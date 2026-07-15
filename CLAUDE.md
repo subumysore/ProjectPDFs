@@ -1,4 +1,4 @@
-# PROJECT — CLAUDE.md
+# ProjectPDFs — CLAUDE.md
 
 ## Project Operating Rules (canonical — apply to every task)
 

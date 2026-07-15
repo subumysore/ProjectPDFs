@@ -1,11 +1,11 @@
-# SDD Project Starter
+# ProjectPDFs
 
-A **stack-agnostic starter** that carries forward a proven way of working: **Specification-Driven
-Development (SDD)**, a **Memory Bank** for durable context, **requirements traceability**, and decision
-records — plus the additional best practices below. Drop your application code into it (any language /
-framework) and keep the governance.
+A project built on a proven way of working: **Specification-Driven Development (SDD)**, a **Memory
+Bank** for durable context, **requirements traceability**, and decision records — plus the additional
+best practices below. Add your application code here (any language / framework) and keep the governance.
 
-> Rename this folder to your project, then work through `docs/START_HERE.md`.
+> New here? Start with `docs/START_HERE.md`. Fill in the `TODO`s in `CLAUDE.md`,
+> `memory-bank/projectBrief.md`, and `memory-bank/techContext.md` to describe **ProjectPDFs**.
 
 ## The loop (SDD)
 
