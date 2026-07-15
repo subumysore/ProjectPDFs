@@ -1,0 +1,32 @@
+# CI quality gates. Wire the TODO steps to your stack's real commands.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Governance gates (stack-agnostic, run today) ---
+      - name: Traceability (BRD ↔ matrix)
+        run: node scripts/check-traceability.mjs
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        # or: run trufflehog / your scanner of choice
+
+      # --- Stack gates (uncomment + fill for your language) ---
+      # - uses: actions/setup-node@v4
+      #   with: { node-version: 22 }
+      # - run: TODO_install        # e.g. pnpm install --frozen-lockfile
+      # - run: TODO_lint           # e.g. pnpm lint
+      # - run: TODO_typecheck      # e.g. pnpm typecheck
+      # - run: TODO_test_unit      # unit tests
+      # - run: TODO_test_integration
+      # - run: TODO_test_acceptance   # features/*.feature via your BDD runner
+      # - run: TODO_migration_safety  # additive/reversible migration check
+      # - run: TODO_sbom              # generate SBOM on release

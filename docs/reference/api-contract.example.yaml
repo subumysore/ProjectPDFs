@@ -1,0 +1,29 @@
+# Contract-first: the API schema is the SOURCE OF TRUTH. Generate types/clients from this,
+# and run contract tests against it. Replace with your real spec (or AsyncAPI for events).
+openapi: 3.1.0
+info:
+  title: TODO API
+  version: 0.1.0
+  description: Contract-first API. Types and server stubs are generated from this file.
+servers:
+  - url: https://dev.example.com/api/v1
+    description: dev
+paths:
+  /health:
+    get:
+      summary: Liveness/readiness probe
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, degraded, down] }
+        checkedAt: { type: string, format: date-time }

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp.*
+vendor/
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+
+# Build output
+dist/
+build/
+out/
+target/
+*.tsbuildinfo
+
+# Env & secrets — NEVER commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+*.secret
+
+# Test / coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Large artifacts (keep the repo lean; use releases/artifact storage instead)
+*.zip
+*.tar.gz
+*.mp4
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Agent/local caches
+.cache/
+scratchpad/
