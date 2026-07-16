@@ -136,10 +136,12 @@ impl Store {
         Ok(())
     }
 
-    /// Create a FormInstance (a filled form for a Profile).
+    /// Create a FormInstance (a filled form for a Profile). Idempotent by id, so a
+    /// stable `profile:entry` id accumulates versions across saves.
     pub fn create_instance(&self, fi: &FormInstance, created_at: i64) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO form_instances(id, profile_id, entry_id, created_at) VALUES(?1, ?2, ?3, ?4)",
+            "INSERT INTO form_instances(id, profile_id, entry_id, created_at) VALUES(?1, ?2, ?3, ?4)
+             ON CONFLICT(id) DO NOTHING",
             params![fi.id, fi.profile_id, fi.entry_id, created_at],
         )?;
         Ok(())

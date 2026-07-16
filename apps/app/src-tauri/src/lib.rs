@@ -2,10 +2,27 @@
 //! core crates. Real commands (catalog match, fill, sign, export) land per spec.
 
 use core_catalog::{autofill, demo_catalog, demo_entry, get, search, CatalogEntry, CatalogSummary, FilledField};
-use core_store::{DataPoint, Profile, Store};
+use core_store::{DataPoint, FormInstance, Profile, Store};
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{Manager, State};
+
+fn now_secs() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Result of saving a filled form.
+#[derive(Serialize)]
+struct SaveInfo {
+    instance_id: String,
+    version_no: i64,
+    saves: i64,
+}
 
 /// Managed app state: the on-device store, guarded for cross-thread command access.
 struct AppState {
@@ -167,6 +184,48 @@ fn load_or_create_key(dir: &std::path::Path) -> core_crypto::SealKey {
     k
 }
 
+/// Save a filled form: autofill from the vault, append an immutable encrypted
+/// version to the form instance, and record a "save" history event.
+#[tauri::command]
+fn save_filled_form(
+    state: State<AppState>,
+    profile_id: String,
+    entry_id: String,
+) -> Result<SaveInfo, String> {
+    let store = state.store.lock().unwrap();
+    let vault = store.vault(&profile_id).map_err(|e| e.to_string())?;
+    let catalog = demo_catalog();
+    let entry = get(&catalog, &entry_id)
+        .cloned()
+        .ok_or_else(|| format!("unknown form: {entry_id}"))?;
+    // Only the fields we actually have values for.
+    let values: BTreeMap<String, String> = autofill(&entry, &vault)
+        .into_iter()
+        .filter_map(|f| f.value.map(|v| (f.ontology_key, v)))
+        .collect();
+
+    let instance_id = format!("{profile_id}:{entry_id}");
+    let at = now_secs();
+    store
+        .create_instance(
+            &FormInstance {
+                id: instance_id.clone(),
+                profile_id: profile_id.clone(),
+                entry_id: entry_id.clone(),
+            },
+            at,
+        )
+        .map_err(|e| e.to_string())?;
+    let version_no = store.add_version(&instance_id, &values, at).map_err(|e| e.to_string())?;
+    store.record_event(&instance_id, "save", at).map_err(|e| e.to_string())?;
+    let saves = store.event_count(&instance_id, "save").map_err(|e| e.to_string())?;
+    Ok(SaveInfo {
+        instance_id,
+        version_no,
+        saves,
+    })
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -195,7 +254,8 @@ pub fn run() {
             upsert_data_point,
             delete_data_point,
             catalog_search,
-            autofill_for
+            autofill_for,
+            save_filled_form
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");

@@ -12,7 +12,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 7 | 7 | 0 | 7 | 0 | 7 |
+| 14 | 0 | 8 | 6 | 0 | 8 | 0 | 6 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
@@ -23,7 +23,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |
 | REQ-06.1 | AI search bar | ☐ | `TODO` | `TODO` | — | ❌ |
-| REQ-07.1 | Save & submit (no proxy) | ☐ | `TODO` | `TODO` | — | ❌ |
+| REQ-07.1 | Save (versioned) & submit | 🟡 | app `save_filled_form` -> instance + immutable version + save counter; online submit pending | core-store versioning tests | — | ⚠️ |
 | REQ-08.1 | History, versioning, annotation layers | 🟡 | `core-store` FormInstance + immutable encrypted versions + history counters; annotation layers pending | `core-store` versioning/history tests | — | ⚠️ |
 | REQ-09.1 | Non-delegable signing (Tier 1 + Tier 2) | ☐ | `core-identity`, `core-crypto` (stubs) | `TODO` | — | ❌ |
 | REQ-10.1 | Data-source extraction + profiles | ☐ | `core-extract` (stub) | `TODO` | — | ❌ |

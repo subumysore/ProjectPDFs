@@ -24,6 +24,11 @@ interface AutofillResult {
   entry: { id: string; name: string };
   filled: FilledField[];
 }
+interface SaveInfo {
+  instance_id: string;
+  version_no: number;
+  saves: number;
+}
 
 const cardStyle: React.CSSProperties = {
   border: "1px solid #d9e2e6",
@@ -56,6 +61,7 @@ export function App() {
   const [results, setResults] = useState<CatalogSummary[]>([]);
   const [form, setForm] = useState<CatalogSummary | null>(null);
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
+  const [saved, setSaved] = useState<SaveInfo | null>(null);
   const [err, setErr] = useState("");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
@@ -84,8 +90,15 @@ export function App() {
   }
   function runAutofill() {
     if (!selected || !form) return;
+    setSaved(null);
     guard(
       invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then(setAutofill),
+    );
+  }
+  function saveForm() {
+    if (!selected || !form) return;
+    guard(
+      invoke<SaveInfo>("save_filled_form", { profileId: selected, entryId: form.id }).then(setSaved),
     );
   }
 
@@ -242,9 +255,17 @@ export function App() {
       {selected && form && (
         <section style={cardStyle}>
           <h2 style={h2Style}>4 · Autofill</h2>
-          <button onClick={runAutofill}>
-            Autofill “{form.name}” from {selectedName}
-          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={runAutofill}>
+              Autofill “{form.name}” from {selectedName}
+            </button>
+            {autofill && <button onClick={saveForm}>Save (new version)</button>}
+            {saved && (
+              <span style={{ color: "#0a6a60", fontSize: 13 }}>
+                Saved version {saved.version_no} · {saved.saves} save(s), encrypted on-device
+              </span>
+            )}
+          </div>
           {autofill && (
             <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>
               <thead>
