@@ -23,7 +23,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |
 | REQ-06.1 | AI search bar | 🟡 | app "Find a form" search UI + `catalog_search` | core-catalog search tests | — | ⚠️ |
-| REQ-07.1 | Save (versioned) & submit | 🟡 | app `save_filled_form` -> instance + immutable version + save counter; online submit pending | core-store versioning tests | — | ⚠️ |
+| REQ-07.1 | Save (versioned) & submit | 🟡 | `save_filled_form` (versions) + PDF export (pdf-lib) + `open_submit_url` (opens vendor page, HTTP warning, never proxied) | core-store versioning tests; builds | — | ⚠️ |
 | REQ-08.1 | History, versioning, annotation layers | 🟡 | `core-store` FormInstance + immutable encrypted versions + history counters; annotation layers pending | `core-store` versioning/history tests | — | ⚠️ |
 | REQ-09.1 | Non-delegable signing (Tier 1) | 🟡 | app `sign_form`: device Ed25519 key (OS keystore) signs the version hash + provenance -> signatures table + UI. OIDC broker for federated identity (reused). Tier-2 biometric + live OIDC pending | core-store signatures + core-crypto + account OIDC tests | — | ⚠️ |
 | REQ-10.1 | Data-source extraction + profiles | 🟡 | app on-device OCR (tesseract.js) + heuristic extractor -> vault; profiles/subscriptions modeled | frontend build (runtime needs live app) | — | ❌ |

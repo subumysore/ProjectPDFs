@@ -366,6 +366,22 @@ fn form_signatures(
         .map_err(|e| e.to_string())
 }
 
+/// Open the vendor's submission page in the default browser so the user submits
+/// there directly (device -> vendor; we never proxy). Warns on insecure HTTP.
+#[tauri::command]
+fn open_submit_url(url: String) -> Result<String, String> {
+    let lower = url.trim().to_lowercase();
+    if lower.starts_with("https://") {
+        open::that(url.trim()).map_err(|e| e.to_string())?;
+        Ok("Opened the submission page (secure https). Submit there — your data goes device → vendor directly.".into())
+    } else if lower.starts_with("http://") {
+        open::that(url.trim()).map_err(|e| e.to_string())?;
+        Ok("WARNING: this page uses insecure HTTP — data would cross the network in cleartext. Opened at your request.".into())
+    } else {
+        Err("Enter an http(s) URL.".into())
+    }
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -399,7 +415,8 @@ pub fn run() {
             autofill_for,
             save_filled_form,
             sign_form,
-            form_signatures
+            form_signatures,
+            open_submit_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");

@@ -74,6 +74,8 @@ export function App() {
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
+  const [submitUrl, setSubmitUrl] = useState("");
+  const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [err, setErr] = useState("");
 
@@ -409,6 +411,28 @@ export function App() {
             }}
           >
             <canvas ref={canvasRef} style={{ maxWidth: "100%" }} />
+          </div>
+
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
+            <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8 }}>
+              Submit online — opens the vendor page; you submit there (device → vendor, we never proxy)
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                placeholder="Submission URL (vendor / gov site)"
+                value={submitUrl}
+                onChange={(e) => setSubmitUrl(e.currentTarget.value)}
+                style={{ padding: 8, flex: 1 }}
+              />
+              <button onClick={() => submitUrl.trim() && guard(invoke<string>("open_submit_url", { url: submitUrl }).then(setSubmitMsg))}>
+                Submit online
+              </button>
+            </div>
+            {submitMsg && (
+              <p style={{ fontSize: 13, color: submitMsg.startsWith("WARNING") ? "#b45309" : "#0a6a60" }}>
+                {submitMsg}
+              </p>
+            )}
           </div>
         </section>
       )}
