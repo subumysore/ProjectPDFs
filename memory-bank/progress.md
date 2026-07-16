@@ -19,10 +19,13 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Requirements traced:** 14 pillars → `REQ-01.1…REQ-14.1` in BRD + matrix; `check-traceability` green.
 - Old `apps/api`/`packages/db` removed; workspace globs now include `services/*`.
 
+- **Persistent vault manager:** `core-store` CRUD (list/delete) + persistent SQLite at OS app-data
+  dir; app commands + a real UI (create profiles, add/edit/delete data points, autofill per profile).
+  All tests green; `[profile.test] debug=0` fixes Windows LNK1201 on test builds.
+
 ## In progress
-- **Phase 1 — vertical slice landed.** Next: encryption-at-rest (SQLCipher) + real Profiles UI;
-  translation (`core-mt`) + OCR fallback (`core-ocr`); `pnpm tauri dev` live-window check; Android
-  SDK/NDK for the mobile spike; iOS on a Mac.
+- **Phase 1 — persistent vault landed.** Next: encryption-at-rest (SQLCipher); translation
+  (`core-mt`) + OCR fallback (`core-ocr`); `pnpm tauri dev` live-window check; Android SDK/NDK; iOS on a Mac.
 
 ## Not started / backlog
 - **Phase 0 spike (GATING): Tauri v2 mobile bindings** — validate pdfium + onnxruntime + WebAuthn +

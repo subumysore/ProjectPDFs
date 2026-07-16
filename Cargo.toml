@@ -13,3 +13,8 @@ publish = false
 [profile.release]
 opt-level = "s"
 lto = true
+
+# Test binaries link the whole Tauri tree; dropping debug info avoids Windows
+# LNK1201 (.pdb write/lock contention with AV) and speeds up test builds.
+[profile.test]
+debug = 0

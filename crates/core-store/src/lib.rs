@@ -79,6 +79,41 @@ impl Store {
         Ok(())
     }
 
+    /// All Profiles, ordered by name.
+    pub fn list_profiles(&self) -> rusqlite::Result<Vec<Profile>> {
+        let mut stmt = self.conn.prepare("SELECT id, name FROM profiles ORDER BY name")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(Profile {
+                id: r.get(0)?,
+                name: r.get(1)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    /// All DataPoints for a Profile, ordered by key.
+    pub fn data_points(&self, profile_id: &str) -> rusqlite::Result<Vec<DataPoint>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT key, value FROM data_points WHERE profile_id = ?1 ORDER BY key")?;
+        let rows = stmt.query_map(params![profile_id], |r| {
+            Ok(DataPoint {
+                key: r.get(0)?,
+                value: r.get(1)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    /// Delete a DataPoint by key.
+    pub fn delete_data_point(&self, profile_id: &str, key: &str) -> rusqlite::Result<()> {
+        self.conn.execute(
+            "DELETE FROM data_points WHERE profile_id = ?1 AND key = ?2",
+            params![profile_id, key],
+        )?;
+        Ok(())
+    }
+
     /// The whole vault for a Profile as `key -> value`.
     pub fn vault(&self, profile_id: &str) -> rusqlite::Result<BTreeMap<String, String>> {
         let mut stmt = self
@@ -143,6 +178,36 @@ mod tests {
         assert_eq!(v.len(), 2);
         assert_eq!(v.get("full_name").unwrap(), "Asha K. Rao");
         assert_eq!(v.get("date_of_birth").unwrap(), "1990-01-01");
+    }
+
+    #[test]
+    fn profiles_and_delete() {
+        let s = Store::open(":memory:").unwrap();
+        s.put_profile(&Profile {
+            id: "b".into(),
+            name: "Bhavna".into(),
+        })
+        .unwrap();
+        s.put_profile(&Profile {
+            id: "a".into(),
+            name: "Asha".into(),
+        })
+        .unwrap();
+        let ps = s.list_profiles().unwrap();
+        assert_eq!(ps.len(), 2);
+        assert_eq!(ps[0].name, "Asha"); // ordered by name
+
+        s.put_data_point(
+            "a",
+            &DataPoint {
+                key: "phone".into(),
+                value: "123".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(s.data_points("a").unwrap().len(), 1);
+        s.delete_data_point("a", "phone").unwrap();
+        assert_eq!(s.data_points("a").unwrap().len(), 0);
     }
 
     #[test]

@@ -16,8 +16,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   signing, Form Catalog, signing hand-off, biometric signing, multi-party, provenance, roles).
 - UML model (use-case, component, domain class, sequences, lifecycle) published.
 
+- **Persistent vault + CRUD:** `core-store` gains `list_profiles`/`data_points`/`delete_data_point`
+  (+ tests); app manages a persistent SQLite store under the OS app-data dir with commands
+  `create_profile`/`list_profiles`/`list_data_points`/`upsert_data_point`/`delete_data_point`/`autofill_for`.
+- **Vault manager UI:** create profiles, add/edit/delete data points, and catalog-first autofill per
+  selected profile (`apps/app/src/App.tsx`).
 - **Phase-1 vertical slice (catalog-first autofill):** `core-store` (SQLite on-device vault + tests),
   `core-catalog` (field-maps + `autofill` join + tests), app command `demo_autofill`, UI table.
+
+### Fixed
+- Windows `LNK1201` (.pdb write/lock contention under AV) on test builds — `[profile.test] debug = 0`.
 - `services/catalog` (Node) public catalog API stub + `packages/shared` TS domain types (both typecheck).
 - Requirements: 14 pillars written as `REQ-01.1…REQ-14.1` (BRD + traceability matrix; check green).
 - **Tauri v2 desktop app** (`apps/app`): React/TS UI + Rust `src-tauri` wired to the core crates —

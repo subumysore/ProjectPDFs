@@ -4,6 +4,13 @@
 use core_catalog::{autofill, demo_entry, CatalogEntry, FilledField};
 use core_store::{DataPoint, Profile, Store};
 use serde::Serialize;
+use std::sync::Mutex;
+use tauri::{Manager, State};
+
+/// Managed app state: the on-device store, guarded for cross-thread command access.
+struct AppState {
+    store: Mutex<Store>,
+}
 
 #[derive(Serialize)]
 struct CoreModules {
@@ -66,11 +73,94 @@ fn demo_autofill() -> Result<AutofillResult, String> {
     Ok(AutofillResult { entry, filled })
 }
 
+// --- Persistent vault: real Profiles + DataPoints (all on-device) ---
+
+#[tauri::command]
+fn create_profile(state: State<AppState>, id: String, name: String) -> Result<(), String> {
+    state
+        .store
+        .lock()
+        .unwrap()
+        .put_profile(&Profile { id, name })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
+    state.store.lock().unwrap().list_profiles().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_data_points(state: State<AppState>, profile_id: String) -> Result<Vec<DataPoint>, String> {
+    state
+        .store
+        .lock()
+        .unwrap()
+        .data_points(&profile_id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn upsert_data_point(
+    state: State<AppState>,
+    profile_id: String,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    state
+        .store
+        .lock()
+        .unwrap()
+        .put_data_point(&profile_id, &DataPoint { key, value })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_data_point(state: State<AppState>, profile_id: String, key: String) -> Result<(), String> {
+    state
+        .store
+        .lock()
+        .unwrap()
+        .delete_data_point(&profile_id, &key)
+        .map_err(|e| e.to_string())
+}
+
+/// Catalog-first autofill for a real Profile's vault against the sample form.
+#[tauri::command]
+fn autofill_for(state: State<AppState>, profile_id: String) -> Result<AutofillResult, String> {
+    let store = state.store.lock().unwrap();
+    let vault = store.vault(&profile_id).map_err(|e| e.to_string())?;
+    let entry = demo_entry();
+    let filled = autofill(&entry, &vault);
+    Ok(AutofillResult { entry, filled })
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, core_modules, demo_autofill])
+        .setup(|app| {
+            // Open the on-device vault under the OS app-data dir (encrypted at rest in production).
+            let dir = app.path().app_data_dir().expect("app data dir");
+            std::fs::create_dir_all(&dir).expect("create data dir");
+            let db_path = dir.join("vault.db");
+            let store = Store::open(db_path.to_string_lossy().as_ref()).expect("open vault store");
+            app.manage(AppState {
+                store: Mutex::new(store),
+            });
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            core_modules,
+            demo_autofill,
+            create_profile,
+            list_profiles,
+            list_data_points,
+            upsert_data_point,
+            delete_data_point,
+            autofill_for
+        ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");
 }

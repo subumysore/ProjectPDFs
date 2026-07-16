@@ -43,3 +43,8 @@ Thumbs.db
 # Agent/local caches
 .cache/
 scratchpad/
+
+# Google Drive sync artifacts (the whole folder is Drive-synced)
+.tmp.driveupload/
+.tmp.drivedownload/
+*.tmp.drive*
