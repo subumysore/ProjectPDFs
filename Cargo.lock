@@ -450,6 +450,9 @@ version = "0.0.0"
 [[package]]
 name = "core-fetch"
 version = "0.0.0"
+dependencies = [
+ "url",
+]
 
 [[package]]
 name = "core-foundation"
@@ -530,6 +533,9 @@ dependencies = [
 [[package]]
 name = "core-webform"
 version = "0.0.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "cpufeatures"
