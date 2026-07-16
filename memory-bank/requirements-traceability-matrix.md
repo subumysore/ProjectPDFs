@@ -18,7 +18,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
 |---|---|---|---|---|---|---|
 | REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store` (values AES-GCM sealed), `core-crypto`, `core-catalog` | `core-store` (incl. encrypted-at-rest), `core-catalog`, `core-crypto` unit tests | — | ⚠️ |
-| REQ-02.1 | Catalog-first field maps, OCR fallback | 🟡 | `core-catalog` (maps + fingerprint match); `core-ocr` (stub) | catalog autofill + fingerprint tests | — | ⚠️ |
+| REQ-02.1 | Make fillable: catalog maps + real PDF render/fill/export | 🟡 | `core-catalog` maps + fingerprint; app pdf.js render + pdf-lib AcroForm fill/export (on-device); OCR detect fallback pending | catalog + fingerprint tests; frontend build | — | ⚠️ |
 | REQ-03.1 | Translated view + original/chosen output | ☐ | `core-mt` (stub) | `TODO` | — | ❌ |
 | REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |

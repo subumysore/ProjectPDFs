@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
+import { downloadBytes, fillAndExport, renderFirstPage } from "./pdf";
 
 interface Profile {
   id: string;
@@ -71,6 +72,9 @@ export function App() {
   const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
+  const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
+  const [pdfMsg, setPdfMsg] = useState("");
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [err, setErr] = useState("");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
@@ -155,6 +159,27 @@ export function App() {
     }
     setExtracted([]);
     loadPoints(selected);
+  }
+  async function onOpenPdf(file: File) {
+    setPdfMsg("");
+    const bytes = await file.arrayBuffer();
+    setPdfBytes(bytes);
+    if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
+  }
+  async function fillPdf() {
+    if (!pdfBytes) return;
+    const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+    try {
+      const { filled, total, data } = await fillAndExport(pdfBytes, vault);
+      downloadBytes(data, "filled.pdf");
+      setPdfMsg(
+        total === 0
+          ? "No AcroForm fields in this PDF (scanned/flat) — use the catalog map or OCR."
+          : `Filled ${filled} of ${total} form fields from the vault; downloaded filled.pdf.`,
+      );
+    } catch (e) {
+      setErr(String(e));
+    }
   }
 
   const selectedName = profiles.find((p) => p.id === selected)?.name;
@@ -355,6 +380,36 @@ export function App() {
               </tbody>
             </table>
           )}
+        </section>
+      )}
+
+      {selected && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>5 · Fill a PDF (render + AcroForm fill, on-device)</h2>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => {
+              const f = e.currentTarget.files?.[0];
+              if (f) onOpenPdf(f);
+            }}
+          />
+          {pdfBytes && (
+            <button onClick={fillPdf} style={{ marginLeft: 8 }}>
+              Fill from {selectedName} &amp; export
+            </button>
+          )}
+          {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
+          <div
+            style={{
+              marginTop: 10,
+              overflow: "auto",
+              maxHeight: 440,
+              border: pdfBytes ? "1px solid #eef2f4" : "none",
+            }}
+          >
+            <canvas ref={canvasRef} style={{ maxWidth: "100%" }} />
+          </div>
         </section>
       )}
     </main>
