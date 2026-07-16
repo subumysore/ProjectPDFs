@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, renderFirstPage } from "./pdf";
+import { translate } from "./translate";
 
 interface Profile {
   id: string;
@@ -70,6 +71,8 @@ export function App() {
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
   const [saved, setSaved] = useState<SaveInfo | null>(null);
   const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
+  const [translated, setTranslated] = useState<Record<string, string>>({});
+  const [transMsg, setTransMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
@@ -120,6 +123,21 @@ export function App() {
   function signForm() {
     if (!selected || !form) return;
     guard(invoke<SignInfo>("sign_form", { profileId: selected, entryId: form.id }).then(setSignInfo));
+  }
+  async function translateLabels() {
+    if (!autofill) return;
+    setTransMsg("translating on-device…");
+    try {
+      const map: Record<string, string> = {};
+      for (const f of autofill.filled) {
+        map[f.ontology_key] = await translate(f.name, "en-hi", setTransMsg);
+      }
+      setTranslated(map);
+      setTransMsg("Translated on-device (English → हिन्दी).");
+    } catch (e) {
+      setErr(String(e));
+      setTransMsg("");
+    }
   }
 
   async function addProfile() {
@@ -361,6 +379,11 @@ export function App() {
             </p>
           )}
           {autofill && (
+            <>
+              <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
+                <button onClick={translateLabels}>Translate labels → हिन्दी (on-device)</button>
+                {transMsg && <span style={{ fontSize: 12, color: "#55666f" }}>{transMsg}</span>}
+              </div>
             <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>
               <thead>
                 <tr style={{ textAlign: "left", borderBottom: "1px solid #d9e2e6" }}>
@@ -372,7 +395,12 @@ export function App() {
               <tbody>
                 {autofill.filled.map((f) => (
                   <tr key={f.ontology_key} style={{ borderBottom: "1px solid #eef2f4" }}>
-                    <td style={{ padding: "6px 8px" }}>{f.name}</td>
+                    <td style={{ padding: "6px 8px" }}>
+                      {f.name}
+                      {translated[f.ontology_key] && (
+                        <span style={{ color: "#0a6a60", marginLeft: 6 }}>({translated[f.ontology_key]})</span>
+                      )}
+                    </td>
                     <td style={{ padding: "6px 8px", ...mono }}>{f.ontology_key}</td>
                     <td style={{ padding: "6px 8px" }}>
                       {f.value ?? <em style={{ color: "#b45309" }}>not in vault — add it above</em>}
@@ -381,6 +409,7 @@ export function App() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </section>
       )}

@@ -53,3 +53,4 @@ scratchpad/
 # and scripts/fetch-translation-assets.mjs). Present on disk for local testing.
 apps/app/public/tesseract/
 apps/app/public/models/
+apps/app/public/ort/

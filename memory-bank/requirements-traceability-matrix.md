@@ -12,14 +12,14 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 13 | 1 | 0 | 12 | 0 | 2 |
+| 14 | 0 | 14 | 0 | 0 | 12 | 0 | 2 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
 |---|---|---|---|---|---|---|
 | REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store` (values AES-GCM sealed), `core-crypto`, `core-catalog` | `core-store` (incl. encrypted-at-rest), `core-catalog`, `core-crypto` unit tests | — | ⚠️ |
 | REQ-02.1 | Make fillable: catalog maps + real PDF render/fill/export | 🟡 | `core-catalog` maps + fingerprint; app pdf.js render + pdf-lib AcroForm fill/export (on-device); OCR detect fallback pending | catalog + fingerprint tests; frontend build | — | ⚠️ |
-| REQ-03.1 | Translated view + original/chosen output | ☐ | `core-mt` (stub) | `TODO` | — | ❌ |
+| REQ-03.1 | Translated view (English<->Hindi) | 🟡 | app on-device translation (transformers.js/ONNX, self-hosted models + ort wasm, zero egress); translate-labels UI; setup script | frontend build (runtime needs model download) | — | ❌ |
 | REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |
 | REQ-06.1 | AI search bar | 🟡 | app "Find a form" search UI + `catalog_search` | core-catalog search tests | — | ⚠️ |
