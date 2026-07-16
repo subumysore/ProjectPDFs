@@ -84,6 +84,22 @@ pub struct VersionMeta {
     pub created_at: i64,
 }
 
+/// A signature over a specific version of a FormInstance (non-delegable — the
+/// signer's own key). Bytes are hex to cross the bridge cleanly.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SignatureRecord {
+    /// Version signed.
+    pub version_no: i64,
+    /// Signer public key (hex).
+    pub signer_public: String,
+    /// Signature (hex).
+    pub signature: String,
+    /// Algorithm (e.g. "ed25519").
+    pub alg: String,
+    /// Time signed (epoch seconds).
+    pub created_at: i64,
+}
+
 /// On-device store handle. Holds the sealing key for value encryption at rest.
 pub struct Store {
     conn: Connection,
@@ -131,9 +147,48 @@ impl Store {
                  instance_id TEXT NOT NULL,
                  kind        TEXT NOT NULL,
                  at          INTEGER NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS signatures(
+                 instance_id   TEXT NOT NULL,
+                 version_no    INTEGER NOT NULL,
+                 signer_public TEXT NOT NULL,
+                 signature     TEXT NOT NULL,
+                 alg           TEXT NOT NULL,
+                 created_at    INTEGER NOT NULL,
+                 PRIMARY KEY(instance_id, version_no, signer_public)
              );",
         )?;
         Ok(())
+    }
+
+    /// Record a signature over a version (idempotent per signer + version).
+    pub fn add_signature(&self, instance_id: &str, s: &SignatureRecord) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO signatures(instance_id, version_no, signer_public, signature, alg, created_at)
+             VALUES(?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(instance_id, version_no, signer_public) DO UPDATE
+               SET signature = excluded.signature, created_at = excluded.created_at",
+            params![instance_id, s.version_no, s.signer_public, s.signature, s.alg, s.created_at],
+        )?;
+        Ok(())
+    }
+
+    /// Signatures on a FormInstance, newest version first.
+    pub fn list_signatures(&self, instance_id: &str) -> Result<Vec<SignatureRecord>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT version_no, signer_public, signature, alg, created_at
+             FROM signatures WHERE instance_id = ?1 ORDER BY version_no DESC",
+        )?;
+        let rows = stmt.query_map(params![instance_id], |r| {
+            Ok(SignatureRecord {
+                version_no: r.get(0)?,
+                signer_public: r.get(1)?,
+                signature: r.get(2)?,
+                alg: r.get(3)?,
+                created_at: r.get(4)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
     /// Create a FormInstance (a filled form for a Profile). Idempotent by id, so a
@@ -440,6 +495,26 @@ mod tests {
             )
             .unwrap();
         assert!(!raw.windows(8).any(|w| w == b"Asha Rao"));
+    }
+
+    #[test]
+    fn signatures_roundtrip() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        s.add_signature(
+            "fi1",
+            &SignatureRecord {
+                version_no: 1,
+                signer_public: "aabb".into(),
+                signature: "ccdd".into(),
+                alg: "ed25519".into(),
+                created_at: 42,
+            },
+        )
+        .unwrap();
+        let sigs = s.list_signatures("fi1").unwrap();
+        assert_eq!(sigs.len(), 1);
+        assert_eq!(sigs[0].alg, "ed25519");
+        assert_eq!(sigs[0].signer_public, "aabb");
     }
 
     #[test]

@@ -30,6 +30,11 @@ interface SaveInfo {
   version_no: number;
   saves: number;
 }
+interface SignInfo {
+  version_no: number;
+  signer_public: string;
+  doc_hash: string;
+}
 
 const cardStyle: React.CSSProperties = {
   border: "1px solid #d9e2e6",
@@ -63,6 +68,7 @@ export function App() {
   const [form, setForm] = useState<CatalogSummary | null>(null);
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
   const [saved, setSaved] = useState<SaveInfo | null>(null);
+  const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [err, setErr] = useState("");
@@ -100,9 +106,14 @@ export function App() {
   }
   function saveForm() {
     if (!selected || !form) return;
+    setSignInfo(null);
     guard(
       invoke<SaveInfo>("save_filled_form", { profileId: selected, entryId: form.id }).then(setSaved),
     );
+  }
+  function signForm() {
+    if (!selected || !form) return;
+    guard(invoke<SignInfo>("sign_form", { profileId: selected, entryId: form.id }).then(setSignInfo));
   }
 
   async function addProfile() {
@@ -314,7 +325,14 @@ export function App() {
                 Saved version {saved.version_no} · {saved.saves} save(s), encrypted on-device
               </span>
             )}
+            {saved && <button onClick={signForm}>Sign (device key)</button>}
           </div>
+          {signInfo && (
+            <p style={{ color: "#0a6a60", fontSize: 13, ...mono }}>
+              ✓ Signed v{signInfo.version_no} · signer {signInfo.signer_public.slice(0, 16)}… · doc{" "}
+              {signInfo.doc_hash.slice(0, 12)}… (non-delegable, on-device Ed25519)
+            </p>
+          )}
           {autofill && (
             <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>
               <thead>

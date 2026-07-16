@@ -24,9 +24,18 @@ struct SaveInfo {
     saves: i64,
 }
 
-/// Managed app state: the on-device store, guarded for cross-thread command access.
+/// Managed app state: the on-device store + the device signing key (from the OS keystore).
 struct AppState {
     store: Mutex<Store>,
+    sign_secret: [u8; 32],
+}
+
+/// Result of signing a form version.
+#[derive(Serialize)]
+struct SignInfo {
+    version_no: i64,
+    signer_public: String,
+    doc_hash: String,
 }
 
 #[derive(Serialize)]
@@ -268,6 +277,95 @@ fn save_filled_form(
     })
 }
 
+/// Load the device Ed25519 signing secret from the OS keystore (file fallback).
+/// This key is non-delegable: only this device+profile can produce its signatures.
+fn load_or_create_sign_key(dir: &std::path::Path) -> [u8; 32] {
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, "sign-key") {
+        match entry.get_password() {
+            Ok(hex) => {
+                if let Some(k) = hex_to_key(&hex) {
+                    return k;
+                }
+            }
+            Err(keyring::Error::NoEntry) => {
+                let k = core_crypto::SignKeypair::generate().secret_bytes();
+                if entry.set_password(&key_to_hex(&k)).is_ok() {
+                    return k;
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    let p = dir.join("sign.key");
+    if let Ok(b) = std::fs::read(&p) {
+        if b.len() == 32 {
+            let mut k = [0u8; 32];
+            k.copy_from_slice(&b);
+            return k;
+        }
+    }
+    let k = core_crypto::SignKeypair::generate().secret_bytes();
+    let _ = std::fs::write(&p, k);
+    k
+}
+
+/// Sign the latest saved version of a form on-device (device Ed25519 key), binding
+/// a provenance manifest (doc hash + signer identity), and store the signature.
+#[tauri::command]
+fn sign_form(state: State<AppState>, profile_id: String, entry_id: String) -> Result<SignInfo, String> {
+    let store = state.store.lock().unwrap();
+    let instance_id = format!("{profile_id}:{entry_id}");
+    let versions = store.list_versions(&instance_id).map_err(|e| e.to_string())?;
+    let latest = versions.last().ok_or("no saved version to sign — save the form first")?;
+    let values = store
+        .version_values(&instance_id, latest.version_no)
+        .map_err(|e| e.to_string())?;
+    let canonical = serde_json::to_vec(&values).map_err(|e| e.to_string())?;
+    let doc_hash = core_crypto::sha256_hex(&canonical);
+
+    let kp = core_crypto::SignKeypair::from_secret(&state.sign_secret);
+    let manifest = core_crypto::ProvenanceManifest {
+        doc_hash: doc_hash.clone(),
+        signer_public: kp.public_bytes(),
+        created_at: now_secs() as u64,
+        roles: vec!["Individual".to_string()],
+    };
+    let sig = manifest.sign(&kp);
+    let signer_public = key_to_hex(&kp.public_bytes());
+    let signature = sig.iter().map(|b| format!("{b:02x}")).collect::<String>();
+
+    store
+        .add_signature(
+            &instance_id,
+            &core_store::SignatureRecord {
+                version_no: latest.version_no,
+                signer_public: signer_public.clone(),
+                signature,
+                alg: "ed25519".into(),
+                created_at: now_secs(),
+            },
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(SignInfo {
+        version_no: latest.version_no,
+        signer_public,
+        doc_hash,
+    })
+}
+
+/// List signatures on a form.
+#[tauri::command]
+fn form_signatures(
+    state: State<AppState>,
+    profile_id: String,
+    entry_id: String,
+) -> Result<Vec<core_store::SignatureRecord>, String> {
+    let store = state.store.lock().unwrap();
+    store
+        .list_signatures(&format!("{profile_id}:{entry_id}"))
+        .map_err(|e| e.to_string())
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -278,11 +376,13 @@ pub fn run() {
             let dir = app.path().app_data_dir().expect("app data dir");
             std::fs::create_dir_all(&dir).expect("create data dir");
             let key = load_or_create_key(&dir);
+            let sign_secret = load_or_create_sign_key(&dir);
             let db_path = dir.join("vault.db");
             let store =
                 Store::open(db_path.to_string_lossy().as_ref(), key).expect("open vault store");
             app.manage(AppState {
                 store: Mutex::new(store),
+                sign_secret,
             });
             Ok(())
         })
@@ -297,7 +397,9 @@ pub fn run() {
             delete_data_point,
             catalog_search,
             autofill_for,
-            save_filled_form
+            save_filled_form,
+            sign_form,
+            form_signatures
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");
