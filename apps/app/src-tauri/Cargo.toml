@@ -1,0 +1,22 @@
+[package]
+name = "app"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Native core modules (workspace crates)
+core-store = { path = "../../../crates/core-store" }
+core-crypto = { path = "../../../crates/core-crypto" }
+core-catalog = { path = "../../../crates/core-catalog" }

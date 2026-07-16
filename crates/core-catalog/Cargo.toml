@@ -1,0 +1,8 @@
+[package]
+name = "core-catalog"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

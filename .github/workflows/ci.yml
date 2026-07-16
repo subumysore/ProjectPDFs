@@ -19,14 +19,20 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         # or: run trufflehog / your scanner of choice
 
-      # --- Stack gates (uncomment + fill for your language) ---
-      # - uses: actions/setup-node@v4
-      #   with: { node-version: 22 }
-      # - run: TODO_install        # e.g. pnpm install --frozen-lockfile
-      # - run: TODO_lint           # e.g. pnpm lint
-      # - run: TODO_typecheck      # e.g. pnpm typecheck
-      # - run: TODO_test_unit      # unit tests
-      # - run: TODO_test_integration
-      # - run: TODO_test_acceptance   # features/*.feature via your BDD runner
-      # - run: TODO_migration_safety  # additive/reversible migration check
-      # - run: TODO_sbom              # generate SBOM on release
+      # --- Stack gates (Node + pnpm monorepo) ---
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.12.0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      # --- Not yet wired (add when the tooling lands) ---
+      # - run: pnpm lint            # add ESLint + per-package `lint` scripts first
+      # - run: pnpm test:acceptance # features/*.feature via a BDD runner (e.g. cucumber)
+      # - run: pnpm db:migrate:check # additive/reversible migration safety
+      # - run: pnpm sbom            # generate SBOM on release

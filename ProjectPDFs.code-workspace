@@ -1,0 +1,29 @@
+{
+  "folders": [
+    { "name": "▸ root", "path": "." },
+    { "name": "api", "path": "apps/api" },
+    { "name": "web", "path": "apps/web" },
+    { "name": "db", "path": "packages/db" },
+    { "name": "docs", "path": "docs" },
+    { "name": "memory-bank", "path": "memory-bank" }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" },
+    "files.eol": "\n",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/coverage": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "ms-playwright.playwright"
+    ]
+  }
+}

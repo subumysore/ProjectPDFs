@@ -1,0 +1,7 @@
+[package]
+name = "core-extract"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]

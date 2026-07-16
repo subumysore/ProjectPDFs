@@ -14,6 +14,17 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
 - **SINGLE SOURCE OF TRUTH:** each concept has ONE authoritative home (schema, config, API contract).
   Duplicating it is forbidden.
 - **SECURITY & DATA:** follow `docs/security/data-classification.md`. Secrets never in code or git.
+- **PRIVACY INVARIANT (non-negotiable, overrides everything):** *No user content ever travels UP to
+  our servers or any third party the user did not explicitly direct it to.* Concretely:
+  - **Every operation that touches user values runs ON-DEVICE** (OCR, translation, AI field-naming,
+    tagging, embeddings/search, font subsetting, PDF fill/export). No cloud AI on user content — ever.
+  - **Servers may only serve assets DOWNWARD** (fonts, models, app updates) and must NEVER receive
+    user content. Inbound downloads are fine; outbound user data is forbidden.
+  - **The only permitted user-data egress is "Submit online" (#7):** user-initiated, device→intended
+    recipient DIRECTLY, never proxied or stored by us, and explicitly labelled as sending their data.
+  - **No content telemetry/analytics/crash payloads.** PDFs are rendered with scripting disabled and
+    external-resource loading blocked (anti-exfiltration).
+  - **The test for any new work:** "does user content go UP?" If yes → not allowed, redesign on-device.
 - **STATUS LIVES IN ONE PLACE:** requirement status lives ONLY in
   `memory-bank/requirements-traceability-matrix.md`.
 

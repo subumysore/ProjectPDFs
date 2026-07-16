@@ -1,0 +1,3 @@
+# Isolates this spike from the repo's pnpm workspace so its heavy deps
+# (tesseract.js, pdfjs, etc.) never touch the production install or CI gates.
+packages: []

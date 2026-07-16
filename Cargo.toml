@@ -1,0 +1,15 @@
+# Rust workspace for the native core. UI (apps/app) and Node services build with pnpm.
+# apps/app/src-tauri is added as a member when the Tauri app is initialised.
+[workspace]
+resolver = "2"
+members = ["crates/*", "apps/app/src-tauri"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+[profile.release]
+opt-level = "s"
+lto = true
