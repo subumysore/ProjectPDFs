@@ -1,7 +1,7 @@
 //! ProjectPDFs native entry point (Tauri v2). Bridges the React UI to the Rust
 //! core crates. Real commands (catalog match, fill, sign, export) land per spec.
 
-use core_catalog::{autofill, demo_entry, CatalogEntry, FilledField};
+use core_catalog::{autofill, demo_catalog, demo_entry, get, search, CatalogEntry, CatalogSummary, FilledField};
 use core_store::{DataPoint, Profile, Store};
 use serde::Serialize;
 use std::sync::Mutex;
@@ -125,12 +125,26 @@ fn delete_data_point(state: State<AppState>, profile_id: String, key: String) ->
         .map_err(|e| e.to_string())
 }
 
-/// Catalog-first autofill for a real Profile's vault against the sample form.
+/// Search the on-device catalog index (name + tags). Query never leaves the device.
 #[tauri::command]
-fn autofill_for(state: State<AppState>, profile_id: String) -> Result<AutofillResult, String> {
+fn catalog_search(query: String) -> Vec<CatalogSummary> {
+    let catalog = demo_catalog();
+    search(&catalog, &query).into_iter().map(|e| e.summary()).collect()
+}
+
+/// Catalog-first autofill: fill a chosen catalogued form from a Profile's vault.
+#[tauri::command]
+fn autofill_for(
+    state: State<AppState>,
+    profile_id: String,
+    entry_id: String,
+) -> Result<AutofillResult, String> {
     let store = state.store.lock().unwrap();
     let vault = store.vault(&profile_id).map_err(|e| e.to_string())?;
-    let entry = demo_entry();
+    let catalog = demo_catalog();
+    let entry = get(&catalog, &entry_id)
+        .cloned()
+        .ok_or_else(|| format!("unknown form: {entry_id}"))?;
     let filled = autofill(&entry, &vault);
     Ok(AutofillResult { entry, filled })
 }
@@ -180,6 +194,7 @@ pub fn run() {
             list_data_points,
             upsert_data_point,
             delete_data_point,
+            catalog_search,
             autofill_for
         ])
         .run(tauri::generate_context!())

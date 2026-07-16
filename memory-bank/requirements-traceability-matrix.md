@@ -12,15 +12,15 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 2 | 12 | 0 | 2 | 0 | 12 |
+| 14 | 0 | 4 | 10 | 0 | 4 | 0 | 10 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
 |---|---|---|---|---|---|---|
 | REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store` (values AES-GCM sealed), `core-crypto`, `core-catalog` | `core-store` (incl. encrypted-at-rest), `core-catalog`, `core-crypto` unit tests | — | ⚠️ |
-| REQ-02.1 | Catalog-first field maps, OCR fallback | 🟡 | `core-catalog` (maps); `core-ocr` (stub) | catalog autofill test | — | ⚠️ |
+| REQ-02.1 | Catalog-first field maps, OCR fallback | 🟡 | `core-catalog` (maps + fingerprint match); `core-ocr` (stub) | catalog autofill + fingerprint tests | — | ⚠️ |
 | REQ-03.1 | Translated view + original/chosen output | ☐ | `core-mt` (stub) | `TODO` | — | ❌ |
-| REQ-04.1 | Auto-tags + on-device index | ☐ | `services/catalog`, `core-catalog` | `TODO` | — | ❌ |
+| REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |
 | REQ-06.1 | AI search bar | ☐ | `TODO` | `TODO` | — | ❌ |
 | REQ-07.1 | Save & submit (no proxy) | ☐ | `TODO` | `TODO` | — | ❌ |

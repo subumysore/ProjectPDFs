@@ -24,6 +24,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Phase-1 vertical slice (catalog-first autofill):** `core-store` (SQLite on-device vault + tests),
   `core-catalog` (field-maps + `autofill` join + tests), app command `demo_autofill`, UI table.
 
+- **Catalog search + matching:** `core-catalog` gains tags, on-device `search` (name+tags, ranked),
+  `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
+  "Find a form" search UI; `autofill_for` now targets the chosen form.
 - **Encryption at rest:** `core-crypto` AES-256-GCM seal/open (random nonce, tamper-detecting;
   6 tests). `core-store` now **seals DataPoint values before they touch disk** (DB holds only
   ciphertext; verified by `values_are_encrypted_at_rest`). App loads/creates a per-install key

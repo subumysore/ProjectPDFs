@@ -9,6 +9,12 @@ interface DataPoint {
   key: string;
   value: string;
 }
+interface CatalogSummary {
+  id: string;
+  name: string;
+  kind: string;
+  tags: string[];
+}
 interface FilledField {
   name: string;
   ontology_key: string;
@@ -19,13 +25,13 @@ interface AutofillResult {
   filled: FilledField[];
 }
 
-const card: React.CSSProperties = {
+const cardStyle: React.CSSProperties = {
   border: "1px solid #d9e2e6",
   borderRadius: 12,
   padding: 16,
   marginTop: 16,
 };
-const h2: React.CSSProperties = {
+const h2Style: React.CSSProperties = {
   fontSize: 13,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
@@ -35,9 +41,9 @@ const h2: React.CSSProperties = {
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
 /**
- * ProjectPDFs — Phase-1 vault manager. Everything here is on-device: Profiles
- * and their DataPoints live in the SQLite vault (core-store), and "autofill"
- * fills a catalogued form's field-map from the selected profile (core-catalog).
+ * ProjectPDFs — Phase-1 shell. All on-device: Profiles + encrypted DataPoints in
+ * the SQLite vault (core-store), catalog search + field-maps (core-catalog).
+ * Pick a profile, find a form, and autofill it from that profile's vault.
  */
 export function App() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -46,25 +52,41 @@ export function App() {
   const [newProfile, setNewProfile] = useState("");
   const [k, setK] = useState("");
   const [v, setV] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<CatalogSummary[]>([]);
+  const [form, setForm] = useState<CatalogSummary | null>(null);
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
   const [err, setErr] = useState("");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
-  const refreshProfiles = () =>
-    guard(invoke<Profile[]>("list_profiles").then(setProfiles));
-
+  const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then(setProfiles));
   const loadPoints = (id: string) =>
     guard(invoke<DataPoint[]>("list_data_points", { profileId: id }).then(setPoints));
+  const doSearch = (q: string) => {
+    setQuery(q);
+    guard(invoke<CatalogSummary[]>("catalog_search", { query: q }).then(setResults));
+  };
 
   useEffect(() => {
     refreshProfiles();
+    doSearch("");
   }, []);
 
   function selectProfile(id: string) {
     setSelected(id);
     setAutofill(null);
     loadPoints(id);
+  }
+  function selectForm(f: CatalogSummary) {
+    setForm(f);
+    setAutofill(null);
+  }
+  function runAutofill() {
+    if (!selected || !form) return;
+    guard(
+      invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then(setAutofill),
+    );
   }
 
   async function addProfile() {
@@ -76,7 +98,6 @@ export function App() {
     await refreshProfiles();
     selectProfile(id);
   }
-
   async function addPoint() {
     if (!selected || !k.trim()) return;
     await guard(invoke("upsert_data_point", { profileId: selected, key: k.trim(), value: v }));
@@ -84,7 +105,6 @@ export function App() {
     setV("");
     loadPoints(selected);
   }
-
   async function removePoint(key: string) {
     if (!selected) return;
     await guard(invoke("delete_data_point", { profileId: selected, key }));
@@ -108,13 +128,13 @@ export function App() {
         Privacy-first, on-device form autofill — your data never leaves this device.
       </p>
       {err && (
-        <p style={{ color: "#9a2c2c" }} onClick={() => setErr("")}>
+        <p style={{ color: "#9a2c2c", cursor: "pointer" }} onClick={() => setErr("")}>
           {err} (click to dismiss)
         </p>
       )}
 
-      <section style={card}>
-        <h2 style={h2}>Profiles</h2>
+      <section style={cardStyle}>
+        <h2 style={h2Style}>1 · Profiles</h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {profiles.map((p) => (
             <button
@@ -146,8 +166,8 @@ export function App() {
       </section>
 
       {selected && (
-        <section style={card}>
-          <h2 style={h2}>Vault — {selectedName}</h2>
+        <section style={cardStyle}>
+          <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <tbody>
               {points.map((dp) => (
@@ -162,7 +182,7 @@ export function App() {
               {points.length === 0 && (
                 <tr>
                   <td colSpan={3} style={{ padding: "6px 8px", opacity: 0.6 }}>
-                    No data points. Add one below (key = ontology key, e.g. full_name).
+                    No data points. Add one (key = ontology key, e.g. full_name).
                   </td>
                 </tr>
               )}
@@ -187,11 +207,43 @@ export function App() {
         </section>
       )}
 
-      {selected && (
-        <section style={card}>
-          <h2 style={h2}>Catalog-first autofill</h2>
-          <button onClick={() => guard(invoke<AutofillResult>("autofill_for", { profileId: selected }).then(setAutofill))}>
-            Autofill "Sample Passport Application" from this profile
+      <section style={cardStyle}>
+        <h2 style={h2Style}>3 · Find a form (on-device search)</h2>
+        <input
+          placeholder="Search forms by name or tag (e.g. passport, kyc, identity)…"
+          value={query}
+          onChange={(e) => doSearch(e.currentTarget.value)}
+          style={{ padding: 8, width: "100%", boxSizing: "border-box" }}
+        />
+        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+          {results.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => selectForm(r)}
+              style={{
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: form?.id === r.id ? "2px solid #0d8f83" : "1px solid #d9e2e6",
+                background: form?.id === r.id ? "#e2f2f0" : "#fff",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{r.name}</div>
+              <div style={{ fontSize: 12, opacity: 0.6, ...mono }}>
+                {r.kind} · {r.tags.join(", ")}
+              </div>
+            </button>
+          ))}
+          {results.length === 0 && <span style={{ opacity: 0.6 }}>No forms match.</span>}
+        </div>
+      </section>
+
+      {selected && form && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>4 · Autofill</h2>
+          <button onClick={runAutofill}>
+            Autofill “{form.name}” from {selectedName}
           </button>
           {autofill && (
             <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>

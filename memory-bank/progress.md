@@ -26,9 +26,12 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Encryption at rest:** `core-crypto` (AES-256-GCM, 6 tests) + `core-store` seals DataPoint values
   before disk (DB holds only ciphertext, verified). App uses a per-install key (OS keystore later).
 
+- **Catalog search + matching:** `core-catalog` search (name+tags) + fingerprint match + 3-form demo
+  catalog (tests); app `catalog_search` command + "Find a form" UI; autofill targets the chosen form.
+
 ## In progress
-- **Phase 1 — encrypted vault landed.** Next: translation (`core-mt`) + OCR fallback (`core-ocr`);
-  OS-keystore key + optional SQLCipher; `pnpm tauri dev` live check; Android SDK/NDK; iOS on a Mac.
+- **Phase 1 — vault (encrypted) + catalog search + autofill working.** Next: translation (`core-mt`)
+  + OCR fallback (`core-ocr`); OS-keystore key; `pnpm tauri dev` live check; Android SDK/NDK; iOS on a Mac.
 
 ## Not started / backlog
 - **Phase 0 spike (GATING): Tauri v2 mobile bindings** — validate pdfium + onnxruntime + WebAuthn +
