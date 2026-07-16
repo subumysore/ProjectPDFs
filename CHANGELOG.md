@@ -28,6 +28,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
   "Find a form" search UI; `autofill_for` now targets the chosen form.
 - **Multi-party workflow:** `core-txn` state machine (Draft→Gathering→Assembled→Circulating→PartiallySigned→FullyExecuted, with Withdrawn + ChangesRequested), per-party consent + signatures, and the re-sign-on-edit invariant (editing clears signatures). 6 tests.
+- **Verifiable provenance:** `core-crypto` `ProvenanceManifest` (SHA-256 doc hash + Ed25519 sign/verify, tamper-detecting) — the public/verifiable part of ADR-0009. 10 tests total.
 - **Signing + E2E sealed bundles:** `core-crypto` adds **Ed25519** sign/verify (signatures +
   provenance foundation) and **X25519 ECIES sealed bundles** (`seal_to`/`open_from`, the basis for
   user-directed E2E export/import per ADR-0003). 8 tests total.

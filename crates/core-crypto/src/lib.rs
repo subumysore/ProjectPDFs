@@ -12,6 +12,8 @@
 use aes_gcm::aead::{Aead, AeadCore, KeyInit, OsRng};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use x25519_dalek::{PublicKey, StaticSecret};
 
 /// A 256-bit symmetric key for at-rest sealing.
@@ -177,6 +179,61 @@ pub fn open_from(recipient_secret: &[u8; 32], bundle: &[u8]) -> Result<Vec<u8>, 
     open(&key, sealed)
 }
 
+// --- Provenance (verifiable manifest, ADR-0009) ---
+
+/// SHA-256 of `bytes` as lowercase hex — the canonical document hash.
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let mut s = String::with_capacity(64);
+    for b in digest {
+        s.push_str(&format!("{b:02x}"));
+    }
+    s
+}
+
+/// The public, verifiable part of a provenance manifest embedded in a document.
+///
+/// It binds the document hash, the signer's public key (identity), a timestamp,
+/// and the acting roles. Signing/verifying is over its canonical bytes. The
+/// authority-scoped sensitive block (encrypted to a named authority's key) is a
+/// separate field added when ADR-0009 is finalised.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProvenanceManifest {
+    /// Hex SHA-256 of the finalised document.
+    pub doc_hash: String,
+    /// The signer's Ed25519 public key (identity binding).
+    pub signer_public: [u8; 32],
+    /// Creation time (epoch seconds; caller-provided for determinism/trusted timestamp).
+    pub created_at: u64,
+    /// The roles that acted (e.g. "Seller", "Notary").
+    pub roles: Vec<String>,
+}
+
+impl ProvenanceManifest {
+    fn canonical_bytes(&self) -> Vec<u8> {
+        let mut b = Vec::new();
+        b.extend_from_slice(self.doc_hash.as_bytes());
+        b.push(0);
+        b.extend_from_slice(&self.signer_public);
+        b.extend_from_slice(&self.created_at.to_be_bytes());
+        for r in &self.roles {
+            b.extend_from_slice(r.as_bytes());
+            b.push(0);
+        }
+        b
+    }
+
+    /// Sign this manifest with `kp` (whose public key must be `signer_public`).
+    pub fn sign(&self, kp: &SignKeypair) -> [u8; 64] {
+        kp.sign(&self.canonical_bytes())
+    }
+
+    /// Verify a signature over this manifest against its embedded `signer_public`.
+    pub fn verify(&self, signature: &[u8; 64]) -> bool {
+        verify(&self.signer_public, &self.canonical_bytes(), signature)
+    }
+}
+
 /// Returns this crate's stable module name.
 pub fn module_name() -> &'static str {
     "core-crypto"
@@ -244,6 +301,32 @@ mod tests {
         // a different recipient cannot open it
         let other = BoxKeypair::generate();
         assert!(open_from(&other.secret_bytes(), &bundle).is_err());
+    }
+
+    #[test]
+    fn sha256_known_vector() {
+        assert_eq!(
+            sha256_hex(b""),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+    }
+
+    #[test]
+    fn provenance_sign_and_tamper() {
+        let kp = SignKeypair::generate();
+        let manifest = ProvenanceManifest {
+            doc_hash: sha256_hex(b"the finalised filled document"),
+            signer_public: kp.public_bytes(),
+            created_at: 1_700_000_000,
+            roles: vec!["Signer".into()],
+        };
+        let sig = manifest.sign(&kp);
+        assert!(manifest.verify(&sig));
+
+        // tampering the document hash invalidates the signature
+        let mut tampered = manifest.clone();
+        tampered.doc_hash = sha256_hex(b"a different document");
+        assert!(!tampered.verify(&sig));
     }
 
     #[test]

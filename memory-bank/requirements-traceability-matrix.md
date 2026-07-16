@@ -12,7 +12,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 5 | 9 | 0 | 5 | 0 | 9 |
+| 14 | 0 | 6 | 8 | 0 | 6 | 0 | 8 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
@@ -29,5 +29,5 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-10.1 | Data-source extraction + profiles | ☐ | `core-extract` (stub) | `TODO` | — | ❌ |
 | REQ-11.1 | Web-hosted download + web-form autofill | ☐ | `core-fetch`, `core-webform` (stubs) | `TODO` | — | ❌ |
 | REQ-12.1 | Multi-party documents | 🟡 | `core-txn` state machine (roles, consent, sign, re-sign-on-edit) | `core-txn` workflow tests | — | ⚠️ |
-| REQ-13.1 | Verifiable provenance (authority-scoped) | ☐ | `core-crypto` (stub) | `TODO` | — | ❌ |
+| REQ-13.1 | Verifiable provenance (authority-scoped) | 🟡 | `core-crypto` ProvenanceManifest (SHA-256 + Ed25519 sign/verify); authority-encrypted block pending | provenance sign/tamper tests | — | ⚠️ |
 | REQ-14.1 | Registered roles & verifiable workflows | ☐ | `services/account`, `core-txn` (stubs) | `TODO` | — | ❌ |

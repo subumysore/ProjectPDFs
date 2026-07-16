@@ -437,6 +437,8 @@ dependencies = [
  "aes-gcm",
  "ed25519-dalek",
  "rand_core",
+ "serde",
+ "sha2",
  "x25519-dalek",
 ]
 
