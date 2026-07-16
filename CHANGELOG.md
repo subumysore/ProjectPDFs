@@ -27,8 +27,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Catalog search + matching:** `core-catalog` gains tags, on-device `search` (name+tags, ranked),
   `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
   "Find a form" search UI; `autofill_for` now targets the chosen form.
-- **Encryption at rest:** `core-crypto` AES-256-GCM seal/open (random nonce, tamper-detecting;
-  6 tests). `core-store` now **seals DataPoint values before they touch disk** (DB holds only
+- **Signing + E2E sealed bundles:** `core-crypto` adds **Ed25519** sign/verify (signatures +
+  provenance foundation) and **X25519 ECIES sealed bundles** (`seal_to`/`open_from`, the basis for
+  user-directed E2E export/import per ADR-0003). 8 tests total.
+- **Encryption at rest:** `core-crypto` AES-256-GCM seal/open (random nonce, tamper-detecting).
+  `core-store` now **seals DataPoint values before they touch disk** (DB holds only
   ciphertext; verified by `values_are_encrypted_at_rest`). App loads/creates a per-install key
   (OS keystore in production).
 

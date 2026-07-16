@@ -6,5 +6,8 @@ publish = false
 
 [dependencies]
 aes-gcm = { version = "0.10", features = ["aes", "alloc", "getrandom"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
 
-# Future: ed25519-dalek (signing), argon2 (passphrase KDF), OS keystore bindings.
+# Future: argon2 (passphrase KDF), HKDF for DH output, OS keystore bindings.
