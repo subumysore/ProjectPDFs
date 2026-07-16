@@ -48,3 +48,8 @@ scratchpad/
 .tmp.driveupload/
 .tmp.drivedownload/
 *.tmp.drive*
+
+# Self-hosted OCR/ML model assets (large; reproduced by scripts/fetch-ocr-assets.mjs
+# and scripts/fetch-translation-assets.mjs). Present on disk for local testing.
+apps/app/public/tesseract/
+apps/app/public/models/
