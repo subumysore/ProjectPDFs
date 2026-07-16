@@ -516,6 +516,9 @@ dependencies = [
 [[package]]
 name = "core-txn"
 version = "0.0.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "core-webform"
