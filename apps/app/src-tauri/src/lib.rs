@@ -166,11 +166,30 @@ fn autofill_for(
     Ok(AutofillResult { entry, filled })
 }
 
-/// Load the vault's sealing key from the app-data dir, or create one on first run.
-///
-/// PLACEHOLDER: the key file lives next to the DB for now. Production moves this to
-/// the **OS secure keystore** (Keychain / Keystore / DPAPI) — see ADR-0002.
-fn load_or_create_key(dir: &std::path::Path) -> core_crypto::SealKey {
+const KEYRING_SERVICE: &str = "com.projectpdfs.app";
+const KEYRING_USER: &str = "vault-key";
+
+fn key_to_hex(k: &[u8; 32]) -> String {
+    let mut s = String::with_capacity(64);
+    for b in k {
+        s.push_str(&format!("{b:02x}"));
+    }
+    s
+}
+fn hex_to_key(s: &str) -> Option<[u8; 32]> {
+    if s.len() != 64 {
+        return None;
+    }
+    let mut k = [0u8; 32];
+    for i in 0..32 {
+        k[i] = u8::from_str_radix(s.get(i * 2..i * 2 + 2)?, 16).ok()?;
+    }
+    Some(k)
+}
+
+/// The vault sealing key, from a file next to the DB (fallback when the OS keystore
+/// is unavailable).
+fn file_key(dir: &std::path::Path) -> core_crypto::SealKey {
     let key_path = dir.join("vault.key");
     if let Ok(bytes) = std::fs::read(&key_path) {
         if bytes.len() == 32 {
@@ -182,6 +201,29 @@ fn load_or_create_key(dir: &std::path::Path) -> core_crypto::SealKey {
     let k = core_crypto::generate_key();
     let _ = std::fs::write(&key_path, k);
     k
+}
+
+/// Load the vault's sealing key from the **OS secure keystore** (Windows Credential
+/// Manager / Keychain / secret-service), creating one on first run. Falls back to a
+/// file next to the DB if the keystore is unavailable.
+fn load_or_create_key(dir: &std::path::Path) -> core_crypto::SealKey {
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
+        match entry.get_password() {
+            Ok(hex) => {
+                if let Some(k) = hex_to_key(&hex) {
+                    return k;
+                }
+            }
+            Err(keyring::Error::NoEntry) => {
+                let k = core_crypto::generate_key();
+                if entry.set_password(&key_to_hex(&k)).is_ok() {
+                    return k;
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    file_key(dir)
 }
 
 /// Save a filled form: autofill from the vault, append an immutable encrypted
