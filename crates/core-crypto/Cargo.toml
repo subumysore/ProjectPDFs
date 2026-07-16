@@ -5,3 +5,6 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+aes-gcm = { version = "0.10", features = ["aes", "alloc", "getrandom"] }
+
+# Future: ed25519-dalek (signing), argon2 (passphrase KDF), OS keystore bindings.

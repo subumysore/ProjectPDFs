@@ -49,7 +49,7 @@ fn greet(name: &str) -> String {
 /// autofill the user's Profile vault. Persistence is in `core-store`.)
 #[tauri::command]
 fn demo_autofill() -> Result<AutofillResult, String> {
-    let store = Store::open(":memory:").map_err(|e| e.to_string())?;
+    let store = Store::open(":memory:", core_crypto::generate_key()).map_err(|e| e.to_string())?;
     store
         .put_profile(&Profile {
             id: "demo".into(),
@@ -135,16 +135,37 @@ fn autofill_for(state: State<AppState>, profile_id: String) -> Result<AutofillRe
     Ok(AutofillResult { entry, filled })
 }
 
+/// Load the vault's sealing key from the app-data dir, or create one on first run.
+///
+/// PLACEHOLDER: the key file lives next to the DB for now. Production moves this to
+/// the **OS secure keystore** (Keychain / Keystore / DPAPI) — see ADR-0002.
+fn load_or_create_key(dir: &std::path::Path) -> core_crypto::SealKey {
+    let key_path = dir.join("vault.key");
+    if let Ok(bytes) = std::fs::read(&key_path) {
+        if bytes.len() == 32 {
+            let mut k = [0u8; 32];
+            k.copy_from_slice(&bytes);
+            return k;
+        }
+    }
+    let k = core_crypto::generate_key();
+    let _ = std::fs::write(&key_path, k);
+    k
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            // Open the on-device vault under the OS app-data dir (encrypted at rest in production).
+            // Open the on-device vault under the OS app-data dir. Values are AES-256-GCM
+            // sealed at rest with a per-install key (OS keystore in production).
             let dir = app.path().app_data_dir().expect("app data dir");
             std::fs::create_dir_all(&dir).expect("create data dir");
+            let key = load_or_create_key(&dir);
             let db_path = dir.join("vault.db");
-            let store = Store::open(db_path.to_string_lossy().as_ref()).expect("open vault store");
+            let store =
+                Store::open(db_path.to_string_lossy().as_ref(), key).expect("open vault store");
             app.manage(AppState {
                 store: Mutex::new(store),
             });

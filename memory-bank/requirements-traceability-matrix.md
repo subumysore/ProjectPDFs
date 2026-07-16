@@ -17,7 +17,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
 |---|---|---|---|---|---|---|
-| REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store`, `core-catalog`, `demo_autofill` | `core-store`, `core-catalog` unit tests | — | ⚠️ |
+| REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store` (values AES-GCM sealed), `core-crypto`, `core-catalog` | `core-store` (incl. encrypted-at-rest), `core-catalog`, `core-crypto` unit tests | — | ⚠️ |
 | REQ-02.1 | Catalog-first field maps, OCR fallback | 🟡 | `core-catalog` (maps); `core-ocr` (stub) | catalog autofill test | — | ⚠️ |
 | REQ-03.1 | Translated view + original/chosen output | ☐ | `core-mt` (stub) | `TODO` | — | ❌ |
 | REQ-04.1 | Auto-tags + on-device index | ☐ | `services/catalog`, `core-catalog` | `TODO` | — | ❌ |

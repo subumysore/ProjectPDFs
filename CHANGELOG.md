@@ -24,8 +24,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Phase-1 vertical slice (catalog-first autofill):** `core-store` (SQLite on-device vault + tests),
   `core-catalog` (field-maps + `autofill` join + tests), app command `demo_autofill`, UI table.
 
+- **Encryption at rest:** `core-crypto` AES-256-GCM seal/open (random nonce, tamper-detecting;
+  6 tests). `core-store` now **seals DataPoint values before they touch disk** (DB holds only
+  ciphertext; verified by `values_are_encrypted_at_rest`). App loads/creates a per-install key
+  (OS keystore in production).
+
 ### Fixed
-- Windows `LNK1201` (.pdb write/lock contention under AV) on test builds — `[profile.test] debug = 0`.
+- Windows `LNK1201` (.pdb write/lock contention under AV/Drive) on test builds — `[profile.test] debug = 0`.
+- Repo bloat: gitignored + removed Google Drive sync artifacts; `git gc` reclaimed accidental blob bloat.
 - `services/catalog` (Node) public catalog API stub + `packages/shared` TS domain types (both typecheck).
 - Requirements: 14 pillars written as `REQ-01.1…REQ-14.1` (BRD + traceability matrix; check green).
 - **Tauri v2 desktop app** (`apps/app`): React/TS UI + Rust `src-tauri` wired to the core crates —

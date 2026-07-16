@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
+core-crypto = { path = "../core-crypto" }
 
-# NOTE: production enables encryption-at-rest by swapping to the
-# `bundled-sqlcipher` feature (SQLCipher) + a key from the OS keystore (core-crypto).
+# NOTE: DataPoint values are AES-256-GCM sealed at rest (core-crypto). The DB
+# itself can additionally move to SQLCipher (bundled-sqlcipher) later.

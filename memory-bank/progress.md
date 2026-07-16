@@ -23,9 +23,12 @@ _What works, what's left, known issues. The narrative complement to the traceabi
   dir; app commands + a real UI (create profiles, add/edit/delete data points, autofill per profile).
   All tests green; `[profile.test] debug=0` fixes Windows LNK1201 on test builds.
 
+- **Encryption at rest:** `core-crypto` (AES-256-GCM, 6 tests) + `core-store` seals DataPoint values
+  before disk (DB holds only ciphertext, verified). App uses a per-install key (OS keystore later).
+
 ## In progress
-- **Phase 1 — persistent vault landed.** Next: encryption-at-rest (SQLCipher); translation
-  (`core-mt`) + OCR fallback (`core-ocr`); `pnpm tauri dev` live-window check; Android SDK/NDK; iOS on a Mac.
+- **Phase 1 — encrypted vault landed.** Next: translation (`core-mt`) + OCR fallback (`core-ocr`);
+  OS-keystore key + optional SQLCipher; `pnpm tauri dev` live check; Android SDK/NDK; iOS on a Mac.
 
 ## Not started / backlog
 - **Phase 0 spike (GATING): Tauri v2 mobile bindings** — validate pdfium + onnxruntime + WebAuthn +
