@@ -513,6 +513,7 @@ dependencies = [
  "core-crypto",
  "rusqlite",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -64,6 +64,26 @@ pub struct DataPoint {
     pub value: String,
 }
 
+/// A filled form for a Profile (an immutable chain of versions hangs off it).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FormInstance {
+    /// Stable id.
+    pub id: String,
+    /// Owning Profile.
+    pub profile_id: String,
+    /// The catalog entry (form) this instance fills.
+    pub entry_id: String,
+}
+
+/// Metadata for one immutable version of a FormInstance.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct VersionMeta {
+    /// 1-based version number.
+    pub version_no: i64,
+    /// Creation time (epoch seconds; caller-provided).
+    pub created_at: i64,
+}
+
 /// On-device store handle. Holds the sealing key for value encryption at rest.
 pub struct Store {
     conn: Connection,
@@ -93,9 +113,105 @@ impl Store {
                  value_enc    BLOB NOT NULL,
                  PRIMARY KEY(profile_id, key),
                  FOREIGN KEY(profile_id) REFERENCES profiles(id)
+             );
+             CREATE TABLE IF NOT EXISTS form_instances(
+                 id         TEXT PRIMARY KEY,
+                 profile_id TEXT NOT NULL,
+                 entry_id   TEXT NOT NULL,
+                 created_at INTEGER NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS form_versions(
+                 instance_id TEXT NOT NULL,
+                 version_no  INTEGER NOT NULL,
+                 values_enc  BLOB NOT NULL,
+                 created_at  INTEGER NOT NULL,
+                 PRIMARY KEY(instance_id, version_no)
+             );
+             CREATE TABLE IF NOT EXISTS history_events(
+                 instance_id TEXT NOT NULL,
+                 kind        TEXT NOT NULL,
+                 at          INTEGER NOT NULL
              );",
         )?;
         Ok(())
+    }
+
+    /// Create a FormInstance (a filled form for a Profile).
+    pub fn create_instance(&self, fi: &FormInstance, created_at: i64) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO form_instances(id, profile_id, entry_id, created_at) VALUES(?1, ?2, ?3, ?4)",
+            params![fi.id, fi.profile_id, fi.entry_id, created_at],
+        )?;
+        Ok(())
+    }
+
+    /// Append a new **immutable** version with the filled `values` (sealed). Returns the version number.
+    pub fn add_version(
+        &self,
+        instance_id: &str,
+        values: &BTreeMap<String, String>,
+        created_at: i64,
+    ) -> Result<i64> {
+        let next: i64 = self.conn.query_row(
+            "SELECT COALESCE(MAX(version_no), 0) + 1 FROM form_versions WHERE instance_id = ?1",
+            params![instance_id],
+            |r| r.get(0),
+        )?;
+        let json = serde_json::to_vec(values).expect("serialize values");
+        let sealed = seal(&self.key, &json);
+        self.conn.execute(
+            "INSERT INTO form_versions(instance_id, version_no, values_enc, created_at)
+             VALUES(?1, ?2, ?3, ?4)",
+            params![instance_id, next, sealed, created_at],
+        )?;
+        Ok(next)
+    }
+
+    /// Versions of a FormInstance, oldest first.
+    pub fn list_versions(&self, instance_id: &str) -> Result<Vec<VersionMeta>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT version_no, created_at FROM form_versions WHERE instance_id = ?1 ORDER BY version_no",
+        )?;
+        let rows = stmt.query_map(params![instance_id], |r| {
+            Ok(VersionMeta {
+                version_no: r.get(0)?,
+                created_at: r.get(1)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    /// The filled values of a specific version (decrypted).
+    pub fn version_values(
+        &self,
+        instance_id: &str,
+        version_no: i64,
+    ) -> Result<BTreeMap<String, String>> {
+        let enc: Vec<u8> = self.conn.query_row(
+            "SELECT values_enc FROM form_versions WHERE instance_id = ?1 AND version_no = ?2",
+            params![instance_id, version_no],
+            |r| r.get(0),
+        )?;
+        let json = open(&self.key, &enc)?;
+        serde_json::from_slice(&json).map_err(|_| StoreError::Utf8)
+    }
+
+    /// Record a history event (`save` / `submit` / `print`).
+    pub fn record_event(&self, instance_id: &str, kind: &str, at: i64) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO history_events(instance_id, kind, at) VALUES(?1, ?2, ?3)",
+            params![instance_id, kind, at],
+        )?;
+        Ok(())
+    }
+
+    /// Count history events of a given kind for a FormInstance.
+    pub fn event_count(&self, instance_id: &str, kind: &str) -> Result<i64> {
+        Ok(self.conn.query_row(
+            "SELECT COUNT(*) FROM history_events WHERE instance_id = ?1 AND kind = ?2",
+            params![instance_id, kind],
+            |r| r.get(0),
+        )?)
     }
 
     /// Insert or update a Profile.
@@ -272,6 +388,67 @@ mod tests {
         assert_eq!(s.data_points("a").unwrap().len(), 1);
         s.delete_data_point("a", "phone").unwrap();
         assert_eq!(s.data_points("a").unwrap().len(), 0);
+    }
+
+    #[test]
+    fn versions_are_immutable_and_encrypted() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        s.put_profile(&Profile {
+            id: "p1".into(),
+            name: "Asha".into(),
+        })
+        .unwrap();
+        s.create_instance(
+            &FormInstance {
+                id: "fi1".into(),
+                profile_id: "p1".into(),
+                entry_id: "sample.passport.v1".into(),
+            },
+            1_700_000_000,
+        )
+        .unwrap();
+
+        let mut v1 = BTreeMap::new();
+        v1.insert("full_name".to_string(), "Asha Rao".to_string());
+        assert_eq!(s.add_version("fi1", &v1, 1_700_000_001).unwrap(), 1);
+
+        let mut v2 = v1.clone();
+        v2.insert("nationality".to_string(), "IN".to_string());
+        assert_eq!(s.add_version("fi1", &v2, 1_700_000_002).unwrap(), 2);
+
+        // both versions retained (immutable chain), oldest first
+        let versions = s.list_versions("fi1").unwrap();
+        assert_eq!(versions.len(), 2);
+        assert_eq!(versions[0].version_no, 1);
+
+        // each version decrypts to its own values
+        assert_eq!(s.version_values("fi1", 1).unwrap().len(), 1);
+        assert_eq!(
+            s.version_values("fi1", 2).unwrap().get("nationality").unwrap(),
+            "IN"
+        );
+
+        // stored values are ciphertext (plaintext absent)
+        let raw: Vec<u8> = s
+            .conn
+            .query_row(
+                "SELECT values_enc FROM form_versions WHERE instance_id='fi1' AND version_no=1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(!raw.windows(8).any(|w| w == b"Asha Rao"));
+    }
+
+    #[test]
+    fn history_event_counters() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        s.record_event("fi1", "save", 1).unwrap();
+        s.record_event("fi1", "save", 2).unwrap();
+        s.record_event("fi1", "print", 3).unwrap();
+        assert_eq!(s.event_count("fi1", "save").unwrap(), 2);
+        assert_eq!(s.event_count("fi1", "print").unwrap(), 1);
+        assert_eq!(s.event_count("fi1", "submit").unwrap(), 0);
     }
 
     #[test]

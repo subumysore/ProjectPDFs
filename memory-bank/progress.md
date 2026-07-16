@@ -29,8 +29,11 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Catalog search + matching:** `core-catalog` search (name+tags) + fingerprint match + 3-form demo
   catalog (tests); app `catalog_search` command + "Find a form" UI; autofill targets the chosen form.
 
-- **Crypto primitives:** `core-crypto` Ed25519 sign/verify + X25519 E2E sealed bundles (8 tests).
+- **Crypto:** `core-crypto` AES-GCM + Ed25519 sign/verify + X25519 sealed bundles + provenance
+  manifest (SHA-256 + signed) — 10 tests.
 - **Multi-party workflow:** `core-txn` state machine + re-sign-on-edit invariant (6 tests).
+- **Form versioning + history:** `core-store` immutable encrypted version chain + save/submit/print
+  counters (6 tests, incl. encrypted-at-rest).
 
 ## In progress
 - **Phase 1 — vault (encrypted) + catalog search/autofill + crypto + multi-party FSM.** Next:
