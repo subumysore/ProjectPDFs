@@ -27,6 +27,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Catalog search + matching:** `core-catalog` gains tags, on-device `search` (name+tags, ranked),
   `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
   "Find a form" search UI; `autofill_for` now targets the chosen form.
+- **On-device OCR data-source extraction (REQ-10):** app imports a passport/licence image, runs Tesseract.js OCR in the webview (image never leaves the device), extracts key-values via patterns, and saves to the vault after review. Build-verified; runtime needs the live app.
 - **OIDC identity broker (signing Tier 1 foundation):** `services/account` OIDC service — PKCE,
   SSRF-guarded discovery, and JWKS ID-token verification returning an identity assertion only
   (never content). **Adapted/reused from the Hospital Nexus SSO** and re-scoped to our local-first,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { extractFromImage, type ExtractedField } from "./ocr";
 
 interface Profile {
   id: string;
@@ -62,6 +63,8 @@ export function App() {
   const [form, setForm] = useState<CatalogSummary | null>(null);
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
   const [saved, setSaved] = useState<SaveInfo | null>(null);
+  const [extracted, setExtracted] = useState<ExtractedField[]>([]);
+  const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [err, setErr] = useState("");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
@@ -121,6 +124,25 @@ export function App() {
   async function removePoint(key: string) {
     if (!selected) return;
     await guard(invoke("delete_data_point", { profileId: selected, key }));
+    loadPoints(selected);
+  }
+  async function onDataSource(file: File) {
+    setExtracted([]);
+    setOcrPct(0);
+    try {
+      const { fields } = await extractFromImage(file, setOcrPct);
+      setExtracted(fields);
+    } catch (e) {
+      setErr(String(e));
+    }
+    setOcrPct(null);
+  }
+  async function saveExtracted() {
+    if (!selected) return;
+    for (const f of extracted) {
+      await guard(invoke("upsert_data_point", { profileId: selected, key: f.ontology_key, value: f.value }));
+    }
+    setExtracted([]);
     loadPoints(selected);
   }
 
@@ -216,6 +238,33 @@ export function App() {
               style={{ padding: 8, flex: 1 }}
             />
             <button onClick={addPoint}>Save</button>
+          </div>
+
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
+            <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8 }}>
+              Import a data source (passport, licence…) — OCR runs on-device
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const f = e.currentTarget.files?.[0];
+                if (f) onDataSource(f);
+              }}
+            />
+            {ocrPct !== null && <span style={{ marginLeft: 8, fontSize: 12 }}>reading… {ocrPct}%</span>}
+            {extracted.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <ul style={{ margin: "6px 0" }}>
+                  {extracted.map((f) => (
+                    <li key={f.ontology_key} style={mono}>
+                      {f.ontology_key} = {f.value}
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={saveExtracted}>Save {extracted.length} to vault</button>
+              </div>
+            )}
           </div>
         </section>
       )}
