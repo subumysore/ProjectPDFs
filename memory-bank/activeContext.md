@@ -4,6 +4,14 @@ _What is in flight RIGHT NOW. Update at the start and end of every work session.
 to absolute._
 
 ## Current focus
+- **BUILD-EVERYTHING pass complete (overnight, autonomous).** All 14 requirements in progress;
+  full app loop plumbed + build/test-verified. Self-hosted OCR + English↔Hindi translation
+  (execution-only CSP, zero third-party egress), OS keystore, device signing + provenance, PDF
+  render/fill/export, save/versions/history, submit, web-form logic, OIDC broker (reused). 25 Rust
+  tests + Node tests green, all builds green, traceability green. Ready for ONE full test pass:
+  `node scripts/fetch-translation-assets.mjs` then `cd apps/app && pnpm tauri dev`.
+
+## (earlier) Current focus
 - **RFC-0001 ACCEPTED. Go-ahead executed (2026-07-16).** ADR-0002…0010 recorded; governance synced.
 - **Toolchain INSTALLED + verified on this machine:** Rust 1.97 (MSVC) + Android targets, VS 2022
   C++ Build Tools, JDK 17, Node 24/pnpm 9, WebView2 150. cargo on User PATH. See

@@ -37,12 +37,20 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Save filled form** wired end-to-end (app command + UI).
 - **Registered roles:** `core-identity` Role/Capability + Registry; Sign non-delegable structurally (4 tests).
 
-## Blocked — need heavy engines or external infra/user input (natural stopping point)
-- REQ-03 translation (`core-mt`): on-device NMT engine (Bergamot/CTranslate2) — its own spike.
-- REQ-09 signing (Tier 1): WebAuthn/OIDC/passkey — needs an IdP + platform integration.
-- REQ-10 data-source extraction: on-device OCR engine (ONNX/PaddleOCR).
-- REQ-11 web-form autofill: live in-app webview DOM injection.
-- Also: OS-keystore key, Android SDK/NDK (mobile spike), iOS on a Mac.
+## ALL 14 REQUIREMENTS NOW IN PROGRESS (built + plumbed + build/test-verified)
+Full app loop wired: profiles → encrypted vault → catalog search → autofill →
+**PDF render/fill/export** → save (immutable encrypted versions + history) →
+**on-device device-key signing + provenance** → **submit (open vendor page + HTTP warning)**.
+Plus: **self-hosted OCR** (Tesseract, data-source extraction), **self-hosted English↔Hindi
+translation** (transformers.js/ONNX), **OS-keystore** vault + sign keys, web-form fill-plan +
+URL validation, OIDC identity broker (reused from Hospital Nexus), multi-party FSM, roles.
+All self-hosted engines keep `connect-src 'self'` (zero third-party egress); execution-only CSP.
+
+## Runtime-pending (verify during the test pass, not headless-verifiable)
+- OCR accuracy, translation quality (run `scripts/fetch-translation-assets.mjs` first),
+  PDF fill on real forms, live signing/submit, OIDC live flow (needs Google client creds).
+- Biometric Tier-2 (scanner), Android SDK/NDK (mobile), iOS (Mac). Annotation layers, authority-
+  scoped provenance encryption, multi-party UI — modeled/foundational, not yet full UI.
 
 ## In progress
 - **Phase 1 — vault (encrypted) + catalog search/autofill + crypto + multi-party FSM.** Next:

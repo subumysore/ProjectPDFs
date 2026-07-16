@@ -61,6 +61,18 @@ iOS builds **require macOS + Xcode**. On a Mac: install Xcode + command-line too
 aarch64-apple-ios aarch64-apple-ios-sim`, then `pnpm tauri ios init` / `ios dev`. Not possible on this
 Windows machine — use a Mac or a macOS CI runner for the iOS half of the Phase-0 spike.
 
+## Provision on-device engine assets (self-hosted; zero third-party egress)
+The AI engines run as WASM in the app webview and load their assets from the app
+origin (`apps/app/public/…`), so `connect-src` stays `'self'`. Assets are large and
+gitignored — reproduce them after `pnpm install`:
+```
+node scripts/fetch-ocr-assets.mjs          # Tesseract worker + LSTM core + eng model
+node scripts/fetch-translation-assets.mjs  # opus-mt en<->hi models + onnxruntime WASM
+```
+- **OCR** assets may already be present on this machine (downloaded during the build).
+- **Translation** models are ~100 MB and are fetched by the script (first run needs
+  internet); after that, translation runs fully on-device/offline.
+
 ## Build the current workspace (works now)
 ```
 # Rust core (all 11 crate stubs)
