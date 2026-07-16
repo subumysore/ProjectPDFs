@@ -27,6 +27,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Catalog search + matching:** `core-catalog` gains tags, on-device `search` (name+tags, ranked),
   `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
   "Find a form" search UI; `autofill_for` now targets the chosen form.
+- **OIDC identity broker (signing Tier 1 foundation):** `services/account` OIDC service — PKCE,
+  SSRF-guarded discovery, and JWKS ID-token verification returning an identity assertion only
+  (never content). **Adapted/reused from the Hospital Nexus SSO** and re-scoped to our local-first,
+  content-free model; bound to on-device Ed25519 for non-delegable signing. 5 unit tests.
 - **Registered roles:** `core-identity` Role/Capability model + Registry (role asserted on sign-in,
   scopes capabilities). Encodes the **non-delegable-signing rule structurally** — no role, not even
   InstitutionAdmin, holds a delegated `Sign` capability. 4 tests. (REQ-14; REQ-06 search bar marked.)

@@ -12,7 +12,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 10 | 4 | 0 | 10 | 0 | 4 |
+| 14 | 0 | 11 | 3 | 0 | 11 | 0 | 3 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
@@ -25,7 +25,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-06.1 | AI search bar | 🟡 | app "Find a form" search UI + `catalog_search` | core-catalog search tests | — | ⚠️ |
 | REQ-07.1 | Save (versioned) & submit | 🟡 | app `save_filled_form` -> instance + immutable version + save counter; online submit pending | core-store versioning tests | — | ⚠️ |
 | REQ-08.1 | History, versioning, annotation layers | 🟡 | `core-store` FormInstance + immutable encrypted versions + history counters; annotation layers pending | `core-store` versioning/history tests | — | ⚠️ |
-| REQ-09.1 | Non-delegable signing (Tier 1 + Tier 2) | ☐ | `core-identity`, `core-crypto` (stubs) | `TODO` | — | ❌ |
+| REQ-09.1 | Non-delegable signing (Tier 1 + Tier 2) | 🟡 | `services/account` OIDC broker (PKCE + JWKS verify, reused from Hospital Nexus); `core-crypto` Ed25519; `core-identity` roles (Sign non-delegable). Live flow + app binding pending | account OIDC + core-crypto Ed25519 tests | — | ⚠️ |
 | REQ-10.1 | Data-source extraction + profiles | ☐ | `core-extract` (stub) | `TODO` | — | ❌ |
 | REQ-11.1 | Web-hosted download + web-form autofill | ☐ | `core-fetch`, `core-webform` (stubs) | `TODO` | — | ❌ |
 | REQ-12.1 | Multi-party documents | 🟡 | `core-txn` state machine (roles, consent, sign, re-sign-on-edit) | `core-txn` workflow tests | — | ⚠️ |
