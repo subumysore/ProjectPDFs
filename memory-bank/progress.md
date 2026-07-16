@@ -34,6 +34,15 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Multi-party workflow:** `core-txn` state machine + re-sign-on-edit invariant (6 tests).
 - **Form versioning + history:** `core-store` immutable encrypted version chain + save/submit/print
   counters (6 tests, incl. encrypted-at-rest).
+- **Save filled form** wired end-to-end (app command + UI).
+- **Registered roles:** `core-identity` Role/Capability + Registry; Sign non-delegable structurally (4 tests).
+
+## Blocked — need heavy engines or external infra/user input (natural stopping point)
+- REQ-03 translation (`core-mt`): on-device NMT engine (Bergamot/CTranslate2) — its own spike.
+- REQ-09 signing (Tier 1): WebAuthn/OIDC/passkey — needs an IdP + platform integration.
+- REQ-10 data-source extraction: on-device OCR engine (ONNX/PaddleOCR).
+- REQ-11 web-form autofill: live in-app webview DOM injection.
+- Also: OS-keystore key, Android SDK/NDK (mobile spike), iOS on a Mac.
 
 ## In progress
 - **Phase 1 — vault (encrypted) + catalog search/autofill + crypto + multi-party FSM.** Next:

@@ -5,3 +5,6 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+
+# Future: WebAuthn/OIDC signer authentication + OS-keystore-backed identities.

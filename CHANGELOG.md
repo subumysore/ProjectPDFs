@@ -27,6 +27,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Catalog search + matching:** `core-catalog` gains tags, on-device `search` (name+tags, ranked),
   `match_by_fingerprint`, and a 3-form demo catalog (+ tests). App: `catalog_search` command and a
   "Find a form" search UI; `autofill_for` now targets the chosen form.
+- **Registered roles:** `core-identity` Role/Capability model + Registry (role asserted on sign-in,
+  scopes capabilities). Encodes the **non-delegable-signing rule structurally** — no role, not even
+  InstitutionAdmin, holds a delegated `Sign` capability. 4 tests. (REQ-14; REQ-06 search bar marked.)
 - **Save filled form:** app `save_filled_form` command + UI Save button — autofills, appends an immutable encrypted version, and records a save event (shows version + count). REQ-07 (save).
 - **Form versioning & history:** `core-store` gains `FormInstance`, an **immutable encrypted version chain** (`add_version`/`list_versions`/`version_values`), and save/submit/print history counters. 6 tests. (REQ-08; annotation layers pending.)
 - **Multi-party workflow:** `core-txn` state machine (Draft→Gathering→Assembled→Circulating→PartiallySigned→FullyExecuted, with Withdrawn + ChangesRequested), per-party consent + signatures, and the re-sign-on-edit invariant (editing clears signatures). 6 tests.
