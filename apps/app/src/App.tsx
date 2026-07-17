@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
-import { downloadBytes, fillAndExport, renderFirstPage } from "./pdf";
+import { downloadBytes, fillAndExport, generateFlatSamplePdf, makeFillableAndFill, renderFirstPage } from "./pdf";
 import { translate } from "./translate";
 
 interface Profile {
@@ -194,8 +194,38 @@ export function App() {
       downloadBytes(data, "filled.pdf");
       setPdfMsg(
         total === 0
-          ? "No AcroForm fields in this PDF (scanned/flat) — use the catalog map or OCR."
-          : `Filled ${filled} of ${total} form fields from the vault; downloaded filled.pdf.`,
+          ? "No AcroForm fields in this PDF (flat/scanned) — use “Make fillable” below to create them."
+          : `Filled ${filled} of ${total} existing form fields from the vault; downloaded filled.pdf.`,
+      );
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+  async function genFlat() {
+    const bytes = await generateFlatSamplePdf();
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    setPdfBytes(ab);
+    setPdfMsg("Loaded a FLAT sample PDF (no form fields). Pick the Passport form above, then “Make fillable & fill”.");
+    if (canvasRef.current) await renderFirstPage(ab, canvasRef.current).catch((e) => setErr(String(e)));
+  }
+  async function makeFillable() {
+    if (!pdfBytes || !form) {
+      setPdfMsg("Open/generate a PDF and select a form (section 3) first.");
+      return;
+    }
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entry: any = await invoke("catalog_get", { entryId: form.id });
+      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+      const { created, filled, data } = await makeFillableAndFill(pdfBytes, entry.field_map.fields, vault);
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      setPdfBytes(ab);
+      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+      downloadBytes(data, "fillable-filled.pdf");
+      setPdfMsg(
+        created === 0
+          ? "This form has no placement coordinates in the catalog yet (needs curation/OCR detection)."
+          : `Created ${created} form fields at their coordinates, filled ${filled} from the vault, and exported fillable-filled.pdf.`,
       );
     } catch (e) {
       setErr(String(e));
@@ -417,19 +447,23 @@ export function App() {
       {selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>5 · Fill a PDF (render + AcroForm fill, on-device)</h2>
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => {
-              const f = e.currentTarget.files?.[0];
-              if (f) onOpenPdf(f);
-            }}
-          />
-          {pdfBytes && (
-            <button onClick={fillPdf} style={{ marginLeft: 8 }}>
-              Fill from {selectedName} &amp; export
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => {
+                const f = e.currentTarget.files?.[0];
+                if (f) onOpenPdf(f);
+              }}
+            />
+            <button onClick={genFlat}>Generate flat sample PDF (no fields)</button>
+            {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
+            {pdfBytes && <button onClick={makeFillable}>Make fillable &amp; fill (create fields)</button>}
+          </div>
+          <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
+            Flat PDF (no fields) → “Make fillable” creates the widgets at catalog coordinates, fills
+            them from the vault, and exports a new fillable PDF.
+          </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
           <div
             style={{

@@ -1,6 +1,14 @@
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-import { PDFDocument, PDFTextField } from "pdf-lib";
+import { PDFDocument, PDFTextField, StandardFonts, rgb } from "pdf-lib";
+
+/** A field-map entry from the catalog (mirrors core-catalog FieldSpec). */
+export interface CatalogFieldSpec {
+  name: string;
+  ontology_key: string;
+  kind: "Text" | "CheckBox";
+  rect: { page: number; x: number; y: number; w: number; h: number } | null;
+}
 
 // On-device PDF render + fill/export. pdf.js renders the page (view); pdf-lib
 // fills AcroForm fields from the vault and exports the filled copy. Everything
@@ -59,6 +67,73 @@ export async function fillAndExport(
   }
   const data = await pdf.save();
   return { filled, total: fields.length, data };
+}
+
+/** Generate a FLAT sample PDF — real page content, but NO AcroForm fields. */
+export async function generateFlatSamplePdf(): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  page.drawText("Passport Application (flat PDF — no form fields)", { x: 50, y: 790, size: 15, font: bold });
+  page.drawText("This page has NO fillable fields. 'Make fillable' creates + places + fills them.", {
+    x: 50,
+    y: 768,
+    size: 9,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  for (const [label, y] of [
+    ["Full name", 740],
+    ["Date of birth", 690],
+    ["Nationality", 640],
+  ] as const) {
+    page.drawText(label + ":", { x: 50, y, size: 12, font });
+    page.drawLine({ start: { x: 180, y: y - 2 }, end: { x: 500, y: y - 2 }, thickness: 0.5, color: rgb(0.6, 0.6, 0.6) });
+  }
+  return pdf.save();
+}
+
+/**
+ * Make a FLAT PDF fillable: CREATE each field-map widget at its coordinates, fill
+ * it from the vault, and return the new (fillable + filled) PDF. This is the
+ * "non-editable PDF → fillable" core (REQ-02) for PDFs with no AcroForm.
+ */
+export async function makeFillableAndFill(
+  bytes: ArrayBuffer,
+  fields: CatalogFieldSpec[],
+  vault: Record<string, string>,
+): Promise<{ created: number; filled: number; data: Uint8Array }> {
+  const pdf = await PDFDocument.load(bytes);
+  const form = pdf.getForm();
+  const pages = pdf.getPages();
+  let created = 0;
+  let filled = 0;
+  for (const f of fields) {
+    if (!f.rect) continue;
+    const page = pages[f.rect.page] ?? pages[0];
+    if (!page) continue;
+    const opts = { x: f.rect.x, y: f.rect.y, width: f.rect.w, height: f.rect.h };
+    if (f.kind === "CheckBox") {
+      const cb = form.createCheckBox(f.ontology_key);
+      cb.addToPage(page, opts);
+      if (vault[f.ontology_key]) {
+        cb.check();
+        filled++;
+      }
+    } else {
+      const tfld = form.createTextField(f.ontology_key);
+      const v = vault[f.ontology_key];
+      if (v !== undefined) {
+        tfld.setText(v);
+        filled++;
+      }
+      tfld.addToPage(page, opts);
+    }
+    created++;
+  }
+  const data = await pdf.save();
+  return { created, filled, data };
 }
 
 /** Trigger a browser download of bytes as a file. */

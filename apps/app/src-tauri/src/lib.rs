@@ -158,6 +158,15 @@ fn catalog_search(query: String) -> Vec<CatalogSummary> {
     search(&catalog, &query).into_iter().map(|e| e.summary()).collect()
 }
 
+/// Get a full catalog entry (incl. the field-map with coordinates) for creating
+/// widgets on a flat PDF.
+#[tauri::command]
+fn catalog_get(entry_id: String) -> Result<CatalogEntry, String> {
+    get(&demo_catalog(), &entry_id)
+        .cloned()
+        .ok_or_else(|| format!("unknown form: {entry_id}"))
+}
+
 /// Catalog-first autofill: fill a chosen catalogued form from a Profile's vault.
 #[tauri::command]
 fn autofill_for(
@@ -412,6 +421,7 @@ pub fn run() {
             upsert_data_point,
             delete_data_point,
             catalog_search,
+            catalog_get,
             autofill_for,
             save_filled_form,
             sign_form,

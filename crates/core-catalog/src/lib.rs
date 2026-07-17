@@ -23,24 +23,57 @@ pub enum FormKind {
     WebForm,
 }
 
-/// One field: how it presents + its canonical ontology key (used to match the vault).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// The widget kind to create on a flat PDF.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum FieldKind {
+    /// A text input.
+    #[default]
+    Text,
+    /// A checkbox.
+    CheckBox,
+}
+
+/// Where to place a created widget on a (flat) PDF. PDF coordinates: origin at the
+/// bottom-left, in points. `page` is 0-based.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct FieldRect {
+    /// 0-based page index.
+    pub page: u32,
+    /// x (points from left).
+    pub x: f32,
+    /// y (points from bottom).
+    pub y: f32,
+    /// width (points).
+    pub w: f32,
+    /// height (points).
+    pub h: f32,
+}
+
+/// One field: how it presents, its canonical ontology key, and (for flat PDFs)
+/// where to CREATE the widget and what kind it is.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FieldSpec {
     /// Field name aligned to the ask (e.g. "Full name").
     pub name: String,
     /// Canonical ontology key (e.g. "full_name").
     pub ontology_key: String,
+    /// Widget kind to create (default Text).
+    #[serde(default)]
+    pub kind: FieldKind,
+    /// Placement on a flat PDF (None = form already has this field, or a web form).
+    #[serde(default)]
+    pub rect: Option<FieldRect>,
 }
 
-/// A public form's field layout (positions/selectors omitted in this stub).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// A public form's field layout (with per-field geometry for flat PDFs).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FieldMap {
     /// The fields, in document order.
     pub fields: Vec<FieldSpec>,
 }
 
 /// A known public form in the catalog.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CatalogEntry {
     /// Stable id.
     pub id: String,
@@ -138,8 +171,20 @@ pub fn get<'a>(catalog: &'a [CatalogEntry], id: &str) -> Option<&'a CatalogEntry
     catalog.iter().find(|e| e.id == id)
 }
 
+fn tf(name: &str, key: &str, rect: Option<FieldRect>) -> FieldSpec {
+    FieldSpec {
+        name: name.into(),
+        ontology_key: key.into(),
+        kind: FieldKind::Text,
+        rect,
+    }
+}
+
 /// A small built-in catalog for the Phase-1 demo (the on-device index, synced down in production).
+/// The passport entry carries **coordinates** so a FLAT PDF (no form fields) can have widgets
+/// created + placed + filled. Coordinates are PDF points on an A4 page (595 x 842), origin bottom-left.
 pub fn demo_catalog() -> Vec<CatalogEntry> {
+    let r = |y: f32| Some(FieldRect { page: 0, x: 180.0, y, w: 320.0, h: 18.0 });
     vec![
         CatalogEntry {
             id: "sample.passport.v1".into(),
@@ -149,9 +194,9 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             fingerprint: "fp-passport-v1".into(),
             field_map: FieldMap {
                 fields: vec![
-                    FieldSpec { name: "Full name".into(), ontology_key: "full_name".into() },
-                    FieldSpec { name: "Date of birth".into(), ontology_key: "date_of_birth".into() },
-                    FieldSpec { name: "Nationality".into(), ontology_key: "nationality".into() },
+                    tf("Full name", "full_name", r(736.0)),
+                    tf("Date of birth", "date_of_birth", r(686.0)),
+                    tf("Nationality", "nationality", r(636.0)),
                 ],
             },
         },
@@ -163,9 +208,9 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             fingerprint: "fp-licence-v1".into(),
             field_map: FieldMap {
                 fields: vec![
-                    FieldSpec { name: "Full name".into(), ontology_key: "full_name".into() },
-                    FieldSpec { name: "Date of birth".into(), ontology_key: "date_of_birth".into() },
-                    FieldSpec { name: "Address".into(), ontology_key: "address".into() },
+                    tf("Full name", "full_name", None),
+                    tf("Date of birth", "date_of_birth", None),
+                    tf("Address", "address", None),
                 ],
             },
         },
@@ -177,9 +222,9 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             fingerprint: "fp-bankkyc-v1".into(),
             field_map: FieldMap {
                 fields: vec![
-                    FieldSpec { name: "Full name".into(), ontology_key: "full_name".into() },
-                    FieldSpec { name: "Phone".into(), ontology_key: "phone".into() },
-                    FieldSpec { name: "Address".into(), ontology_key: "address".into() },
+                    tf("Full name", "full_name", None),
+                    tf("Phone", "phone", None),
+                    tf("Address", "address", None),
                 ],
             },
         },
