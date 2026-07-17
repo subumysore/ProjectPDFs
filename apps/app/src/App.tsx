@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
-import { downloadBytes, fillAndExport, generateFlatSamplePdf, makeFillableAndFill, renderFirstPage } from "./pdf";
+import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage } from "./pdf";
 import { detectFields } from "./detect";
 import { translate } from "./translate";
 
@@ -183,7 +183,15 @@ export function App() {
   }
   async function onOpenPdf(file: File) {
     setPdfMsg("");
-    const bytes = await file.arrayBuffer();
+    let bytes = await file.arrayBuffer();
+    const isImage = /^image\//i.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
+    if (isImage) {
+      // A photo/scan of a form → wrap it into a PDF page on-device, then the same
+      // OCR-detect → make-fillable → fill pipeline turns it into an editable form.
+      const wrapped = await imageToPdf(bytes, file.type);
+      bytes = wrapped.buffer.slice(wrapped.byteOffset, wrapped.byteOffset + wrapped.byteLength) as ArrayBuffer;
+      setPdfMsg("Wrapped the image into a PDF. Now “Detect fields (OCR) & fill” to make it an editable form.");
+    }
     setPdfBytes(bytes);
     if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
   }
@@ -470,7 +478,7 @@ export function App() {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <input
               type="file"
-              accept="application/pdf"
+              accept="application/pdf,image/png,image/jpeg"
               onChange={(e) => {
                 const f = e.currentTarget.files?.[0];
                 if (f) onOpenPdf(f);
@@ -485,6 +493,8 @@ export function App() {
             Flat PDF (no fields) → “Make fillable” uses <b>catalog coordinates</b> (known forms);
             “Detect fields (OCR)” uses <b>on-device OCR</b> to place fields on an <b>uncatalogued</b> PDF.
             Both create widgets, fill from the vault, and export a new fillable PDF.
+            An <b>image of a form</b> (PNG/JPG photo or scan) is wrapped into a PDF on-device, then
+            “Detect fields (OCR)” makes it editable — same pipeline, nothing uploaded.
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
           <div

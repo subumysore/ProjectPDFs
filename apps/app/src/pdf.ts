@@ -69,6 +69,21 @@ export async function fillAndExport(
   return { filled, total: fields.length, data };
 }
 
+/**
+ * Wrap a form IMAGE (photo/scan: JPG or PNG) into a single-page PDF at the image's
+ * own pixel dimensions (1px → 1pt). The result is a flat PDF with no fields — feed it
+ * straight into `detectFields` (OCR) or `makeFillableAndFill`. Runs on-device; the
+ * image is only embedded locally and never uploaded.
+ */
+export async function imageToPdf(bytes: ArrayBuffer, mimeType: string): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const isPng = /png/i.test(mimeType) || (!/jpe?g/i.test(mimeType) && new Uint8Array(bytes)[0] === 0x89);
+  const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+  const page = pdf.addPage([img.width, img.height]);
+  page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+  return pdf.save();
+}
+
 /** Generate a FLAT sample PDF — real page content, but NO AcroForm fields. */
 export async function generateFlatSamplePdf(): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
