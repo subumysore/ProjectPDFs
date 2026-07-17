@@ -78,6 +78,7 @@ export function App() {
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -181,19 +182,65 @@ export function App() {
     setExtracted([]);
     loadPoints(selected);
   }
-  async function onOpenPdf(file: File) {
+  // Open a form (PDF or image) and AUTOMATICALLY make it fillable + fill it:
+  //   already has fields → fill them; no fields → OCR-detect, create, fill.
+  // Everything on-device; nothing is uploaded.
+  async function onOpenForm(file: File) {
     setPdfMsg("");
+    setErr("");
+    if (/\.(docx?|xlsx?)$/i.test(file.name)) {
+      setPdfMsg("Word/Excel forms aren’t supported yet — please use a PDF or an image (PNG/JPG) for now.");
+      return;
+    }
     let bytes = await file.arrayBuffer();
     const isImage = /^image\//i.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
     if (isImage) {
-      // A photo/scan of a form → wrap it into a PDF page on-device, then the same
-      // OCR-detect → make-fillable → fill pipeline turns it into an editable form.
+      // A photo/scan of a form → wrap it into a PDF page on-device first.
       const wrapped = await imageToPdf(bytes, file.type);
       bytes = wrapped.buffer.slice(wrapped.byteOffset, wrapped.byteOffset + wrapped.byteLength) as ArrayBuffer;
-      setPdfMsg("Wrapped the image into a PDF. Now “Detect fields (OCR) & fill” to make it an editable form.");
     }
     setPdfBytes(bytes);
     if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
+    await autoFillForm(bytes, isImage);
+  }
+
+  // The automatic pipeline: fill existing fields, else detect + create + fill.
+  async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean) {
+    const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+    try {
+      const existing = await fillAndExport(bytes, vault); // total = # AcroForm fields
+      if (existing.total > 0) {
+        const ab = existing.data.buffer.slice(
+          existing.data.byteOffset,
+          existing.data.byteOffset + existing.data.byteLength,
+        ) as ArrayBuffer;
+        setPdfBytes(ab);
+        if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+        downloadBytes(existing.data, "filled.pdf");
+        setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; exported filled.pdf.`);
+        return;
+      }
+      setPdfMsg(
+        wasImage
+          ? "This image has no form fields — reading it with on-device OCR…"
+          : "This PDF has no form fields — detecting them with on-device OCR…",
+      );
+      const { fields } = await detectFields(bytes, setPdfMsg);
+      if (!fields.length) {
+        setPdfMsg(
+          "No fields could be detected automatically. If this is a known form, search & select it above, then use “Make fillable (catalog coords)”.",
+        );
+        return;
+      }
+      const { created, filled, data } = await makeFillableAndFill(bytes, fields, vault);
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      setPdfBytes(ab);
+      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+      downloadBytes(data, "filled.pdf");
+      setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; exported filled.pdf.`);
+    } catch (e) {
+      setErr(String(e));
+    }
   }
   async function fillPdf() {
     if (!pdfBytes) return;
@@ -474,29 +521,45 @@ export function App() {
 
       {selected && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>5 · Fill a PDF (render + AcroForm fill, on-device)</h2>
+          <h2 style={h2Style}>5 · Fill a Form (on-device)</h2>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <label style={{ fontSize: 13, opacity: 0.8 }}>Open a form from this device:</label>
             <input
               type="file"
-              accept="application/pdf,image/png,image/jpeg"
+              accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
               onChange={(e) => {
                 const f = e.currentTarget.files?.[0];
-                if (f) onOpenPdf(f);
+                if (f) onOpenForm(f);
               }}
             />
-            <button onClick={genFlat}>Generate flat sample PDF (no fields)</button>
-            {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
-            {pdfBytes && <button onClick={makeFillable}>Make fillable &amp; fill (catalog coords)</button>}
-            {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR) &amp; fill</button>}
           </div>
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
-            Flat PDF (no fields) → “Make fillable” uses <b>catalog coordinates</b> (known forms);
-            “Detect fields (OCR)” uses <b>on-device OCR</b> to place fields on an <b>uncatalogued</b> PDF.
-            Both create widgets, fill from the vault, and export a new fillable PDF.
-            An <b>image of a form</b> (PNG/JPG photo or scan) is wrapped into a PDF on-device, then
-            “Detect fields (OCR)” makes it editable — same pipeline, nothing uploaded.
+            Pick a form (PDF or an image/scan). It’s handled <b>automatically</b>: if it already has form
+            fields they’re filled from your vault; if it has <b>none</b>, on-device OCR detects the fields,
+            creates them, and fills them — then exports a ready <code>filled.pdf</code>. Nothing is uploaded.
+            <br />
+            <span style={{ opacity: 0.75 }}>
+              Word/Excel forms and “from the web (URL)” are coming next. For a <b>known</b> form, search &amp;
+              select it in step 3 first so exact catalog coordinates are used.
+            </span>
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
+          <div style={{ marginTop: 4 }}>
+            <button
+              onClick={() => setShowAdvanced((v) => !v)}
+              style={{ fontSize: 12, background: "none", border: "none", color: "#0a6a60", cursor: "pointer", padding: 0 }}
+            >
+              {showAdvanced ? "▾ Hide manual/demo tools" : "▸ Manual & demo tools"}
+            </button>
+          </div>
+          {showAdvanced && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+              <button onClick={genFlat}>Generate flat sample PDF (demo)</button>
+              {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
+              {pdfBytes && <button onClick={makeFillable}>Make fillable (catalog coords)</button>}
+              {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR)</button>}
+            </div>
+          )}
           <div
             style={{
               marginTop: 10,
