@@ -1,0 +1,7 @@
+{
+  "name": "@napi-rs/canvas",
+  "version": "0.1.100",
+  "description": "Local empty stub — pdf.js renders to a DOM canvas in the browser; the Node @napi-rs/canvas binary is never used (saves ~37 MB). See root package.json pnpm.overrides.",
+  "main": "index.js",
+  "license": "MIT"
+}

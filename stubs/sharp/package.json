@@ -1,0 +1,7 @@
+{
+  "name": "sharp",
+  "version": "0.34.1",
+  "description": "Local empty stub — browser image ops use canvas, not sharp (Node-only). See root package.json pnpm.overrides.",
+  "main": "index.js",
+  "license": "Apache-2.0"
+}

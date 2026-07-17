@@ -1,0 +1,7 @@
+{
+  "name": "onnxruntime-node",
+  "version": "1.21.0",
+  "description": "Local empty stub — the browser app uses onnxruntime-web, never the Node binaries (saves ~208 MB). See root package.json pnpm.overrides.",
+  "main": "index.js",
+  "license": "MIT"
+}
