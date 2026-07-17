@@ -54,3 +54,10 @@ scratchpad/
 apps/app/public/tesseract/
 apps/app/public/models/
 apps/app/public/ort/
+
+# Code-signing certificates — NEVER commit
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
