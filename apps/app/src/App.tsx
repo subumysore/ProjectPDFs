@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, makeFillableAndFill, renderFirstPage } from "./pdf";
+import { detectFields } from "./detect";
 import { translate } from "./translate";
 
 interface Profile {
@@ -207,6 +208,25 @@ export function App() {
     setPdfBytes(ab);
     setPdfMsg("Loaded a FLAT sample PDF (no form fields). Pick the Passport form above, then “Make fillable & fill”.");
     if (canvasRef.current) await renderFirstPage(ab, canvasRef.current).catch((e) => setErr(String(e)));
+  }
+  async function detectAndFill() {
+    if (!pdfBytes) {
+      setPdfMsg("Open or generate a PDF first.");
+      return;
+    }
+    try {
+      setPdfMsg("Detecting fields with on-device OCR…");
+      const { fields, note } = await detectFields(pdfBytes, setPdfMsg);
+      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+      const { created, filled, data } = await makeFillableAndFill(pdfBytes, fields, vault);
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      setPdfBytes(ab);
+      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+      downloadBytes(data, "detected-filled.pdf");
+      setPdfMsg(`${note} Created ${created}, filled ${filled} from the vault; exported detected-filled.pdf.`);
+    } catch (e) {
+      setErr(String(e));
+    }
   }
   async function makeFillable() {
     if (!pdfBytes || !form) {
@@ -458,11 +478,13 @@ export function App() {
             />
             <button onClick={genFlat}>Generate flat sample PDF (no fields)</button>
             {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
-            {pdfBytes && <button onClick={makeFillable}>Make fillable &amp; fill (create fields)</button>}
+            {pdfBytes && <button onClick={makeFillable}>Make fillable &amp; fill (catalog coords)</button>}
+            {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR) &amp; fill</button>}
           </div>
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
-            Flat PDF (no fields) → “Make fillable” creates the widgets at catalog coordinates, fills
-            them from the vault, and exports a new fillable PDF.
+            Flat PDF (no fields) → “Make fillable” uses <b>catalog coordinates</b> (known forms);
+            “Detect fields (OCR)” uses <b>on-device OCR</b> to place fields on an <b>uncatalogued</b> PDF.
+            Both create widgets, fill from the vault, and export a new fillable PDF.
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
           <div
