@@ -7,7 +7,7 @@ what the review teams reward.
 **PolyglotFormFill — Private PDF & Form Autofill**
 
 ## Short description (≤ 132 chars)
-Fill PDFs, Word, Excel & web forms from a reusable vault. On-device OCR, translation & signing — we never see your data.
+Read & fill any form — in any language. PDFs, Word, Excel & web forms, on-device OCR & translation. We never see your data.
 
 ## Categories
 Productivity · Tools
