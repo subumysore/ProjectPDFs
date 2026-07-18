@@ -4,7 +4,7 @@
 - **Author(s):** ProjectPDFs team
 - **Created:** 2026-07-18
 - **Related:** REQ-02 (make non-editable forms fillable), REQ-11 (multi-source: device/web),
-  proposes **REQ-15** (multi-format forms: DOCX/XLSX). Will produce an ADR on acceptance.
+  proposes **REQ-15** (multi-format forms: DOCX/XLSX). Produced **ADR-0011** on acceptance.
 
 ## Summary
 Extend the "Fill a Form" flow from PDF/image to **Word (`.docx`) and Excel (`.xlsx`)**, entirely

@@ -163,7 +163,21 @@ to absolute._
   **ADR-0010** registered roles + verifiable workflows (registry model, role taxonomy, role-scoped
   workflow defs, audit+provenance binding, authority verification).
 
+## Recently shipped (2026-07-18)
+- **Fill-a-Form flow reworked:** opening a form (PDF/image) now **auto-detects & fills** (existing
+  AcroForm → fill; else OCR-create + fill); "Fill a PDF" renamed "Fill a Form"; demo sample tucked away.
+- **Image-of-a-form → editable PDF** (`imageToPdf`), then the same pipeline.
+- **From the web (URL):** `core-fetch::fetch_form` (reqwest/rustls, SSRF-guarded, redirect-revalidated,
+  size-capped) + `download_form` command + UI.
+- **Word/Excel (REQ-15.1 / RFC-0002 / ADR-0011) Phase A:** fill named regions (Word content controls,
+  Excel named ranges) on-device via OOXML edit (`office.ts`, fflate + fast-xml-parser). Unit-tested.
+- **Windows code signing:** opt-in `signCommand` hook (`sign-windows.ps1`), env-driven, dev-cert script,
+  docs — verified end-to-end (signed MSI + NSIS setup).
+
 ## Decisions pending (older)
 - Architecture RFC (local-first, cross-platform) — not yet opened.
 - Vectorization/search ADR — recommendation drafted in the brief, not yet formalized.
-- Word/XLS document-type support — accepted into scope (V-next), fill model TBD via ADR.
+- **Word/Excel fill:** Phase A **done** (named fields). Phase B (flat-doc detection) + Phase C
+  (Office→PDF) pending — see RFC-0002.
+- **Web *search* to locate a form (REQ-11):** parked — user scoped web sourcing to URL/download only
+  (a search query would leave the device; needs explicit opt-in).

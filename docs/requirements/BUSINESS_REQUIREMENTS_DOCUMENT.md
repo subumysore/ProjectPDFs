@@ -75,4 +75,14 @@ on behalf of another.
 ## REQ-14 — Registered roles & verifiable workflows
 ### REQ-14.1 — Authority/Institution registry; role asserted on SSO; role-scoped, auditable workflows.
 
+## REQ-15 — Multi-format forms (Word/Excel)
+### REQ-15.1 — Fill `.docx`/`.xlsx` forms on-device from the vault.
+**Statement.** As a user, I want to fill Word and Excel forms — not just PDFs — from my reusable data.
+**Solution Implemented (Phase A).** Named fillable regions filled on-device: Word content controls
+(`w:sdt` tag/alias → ontology key) and Excel named ranges (`definedName` → cell). OOXML unzipped
+(fflate), edited with an order-preserving round-trip (fast-xml-parser), re-zipped, downloaded as a
+filled file (`office.ts`). **Privacy.** OOXML is a local ZIP+XML; no Office runtime, no conversion
+server, nothing uploaded; macros/external data neutralised. Flat-doc detection (Phase B) and optional
+Office→PDF (Phase C) pending — see RFC-0002 / ADR-0011.
+
 <!-- Copy a REQ-NN.M block for each new requirement. Keep ids stable and sequential per group. -->

@@ -12,7 +12,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 14 | 0 | 14 | 0 | 0 | 12 | 0 | 2 |
+| 15 | 0 | 15 | 0 | 0 | 13 | 0 | 2 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
@@ -31,3 +31,4 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-12.1 | Multi-party documents | 🟡 | `core-txn` state machine (roles, consent, sign, re-sign-on-edit) | `core-txn` workflow tests | — | ⚠️ |
 | REQ-13.1 | Verifiable provenance (authority-scoped) | 🟡 | `core-crypto` ProvenanceManifest (SHA-256 + Ed25519 sign/verify); authority-encrypted block pending | provenance sign/tamper tests | — | ⚠️ |
 | REQ-14.1 | Registered roles & verifiable workflows | 🟡 | `core-identity` Registry + Role capabilities (Sign non-delegable); workflow binding pending | `core-identity` role/capability tests | — | ⚠️ |
+| REQ-15.1 | Multi-format forms (Word/Excel) | 🟡 | app `office.ts`: fill Word content controls + Excel named ranges on-device (fflate + fast-xml-parser round-trip), export filled `.docx/.xlsx`; also `.docx/.xlsx` routed in "Fill a Form". Flat-doc detection (Phase B) + Office→PDF (Phase C) pending. See RFC-0002 / ADR-0011 | `office.test.mjs` (3 tests: content-control fill, unknown-key report, named-range write) + frontend build + headless UI run | — | ⚠️ |
