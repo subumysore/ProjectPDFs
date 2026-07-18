@@ -31,10 +31,11 @@ New-Item -ItemType Directory -Force -Path $destDir | Out-Null
 $manifestPath = Join-Path $destDir "com.projectpdfs.host.json"
 Set-Content -Path $manifestPath -Value $json -Encoding utf8
 
-$root = if ($Browser -eq "edge") { "HKCU:\Software\Microsoft\Edge\NativeMessagingHosts" }
-        else { "HKCU:\Software\Google\Chrome\NativeMessagingHosts" }
-New-Item -Path $root -Force | Out-Null
-New-ItemProperty -Path (Join-Path $root "com.projectpdfs.host") -Name "(Default)" -Value $manifestPath -PropertyType String -Force | Out-Null
+$root = if ($Browser -eq "edge") { "HKCU\Software\Microsoft\Edge\NativeMessagingHosts" }
+        else { "HKCU\Software\Google\Chrome\NativeMessagingHosts" }
+# reg.exe reliably creates the full key path and sets the (Default) value.
+& reg.exe add "$root\com.projectpdfs.host" /ve /t REG_SZ /d "$manifestPath" /f | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "failed to write registry key under $root" }
 
 Write-Host "Registered com.projectpdfs.host for $Browser"
 Write-Host "  host exe : $HostExe"
