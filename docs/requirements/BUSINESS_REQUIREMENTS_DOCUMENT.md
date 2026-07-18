@@ -85,4 +85,15 @@ filled file (`office.ts`). **Privacy.** OOXML is a local ZIP+XML; no Office runt
 server, nothing uploaded; macros/external data neutralised. Flat-doc detection (Phase B) and optional
 Office→PDF (Phase C) pending — see RFC-0002 / ADR-0011.
 
+## REQ-16 — Browser-extension client (secure)
+### REQ-16.1 — Ship a browser-extension autofill client with an encrypted on-device vault.
+**Statement.** As a user, I want a browser extension that fills web forms from my vault, with
+security built in. **Solution Implemented (security core + scaffold).** MV3 extension
+(`apps/extension`): AES-256-GCM vault whose key is derived on unlock from a passphrase (PBKDF2)
+or a passkey (WebAuthn PRF, hardware-backed) and NEVER stored; key/plaintext only in
+service-worker memory; storage holds salt+ciphertext only; least-privilege (activeTab+scripting),
+no remote code. **Privacy.** Data stays on device; no egress. The store auto-update trust gap is
+shrunk via WebAuthn-PRF unlock, a native-app companion trust anchor, reproducible builds, and
+self-hosted distribution — see RFC-0004 / ADR-0014. Companion bridge + passkey enrolment pending.
+
 <!-- Copy a REQ-NN.M block for each new requirement. Keep ids stable and sequential per group. -->

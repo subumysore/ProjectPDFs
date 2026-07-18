@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "ProjectPDFs Autofill (companion)",
+  "version": "0.0.1",
+  "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "background": { "service_worker": "src/background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "ProjectPDFs Autofill" },
+  "icons": { "128": "icon128.png" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self'"
+  }
+}
