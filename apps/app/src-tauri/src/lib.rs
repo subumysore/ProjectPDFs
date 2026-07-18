@@ -451,16 +451,13 @@ fn write_host_registry(browser_root: &str, manifest_path: &str) -> Result<(), St
     key.set_value("", &manifest_path.to_string()).map_err(|e| e.to_string())
 }
 
-/// Register the native-messaging host so the browser extension can reach this app.
-/// User-initiated (they supply their extension id). Writes the host manifest + the
-/// Chrome/Edge registry entry pointing at the bundled host binary.
-#[tauri::command]
-fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<String, String> {
-    let ext = extension_id.trim();
+/// Write the native-messaging manifest + Chrome/Edge registry entry for `ext`.
+fn do_register_companion(app: &tauri::AppHandle, ext: &str) -> Result<String, String> {
+    let ext = ext.trim();
     if ext.is_empty() {
         return Err("Enter your extension id (from chrome://extensions).".into());
     }
-    let host = resolve_host_exe(&app)
+    let host = resolve_host_exe(app)
         .ok_or("Companion host binary not found. Build it: cargo build -p native-host --release")?;
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -483,6 +480,38 @@ fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<Str
     Ok(format!("Companion registered. Host: {}", host.to_string_lossy()))
 }
 
+/// Register the native-messaging host so the browser extension can reach this app.
+/// User-initiated (they supply their extension id).
+#[tauri::command]
+fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<String, String> {
+    do_register_companion(&app, &extension_id)
+}
+
+/// The published extension id to auto-register on first run. Empty until the
+/// extension ships to a store; set it (or drop the id in `companion-extension-id.txt`
+/// under the app-data dir) to have the installer/app register the companion for you.
+const COMPANION_EXTENSION_ID: &str = "";
+
+/// Auto-register the companion on startup (idempotent). Uses the compiled id, else an
+/// `companion-extension-id.txt` file in the app-data dir. Best-effort, never fatal.
+fn auto_register_companion(app: &tauri::AppHandle) {
+    let mut ext = COMPANION_EXTENSION_ID.trim().to_string();
+    if ext.is_empty() {
+        if let Ok(dir) = app.path().app_data_dir() {
+            if let Ok(s) = std::fs::read_to_string(dir.join("companion-extension-id.txt")) {
+                ext = s.trim().to_string();
+            }
+        }
+    }
+    if ext.is_empty() {
+        return; // nothing configured yet — skip silently
+    }
+    match do_register_companion(app, &ext) {
+        Ok(msg) => eprintln!("[companion] {msg}"),
+        Err(e) => eprintln!("[companion] auto-register skipped: {e}"),
+    }
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -501,6 +530,8 @@ pub fn run() {
                 store: Mutex::new(store),
                 sign_secret,
             });
+            // Auto-register the browser companion on first run (idempotent, best-effort).
+            auto_register_companion(&app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
