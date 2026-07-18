@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
-import { fillDocx, fillXlsx } from "./office.ts";
+import { fillDocx, fillXlsx, officeToPdf } from "./office.ts";
+import { PDFDocument } from "pdf-lib";
 
 const vault = { full_name: "Asha Rao", date_of_birth: "1990-01-15" };
 
@@ -110,4 +111,21 @@ test("fillXlsx flat: label cell fills right neighbour", () => {
   const xml = strFromU8(unzipSync(r.data)["xl/worksheets/sheet1.xml"]);
   assert.match(xml, /r="B1"/);
   assert.match(xml, /Asha Rao/);
+});
+
+// ---- Phase C: Office → PDF content export ----
+
+test("officeToPdf (docx) produces a valid, non-empty PDF", async () => {
+  const filled = fillDocx(docxFixture(), vault).data;
+  const pdf = await officeToPdf(filled.buffer, "docx");
+  assert.ok(pdf.length > 400, "PDF should be non-trivial");
+  const doc = await PDFDocument.load(pdf);
+  assert.ok(doc.getPageCount() >= 1);
+});
+
+test("officeToPdf (xlsx) produces a valid PDF", async () => {
+  const filled = fillXlsx(xlsxFixture(), vault).data;
+  const pdf = await officeToPdf(filled.buffer, "xlsx");
+  const doc = await PDFDocument.load(pdf);
+  assert.ok(doc.getPageCount() >= 1);
 });

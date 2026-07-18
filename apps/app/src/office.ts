@@ -1,5 +1,7 @@
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import type { PDFFont } from "pdf-lib";
 
 // RFC-0002 Phase A: fill NAMED fillable regions in Office forms, on-device.
 //   .docx → Word content controls (w:sdt): match tag/alias → ontology key → set text.
@@ -426,4 +428,134 @@ export function fillOfficeForm(
   vault: Record<string, string>,
 ): OfficeFillResult {
   return kind === "docx" ? fillDocx(bytes, vault) : fillXlsx(bytes, vault);
+}
+
+// ---------------- RFC-0003 Phase C (Tier 1): Office → PDF (content export) ----------------
+// Extract the document's text in reading order and lay it into a PDF with pdf-lib
+// (already a dep). Fully on-device, cross-platform, no sidecar. This is a readable,
+// signable CONTENT export — not a pixel-faithful render (that is the future Tier-2
+// LibreOffice pack). Text outside WinAnsi (e.g. Devanagari) is a known Tier-1 limit.
+
+function docxToLines(bytes: ArrayBuffer): string[] {
+  const zip = unzipSync(new Uint8Array(bytes));
+  if (!zip["word/document.xml"]) throw new Error("Not a Word document.");
+  const tree: Node[] = parser.parse(strFromU8(zip["word/document.xml"]));
+  const body = findAll(tree, "w:body")[0];
+  const lines: string[] = [];
+  const kids = body ? body["w:body"] : null;
+  if (Array.isArray(kids)) {
+    for (const n of kids) {
+      const t = tagOf(n);
+      if (t === "w:p") lines.push(textOf(n).trim());
+      else if (t === "w:tbl") {
+        for (const tr of findAll([n], "w:tr")) {
+          lines.push(childrenTag(tr, "w:tc").map((tc) => textOf(tc).trim()).join("    |    "));
+        }
+      }
+    }
+  }
+  return lines;
+}
+
+function xlsxToLines(bytes: ArrayBuffer): string[] {
+  const zip = unzipSync(new Uint8Array(bytes));
+  if (!zip["xl/workbook.xml"]) throw new Error("Not an Excel workbook.");
+  const { sheetRid, ridTarget } = resolveSheets(zip);
+  const shared = readSharedStrings(zip);
+  const lines: string[] = [];
+  for (const rid of Object.values(sheetRid)) {
+    const rel = ridTarget[rid];
+    if (!rel) continue;
+    const sheetPath = `xl/${rel}`;
+    if (!zip[sheetPath]) continue;
+    const sheet: Node[] = parser.parse(strFromU8(zip[sheetPath]));
+    const sheetData = findAll(sheet, "sheetData")[0];
+    if (!sheetData) continue;
+    for (const row of childrenTag(sheetData, "row")) {
+      const cells = childrenTag(row, "c")
+        .map((c) => cellTextXlsx(c, shared).trim())
+        .filter((x) => x !== "");
+      if (cells.length) lines.push(cells.join("     "));
+    }
+  }
+  return lines;
+}
+
+// Shared sheet-name → path resolution (used by fill + export).
+function resolveSheets(zip: Record<string, Uint8Array>) {
+  const wb: Node[] = parser.parse(strFromU8(zip["xl/workbook.xml"]!));
+  const rels: Node[] = zip["xl/_rels/workbook.xml.rels"]
+    ? parser.parse(strFromU8(zip["xl/_rels/workbook.xml.rels"]))
+    : [];
+  const sheetRid: Record<string, string> = {};
+  for (const s of findAll(wb, "sheet")) {
+    const nm = attr(s, "name");
+    const rid = attr(s, "r:id");
+    if (nm && rid) sheetRid[nm] = rid;
+  }
+  const ridTarget: Record<string, string> = {};
+  for (const r of findAll(rels, "Relationship")) {
+    const id = attr(r, "Id");
+    const tgt = attr(r, "Target");
+    if (id && tgt) ridTarget[id] = tgt.replace(/^\/?xl\//, "").replace(/^\//, "");
+  }
+  return { sheetRid, ridTarget };
+}
+
+// Map characters pdf-lib's standard font can't encode to a safe placeholder.
+function toWinAnsi(text: string): string {
+  let s = "";
+  for (const ch of text) s += ch.charCodeAt(0) <= 255 ? ch : "?";
+  return s;
+}
+function wrapText(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const clean = toWinAnsi(text);
+  const out: string[] = [];
+  let cur = "";
+  for (const w of clean.split(/\s+/)) {
+    const t = cur ? `${cur} ${w}` : w;
+    if (font.widthOfTextAtSize(t, size) <= maxW) {
+      cur = t;
+      continue;
+    }
+    if (cur) out.push(cur);
+    cur = w;
+    while (font.widthOfTextAtSize(cur, size) > maxW && cur.length > 1) {
+      let i = cur.length;
+      while (i > 1 && font.widthOfTextAtSize(cur.slice(0, i), size) > maxW) i--;
+      out.push(cur.slice(0, i));
+      cur = cur.slice(i);
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+/** Export a (filled) Office file to a content PDF on-device (RFC-0003 Tier 1). */
+export async function officeToPdf(bytes: ArrayBuffer, kind: OfficeKind): Promise<Uint8Array> {
+  const lines = kind === "docx" ? docxToLines(bytes) : xlsxToLines(bytes);
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const size = 11;
+  const margin = 50;
+  const lineH = 16;
+  const pageW = 595;
+  const pageH = 842;
+  const maxW = pageW - margin * 2;
+  let page = pdf.addPage([pageW, pageH]);
+  let y = pageH - margin;
+  const emit = (text: string) => {
+    if (y < margin) {
+      page = pdf.addPage([pageW, pageH]);
+      y = pageH - margin;
+    }
+    if (text) page.drawText(text, { x: margin, y, size, font });
+    y -= lineH;
+  };
+  for (const raw of lines) {
+    const wrapped = wrapText(raw, font, size, maxW);
+    if (wrapped.length === 0) emit("");
+    else for (const ln of wrapped) emit(ln);
+  }
+  return pdf.save();
 }

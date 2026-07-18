@@ -48,6 +48,13 @@ Feature: Fill Word/Excel forms on-device
     Then the app reports that no fillable fields were found
     And it does not export a corrupted or empty file
 
+  Scenario: Export a filled Office form to a PDF on-device (Phase C Tier-1)
+    Given a filled .docx or .xlsx
+    When the user chooses "Export as PDF"
+    Then a valid PDF is produced on-device with the filled content
+    And it can be previewed, signed, and submitted like any PDF
+    And nothing is uploaded off the device
+
   Scenario: Legacy binary formats are refused with guidance
     Given a legacy .doc or .xls (binary, non-OOXML) file
     When the user opens it

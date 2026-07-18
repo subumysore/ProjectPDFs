@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage } from "./pdf";
-import { fillOfficeForm } from "./office";
+import { fillOfficeForm, officeToPdf } from "./office";
+import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
 import { translate } from "./translate";
 
@@ -81,6 +82,7 @@ export function App() {
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [formUrl, setFormUrl] = useState("");
+  const [officeFilled, setOfficeFilled] = useState<{ data: Uint8Array; kind: OfficeKind } | null>(null);
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -238,8 +240,28 @@ export function App() {
       a.href = URL.createObjectURL(blob);
       a.download = `filled.${kind}`;
       a.click();
+      setOfficeFilled({ data, kind });
       const summary = fields.map((f) => `${f.name}${f.value ? " ✓" : " —"}`).join(", ");
-      setPdfMsg(`Filled ${filled} of ${created} named field(s) from your vault; exported filled.${kind}. (${summary})`);
+      setPdfMsg(`Filled ${filled} of ${created} field(s) from your vault; exported filled.${kind}. (${summary}) — “Export as PDF” below to make a signable PDF.`);
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+
+  // Export the filled Word/Excel as a content PDF on-device (RFC-0003 Tier 1).
+  async function exportOfficePdf() {
+    if (!officeFilled) return;
+    try {
+      const { data, kind } = officeFilled;
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      const pdf = await officeToPdf(ab, kind);
+      const pab = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
+      setPdfBytes(pab);
+      if (canvasRef.current) await renderFirstPage(pab, canvasRef.current);
+      downloadBytes(pdf, "filled.pdf");
+      setPdfMsg(
+        `Exported a PDF from the filled ${kind} (on-device, content export). It’s previewed below and can be signed/submitted like any PDF.`,
+      );
     } catch (e) {
       setErr(String(e));
     }
@@ -634,6 +656,14 @@ export function App() {
             </span>
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
+          {officeFilled && (
+            <div style={{ marginTop: 4 }}>
+              <button onClick={exportOfficePdf}>Export as PDF (on-device)</button>
+              <span style={{ fontSize: 12, color: "#55666f", marginLeft: 8 }}>
+                Content export — readable &amp; signable. Pixel-faithful layout is a future option.
+              </span>
+            </div>
+          )}
           <div style={{ marginTop: 4 }}>
             <button
               onClick={() => setShowAdvanced((v) => !v)}
