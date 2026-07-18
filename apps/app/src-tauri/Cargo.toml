@@ -25,3 +25,4 @@ open = "5"
 core-store = { path = "../../../crates/core-store" }
 core-crypto = { path = "../../../crates/core-crypto" }
 core-catalog = { path = "../../../crates/core-catalog" }
+core-fetch = { path = "../../../crates/core-fetch" }

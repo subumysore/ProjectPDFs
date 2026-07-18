@@ -79,6 +79,7 @@ export function App() {
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [formUrl, setFormUrl] = useState("");
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -202,6 +203,41 @@ export function App() {
     setPdfBytes(bytes);
     if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
     await autoFillForm(bytes, isImage);
+  }
+
+  // Fetch a form from the web (URL) on-device, then run the same auto pipeline.
+  async function fetchFromUrl() {
+    const url = formUrl.trim();
+    if (!url) {
+      setPdfMsg("Enter a form URL (https://…).");
+      return;
+    }
+    setErr("");
+    setPdfMsg("Downloading the form on-device (direct from the site, nothing proxied)…");
+    try {
+      const buf = (await invoke("download_form", { url })) as ArrayBuffer;
+      const bytes = (buf instanceof ArrayBuffer ? buf : new Uint8Array(buf as ArrayBufferLike).buffer) as ArrayBuffer;
+      const head = new Uint8Array(bytes.slice(0, 4));
+      const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46; // %PDF
+      let ab: ArrayBuffer = bytes;
+      let wasImage = false;
+      if (!isPdf) {
+        const isPng = head[0] === 0x89 && head[1] === 0x50;
+        const isJpg = head[0] === 0xff && head[1] === 0xd8;
+        if (!isPng && !isJpg) {
+          setPdfMsg("Downloaded, but it isn’t a PDF or image. Word/Excel from a URL isn’t supported yet.");
+          return;
+        }
+        const wrapped = await imageToPdf(bytes, isPng ? "image/png" : "image/jpeg");
+        ab = wrapped.buffer.slice(wrapped.byteOffset, wrapped.byteOffset + wrapped.byteLength) as ArrayBuffer;
+        wasImage = true;
+      }
+      setPdfBytes(ab);
+      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+      await autoFillForm(ab, wasImage);
+    } catch (e) {
+      setErr(String(e));
+    }
   }
 
   // The automatic pipeline: fill existing fields, else detect + create + fill.
@@ -533,13 +569,25 @@ export function App() {
               }}
             />
           </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+            <label style={{ fontSize: 13, opacity: 0.8 }}>…or from the web (URL):</label>
+            <input
+              type="url"
+              placeholder="https://gov.example/form.pdf"
+              value={formUrl}
+              onChange={(e) => setFormUrl(e.currentTarget.value)}
+              style={{ flex: 1, minWidth: 260, padding: "6px 8px" }}
+            />
+            <button onClick={fetchFromUrl}>Fetch &amp; fill</button>
+          </div>
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
             Pick a form (PDF or an image/scan). It’s handled <b>automatically</b>: if it already has form
             fields they’re filled from your vault; if it has <b>none</b>, on-device OCR detects the fields,
             creates them, and fills them — then exports a ready <code>filled.pdf</code>. Nothing is uploaded.
             <br />
             <span style={{ opacity: 0.75 }}>
-              Word/Excel forms and “from the web (URL)” are coming next. For a <b>known</b> form, search &amp;
+              A <b>web URL</b> is downloaded on-device (direct from the site, SSRF-guarded) then filled the
+              same way. Word/Excel forms are coming next. For a <b>known</b> form, search &amp;
               select it in step 3 first so exact catalog coordinates are used.
             </span>
           </div>

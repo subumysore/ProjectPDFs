@@ -391,6 +391,17 @@ fn open_submit_url(url: String) -> Result<String, String> {
     }
 }
 
+/// Download a web-hosted form on-device (SSRF-guarded, size-capped) and return its
+/// raw bytes to the UI, which runs the same auto-fill pipeline. Inbound only — the
+/// user directs the download; no user content goes up.
+#[tauri::command]
+async fn download_form(url: String) -> Result<tauri::ipc::Response, String> {
+    let bytes = core_fetch::fetch_form(url.trim())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -426,7 +437,8 @@ pub fn run() {
             save_filled_form,
             sign_form,
             form_signatures,
-            open_submit_url
+            open_submit_url,
+            download_form
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");

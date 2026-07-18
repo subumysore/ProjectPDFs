@@ -10,13 +10,20 @@
 
 use url::Url;
 
-/// Why a URL was rejected.
+/// Largest form download we accept (guards memory + IPC).
+pub const MAX_BYTES: usize = 25 * 1024 * 1024;
+
+/// Why a URL was rejected or a download failed.
 #[derive(Debug, PartialEq, Eq)]
 pub enum FetchError {
     /// Not a parseable http/https URL.
     InvalidUrl,
     /// Host is private / loopback / link-local and not allowed.
     Blocked,
+    /// The HTTP request itself failed (network, TLS, non-2xx status).
+    Request,
+    /// The response exceeded [`MAX_BYTES`].
+    TooLarge,
 }
 
 impl std::fmt::Display for FetchError {
@@ -24,6 +31,8 @@ impl std::fmt::Display for FetchError {
         match self {
             FetchError::InvalidUrl => write!(f, "not a valid http(s) URL"),
             FetchError::Blocked => write!(f, "host is not allowed (private/loopback/link-local)"),
+            FetchError::Request => write!(f, "the download request failed"),
+            FetchError::TooLarge => write!(f, "the file is larger than the {MAX_BYTES} byte limit"),
         }
     }
 }
@@ -66,6 +75,42 @@ pub fn validate_url(raw: &str) -> Result<Url, FetchError> {
         Some(_) => Err(FetchError::Blocked),
         None => Err(FetchError::InvalidUrl),
     }
+}
+
+/// Download a web-hosted form file on-device. Validates the URL, then GETs it with:
+/// http(s) only, every redirect hop re-validated (SSRF guard through redirects),
+/// a 30s timeout, and a [`MAX_BYTES`] size cap. Inbound only — no user data goes up.
+pub async fn fetch_form(raw: &str) -> Result<Vec<u8>, FetchError> {
+    let url = validate_url(raw)?;
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            if attempt.previous().len() >= 5 {
+                return attempt.stop();
+            }
+            match validate_url(attempt.url().as_str()) {
+                Ok(_) => attempt.follow(),
+                Err(_) => attempt.stop(), // redirect to a blocked/invalid host → don't follow
+            }
+        }))
+        .timeout(std::time::Duration::from_secs(30))
+        .user_agent(concat!("ProjectPDFs/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|_| FetchError::Request)?;
+
+    let resp = client.get(url).send().await.map_err(|_| FetchError::Request)?;
+    if !resp.status().is_success() {
+        return Err(FetchError::Request);
+    }
+    if let Some(len) = resp.content_length() {
+        if len as usize > MAX_BYTES {
+            return Err(FetchError::TooLarge);
+        }
+    }
+    let bytes = resp.bytes().await.map_err(|_| FetchError::Request)?;
+    if bytes.len() > MAX_BYTES {
+        return Err(FetchError::TooLarge);
+    }
+    Ok(bytes.to_vec())
 }
 
 /// Returns this crate's stable module name.
