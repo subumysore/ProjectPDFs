@@ -94,7 +94,9 @@ resource "oci_core_subnet" "subnet" {
 # --- cloud-init: write the installer to the box and run it with the domain ---
 locals {
   installer = file("${path.module}/../../docs/marketing/site/install-on-vm.sh")
-  user_data = base64encode(join("\n", [
+  # gzip-compressed so it stays under OCI's 32 KB instance-metadata limit;
+  # cloud-init detects the gzip magic bytes and decompresses before running it.
+  user_data = base64gzip(join("\n", [
     "#!/bin/bash",
     "set -e",
     "cat > /root/install-on-vm.sh <<'PFF_INSTALLER_EOF'",
