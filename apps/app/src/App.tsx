@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage } from "./pdf";
+import { fillOfficeForm } from "./office";
 import { detectFields } from "./detect";
 import { translate } from "./translate";
 
@@ -190,7 +191,7 @@ export function App() {
     setPdfMsg("");
     setErr("");
     if (/\.(docx?|xlsx?)$/i.test(file.name)) {
-      setPdfMsg("Word/Excel forms aren’t supported yet — please use a PDF or an image (PNG/JPG) for now.");
+      await fillOfficeAndExport(file);
       return;
     }
     let bytes = await file.arrayBuffer();
@@ -203,6 +204,45 @@ export function App() {
     setPdfBytes(bytes);
     if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
     await autoFillForm(bytes, isImage);
+  }
+
+  // Fill a Word/Excel form's NAMED fields (content controls / named ranges) from the
+  // vault, on-device (RFC-0002 Phase A), and export the filled .docx/.xlsx.
+  async function fillOfficeAndExport(file: File) {
+    if (/\.(doc|xls)$/i.test(file.name)) {
+      setPdfMsg("Legacy .doc/.xls (binary) aren’t supported — please save as .docx/.xlsx.");
+      return;
+    }
+    const kind = /\.xlsx$/i.test(file.name) ? "xlsx" : "docx";
+    try {
+      const buf = await file.arrayBuffer();
+      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+      const { created, filled, data, fields } = fillOfficeForm(buf, kind, vault);
+      if (created === 0) {
+        setPdfMsg(
+          "No named fields (Word content controls / Excel named ranges) found in this file. Flat Word/Excel detection is coming (RFC-0002 Phase B).",
+        );
+        return;
+      }
+      setPdfBytes(null);
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      const mime =
+        kind === "xlsx"
+          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const blob = new Blob([data as unknown as BlobPart], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `filled.${kind}`;
+      a.click();
+      const summary = fields.map((f) => `${f.name}${f.value ? " ✓" : " —"}`).join(", ");
+      setPdfMsg(`Filled ${filled} of ${created} named field(s) from your vault; exported filled.${kind}. (${summary})`);
+    } catch (e) {
+      setErr(String(e));
+    }
   }
 
   // Fetch a form from the web (URL) on-device, then run the same auto pipeline.
@@ -587,7 +627,8 @@ export function App() {
             <br />
             <span style={{ opacity: 0.75 }}>
               A <b>web URL</b> is downloaded on-device (direct from the site, SSRF-guarded) then filled the
-              same way. Word/Excel forms are coming next. For a <b>known</b> form, search &amp;
+              same way. <b>Word/Excel</b> (.docx/.xlsx) forms fill their named fields (content controls /
+              named ranges) from your vault and download as a filled file. For a <b>known</b> form, search &amp;
               select it in step 3 first so exact catalog coordinates are used.
             </span>
           </div>

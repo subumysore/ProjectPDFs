@@ -1,6 +1,6 @@
 # RFC-0002: On-device DOCX / XLSX form fill
 
-- **Status:** Draft
+- **Status:** Accepted — **Phase A implemented** (2026-07-18); Phases B/C pending
 - **Author(s):** ProjectPDFs team
 - **Created:** 2026-07-18
 - **Related:** REQ-02 (make non-editable forms fillable), REQ-11 (multi-source: device/web),
