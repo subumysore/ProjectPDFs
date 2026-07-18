@@ -6,6 +6,14 @@ import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
 import { translate } from "./translate";
+import type { Direction } from "./translate";
+
+// Languages the on-device models support today. A form's "original language" is the
+// language it was authored in (catalogue forms are English); the user's BASE language
+// is their comfort language for viewing + entry.
+const LANGS = { en: "English", hi: "हिन्दी" } as const;
+type Lang = keyof typeof LANGS;
+const FORM_LANG: Lang = "en"; // catalogue forms' original language
 
 interface Profile {
   id: string;
@@ -79,6 +87,7 @@ export function App() {
   const [saved, setSaved] = useState<SaveInfo | null>(null);
   const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
   const [translated, setTranslated] = useState<Record<string, string>>({});
+  const [baseLang, setBaseLang] = useState<Lang>("en");
   const [transMsg, setTransMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
@@ -132,8 +141,22 @@ export function App() {
   // the active profile's vault automatically (on-device, encrypted) so future forms
   // fill it. Then re-run autofill so the newly-learned value shows as filled.
   async function captureAnswer(key: string, raw: string) {
-    const value = raw.trim();
+    let value = raw.trim();
     if (!value || !selected) return;
+    // You type in YOUR base language; the value is converted to the form's ORIGINAL
+    // language before it's stored/filled, so the submitted form stays in its language.
+    let note = "";
+    if (baseLang !== FORM_LANG) {
+      try {
+        const converted = await translate(value, `${baseLang}-${FORM_LANG}` as Direction, setTransMsg);
+        if (converted) {
+          note = ` — you typed ${LANGS[baseLang]}, saved as ${LANGS[FORM_LANG]}: “${converted}”`;
+          value = converted;
+        }
+      } catch {
+        /* translation unavailable → keep what the user typed */
+      }
+    }
     await guard(invoke("upsert_data_point", { profileId: selected, key, value }));
     await loadPoints(selected);
     setAnswers((a) => {
@@ -141,7 +164,7 @@ export function App() {
       delete next[key];
       return next;
     });
-    setLearnedMsg(`Remembered ${key} in your vault (on-device).`);
+    setLearnedMsg(`Remembered ${key}${note} (on-device).`);
     runAutofill();
   }
   function saveForm() {
@@ -155,16 +178,22 @@ export function App() {
     if (!selected || !form) return;
     guard(invoke<SignInfo>("sign_form", { profileId: selected, entryId: form.id }).then(setSignInfo));
   }
-  async function translateLabels() {
+  // Translate the form's field labels into the user's BASE language — for VIEWING only.
+  // The form is still filled/submitted in its original language.
+  async function translateForViewing() {
     if (!autofill) return;
+    if (baseLang === FORM_LANG) {
+      setTransMsg(`This form is already in your base language (${LANGS[FORM_LANG]}).`);
+      return;
+    }
     setTransMsg("translating on-device…");
     try {
       const map: Record<string, string> = {};
       for (const f of autofill.filled) {
-        map[f.ontology_key] = await translate(f.name, "en-hi", setTransMsg);
+        map[f.ontology_key] = await translate(f.name, `${FORM_LANG}-${baseLang}` as Direction, setTransMsg);
       }
       setTranslated(map);
-      setTransMsg("Translated on-device (English → हिन्दी).");
+      setTransMsg(`Translated for viewing (${LANGS[FORM_LANG]} → ${LANGS[baseLang]}). You still fill it in ${LANGS[FORM_LANG]}.`);
     } catch (e) {
       setErr(String(e));
       setTransMsg("");
@@ -492,6 +521,27 @@ export function App() {
       <p style={{ color: "#55666f", marginTop: 0 }}>
         Privacy-first, on-device form autofill — processed on your device; we never see your data.
       </p>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", fontSize: 13 }}>
+        <label htmlFor="baselang" style={{ color: "#55666f" }}>Your language:</label>
+        <select
+          id="baselang"
+          value={baseLang}
+          onChange={(e) => {
+            setBaseLang(e.currentTarget.value as Lang);
+            setTranslated({});
+          }}
+          style={{ padding: "4px 6px" }}
+        >
+          {Object.entries(LANGS).map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <span style={{ color: "#8a8f92", fontSize: 12 }}>
+          view forms in your language; your entries are converted to the form’s language.
+        </span>
+      </div>
       {err && (
         <p style={{ color: "#9a2c2c", cursor: "pointer" }} onClick={() => setErr("")}>
           {err} (click to dismiss)
@@ -680,7 +730,11 @@ export function App() {
           {autofill && (
             <>
               <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-                <button onClick={translateLabels}>Translate labels → हिन्दी (on-device)</button>
+                <button onClick={translateForViewing} disabled={baseLang === FORM_LANG}>
+                  {baseLang === FORM_LANG
+                    ? `Form is in your language (${LANGS[FORM_LANG]})`
+                    : `Translate for viewing → ${LANGS[baseLang]} (on-device)`}
+                </button>
                 {transMsg && <span style={{ fontSize: 12, color: "#55666f" }}>{transMsg}</span>}
               </div>
               <p style={{ fontSize: 12, color: "#55666f", marginTop: 8, marginBottom: 0 }}>

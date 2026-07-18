@@ -31,8 +31,12 @@ on-device OCR/detection otherwise.
 
 ## REQ-03 — Any-language translated fill
 ### REQ-03.1 — Native-language working view + original/chosen output
-**Statement.** As a user, I want a foreign form shown in my language, filled locally, and exported in
-the original or my language. **Security/privacy.** On-device NMT; values never sent out.
+**Statement.** As a user, I set a **base (comfort) language**; a foreign form can be shown translated
+into it **for viewing only**, and when I enter data in my base language it is **converted back into the
+form's original language** before it fills/submits — so the form stays in its authored language while I
+work in mine. **Solution Implemented.** Base-language selector; `translateForViewing` (form→base, view);
+`captureAnswer` back-translates entries (base→form) before storing/filling; on-device NMT (transformers.js,
+en↔hi). **Security/privacy.** On-device NMT; values never sent out.
 
 ## REQ-04 — Auto-tagging & searchable catalog
 ### REQ-04.1 — Tags + on-device index

@@ -19,7 +19,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 |---|---|---|---|---|---|---|
 | REQ-01.1 | On-device vault + catalog-first autofill | 🟡 | `core-store` (values AES-GCM sealed), `core-crypto`, `core-catalog` | `core-store` (incl. encrypted-at-rest), `core-catalog`, `core-crypto` unit tests | — | ⚠️ |
 | REQ-02.1 | Make fillable: CREATE fields on flat PDFs + fill/export | 🟡 | `core-catalog` field-maps WITH coordinates; app creates AcroForm widgets on FLAT PDFs at coords + fills + exports (pdf-lib), also fills existing fields + pdf.js render; OCR-detected coords for uncatalogued forms pending | catalog tests + verified flat->3 fields created+filled | — | ⚠️ |
-| REQ-03.1 | Translated view (English<->Hindi) | 🟡 | app on-device translation (transformers.js/ONNX, self-hosted models + ort wasm, zero egress); translate-labels UI; setup script | frontend build (runtime needs model download) | — | ❌ |
+| REQ-03.1 | Base-language view + write-back (En↔Hi) | 🟡 | base-language selector; `translateForViewing` (form→base, view-only) + `captureAnswer` back-translation (base→form's original language) before fill/store; on-device NMT (transformers.js/ONNX, self-hosted, zero egress) | frontend build (runtime needs model download) | — | ❌ |
 | REQ-04.1 | Auto-tags + on-device index/search | 🟡 | `core-catalog` search + tags; `services/catalog`; app `catalog_search` + UI | `core-catalog` search tests | — | ⚠️ |
 | REQ-05.1 | Native cross-platform app, data on-device | 🟡 | `apps/app` (Tauri v2 + Rust core) builds | frontend build + `cargo build` | — | ⚠️ |
 | REQ-06.1 | AI search bar | 🟡 | app "Find a form" search UI + `catalog_search` | core-catalog search tests | — | ⚠️ |
