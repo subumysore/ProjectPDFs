@@ -182,6 +182,9 @@ function fillDocxFlat(tree: Node[], vault: Record<string, string>) {
         if (value === undefined) continue;
         const target = cells[i + 1];
         if (!target) continue;
+        // Only fill an EMPTY input cell — never overwrite an adjacent label/value.
+        // (A blank underscore run counts as empty.)
+        if (textOf(target).replace(/[_\s]/g, "") !== "") continue;
         setCellTextDocx(target, value);
         used.add(key);
         created++;

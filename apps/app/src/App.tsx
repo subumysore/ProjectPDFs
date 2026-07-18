@@ -195,6 +195,7 @@ export function App() {
   async function onOpenForm(file: File) {
     setPdfMsg("");
     setErr("");
+    setOfficeFilled(null);
     if (/\.(docx?|xlsx?)$/i.test(file.name)) {
       await fillOfficeAndExport(file);
       return;
@@ -298,6 +299,7 @@ export function App() {
       return;
     }
     setErr("");
+    setOfficeFilled(null);
     setPdfMsg("Downloading the form on-device (direct from the site, nothing proxied)…");
     try {
       const buf = (await invoke("download_form", { url })) as ArrayBuffer;
@@ -379,6 +381,7 @@ export function App() {
     }
   }
   async function genFlat() {
+    setOfficeFilled(null);
     const bytes = await generateFlatSamplePdf();
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
     setPdfBytes(ab);

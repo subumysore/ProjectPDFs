@@ -105,6 +105,21 @@ test("fillDocx flat: table label→next cell + Label: paragraph", () => {
   assert.match(xml, /Indian/);
 });
 
+test("fillDocx flat: does NOT overwrite an adjacent label cell", () => {
+  // Row: "Full name" | "Date of birth" (two labels, no blank input between them).
+  const doc = `<?xml version="1.0"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+<w:tbl><w:tr>
+<w:tc><w:p><w:r><w:t>Full name</w:t></w:r></w:p></w:tc>
+<w:tc><w:p><w:r><w:t>Date of birth</w:t></w:r></w:p></w:tc>
+</w:tr></w:tbl></w:body></w:document>`;
+  const r = fillDocx(zipSync({ "word/document.xml": strToU8(doc) }).buffer, { full_name: "Asha Rao" });
+  const xml = strFromU8(unzipSync(r.data)["word/document.xml"]);
+  assert.equal(r.filled, 0, "must not fill a label cell");
+  assert.match(xml, /Date of birth/); // label preserved
+  assert.doesNotMatch(xml, /Asha Rao/);
+});
+
 test("fillXlsx flat: label cell fills right neighbour", () => {
   const r = fillXlsx(flatXlsxFixture(), { full_name: "Asha Rao" });
   assert.equal(r.filled, 1);
