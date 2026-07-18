@@ -12,7 +12,7 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 ## Executive rollup
 | Total | ✅ | 🟡 | ☐ | Prod-Ready ✅ | ⚠️ | 🟠 | ❌ |
 |---|---|---|---|---|---|---|---|
-| 16 | 0 | 16 | 0 | 0 | 14 | 0 | 2 |
+| 17 | 0 | 17 | 0 | 0 | 15 | 0 | 2 |
 
 ## Matrix
 | REQ | Title | Status | Implementation | Tests | Cov % | Prod-Ready |
@@ -31,5 +31,6 @@ once. `node scripts/check-traceability.mjs` reconciles this against the BRD._
 | REQ-12.1 | Multi-party documents | 🟡 | `core-txn` state machine (roles, consent, sign, re-sign-on-edit) | `core-txn` workflow tests | — | ⚠️ |
 | REQ-13.1 | Verifiable provenance (authority-scoped) | 🟡 | `core-crypto` ProvenanceManifest (SHA-256 + Ed25519 sign/verify); authority-encrypted block pending | provenance sign/tamper tests | — | ⚠️ |
 | REQ-14.1 | Registered roles & verifiable workflows | 🟡 | `core-identity` Registry + Role capabilities (Sign non-delegable); workflow binding pending | `core-identity` role/capability tests | — | ⚠️ |
+| REQ-17.1 | Offline monetization (licensing) | 🟡 | `core-license`: Ed25519-signed license tokens (tier/features/expiry) verified on-device against the embedded vendor public key; no activation server, nothing sent. Verify command + import UI pending. See RFC-0005 / ADR-0015 | `core-license` tests (5: issue↔verify+gating, wrong-key, tamper, expiry/perpetual, malformed) | — | ⚠️ |
 | REQ-16.1 | Browser-extension client (secure) | 🟡 | `apps/extension` MV3: `vault.js` (AES-256-GCM; key derived on unlock via PBKDF2 passphrase or WebAuthn-PRF, never stored, non-extractable, memory-only) + background SW + popup (passphrase/passkey unlock, fill/lock) + page autofill + **passkey enrolment** (options). **Companion bridge:** `crates/native-host` (`projectpdfs-host`) native-messaging binary reads the app's on-device vault (same keystore key/DB); extension pulls the vault over the bridge so keys/vault stay in the native trust anchor; app **auto-registers** the companion (`register_companion` command + winreg; host bundled via `beforeBundleCommand` + `resources`); **passphrase→passkey migration** (re-seal under WebAuthn key). Engine reuse + reproducible builds pending. See RFC-0004 / ADR-0014 | `vault.test.mjs` (6, incl. migration) + `native-host` framing (2) + app compiles + JS syntax-checked | — | ⚠️ |
 | REQ-15.1 | Multi-format forms (Word/Excel) | 🟡 | app `office.ts`: on-device fill of Word content controls + Excel named ranges (Phase A) AND flat docs — table label→next cell, "Label:" paragraphs, Excel label→neighbour cell (Phase B); fflate + fast-xml-parser round-trip; `.docx/.xlsx` routed in "Fill a Form". Office→PDF content export on-device (Phase C Tier-1, pdf-lib) via "Export as PDF". Tier-2 (LibreOffice)/vector print pending. See RFC-0002/0003, ADR-0011/0012 | `office.test.mjs` (7 tests incl. officeToPdf) + acceptance `features/office-form-fill.feature` (8 scenarios) + frontend build + headless UI run (fill + Export-as-PDF) | — | ⚠️ |

@@ -1,0 +1,11 @@
+[package]
+name = "core-license"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+core-crypto = { path = "../core-crypto" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"

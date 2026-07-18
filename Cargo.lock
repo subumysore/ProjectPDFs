@@ -446,14 +446,14 @@ dependencies = [
 
 [[package]]
 name = "core-catalog"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "core-crypto"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "ed25519-dalek",
@@ -465,11 +465,11 @@ dependencies = [
 
 [[package]]
 name = "core-extract"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "core-fetch"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "regex",
  "reqwest 0.12.28",
@@ -518,26 +518,36 @@ dependencies = [
 
 [[package]]
 name = "core-identity"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
+name = "core-license"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "core-crypto",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "core-mt"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "core-ocr"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "core-pdf"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "core-store"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "core-crypto",
  "rusqlite",
@@ -547,14 +557,14 @@ dependencies = [
 
 [[package]]
 name = "core-txn"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "core-webform"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "serde",
 ]
@@ -2148,7 +2158,7 @@ dependencies = [
 
 [[package]]
 name = "native-host"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "core-crypto",
  "core-store",

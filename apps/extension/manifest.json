@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ProjectPDFs Autofill (companion)",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
   "permissions": ["storage", "activeTab", "scripting", "nativeMessaging"],
   "background": { "service_worker": "src/background.js", "type": "module" },

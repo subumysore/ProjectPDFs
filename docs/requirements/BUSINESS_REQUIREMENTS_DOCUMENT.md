@@ -96,4 +96,12 @@ no remote code. **Privacy.** Data stays on device; no egress. The store auto-upd
 shrunk via WebAuthn-PRF unlock, a native-app companion trust anchor, reproducible builds, and
 self-hosted distribution — see RFC-0004 / ADR-0014. Companion bridge + passkey enrolment pending.
 
+## REQ-17 — Offline monetization (licensing)
+### REQ-17.1 — Paid tiers via an offline, signed license (no phone-home).
+**Statement.** As the vendor, I want to sell Pro/Team features without breaking the privacy
+invariant. **Solution Implemented.** `core-license`: the vendor signs a license (tier, features,
+expiry) with Ed25519; the app embeds the vendor public key and verifies the token on-device —
+no activation server, nothing sent. Feature-gated flags; expiry checked locally. **Privacy.**
+Verifying a license contacts nothing. See RFC-0005 / ADR-0015.
+
 <!-- Copy a REQ-NN.M block for each new requirement. Keep ids stable and sequential per group. -->
