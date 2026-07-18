@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-18
-- **Deciders:** ProjectPDFs team
+- **Deciders:** PolyglotFormFill team
 - **Related:** REQ-17.1; privacy invariant (CLAUDE.md); ADR-0002.
 
 ## Context

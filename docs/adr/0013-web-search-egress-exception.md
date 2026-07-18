@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-18
-- **Deciders:** ProjectPDFs team (explicit user authorization on 2026-07-18)
+- **Deciders:** PolyglotFormFill team (explicit user authorization on 2026-07-18)
 - **Related:** REQ-06.1 (search bar), REQ-11.1 (find forms wherever they live); privacy invariant in
   CLAUDE.md; complements ADR-0011/0012 (Office), the `download_form` URL path.
 

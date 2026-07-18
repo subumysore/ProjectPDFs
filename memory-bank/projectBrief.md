@@ -3,7 +3,7 @@
 _The root context document. If you read only one file, read this. Keep it current._
 
 ## Vision
-ProjectPDFs is a **privacy-first, cross-platform PDF autofill assistant**. It turns any PDF —
+PolyglotFormFill is a **privacy-first, cross-platform PDF autofill assistant**. It turns any PDF —
 editable or not, in any language — into a fillable form and completes it from the user's own
 reusable data (name, DOB, address, phone, and any custom key–value pairs they define), saving
 them time, effort, and money. **All user data lives only on the user's own device**; nothing
@@ -325,7 +325,7 @@ direct it to.* This is binding and overrides every other consideration (see CLAU
   never applies to user content. Retention configurable; usage tracked on-device only.
 
 ### Platform — NATIVE cross-platform app + public Form Catalog
-- ProjectPDFs is a **native, installed cross-platform app** (Tauri v2 + React/TS UI + Rust core)
+- PolyglotFormFill is a **native, installed cross-platform app** (Tauri v2 + React/TS UI + Rust core)
   covering **Desktop + Tablet + Phone**. **All user data stays on-device; all processing runs
   on-device.** Native (not web) is chosen so there is no served-code trust gap, plus durable local
   storage, camera capture, OS secure keystore, and offline. See `docs/rfc/0001`.

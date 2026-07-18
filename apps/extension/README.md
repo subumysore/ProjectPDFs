@@ -1,4 +1,4 @@
-# ProjectPDFs Autofill — browser extension (MV3)
+# PolyglotFormFill Autofill — browser extension (MV3)
 
 Privacy-first form autofill as a browser extension, with **security built in**. The
 vault is AES-256-GCM encrypted on-device; the key is derived on unlock and never

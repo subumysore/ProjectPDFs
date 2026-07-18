@@ -93,7 +93,7 @@ pub async fn fetch_form(raw: &str) -> Result<Vec<u8>, FetchError> {
             }
         }))
         .timeout(std::time::Duration::from_secs(30))
-        .user_agent(concat!("ProjectPDFs/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("PolyglotFormFill/", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|_| FetchError::Request)?;
 
@@ -172,7 +172,7 @@ pub async fn web_search(query: &str) -> Result<Vec<(String, String)>, FetchError
     let endpoint = format!("https://html.duckduckgo.com/html/?q={q}");
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(20))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) ProjectPDFs")
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) PolyglotFormFill")
         .build()
         .map_err(|_| FetchError::Request)?;
     let resp = client.get(endpoint).send().await.map_err(|_| FetchError::Request)?;

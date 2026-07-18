@@ -1,4 +1,4 @@
-// OIDC Authorization-Code + PKCE identity broker for ProjectPDFs signing.
+// OIDC Authorization-Code + PKCE identity broker for PolyglotFormFill signing.
 //
 // ADAPTED from the Hospital Nexus (SDD) `oidc.service.ts` — same hardened flow
 // (PKCE S256, SSRF-guarded discovery, JWKS RS256 ID-token verification), but:

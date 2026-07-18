@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "ProjectPDFs Autofill (companion)",
+  "name": "PolyglotFormFill Autofill (companion)",
   "version": "0.1.0",
   "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
   "permissions": ["storage", "activeTab", "scripting", "nativeMessaging"],
   "background": { "service_worker": "src/background.js", "type": "module" },
-  "action": { "default_popup": "popup.html", "default_title": "ProjectPDFs Autofill" },
+  "action": { "default_popup": "popup.html", "default_title": "PolyglotFormFill Autofill" },
   "options_page": "options.html",
   "icons": { "128": "icon128.png" },
   "content_security_policy": {

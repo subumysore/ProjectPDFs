@@ -1,11 +1,11 @@
-# ProjectPDFs
+# PolyglotFormFill
 
 A project built on a proven way of working: **Specification-Driven Development (SDD)**, a **Memory
 Bank** for durable context, **requirements traceability**, and decision records — plus the additional
 best practices below. Add your application code here (any language / framework) and keep the governance.
 
 > New here? Start with `docs/START_HERE.md`. Fill in the `TODO`s in `CLAUDE.md`,
-> `memory-bank/projectBrief.md`, and `memory-bank/techContext.md` to describe **ProjectPDFs**.
+> `memory-bank/projectBrief.md`, and `memory-bank/techContext.md` to describe **PolyglotFormFill**.
 
 ## The loop (SDD)
 

@@ -1,4 +1,4 @@
-# ProjectPDFs — CLAUDE.md
+# PolyglotFormFill — CLAUDE.md
 
 ## Project Operating Rules (canonical — apply to every task)
 

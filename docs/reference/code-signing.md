@@ -44,7 +44,7 @@ pnpm --filter @projectpdfs/app tauri build
 
 # 3. (optional) confirm the artifact is signed
 $env:SIGNTOOL_DIR = (Get-ChildItem "$env:ProgramFiles (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe | Where-Object FullName -match '\\x64\\' | Sort-Object FullName -Desc | Select-Object -First 1).DirectoryName
-& "$env:SIGNTOOL_DIR\signtool.exe" verify /pa /v target\release\bundle\nsis\ProjectPDFs_*-setup.exe
+& "$env:SIGNTOOL_DIR\signtool.exe" verify /pa /v target\release\bundle\nsis\PolyglotFormFill_*-setup.exe
 ```
 
 With a self-signed cert the `verify` chain check reports "root not trusted" — that is

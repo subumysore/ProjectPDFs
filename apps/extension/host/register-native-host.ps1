@@ -1,4 +1,4 @@
-# Register the ProjectPDFs native-messaging host for Chrome/Edge (Windows, per-user).
+# Register the PolyglotFormFill native-messaging host for Chrome/Edge (Windows, per-user).
 # Fills the manifest template with the host EXE path + your extension id, writes it to
 # LOCALAPPDATA, and points the browser's NativeMessagingHosts registry key at it.
 #
@@ -26,7 +26,7 @@ if (-not (Test-Path $HostExe)) {
 $template = Get-Content (Join-Path $PSScriptRoot "com.projectpdfs.host.template.json") -Raw
 $json = $template.Replace("__HOST_EXE__", ($HostExe -replace '\\', '\\')).Replace("__EXTENSION_ID__", $ExtensionId)
 
-$destDir = Join-Path $env:LOCALAPPDATA "ProjectPDFs"
+$destDir = Join-Path $env:LOCALAPPDATA "PolyglotFormFill"
 New-Item -ItemType Directory -Force -Path $destDir | Out-Null
 $manifestPath = Join-Path $destDir "com.projectpdfs.host.json"
 Set-Content -Path $manifestPath -Value $json -Encoding utf8

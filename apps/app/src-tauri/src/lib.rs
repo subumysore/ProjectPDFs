@@ -1,4 +1,4 @@
-//! ProjectPDFs native entry point (Tauri v2). Bridges the React UI to the Rust
+//! PolyglotFormFill native entry point (Tauri v2). Bridges the React UI to the Rust
 //! core crates. Real commands (catalog match, fill, sign, export) land per spec.
 
 use core_catalog::{autofill, demo_catalog, demo_entry, get, search, CatalogEntry, CatalogSummary, FilledField};
@@ -65,7 +65,7 @@ fn core_modules() -> CoreModules {
 /// Minimal round-trip command used by the Phase-1 shell.
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("Hello, {name}! ProjectPDFs native core is wired and on-device.")
+    format!("Hello, {name}! PolyglotFormFill native core is wired and on-device.")
 }
 
 /// Phase-1 vertical slice: catalog-first autofill, fully on-device.
@@ -463,7 +463,7 @@ fn do_register_companion(app: &tauri::AppHandle, ext: &str) -> Result<String, St
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let manifest = serde_json::json!({
         "name": "com.projectpdfs.host",
-        "description": "ProjectPDFs native messaging host (companion trust anchor)",
+        "description": "PolyglotFormFill native messaging host (companion trust anchor)",
         "path": host.to_string_lossy(),
         "type": "stdio",
         "allowed_origins": [format!("chrome-extension://{ext}/")]
@@ -555,5 +555,5 @@ pub fn run() {
             register_companion
         ])
         .run(tauri::generate_context!())
-        .expect("error while running ProjectPDFs");
+        .expect("error while running PolyglotFormFill");
 }

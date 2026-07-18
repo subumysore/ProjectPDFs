@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-18
-- **Deciders:** ProjectPDFs team
+- **Deciders:** PolyglotFormFill team
 - **Related:** RFC-0003, RFC-0002 / ADR-0011, REQ-15.1; ties to REQ-07/08/09.
 
 ## Context

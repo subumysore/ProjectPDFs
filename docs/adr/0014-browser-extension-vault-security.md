@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-18
-- **Deciders:** ProjectPDFs team (explicit user request)
+- **Deciders:** PolyglotFormFill team (explicit user request)
 - **Related:** RFC-0004, ADR-0002 (native-over-web), REQ-16.1, REQ-01.1, REQ-09.1.
 
 ## Context

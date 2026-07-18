@@ -1,4 +1,4 @@
-// ProjectPDFs account / identity broker — **identity assertions only, never content**.
+// PolyglotFormFill account / identity broker — **identity assertions only, never content**.
 //
 // Signing flow (REQ-09 Tier 1): the app builds the authorize URL, the user
 // authenticates at their IdP, the app receives the code via a loopback/custom-scheme

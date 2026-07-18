@@ -1,6 +1,6 @@
 # Feasibility — Optimistic Approach (the "happy path")
 
-_How ProjectPDFs works when everything goes right. This is the target we build toward; the
+_How PolyglotFormFill works when everything goes right. This is the target we build toward; the
 worst-case trial (`02-worst-case-trial.md`) stress-tests the risky links in it._
 
 ## The optimistic end-to-end flow

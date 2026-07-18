@@ -1,7 +1,7 @@
 # RFC-0001: Native local-first architecture, stack & the public Form Catalog
 
 - **Status:** Accepted (2026-07-16) — proceed to Phase 0 (spikes) then Phase 1 (MVP)
-- **Author(s):** ProjectPDFs team
+- **Author(s):** PolyglotFormFill team
 - **Created:** 2026-07-15
 - **Updated:** 2026-07-15 — **native cross-platform** app (not web/PWA); added the **public Form
   Catalog** facilitator; OCR/detection demoted to a fallback behind catalog field-maps.
@@ -14,7 +14,7 @@
   **ADR-0010 (registered roles + verifiable workflows — pending)**
 
 ## Summary
-Build ProjectPDFs as a **native, installed cross-platform app** (Desktop + Tablet + Phone) that keeps
+Build PolyglotFormFill as a **native, installed cross-platform app** (Desktop + Tablet + Phone) that keeps
 **all user data on the device** and runs **all processing on-device**. A **public Form Catalog**
 server holds only **public form knowledge** — metadata, source URLs, tags, blank templates, and
 curated **field-maps** — and serves it **down** to devices. The catalog is both the fast-search

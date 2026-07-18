@@ -2,13 +2,13 @@
 
 - **Status:** Accepted — **security core + MV3 scaffold + companion bridge + passkey enrolment
   implemented** (2026-07-18); engine reuse + reproducible-build pipeline pending
-- **Author(s):** ProjectPDFs team (explicit user request)
+- **Author(s):** PolyglotFormFill team (explicit user request)
 - **Created:** 2026-07-18
 - **Related:** ADR-0002 (native-over-web decision), REQ-11.1 (fill forms wherever they live),
   REQ-01.1 (on-device vault), REQ-09.1 (signing); proposes **REQ-16**. Produced **ADR-0014**.
 
 ## Summary
-Ship ProjectPDFs as a **browser extension** (Manifest V3) with security built in: an
+Ship PolyglotFormFill as a **browser extension** (Manifest V3) with security built in: an
 AES-256-GCM on-device vault whose key is derived on unlock from a **passphrase** (PBKDF2)
 or a **passkey** (WebAuthn PRF, hardware-backed) and **never stored**. Because a
 store-served extension auto-updates code (the very trust gap ADR-0002 avoided by going

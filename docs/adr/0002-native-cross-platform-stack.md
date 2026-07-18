@@ -6,7 +6,7 @@
 - **Related:** RFC-0001, ADR-0003..0010
 
 ## Context
-ProjectPDFs must run on Desktop + Tablet + Phone, keep **all user data on-device**, and run **all
+PolyglotFormFill must run on Desktop + Tablet + Phone, keep **all user data on-device**, and run **all
 processing on-device** (OCR, translation, embeddings, PDF, crypto). A web app re-downloads its code
 each visit (served-code trust gap) and is CORS-bound (can't auto-download third-party forms).
 

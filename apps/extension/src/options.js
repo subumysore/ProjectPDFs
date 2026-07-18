@@ -29,11 +29,11 @@ $("enrol").onclick = async () => {
     const cred = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: "ProjectPDFs Autofill" }, // extension origin is the effective RP
+        rp: { name: "PolyglotFormFill Autofill" }, // extension origin is the effective RP
         user: {
           id: crypto.getRandomValues(new Uint8Array(16)),
           name: "projectpdfs-vault",
-          displayName: "ProjectPDFs Vault",
+          displayName: "PolyglotFormFill Vault",
         },
         pubKeyCredParams: [
           { type: "public-key", alg: -7 }, // ES256
@@ -66,11 +66,11 @@ async function enrolAndGetPrf() {
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: "ProjectPDFs Autofill" },
+      rp: { name: "PolyglotFormFill Autofill" },
       user: {
         id: crypto.getRandomValues(new Uint8Array(16)),
         name: "projectpdfs-vault",
-        displayName: "ProjectPDFs Vault",
+        displayName: "PolyglotFormFill Vault",
       },
       pubKeyCredParams: [
         { type: "public-key", alg: -7 },

@@ -1,7 +1,7 @@
 # RFC-0005: Offline signed licensing
 
 - **Status:** Accepted — implemented (2026-07-18)
-- **Author(s):** ProjectPDFs team
+- **Author(s):** PolyglotFormFill team
 - **Created:** 2026-07-18
 - **Related:** REQ-17.1; produced ADR-0015; privacy invariant.
 

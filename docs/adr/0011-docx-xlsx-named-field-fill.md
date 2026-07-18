@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-18
-- **Deciders:** ProjectPDFs team
+- **Deciders:** PolyglotFormFill team
 - **Related:** RFC-0002, REQ-15.1 (also REQ-02.1 make-fillable, REQ-11.1 multi-source)
 
 ## Context

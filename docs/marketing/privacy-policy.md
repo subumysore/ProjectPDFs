@@ -1,9 +1,9 @@
-# ProjectPDFs — Privacy Policy
+# PolyglotFormFill — Privacy Policy
 
 **Effective date:** [DATE] · **Version:** 1.0
 
 > **⚖️ Legal review required — not legal advice.** This document is a drafting template prepared for the
-> ProjectPDFs product. It must be reviewed and approved by qualified legal counsel licensed in each
+> PolyglotFormFill product. It must be reviewed and approved by qualified legal counsel licensed in each
 > jurisdiction where the product is offered (including, as applicable, the EU/EEA under the GDPR, India
 > under the Digital Personal Data Protection Act 2023, and the United States under the CCPA/CPRA) before
 > publication. Bracketed `[…]` fields must be completed. Nothing here is legal advice.
@@ -12,7 +12,7 @@
 
 ## 1. Who we are (Data Controller / Data Fiduciary)
 This Policy is issued by **[LEGAL ENTITY NAME]**, **[registered address]** ("**we**", "**us**", "**our**"),
-the entity responsible for the ProjectPDFs application, browser extension, and website (together, the
+the entity responsible for the PolyglotFormFill application, browser extension, and website (together, the
 "**Service**"). For the purposes of the GDPR we act as the **data controller**; under the India DPDP Act
 2023 we act as the **Data Fiduciary**; where we process no personal data (see §3), no such role arises.
 

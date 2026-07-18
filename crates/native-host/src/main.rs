@@ -18,7 +18,7 @@ fn main() {
             Ok(s) => dispatch(s, &req),
             Err(e) => serde_json::json!({
                 "ok": false,
-                "error": format!("vault unavailable ({e}). Run the ProjectPDFs app once to create it.")
+                "error": format!("vault unavailable ({e}). Run the PolyglotFormFill app once to create it.")
             }),
         };
         let bytes = serde_json::to_vec(&resp).unwrap_or_default();

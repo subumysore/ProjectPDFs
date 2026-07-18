@@ -4,7 +4,7 @@ Keep the on-device / privacy angle in the first two lines — it's the different
 what the review teams reward.
 
 ## Name (≤ 45 chars)
-**ProjectPDFs — Private PDF & Form Autofill**
+**PolyglotFormFill — Private PDF & Form Autofill**
 
 ## Short description (≤ 132 chars)
 Fill PDFs, Word, Excel & web forms from a reusable vault. On-device OCR, translation & signing — we never see your data.
@@ -19,7 +19,7 @@ kyc form, visa form, form filler
 
 ## Full description
 
-**Fill any form — privately.** ProjectPDFs fills PDFs, Word, Excel, and web forms from a
+**Fill any form — privately.** PolyglotFormFill fills PDFs, Word, Excel, and web forms from a
 reusable data vault that lives **only on your device**, and processes everything locally. When
 you submit, your form goes straight to the recipient you chose — never through us. No cloud
 middleman, no tracking, no telemetry.
@@ -36,7 +36,7 @@ middleman, no tracking, no telemetry.
 - 🧠 **A vault that learns.** Answer a new field once; it's remembered for next time
   (encrypted, on your device).
 - ✍️ **Trustworthy signing.** Non-delegable, device-bound signatures with verifiable provenance.
-- 🔗 **Companion to the desktop app.** Pair with the ProjectPDFs desktop app so your keys and
+- 🔗 **Companion to the desktop app.** Pair with the PolyglotFormFill desktop app so your keys and
   vault stay in a hardened native trust anchor — the extension never holds them.
 
 **Security built in.** Your vault is AES-256 encrypted and unlocked by a passphrase or a

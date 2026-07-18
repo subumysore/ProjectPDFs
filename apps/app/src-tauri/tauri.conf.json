@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ProjectPDFs",
+  "productName": "PolyglotFormFill",
   "version": "0.1.0",
   "identifier": "com.projectpdfs.app",
   "build": {
@@ -13,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "ProjectPDFs",
+        "title": "PolyglotFormFill",
         "label": "main",
         "width": 1100,
         "height": 760

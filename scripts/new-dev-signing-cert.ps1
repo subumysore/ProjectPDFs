@@ -10,7 +10,7 @@
 #   pnpm --filter @projectpdfs/app tauri build
 [CmdletBinding()]
 param(
-  [string] $Subject = "CN=ProjectPDFs Dev (self-signed), O=ProjectPDFs",
+  [string] $Subject = "CN=PolyglotFormFill Dev (self-signed), O=PolyglotFormFill",
   [int]    $YearsValid = 2
 )
 

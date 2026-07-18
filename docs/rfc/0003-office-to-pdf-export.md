@@ -2,7 +2,7 @@
 
 - **Status:** Accepted — **Tier-1 (content export) implemented** (2026-07-18); Tier-2 (LibreOffice
   high-fidelity pack) and per-platform vector print pending
-- **Author(s):** ProjectPDFs team
+- **Author(s):** PolyglotFormFill team
 - **Created:** 2026-07-18
 - **Related:** RFC-0002 / ADR-0011 (DOCX/XLSX fill), REQ-15.1; ties to REQ-07.1 (submit),
   REQ-08.1 (print/versions), REQ-09.1 (signing). Produces an ADR on acceptance.

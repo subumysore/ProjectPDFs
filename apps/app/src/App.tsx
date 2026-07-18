@@ -57,7 +57,7 @@ const h2Style: React.CSSProperties = {
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
 /**
- * ProjectPDFs — Phase-1 shell. All on-device: Profiles + encrypted DataPoints in
+ * PolyglotFormFill — Phase-1 shell. All on-device: Profiles + encrypted DataPoints in
  * the SQLite vault (core-store), catalog search + field-maps (core-catalog).
  * Pick a profile, find a form, and autofill it from that profile's vault.
  */
@@ -488,7 +488,7 @@ export function App() {
         color: "#101a20",
       }}
     >
-      <h1 style={{ marginBottom: 2 }}>ProjectPDFs</h1>
+      <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
       <p style={{ color: "#55666f", marginTop: 0 }}>
         Privacy-first, on-device form autofill — processed on your device; we never see your data.
       </p>
