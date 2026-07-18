@@ -85,8 +85,17 @@ pub struct CatalogEntry {
     pub tags: Vec<String>,
     /// A stable layout fingerprint used to match an opened document to this entry.
     pub fingerprint: String,
+    /// The language the form was authored in (BCP-47-ish, e.g. "en", "hi"). The app
+    /// translates INTO the user's base language for viewing, and back INTO this
+    /// language when filling. Defaults to "en" for older entries.
+    #[serde(default = "default_lang")]
+    pub lang: String,
     /// The field layout.
     pub field_map: FieldMap,
+}
+
+fn default_lang() -> String {
+    "en".into()
 }
 
 impl CatalogEntry {
@@ -97,6 +106,7 @@ impl CatalogEntry {
             name: self.name.clone(),
             kind: self.kind,
             tags: self.tags.clone(),
+            lang: self.lang.clone(),
         }
     }
 }
@@ -112,6 +122,9 @@ pub struct CatalogSummary {
     pub kind: FormKind,
     /// Search tags.
     pub tags: Vec<String>,
+    /// The form's authored language ("en", "hi", …).
+    #[serde(default = "default_lang")]
+    pub lang: String,
 }
 
 /// A field filled from the vault (value is `None` when the vault lacks the key).
@@ -192,6 +205,7 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             kind: FormKind::Pdf,
             tags: vec!["passport".into(), "travel".into(), "identity".into(), "government".into()],
             fingerprint: "fp-passport-v1".into(),
+            lang: "en".into(),
             field_map: FieldMap {
                 fields: vec![
                     tf("Full name", "full_name", r(736.0)),
@@ -206,6 +220,7 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             kind: FormKind::Pdf,
             tags: vec!["driving".into(), "licence".into(), "vehicle".into(), "identity".into()],
             fingerprint: "fp-licence-v1".into(),
+            lang: "en".into(),
             field_map: FieldMap {
                 fields: vec![
                     tf("Full name", "full_name", None),
@@ -220,11 +235,29 @@ pub fn demo_catalog() -> Vec<CatalogEntry> {
             kind: FormKind::WebForm,
             tags: vec!["bank".into(), "kyc".into(), "finance".into(), "account".into()],
             fingerprint: "fp-bankkyc-v1".into(),
+            lang: "en".into(),
             field_map: FieldMap {
                 fields: vec![
                     tf("Full name", "full_name", None),
                     tf("Phone", "phone", None),
                     tf("Address", "address", None),
+                ],
+            },
+        },
+        // A Hindi-language form — demonstrates translate-for-viewing (hi→base) and
+        // write-back (base→hi) when the user's base language differs from the form's.
+        CatalogEntry {
+            id: "sample.aadhaar-hi.v1".into(),
+            name: "नमूना आधार फॉर्म".into(),
+            kind: FormKind::Pdf,
+            tags: vec!["aadhaar".into(), "bharat".into()],
+            fingerprint: "fp-aadhaar-hi-v1".into(),
+            lang: "hi".into(),
+            field_map: FieldMap {
+                fields: vec![
+                    tf("पूरा नाम", "full_name", None),
+                    tf("जन्म तिथि", "date_of_birth", None),
+                    tf("राष्ट्रीयता", "nationality", None),
                 ],
             },
         },
@@ -283,5 +316,13 @@ mod tests {
     #[test]
     fn module_name_is_stable() {
         assert_eq!(module_name(), "core-catalog");
+    }
+
+    #[test]
+    fn entries_and_summaries_carry_language() {
+        let cat = demo_catalog();
+        assert_eq!(get(&cat, "sample.passport.v1").unwrap().lang, "en");
+        assert_eq!(get(&cat, "sample.aadhaar-hi.v1").unwrap().lang, "hi");
+        assert_eq!(demo_entry().summary().lang, "en");
     }
 }

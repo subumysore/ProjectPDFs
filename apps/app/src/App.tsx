@@ -28,6 +28,7 @@ interface CatalogSummary {
   name: string;
   kind: string;
   tags: string[];
+  lang?: string;
 }
 interface FilledField {
   name: string;
@@ -146,11 +147,12 @@ export function App() {
     // You type in YOUR base language; the value is converted to the form's ORIGINAL
     // language before it's stored/filled, so the submitted form stays in its language.
     let note = "";
-    if (baseLang !== FORM_LANG) {
+    const formLang = (form?.lang as Lang) ?? FORM_LANG;
+    if (baseLang !== formLang) {
       try {
-        const converted = await translate(value, `${baseLang}-${FORM_LANG}` as Direction, setTransMsg);
+        const converted = await translate(value, `${baseLang}-${formLang}` as Direction, setTransMsg);
         if (converted) {
-          note = ` — you typed ${LANGS[baseLang]}, saved as ${LANGS[FORM_LANG]}: “${converted}”`;
+          note = ` — you typed ${LANGS[baseLang]}, saved as ${LANGS[formLang]}: “${converted}”`;
           value = converted;
         }
       } catch {
@@ -182,18 +184,19 @@ export function App() {
   // The form is still filled/submitted in its original language.
   async function translateForViewing() {
     if (!autofill) return;
-    if (baseLang === FORM_LANG) {
-      setTransMsg(`This form is already in your base language (${LANGS[FORM_LANG]}).`);
+    const formLang = (form?.lang as Lang) ?? FORM_LANG;
+    if (baseLang === formLang) {
+      setTransMsg(`This form is already in your base language (${LANGS[formLang]}).`);
       return;
     }
     setTransMsg("translating on-device…");
     try {
       const map: Record<string, string> = {};
       for (const f of autofill.filled) {
-        map[f.ontology_key] = await translate(f.name, `${FORM_LANG}-${baseLang}` as Direction, setTransMsg);
+        map[f.ontology_key] = await translate(f.name, `${formLang}-${baseLang}` as Direction, setTransMsg);
       }
       setTranslated(map);
-      setTransMsg(`Translated for viewing (${LANGS[FORM_LANG]} → ${LANGS[baseLang]}). You still fill it in ${LANGS[FORM_LANG]}.`);
+      setTransMsg(`Translated for viewing (${LANGS[formLang]} → ${LANGS[baseLang]}). You still fill it in ${LANGS[formLang]}.`);
     } catch (e) {
       setErr(String(e));
       setTransMsg("");
@@ -730,9 +733,12 @@ export function App() {
           {autofill && (
             <>
               <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-                <button onClick={translateForViewing} disabled={baseLang === FORM_LANG}>
-                  {baseLang === FORM_LANG
-                    ? `Form is in your language (${LANGS[FORM_LANG]})`
+                <button
+                  onClick={translateForViewing}
+                  disabled={baseLang === ((form?.lang as Lang) ?? FORM_LANG)}
+                >
+                  {baseLang === ((form?.lang as Lang) ?? FORM_LANG)
+                    ? `Form is in your language (${LANGS[(form?.lang as Lang) ?? FORM_LANG]})`
                     : `Translate for viewing → ${LANGS[baseLang]} (on-device)`}
                 </button>
                 {transMsg && <span style={{ fontSize: 12, color: "#55666f" }}>{transMsg}</span>}
