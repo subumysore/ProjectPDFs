@@ -12,7 +12,56 @@ async function refresh() {
   const unlocked = s && s.ok && s.unlocked;
   $("locked").classList.toggle("hidden", unlocked);
   $("unlocked").classList.toggle("hidden", !unlocked);
-  if (unlocked) $("keys").textContent = s.keys.length ? `Remembered: ${s.keys.join(", ")}` : "Vault is empty.";
+  if (unlocked) await renderEntries();
+}
+
+// Show every saved field with its value + a delete button.
+async function renderEntries() {
+  const r = await send({ type: "getVault" });
+  const box = $("entries");
+  box.textContent = "";
+  const keys = r.ok ? Object.keys(r.vault) : [];
+  if (!keys.length) {
+    const p = document.createElement("div");
+    p.className = "empty";
+    p.textContent = "No fields yet — add your name, email, etc. below.";
+    box.appendChild(p);
+    return;
+  }
+  for (const k of keys.sort()) {
+    const row = document.createElement("div");
+    row.className = "entry";
+    const kEl = document.createElement("span");
+    kEl.className = "k";
+    kEl.textContent = k;
+    const vEl = document.createElement("span");
+    vEl.className = "v";
+    vEl.textContent = r.vault[k];
+    vEl.title = r.vault[k];
+    const x = document.createElement("button");
+    x.className = "x";
+    x.textContent = "✕";
+    x.title = "Delete";
+    x.onclick = async () => {
+      await send({ type: "del", key: k });
+      renderEntries();
+    };
+    row.append(kEl, vEl, x);
+    box.appendChild(row);
+  }
+}
+
+// Add / update a field.
+async function addField() {
+  const key = $("newKey").value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  const value = $("newVal").value;
+  if (!key) return setMsg("Enter a field name (e.g. full_name).", false);
+  const r = await send({ type: "set", key, value });
+  if (!r.ok) return setMsg(r.error || "Locked", false);
+  $("newKey").value = "";
+  $("newVal").value = "";
+  setMsg(`Saved “${key}”.`);
+  renderEntries();
 }
 
 $("unlock").onclick = async () => {
@@ -56,6 +105,11 @@ $("unlockPasskey").onclick = async () => {
     setMsg("Passkey unlock cancelled/failed: " + ((e && e.message) || e), false);
   }
 };
+
+$("add").onclick = addField;
+$("newVal").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addField();
+});
 
 $("lock").onclick = async () => {
   await send({ type: "lock" });

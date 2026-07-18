@@ -14,6 +14,11 @@
       .err { color: #9a2c2c; }
       .hidden { display: none; }
       .keys { font-family: ui-monospace, monospace; font-size: 11px; color: #55666f; }
+      .entry { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; }
+      .entry .k { font-family: ui-monospace, monospace; color: #0a6a60; min-width: 90px; }
+      .entry .v { flex: 1; color: #101a20; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .entry .x { border: none; background: none; color: #9a2c2c; cursor: pointer; font-size: 14px; padding: 0 4px; }
+      .empty { color: #55666f; font-size: 12px; margin-bottom: 6px; }
     </style>
   </head>
   <body>
@@ -33,7 +38,14 @@
         <button id="fill">Fill this page</button>
         <button id="lock">Lock</button>
       </div>
-      <div class="keys" id="keys"></div>
+
+      <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
+        <div class="sub" style="margin-bottom: 6px"><b>Your details</b> — saved encrypted on this device.</div>
+        <div id="entries"></div>
+        <input id="newKey" placeholder="field (e.g. full_name, email, phone)" />
+        <input id="newVal" placeholder="value (e.g. Asha Rao)" />
+        <button id="add">Save field</button>
+      </div>
     </div>
 
     <div style="border-top: 1px solid #e5e5e5; margin: 10px 0 8px; padding-top: 8px">

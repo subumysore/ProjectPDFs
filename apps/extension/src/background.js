@@ -108,6 +108,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await persist();
           sendResponse({ ok: true });
           break;
+        case "del":
+          if (!key) throw new Error("locked");
+          delete vault[msg.key];
+          await persist();
+          sendResponse({ ok: true });
+          break;
         case "lock":
           lock();
           sendResponse({ ok: true });
