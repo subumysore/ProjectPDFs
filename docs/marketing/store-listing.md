@@ -7,7 +7,7 @@ what the review teams reward.
 **ProjectPDFs — Private PDF & Form Autofill**
 
 ## Short description (≤ 132 chars)
-Fill PDFs, Word, Excel & web forms from a reusable vault. On-device OCR, translation & signing — your data never leaves your device.
+Fill PDFs, Word, Excel & web forms from a reusable vault. On-device OCR, translation & signing — we never see your data.
 
 ## Categories
 Productivity · Tools
@@ -20,12 +20,14 @@ kyc form, visa form, form filler
 ## Full description
 
 **Fill any form — privately.** ProjectPDFs fills PDFs, Word, Excel, and web forms from a
-reusable data vault that lives **only on your device**. No cloud, no tracking, no telemetry.
+reusable data vault that lives **only on your device**, and processes everything locally. When
+you submit, your form goes straight to the recipient you chose — never through us. No cloud
+middleman, no tracking, no telemetry.
 
 **What makes it different**
 
 - 🔒 **On-device, always.** OCR, translation, field-detection, filling and signing all run
-  locally. Your documents and personal data never travel to us or anyone else.
+  locally. Your documents and personal data never travel to us — no cloud middleman.
 - 🧩 **Make any PDF fillable.** Got a flat PDF or a *photo/scan* of a form with no fields?
   On-device OCR detects the fields, places them, and fills them.
 - 🌍 **Polyglot / translated fill.** Fill an English form from your data in another language

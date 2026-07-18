@@ -3,9 +3,10 @@
 _Last updated: 2026-07-18. Plain-language summary first; specifics follow._
 
 ## The one-sentence version
-**Your content and personal data never leave your device.** ProjectPDFs does all of its
-work — reading forms, OCR, translation, filling, and signing — on your own device, and we
-never receive, store, or transmit your documents or the data you put into them.
+ProjectPDFs does all of its work — reading forms, OCR, translation, filling, and signing — **on your
+own device**, and **we never receive, store, or transmit your documents or the data you enter.** The only
+data that leaves is a form *you* choose to submit (sent directly to its recipient) or a web search *you*
+type — and neither passes through our servers.
 
 ## What we do NOT collect
 - We do **not** collect your documents, forms, or the values in your vault.
