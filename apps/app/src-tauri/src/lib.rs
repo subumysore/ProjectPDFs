@@ -423,6 +423,66 @@ async fn web_search(query: String) -> Result<Vec<SearchHit>, String> {
         .collect())
 }
 
+// --- Browser companion: register the native-messaging host for the extension ---
+
+fn resolve_host_exe(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    let name = if cfg!(windows) { "projectpdfs-host.exe" } else { "projectpdfs-host" };
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            candidates.push(dir.join(name));
+        }
+    }
+    if let Ok(rd) = app.path().resource_dir() {
+        candidates.push(rd.join(name));
+        candidates.push(rd.join("target").join("release").join(name));
+    }
+    candidates.push(std::path::PathBuf::from("target").join("release").join(name));
+    candidates.into_iter().find(|p| p.exists())
+}
+
+#[cfg(windows)]
+fn write_host_registry(browser_root: &str, manifest_path: &str) -> Result<(), String> {
+    use winreg::enums::HKEY_CURRENT_USER;
+    use winreg::RegKey;
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let path = format!("{browser_root}\\NativeMessagingHosts\\com.projectpdfs.host");
+    let (key, _) = hkcu.create_subkey(path).map_err(|e| e.to_string())?;
+    key.set_value("", &manifest_path.to_string()).map_err(|e| e.to_string())
+}
+
+/// Register the native-messaging host so the browser extension can reach this app.
+/// User-initiated (they supply their extension id). Writes the host manifest + the
+/// Chrome/Edge registry entry pointing at the bundled host binary.
+#[tauri::command]
+fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<String, String> {
+    let ext = extension_id.trim();
+    if ext.is_empty() {
+        return Err("Enter your extension id (from chrome://extensions).".into());
+    }
+    let host = resolve_host_exe(&app)
+        .ok_or("Companion host binary not found. Build it: cargo build -p native-host --release")?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let manifest = serde_json::json!({
+        "name": "com.projectpdfs.host",
+        "description": "ProjectPDFs native messaging host (companion trust anchor)",
+        "path": host.to_string_lossy(),
+        "type": "stdio",
+        "allowed_origins": [format!("chrome-extension://{ext}/")]
+    });
+    let manifest_path = dir.join("com.projectpdfs.host.json");
+    std::fs::write(&manifest_path, serde_json::to_vec_pretty(&manifest).unwrap())
+        .map_err(|e| e.to_string())?;
+    #[cfg(windows)]
+    {
+        let mp = manifest_path.to_string_lossy().to_string();
+        write_host_registry("Software\\Google\\Chrome", &mp)?;
+        let _ = write_host_registry("Software\\Microsoft\\Edge", &mp);
+    }
+    Ok(format!("Companion registered. Host: {}", host.to_string_lossy()))
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -460,7 +520,8 @@ pub fn run() {
             form_signatures,
             open_submit_url,
             download_form,
-            web_search
+            web_search,
+            register_companion
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");

@@ -25,7 +25,12 @@
         exists when the hardware is present — so even a malicious extension update can't decrypt
         your vault without it. Enrol on an <b>empty</b> vault (or before adding data).
       </p>
-      <button id="enrol">Enrol a passkey</button>
+      <button id="enrol">Enrol a passkey (empty vault)</button>
+      <button id="migrate">Migrate this vault to a passkey</button>
+      <div class="muted" style="margin-top: 6px">
+        Migrating re-encrypts your existing vault under the passkey. <b>Unlock it first</b> (open the
+        popup, enter your passphrase), then click Migrate.
+      </div>
       <div class="msg" id="msg"></div>
     </div>
 

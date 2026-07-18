@@ -90,6 +90,8 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchHits, setSearchHits] = useState<Array<{ title: string; url: string }>>([]);
   const [searching, setSearching] = useState(false);
+  const [companionId, setCompanionId] = useState("");
+  const [companionMsg, setCompanionMsg] = useState("");
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -299,6 +301,18 @@ export function App() {
       );
     } catch (e) {
       setErr(String(e));
+    }
+  }
+
+  // Register the browser-extension companion (native-messaging host) on-device.
+  async function registerCompanion() {
+    setCompanionMsg("Registering…");
+    try {
+      const r = (await invoke("register_companion", { extensionId: companionId.trim() })) as string;
+      setCompanionMsg(r);
+    } catch (e) {
+      setErr(String(e));
+      setCompanionMsg("");
     }
   }
 
@@ -855,6 +869,25 @@ export function App() {
           </div>
         </section>
       )}
+
+      <section style={cardStyle}>
+        <h2 style={h2Style}>6 · Browser companion (extension)</h2>
+        <p style={{ fontSize: 12, color: "#55666f", marginTop: 0 }}>
+          Let the browser extension fill web forms from <b>this app’s</b> vault over a local bridge —
+          your keys stay here, never in the extension. Paste the extension’s id (from{" "}
+          <code style={mono}>chrome://extensions</code>) and register.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            placeholder="extension id (e.g. abcdef…)"
+            value={companionId}
+            onChange={(e) => setCompanionId(e.currentTarget.value)}
+            style={{ flex: 1, minWidth: 280, padding: "6px 8px" }}
+          />
+          <button onClick={registerCompanion}>Register companion</button>
+        </div>
+        {companionMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{companionMsg}</p>}
+      </section>
     </main>
   );
 }

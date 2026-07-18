@@ -61,4 +61,58 @@ $("enrol").onclick = async () => {
   }
 };
 
+// Enrol a passkey and obtain its PRF secret (create → get), returning {credId, prfSecret}.
+async function enrolAndGetPrf() {
+  const cred = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: "ProjectPDFs Autofill" },
+      user: {
+        id: crypto.getRandomValues(new Uint8Array(16)),
+        name: "projectpdfs-vault",
+        displayName: "ProjectPDFs Vault",
+      },
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 },
+      ],
+      authenticatorSelection: { userVerification: "required", residentKey: "preferred" },
+      extensions: { prf: {} },
+    },
+  });
+  const credId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+  const rawId = new Uint8Array(cred.rawId);
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ id: rawId, type: "public-key" }],
+      userVerification: "required",
+      extensions: { prf: { eval: { first: new TextEncoder().encode("projectpdfs-vault") } } },
+    },
+  });
+  const prf = assertion.getClientExtensionResults().prf;
+  if (!prf || !prf.results || !prf.results.first) throw new Error("authenticator has no PRF support");
+  const prfSecret = btoa(String.fromCharCode(...new Uint8Array(prf.results.first)));
+  return { credId, prfSecret };
+}
+
+$("migrate").onclick = async () => {
+  try {
+    const s = await chrome.runtime.sendMessage({ type: "status" });
+    if (!s || !s.ok || !s.unlocked) {
+      setMsg("Unlock the vault first (open the popup, enter your passphrase), then migrate.", false);
+      return;
+    }
+    setMsg("Enrol the passkey when prompted…");
+    const { credId, prfSecret } = await enrolAndGetPrf();
+    const r = await chrome.runtime.sendMessage({ type: "migrateToPasskey", credId, prfSecret });
+    if (r && r.ok) {
+      setMsg("Migrated: your vault is now unlocked by the passkey.");
+      status();
+    } else setMsg((r && r.error) || "Migration failed", false);
+  } catch (e) {
+    setMsg("Migration cancelled/failed: " + ((e && e.message) || e), false);
+  }
+};
+
 status();

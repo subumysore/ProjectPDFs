@@ -36,6 +36,18 @@ test("webauthn-prf: derived key round-trips", async () => {
   assert.deepEqual(await open(key, blob), { device: "bound" });
 });
 
+test("migration: passphrase vault re-seals under a WebAuthn key, opens the same", async () => {
+  const salt = newSalt();
+  const pass = await derivePassphraseKey("pw", salt, 50_000);
+  const data = { full_name: "Asha Rao", nationality: "Indian" };
+  const blob1 = await seal(pass, data); // created under passphrase
+  const opened = await open(pass, blob1); // "unlock" (in-memory vault)
+  const pk = await deriveWebAuthnKey(new Uint8Array(32).fill(9), salt);
+  const blob2 = await seal(pk, opened); // re-seal under passkey (same salt)
+  assert.deepEqual(await open(pk, blob2), data); // opens under passkey
+  await assert.rejects(() => open(pass, blob2)); // old passphrase no longer opens it
+});
+
 test("keys are non-extractable", async () => {
   const key = await derivePassphraseKey("pw", newSalt(), 50_000);
   assert.equal(key.extractable, false);

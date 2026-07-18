@@ -112,6 +112,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           lock();
           sendResponse({ ok: true });
           break;
+        case "migrateToPasskey": {
+          // Re-seal the CURRENTLY-UNLOCKED vault with a WebAuthn-PRF key.
+          if (!key) throw new Error("unlock the vault (passphrase) first");
+          let { salt } = await store();
+          if (!salt) salt = newSalt();
+          const secret = Uint8Array.from(atob(msg.prfSecret), (c) => c.charCodeAt(0));
+          const newKey = await deriveWebAuthnKey(secret, salt);
+          await chrome.storage.local.set({
+            salt,
+            kdf: "webauthn-prf",
+            credId: msg.credId,
+            blob: await seal(newKey, vault),
+          });
+          key = newKey; // now unlocked under the passkey
+          sendResponse({ ok: true });
+          break;
+        }
         case "companionPing":
           sendResponse(await hostRequest({ type: "ping" }));
           break;
