@@ -220,7 +220,7 @@ export function App() {
       const { created, filled, data, fields } = fillOfficeForm(buf, kind, vault);
       if (created === 0) {
         setPdfMsg(
-          "No named fields (Word content controls / Excel named ranges) found in this file. Flat Word/Excel detection is coming (RFC-0002 Phase B).",
+          "Couldn’t find fillable fields in this Word/Excel file (no named fields, table labels, or “Label:” lines matched your vault keys).",
         );
         return;
       }
@@ -627,8 +627,9 @@ export function App() {
             <br />
             <span style={{ opacity: 0.75 }}>
               A <b>web URL</b> is downloaded on-device (direct from the site, SSRF-guarded) then filled the
-              same way. <b>Word/Excel</b> (.docx/.xlsx) forms fill their named fields (content controls /
-              named ranges) from your vault and download as a filled file. For a <b>known</b> form, search &amp;
+              same way. <b>Word/Excel</b> (.docx/.xlsx) forms are filled from your vault — named fields
+              (content controls / named ranges) or flat labels (table cells / “Label:” lines) — and
+              download as a filled file. For a <b>known</b> form, search &amp;
               select it in step 3 first so exact catalog coordinates are used.
             </span>
           </div>

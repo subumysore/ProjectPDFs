@@ -77,6 +77,19 @@ function firstChildTag(node: Node, name: string): Node | undefined {
   if (!t || !Array.isArray(node[t])) return undefined;
   return node[t].find((c: Node) => tagOf(c) === name);
 }
+// Recursively concatenate all text under a node.
+function textOf(node: Node): string {
+  let s = node["#text"] !== undefined ? String(node["#text"]) : "";
+  const t = tagOf(node);
+  if (t && Array.isArray(node[t])) for (const c of node[t]) s += textOf(c);
+  return s;
+}
+// Direct children nodes with the given tag (non-recursive).
+function childrenTag(node: Node, name: string): Node[] {
+  const t = tagOf(node);
+  if (!t || !Array.isArray(node[t])) return [];
+  return node[t].filter((c: Node) => tagOf(c) === name);
+}
 
 // ---------------- DOCX: Word content controls (w:sdt) ----------------
 export function fillDocx(bytes: ArrayBuffer, vault: Record<string, string>): OfficeFillResult {
@@ -116,8 +129,85 @@ export function fillDocx(bytes: ArrayBuffer, vault: Record<string, string>): Off
     filled++;
   }
 
+  // Phase B fallback: no named content controls → detect flat labels.
+  if (created === 0) {
+    const flat = fillDocxFlat(tree, vault);
+    created += flat.created;
+    filled += flat.filled;
+    fields.push(...flat.fields);
+  }
+
   zip[path] = strToU8(builder.build(tree));
   return { created, filled, data: zipSync(zip), fields };
+}
+
+// Write a value into a table cell (w:tc): reuse its first w:t, else append a run.
+function setCellTextDocx(tc: Node, value: string): void {
+  const tNodes = findAll([tc], "w:t");
+  const first = tNodes[0];
+  if (first) {
+    first["w:t"] = [{ "#text": value }];
+    for (let i = 1; i < tNodes.length; i++) {
+      const t = tNodes[i];
+      if (t) t["w:t"] = [{ "#text": "" }];
+    }
+    return;
+  }
+  const p = firstChildTag(tc, "w:p");
+  const run: Node = { "w:r": [{ "w:t": [{ "#text": value }], ":@": { "@_xml:space": "preserve" } }] };
+  if (p && Array.isArray(p["w:p"])) p["w:p"].push(run);
+  else if (Array.isArray(tc["w:tc"])) tc["w:tc"].push({ "w:p": [run] });
+}
+
+// Flat DOCX detection (Phase B): table label→next cell, and "Label:" paragraphs.
+function fillDocxFlat(tree: Node[], vault: Record<string, string>) {
+  const fields: OfficeFillResult["fields"] = [];
+  let created = 0;
+  let filled = 0;
+  const used = new Set<string>();
+
+  // 1) Tables: a label cell fills the NEXT cell in its row.
+  for (const tbl of findAll(tree, "w:tbl")) {
+    for (const tr of findAll([tbl], "w:tr")) {
+      const cells = childrenTag(tr, "w:tc");
+      for (let i = 0; i < cells.length - 1; i++) {
+        const cell = cells[i];
+        if (!cell) continue;
+        const label = textOf(cell).trim();
+        const key = nameToKey(label, vault);
+        if (!key || used.has(key)) continue;
+        const value = vault[key];
+        if (value === undefined) continue;
+        const target = cells[i + 1];
+        if (!target) continue;
+        setCellTextDocx(target, value);
+        used.add(key);
+        created++;
+        filled++;
+        fields.push({ name: label, ontology_key: key, value });
+      }
+    }
+  }
+
+  // 2) Paragraphs shaped like "Full name: ____" → append the value inline.
+  for (const p of findAll(tree, "w:p")) {
+    const text = textOf(p).trim();
+    const m = /^(.{1,40}?)[:：]\s*_*\s*$/.exec(text);
+    if (!m || !m[1]) continue;
+    const key = nameToKey(m[1], vault);
+    if (!key || used.has(key)) continue;
+    const value = vault[key];
+    if (value === undefined) continue;
+    if (Array.isArray(p["w:p"])) {
+      p["w:p"].push({ "w:r": [{ "w:t": [{ "#text": ` ${value}` }], ":@": { "@_xml:space": "preserve" } }] });
+      used.add(key);
+      created++;
+      filled++;
+      fields.push({ name: m[1].trim(), ontology_key: key, value });
+    }
+  }
+
+  return { created, filled, fields };
 }
 
 // ---------------- XLSX: Excel named ranges (definedName) ----------------
@@ -189,7 +279,108 @@ export function fillXlsx(bytes: ArrayBuffer, vault: Record<string, string>): Off
     zip[sheetPath] = strToU8(builder.build(sheet));
   }
 
+  // Phase B fallback: no named ranges filled → detect flat label cells.
+  if (created === 0) {
+    const flat = fillXlsxFlat(zip, sheetRid, ridTarget, vault);
+    created += flat.created;
+    filled += flat.filled;
+    fields.push(...flat.fields);
+  }
+
   return { created, filled, data: zipSync(zip), fields };
+}
+
+function parseRef(ref: string): { col: string; row: number } | null {
+  const m = /^([A-Z]+)(\d+)$/.exec(ref);
+  return m && m[1] && m[2] ? { col: m[1], row: parseInt(m[2], 10) } : null;
+}
+function indexToCol(n: number): string {
+  let s = "";
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+// Read shared strings (labels are usually stored there).
+function readSharedStrings(zip: Record<string, Uint8Array>): string[] {
+  if (!zip["xl/sharedStrings.xml"]) return [];
+  const sst: Node[] = parser.parse(strFromU8(zip["xl/sharedStrings.xml"]));
+  return findAll(sst, "si").map((si) => textOf(si));
+}
+function cellTextXlsx(cell: Node, shared: string[]): string {
+  const t = attr(cell, "t");
+  if (t === "s") {
+    const v = firstChildTag(cell, "v");
+    const idx = v ? parseInt(textOf(v), 10) : NaN;
+    return Number.isFinite(idx) ? shared[idx] ?? "" : "";
+  }
+  if (t === "inlineStr") {
+    const is = firstChildTag(cell, "is");
+    return is ? textOf(is) : "";
+  }
+  const v = firstChildTag(cell, "v");
+  return v ? textOf(v) : "";
+}
+
+// Flat XLSX detection (Phase B): a label cell fills its RIGHT neighbour (else BELOW).
+function fillXlsxFlat(
+  zip: Record<string, Uint8Array>,
+  sheetRid: Record<string, string>,
+  ridTarget: Record<string, string>,
+  vault: Record<string, string>,
+) {
+  const shared = readSharedStrings(zip);
+  const fields: OfficeFillResult["fields"] = [];
+  let created = 0;
+  let filled = 0;
+  const used = new Set<string>();
+
+  for (const rid of Object.values(sheetRid)) {
+    const rel = ridTarget[rid];
+    if (!rel) continue;
+    const sheetPath = `xl/${rel}`;
+    if (!zip[sheetPath]) continue;
+    const sheet: Node[] = parser.parse(strFromU8(zip[sheetPath]));
+    const sheetData = findAll(sheet, "sheetData")[0];
+    if (!sheetData) continue;
+
+    // Map ref -> text for emptiness checks + label scan.
+    const textAt: Record<string, string> = {};
+    for (const row of childrenTag(sheetData, "row")) {
+      for (const c of childrenTag(row, "c")) {
+        const ref = attr(c, "r");
+        if (ref) textAt[ref] = cellTextXlsx(c, shared).trim();
+      }
+    }
+
+    let changed = false;
+    for (const [ref, label] of Object.entries(textAt)) {
+      if (!label) continue;
+      const key = nameToKey(label, vault);
+      if (!key || used.has(key)) continue;
+      const value = vault[key];
+      if (value === undefined) continue;
+      const pos = parseRef(ref);
+      if (!pos) continue;
+      const right = `${indexToCol(colToIndex(pos.col) + 1)}${pos.row}`;
+      const below = `${pos.col}${pos.row + 1}`;
+      const target = !textAt[right] ? right : !textAt[below] ? below : null;
+      if (!target) continue;
+      setCell(sheetData, target, value);
+      textAt[target] = value;
+      used.add(key);
+      created++;
+      filled++;
+      changed = true;
+      fields.push({ name: label, ontology_key: key, value });
+    }
+    if (changed) zip[sheetPath] = strToU8(builder.build(sheet));
+  }
+
+  return { created, filled, fields };
 }
 
 // Set a cell to an inline string, creating the row/cell in order if needed.
