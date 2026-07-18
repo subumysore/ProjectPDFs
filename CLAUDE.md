@@ -20,8 +20,13 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
     tagging, embeddings/search, font subsetting, PDF fill/export). No cloud AI on user content — ever.
   - **Servers may only serve assets DOWNWARD** (fonts, models, app updates) and must NEVER receive
     user content. Inbound downloads are fine; outbound user data is forbidden.
-  - **The only permitted user-data egress is "Submit online" (#7):** user-initiated, device→intended
-    recipient DIRECTLY, never proxied or stored by us, and explicitly labelled as sending their data.
+  - **Permitted user-directed egress (user-initiated, device→recipient DIRECTLY, never proxied or
+    stored by us, explicitly labelled):**
+    1. **"Submit online" (#7)** — sends the filled form to the intended recipient.
+    2. **Web search to locate a form (ADR-0013)** — sends ONLY the user's typed search query to a
+       privacy-respecting engine (DuckDuckGo) directly; never form content, vault data, or identifiers.
+    No other user-data egress is permitted. Both are opt-in and prominently labelled; everything else
+    (OCR, translation, fill, etc.) stays on-device.
   - **No content telemetry/analytics/crash payloads.** PDFs are rendered with scripting disabled and
     external-resource loading blocked (anti-exfiltration).
   - **The test for any new work:** "does user content go UP?" If yes → not allowed, redesign on-device.

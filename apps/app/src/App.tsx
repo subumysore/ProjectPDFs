@@ -83,6 +83,9 @@ export function App() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [formUrl, setFormUrl] = useState("");
   const [officeFilled, setOfficeFilled] = useState<{ data: Uint8Array; kind: OfficeKind } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchHits, setSearchHits] = useState<Array<{ title: string; url: string }>>([]);
+  const [searching, setSearching] = useState(false);
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -267,9 +270,29 @@ export function App() {
     }
   }
 
+  // Web search to LOCATE a form. This is a user-directed egress exception: the query
+  // leaves the device (device → DuckDuckGo directly, never via our servers). Results
+  // are downloaded + filled on-device via the same pipeline.
+  async function webSearch() {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setErr("");
+    setSearching(true);
+    setSearchHits([]);
+    try {
+      const hits = (await invoke("web_search", { query: q })) as Array<{ title: string; url: string }>;
+      setSearchHits(hits);
+      if (hits.length === 0) setPdfMsg("No web results found. Try different terms, or paste a URL above.");
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setSearching(false);
+    }
+  }
+
   // Fetch a form from the web (URL) on-device, then run the same auto pipeline.
-  async function fetchFromUrl() {
-    const url = formUrl.trim();
+  async function fetchFromUrl(explicitUrl?: string) {
+    const url = (explicitUrl ?? formUrl).trim();
     if (!url) {
       setPdfMsg("Enter a form URL (https://…).");
       return;
@@ -640,8 +663,48 @@ export function App() {
               onChange={(e) => setFormUrl(e.currentTarget.value)}
               style={{ flex: 1, minWidth: 260, padding: "6px 8px" }}
             />
-            <button onClick={fetchFromUrl}>Fetch &amp; fill</button>
+            <button onClick={() => fetchFromUrl()}>Fetch &amp; fill</button>
           </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+            <label style={{ fontSize: 13, opacity: 0.8 }}>…or search the web:</label>
+            <input
+              type="search"
+              placeholder="e.g. India passport renewal form"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") webSearch();
+              }}
+              style={{ flex: 1, minWidth: 260, padding: "6px 8px" }}
+            />
+            <button onClick={webSearch} disabled={searching}>
+              {searching ? "Searching…" : "Search"}
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: "#8a4b0a", background: "#fbe7cf", borderRadius: 6, padding: "6px 8px", marginTop: 6 }}>
+            ⚠ Web search is the one thing that <b>leaves your device</b>: your search terms go to
+            DuckDuckGo <b>directly</b> (device → DuckDuckGo, never via our servers, no tracking). Everything
+            else — the form and your data — stays on-device. Skip this and paste a URL if you prefer.
+          </div>
+          {searchHits.length > 0 && (
+            <div style={{ marginTop: 8, border: "1px solid #eef2f4", borderRadius: 8, padding: 8 }}>
+              <div style={{ fontSize: 12, color: "#55666f", marginBottom: 6 }}>
+                Results — “Fill this” downloads it on-device and fills it:
+              </div>
+              {searchHits.map((h) => (
+                <div key={h.url} style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+                  <button onClick={() => fetchFromUrl(h.url)} style={{ flexShrink: 0 }}>
+                    Fill this
+                  </button>
+                  <span style={{ fontSize: 13 }}>
+                    <b>{h.title}</b>
+                    <br />
+                    <span style={{ fontSize: 11, color: "#55666f" }}>{h.url}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
             Pick a form (PDF or an image/scan). It’s handled <b>automatically</b>: if it already has form
             fields they’re filled from your vault; if it has <b>none</b>, on-device OCR detects the fields,

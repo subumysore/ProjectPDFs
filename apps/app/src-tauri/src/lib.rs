@@ -402,6 +402,27 @@ async fn download_form(url: String) -> Result<tauri::ipc::Response, String> {
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+/// A web-search hit (title + URL) returned to the UI.
+#[derive(serde::Serialize)]
+struct SearchHit {
+    title: String,
+    url: String,
+}
+
+/// Search the web for a form (DuckDuckGo). **User-directed egress exception:** the
+/// query leaves the device (device → DuckDuckGo directly, never via our servers).
+/// The chosen result URL is then downloaded + filled on-device.
+#[tauri::command]
+async fn web_search(query: String) -> Result<Vec<SearchHit>, String> {
+    let hits = core_fetch::web_search(query.trim())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(hits
+        .into_iter()
+        .map(|(title, url)| SearchHit { title, url })
+        .collect())
+}
+
 /// App entry (also the mobile entry point under Tauri v2).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -438,7 +459,8 @@ pub fn run() {
             sign_form,
             form_signatures,
             open_submit_url,
-            download_form
+            download_form,
+            web_search
         ])
         .run(tauri::generate_context!())
         .expect("error while running ProjectPDFs");

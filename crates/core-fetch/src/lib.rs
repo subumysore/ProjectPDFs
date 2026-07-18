@@ -113,6 +113,76 @@ pub async fn fetch_form(raw: &str) -> Result<Vec<u8>, FetchError> {
     Ok(bytes.to_vec())
 }
 
+/// Decode a small set of HTML entities found in result titles.
+fn decode_entities(s: &str) -> String {
+    s.replace("&amp;", "&")
+        .replace("&#x27;", "'")
+        .replace("&#39;", "'")
+        .replace("&quot;", "\"")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+}
+fn strip_tags(s: &str) -> String {
+    let re = regex::Regex::new(r"<[^>]*>").expect("valid regex");
+    re.replace_all(s, "").into_owned()
+}
+// DuckDuckGo wraps result links as //duckduckgo.com/l/?uddg=<real-url>. Unwrap it.
+fn extract_uddg(href: &str) -> Option<String> {
+    let full = if href.starts_with("//") {
+        format!("https:{href}")
+    } else {
+        href.to_string()
+    };
+    let u = Url::parse(&full).ok()?;
+    u.query_pairs().find(|(k, _)| k == "uddg").map(|(_, v)| v.into_owned())
+}
+
+/// Parse DuckDuckGo HTML results into (title, url) pairs. Pure/offline for testing.
+pub fn parse_ddg_results(html: &str) -> Vec<(String, String)> {
+    let re = regex::Regex::new(r#"class="result__a"[^>]*?href="([^"]+)"[^>]*?>(.*?)</a>"#)
+        .expect("valid regex");
+    let mut out = Vec::new();
+    for cap in re.captures_iter(html) {
+        let href = cap[1].replace("&amp;", "&");
+        let url = extract_uddg(&href).unwrap_or(href);
+        if !url.starts_with("http") {
+            continue;
+        }
+        let title = strip_tags(&decode_entities(&cap[2])).trim().to_string();
+        if title.is_empty() {
+            continue;
+        }
+        out.push((title, url));
+        if out.len() >= 10 {
+            break;
+        }
+    }
+    out
+}
+
+/// Search the web for a form via DuckDuckGo (privacy-respecting, no tracking).
+/// **This sends the query off-device** — a user-directed egress exception (like
+/// "Submit online"): device → DuckDuckGo directly, never proxied by us. Returns
+/// (title, url) hits; the chosen URL is later fetched + filled on-device.
+pub async fn web_search(query: &str) -> Result<Vec<(String, String)>, FetchError> {
+    let q: String = url::form_urlencoded::byte_serialize(query.trim().as_bytes()).collect();
+    if q.is_empty() {
+        return Ok(vec![]);
+    }
+    let endpoint = format!("https://html.duckduckgo.com/html/?q={q}");
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(20))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) ProjectPDFs")
+        .build()
+        .map_err(|_| FetchError::Request)?;
+    let resp = client.get(endpoint).send().await.map_err(|_| FetchError::Request)?;
+    if !resp.status().is_success() {
+        return Err(FetchError::Request);
+    }
+    let html = resp.text().await.map_err(|_| FetchError::Request)?;
+    Ok(parse_ddg_results(&html))
+}
+
 /// Returns this crate's stable module name.
 pub fn module_name() -> &'static str {
     "core-fetch"
@@ -155,5 +225,22 @@ mod tests {
     #[test]
     fn module_name_is_stable() {
         assert_eq!(module_name(), "core-fetch");
+    }
+
+    #[test]
+    fn parses_ddg_results_and_unwraps_redirect() {
+        let html = r##"
+            <div class="result">
+              <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fpassport.gov.example%2Fform.pdf&amp;rut=abc">Passport <b>Form</b> PDF</a>
+            </div>
+            <div class="result">
+              <a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fforms.example.org%2Fkyc">Bank KYC &amp; Details</a>
+            </div>"##;
+        let hits = parse_ddg_results(html);
+        assert_eq!(hits.len(), 2);
+        assert_eq!(hits[0].0, "Passport Form PDF"); // tags stripped
+        assert_eq!(hits[0].1, "https://passport.gov.example/form.pdf"); // uddg unwrapped
+        assert_eq!(hits[1].0, "Bank KYC & Details"); // entity decoded
+        assert_eq!(hits[1].1, "https://forms.example.org/kyc");
     }
 }
