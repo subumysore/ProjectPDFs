@@ -61,3 +61,7 @@ apps/app/public/ort/
 *.cer
 *.crt
 *.key
+
+# Extension package output
+apps/extension/dist/
+apps/extension/.chrome-ext-*/
