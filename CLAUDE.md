@@ -14,8 +14,10 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
 - **SINGLE SOURCE OF TRUTH:** each concept has ONE authoritative home (schema, config, API contract).
   Duplicating it is forbidden.
 - **SECURITY & DATA:** follow `docs/security/data-classification.md`. Secrets never in code or git.
-- **PRIVACY INVARIANT (non-negotiable, overrides everything):** *No user content ever travels UP to
-  our servers or any third party the user did not explicitly direct it to.* Concretely:
+- **PRIVACY INVARIANT (non-negotiable, overrides everything):** *We do not SEE, STORE, or SEND user
+  content to ANY location the user did not intend. User content leaves the device ONLY to the exact
+  destination the user explicitly chose (e.g. the recipient of a form they submit) — never to us, never
+  to a third party, never to any unintended location.* Concretely:
   - **Every operation that touches user values runs ON-DEVICE** (OCR, translation, AI field-naming,
     tagging, embeddings/search, font subsetting, PDF fill/export). No cloud AI on user content — ever.
   - **Servers may only serve assets DOWNWARD** (fonts, models, app updates) and must NEVER receive
@@ -29,7 +31,9 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
     (OCR, translation, fill, etc.) stays on-device.
   - **No content telemetry/analytics/crash payloads.** PDFs are rendered with scripting disabled and
     external-resource loading blocked (anti-exfiltration).
-  - **The test for any new work:** "does user content go UP?" If yes → not allowed, redesign on-device.
+  - **The test for any new work:** "could this let us — or any unintended party — SEE, STORE, or RECEIVE
+    user content, or send it anywhere the user did not explicitly choose?" If yes → not allowed, redesign
+    on-device. The only sanctioned egress is user-initiated, device→user-chosen-destination, direct.
 - **STATUS LIVES IN ONE PLACE:** requirement status lives ONLY in
   `memory-bank/requirements-traceability-matrix.md`.
 
