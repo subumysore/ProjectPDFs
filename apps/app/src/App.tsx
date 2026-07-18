@@ -490,7 +490,7 @@ export function App() {
     >
       <h1 style={{ marginBottom: 2 }}>ProjectPDFs</h1>
       <p style={{ color: "#55666f", marginTop: 0 }}>
-        Privacy-first, on-device form autofill — your data never leaves this device.
+        Privacy-first, on-device form autofill — processed on your device; we never see your data.
       </p>
       {err && (
         <p style={{ color: "#9a2c2c", cursor: "pointer" }} onClick={() => setErr("")}>
