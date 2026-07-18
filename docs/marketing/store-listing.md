@@ -56,8 +56,9 @@ Free to use. Pro features (multi-format, OCR make-fillable, translation, signing
 - No host permissions requested for background access; no analytics; no remote code (MV3).
 
 ## Required links
-- Privacy policy: `https://<your-domain>/privacy` (see docs/marketing/privacy-policy.md)
-- Homepage / support: `https://<your-domain>`
+- Privacy policy: **https://polyglotformfill.surge.sh/privacy/** (live)
+- Homepage: **https://polyglotformfill.surge.sh/** (live)
+- Support email: `[your email]`
 
 ## Assets checklist
 - 128×128 icon (replace the placeholder)
