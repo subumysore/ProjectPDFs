@@ -28,6 +28,94 @@ struct SaveInfo {
 struct AppState {
     store: Mutex<Store>,
     sign_secret: [u8; 32],
+    /// Whether the user has unlocked the app this session. Data commands refuse until true.
+    unlocked: Mutex<bool>,
+    /// App-data dir (holds the lock verifier file).
+    data_dir: std::path::PathBuf,
+}
+
+// ---- App unlock (passphrase gate) ------------------------------------------------
+// The app requires a passphrase to open. We store a SALTED, ITERATED verifier (not the
+// passphrase, not the vault key) so nobody can open the app UI or read the vault via
+// commands without it. At-rest encryption (OS keystore) is unchanged; this adds an
+// access gate so "nobody can access without signing in" holds on the desktop too.
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LockFile {
+    salt: String,
+    hash: String,
+    iters: u32,
+}
+
+fn lock_path(dir: &std::path::Path) -> std::path::PathBuf {
+    dir.join("app-lock.json")
+}
+
+fn kdf(salt: &str, passphrase: &str, iters: u32) -> String {
+    let mut h = core_crypto::sha256_hex(format!("{salt}\u{0}{passphrase}").as_bytes());
+    for _ in 1..iters {
+        h = core_crypto::sha256_hex(h.as_bytes());
+    }
+    h
+}
+
+/// Lock status for the UI: whether a passphrase is set, and whether we're unlocked.
+#[tauri::command]
+fn lock_status(state: State<AppState>) -> serde_json::Value {
+    let has = lock_path(&state.data_dir).exists();
+    let unlocked = *state.unlocked.lock().unwrap();
+    serde_json::json!({ "has_passphrase": has, "unlocked": unlocked })
+}
+
+/// First-run: set the app passphrase (creates the verifier) and unlock.
+#[tauri::command]
+fn set_passphrase(state: State<AppState>, passphrase: String) -> Result<(), String> {
+    if passphrase.trim().len() < 6 {
+        return Err("Passphrase must be at least 6 characters.".into());
+    }
+    let path = lock_path(&state.data_dir);
+    if path.exists() {
+        return Err("A passphrase is already set; use unlock.".into());
+    }
+    let salt = key_to_hex(&core_crypto::generate_key());
+    let iters = 100_000u32;
+    let lf = LockFile {
+        hash: kdf(&salt, passphrase.trim(), iters),
+        salt,
+        iters,
+    };
+    std::fs::write(&path, serde_json::to_vec_pretty(&lf).unwrap()).map_err(|e| e.to_string())?;
+    *state.unlocked.lock().unwrap() = true;
+    Ok(())
+}
+
+/// Unlock the app by verifying the passphrase against the stored verifier.
+#[tauri::command]
+fn unlock(state: State<AppState>, passphrase: String) -> Result<(), String> {
+    let path = lock_path(&state.data_dir);
+    let bytes = std::fs::read(&path).map_err(|_| "No passphrase set.".to_string())?;
+    let lf: LockFile = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    if kdf(&lf.salt, passphrase.trim(), lf.iters) == lf.hash {
+        *state.unlocked.lock().unwrap() = true;
+        Ok(())
+    } else {
+        Err("Incorrect passphrase.".into())
+    }
+}
+
+/// Re-lock the app (e.g. when stepping away).
+#[tauri::command]
+fn lock_app(state: State<AppState>) {
+    *state.unlocked.lock().unwrap() = false;
+}
+
+/// Guard used by every command that exposes user data.
+fn require_unlocked(state: &State<AppState>) -> Result<(), String> {
+    if *state.unlocked.lock().unwrap() {
+        Ok(())
+    } else {
+        Err("locked — unlock the app first".into())
+    }
 }
 
 /// Result of signing a form version.
@@ -103,6 +191,7 @@ fn demo_autofill() -> Result<AutofillResult, String> {
 
 #[tauri::command]
 fn create_profile(state: State<AppState>, id: String, name: String) -> Result<(), String> {
+    require_unlocked(&state)?;
     state
         .store
         .lock()
@@ -113,11 +202,13 @@ fn create_profile(state: State<AppState>, id: String, name: String) -> Result<()
 
 #[tauri::command]
 fn list_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
+    require_unlocked(&state)?;
     state.store.lock().unwrap().list_profiles().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn list_data_points(state: State<AppState>, profile_id: String) -> Result<Vec<DataPoint>, String> {
+    require_unlocked(&state)?;
     state
         .store
         .lock()
@@ -133,6 +224,7 @@ fn upsert_data_point(
     key: String,
     value: String,
 ) -> Result<(), String> {
+    require_unlocked(&state)?;
     state
         .store
         .lock()
@@ -143,6 +235,7 @@ fn upsert_data_point(
 
 #[tauri::command]
 fn delete_data_point(state: State<AppState>, profile_id: String, key: String) -> Result<(), String> {
+    require_unlocked(&state)?;
     state
         .store
         .lock()
@@ -174,6 +267,7 @@ fn autofill_for(
     profile_id: String,
     entry_id: String,
 ) -> Result<AutofillResult, String> {
+    require_unlocked(&state)?;
     let store = state.store.lock().unwrap();
     let vault = store.vault(&profile_id).map_err(|e| e.to_string())?;
     let catalog = demo_catalog();
@@ -252,6 +346,7 @@ fn save_filled_form(
     profile_id: String,
     entry_id: String,
 ) -> Result<SaveInfo, String> {
+    require_unlocked(&state)?;
     let store = state.store.lock().unwrap();
     let vault = store.vault(&profile_id).map_err(|e| e.to_string())?;
     let catalog = demo_catalog();
@@ -322,6 +417,7 @@ fn load_or_create_sign_key(dir: &std::path::Path) -> [u8; 32] {
 /// a provenance manifest (doc hash + signer identity), and store the signature.
 #[tauri::command]
 fn sign_form(state: State<AppState>, profile_id: String, entry_id: String) -> Result<SignInfo, String> {
+    require_unlocked(&state)?;
     let store = state.store.lock().unwrap();
     let instance_id = format!("{profile_id}:{entry_id}");
     let versions = store.list_versions(&instance_id).map_err(|e| e.to_string())?;
@@ -369,6 +465,7 @@ fn form_signatures(
     profile_id: String,
     entry_id: String,
 ) -> Result<Vec<core_store::SignatureRecord>, String> {
+    require_unlocked(&state)?;
     let store = state.store.lock().unwrap();
     store
         .list_signatures(&format!("{profile_id}:{entry_id}"))
@@ -529,6 +626,8 @@ pub fn run() {
             app.manage(AppState {
                 store: Mutex::new(store),
                 sign_secret,
+                unlocked: Mutex::new(false), // locked until the user enters their passphrase
+                data_dir: dir.clone(),
             });
             // Auto-register the browser companion on first run (idempotent, best-effort).
             auto_register_companion(&app.handle().clone());
@@ -552,7 +651,11 @@ pub fn run() {
             open_submit_url,
             download_form,
             web_search,
-            register_companion
+            register_companion,
+            lock_status,
+            set_passphrase,
+            unlock,
+            lock_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running PolyglotFormFill");

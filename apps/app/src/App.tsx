@@ -89,6 +89,10 @@ export function App() {
   const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
   const [translated, setTranslated] = useState<Record<string, string>>({});
   const [baseLang, setBaseLang] = useState<Lang>("en");
+  const [locked, setLocked] = useState(true);
+  const [hasPass, setHasPass] = useState(false);
+  const [pass, setPass] = useState("");
+  const [lockMsg, setLockMsg] = useState("");
   const [transMsg, setTransMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
@@ -118,9 +122,41 @@ export function App() {
   };
 
   useEffect(() => {
-    refreshProfiles();
-    doSearch("");
+    checkLock();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function checkLock() {
+    try {
+      const s = (await invoke("lock_status")) as { has_passphrase: boolean; unlocked: boolean };
+      setHasPass(s.has_passphrase);
+      setLocked(!s.unlocked);
+      if (s.unlocked) {
+        refreshProfiles();
+        doSearch("");
+      }
+    } catch {
+      /* leave locked */
+    }
+  }
+  async function submitLock() {
+    setLockMsg("");
+    try {
+      if (hasPass) await invoke("unlock", { passphrase: pass });
+      else await invoke("set_passphrase", { passphrase: pass });
+      setPass("");
+      setLocked(false);
+      refreshProfiles();
+      doSearch("");
+    } catch (e) {
+      setLockMsg(String(e));
+    }
+  }
+  async function lockNow() {
+    await invoke("lock_app");
+    setSelected(null);
+    setLocked(true);
+  }
 
   function selectProfile(id: string) {
     setSelected(id);
@@ -510,6 +546,44 @@ export function App() {
 
   const selectedName = profiles.find((p) => p.id === selected)?.name;
 
+  if (locked) {
+    return (
+      <main
+        style={{
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: 420,
+          margin: "0 auto",
+          padding: "80px 24px",
+          color: "#101a20",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ marginBottom: 4 }}>🔒 PolyglotFormFill</h1>
+        <p style={{ color: "#55666f", marginTop: 0 }}>
+          {hasPass ? "Enter your passphrase to unlock." : "Set a passphrase to protect your vault."}
+        </p>
+        <input
+          type="password"
+          autoFocus
+          placeholder={hasPass ? "Passphrase" : "Create a passphrase (min 6 chars)"}
+          value={pass}
+          onChange={(e) => setPass(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submitLock();
+          }}
+          style={{ width: "100%", padding: "10px 12px", margin: "12px 0", boxSizing: "border-box" }}
+        />
+        <button onClick={submitLock} style={{ padding: "10px 16px", width: "100%" }}>
+          {hasPass ? "Unlock" : "Set passphrase & continue"}
+        </button>
+        {lockMsg && <p style={{ color: "#9a2c2c", fontSize: 13 }}>{lockMsg}</p>}
+        <p style={{ color: "#8a8f92", fontSize: 12, marginTop: 20 }}>
+          Your vault stays on this device, encrypted. Nobody can open the app without this passphrase.
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main
       style={{
@@ -520,7 +594,12 @@ export function App() {
         color: "#101a20",
       }}
     >
-      <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
+        <button onClick={lockNow} style={{ fontSize: 12 }}>
+          🔒 Lock
+        </button>
+      </div>
       <p style={{ color: "#55666f", marginTop: 0 }}>
         Privacy-first, on-device form autofill — processed on your device; we never see your data.
       </p>
