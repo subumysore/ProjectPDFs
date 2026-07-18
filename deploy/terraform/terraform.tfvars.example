@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in. Get OCIDs from the OCI console.
+region           = "us-ashburn-1"
+tenancy_ocid     = "ocid1.tenancy.oc1..xxxxxxxx"
+compartment_ocid = "ocid1.tenancy.oc1..xxxxxxxx" # root compartment = your tenancy OCID (fine for Always Free)
+
+# Paste the CONTENTS of your public key (cat ~/.ssh/id_ed25519.pub)
+ssh_public_key = "ssh-ed25519 AAAA... you@host"
+
+domain = "polyglotformfill.mooo.com"
+
+# x86 Always-Free micro (simplest). For ARM Ampere instead:
+#   instance_shape = "VM.Standard.A1.Flex"
+#   ocpus          = 1
+#   memory_gb      = 6
+instance_shape = "VM.Standard.E2.1.Micro"
