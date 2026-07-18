@@ -76,6 +76,7 @@ export function App() {
   const [points, setPoints] = useState<DataPoint[]>([]);
   const [editKey, setEditKey] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
+  const [imgKey, setImgKey] = useState("");
   const [newProfile, setNewProfile] = useState("");
   const [k, setK] = useState("");
   const [v, setV] = useState("");
@@ -253,6 +254,19 @@ export function App() {
     await guard(invoke("upsert_data_point", { profileId: selected, key: k.trim(), value: v }));
     setK("");
     setV("");
+    loadPoints(selected);
+  }
+  // Store an image (profile photo, signature, …) against a key as a sealed base64
+  // data-URI — encrypted at rest like any value, entirely on-device.
+  async function addImagePoint(key: string, file: File) {
+    if (!selected || !key.trim()) return;
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+    await guard(invoke("upsert_data_point", { profileId: selected, key: key.trim(), value: dataUrl }));
     loadPoints(selected);
   }
   async function removePoint(key: string) {
@@ -682,6 +696,12 @@ export function App() {
                         }}
                         style={{ padding: "4px 6px", width: "90%" }}
                       />
+                    ) : dp.value.startsWith("data:image") ? (
+                      <img
+                        src={dp.value}
+                        alt={dp.key}
+                        style={{ maxHeight: 48, maxWidth: 160, border: "1px solid #eef2f4", borderRadius: 4 }}
+                      />
                     ) : (
                       dp.value
                     )}
@@ -725,6 +745,27 @@ export function App() {
               style={{ padding: 8, flex: 1 }}
             />
             <button onClick={addPoint}>Save</button>
+          </div>
+          <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
+            <label style={{ color: "#55666f" }}>Add image (photo / signature):</label>
+            <input
+              placeholder="key (e.g. profile_photo, signature)"
+              value={imgKey}
+              onChange={(e) => setImgKey(e.currentTarget.value)}
+              style={{ padding: 6, ...mono, width: "35%" }}
+            />
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={(e) => {
+                const f = e.currentTarget.files?.[0];
+                if (f && imgKey.trim()) {
+                  addImagePoint(imgKey, f);
+                  setImgKey("");
+                  e.currentTarget.value = "";
+                }
+              }}
+            />
           </div>
 
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
