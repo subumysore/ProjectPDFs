@@ -697,9 +697,10 @@ export function App() {
                         <input
                           placeholder="type your answer — it’s remembered"
                           value={answers[f.ontology_key] ?? ""}
-                          onChange={(e) =>
-                            setAnswers((a) => ({ ...a, [f.ontology_key]: e.currentTarget.value }))
-                          }
+                          onChange={(e) => {
+                            const val = e.currentTarget.value;
+                            setAnswers((a) => ({ ...a, [f.ontology_key]: val }));
+                          }}
                           onBlur={(e) => captureAnswer(f.ontology_key, e.currentTarget.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") captureAnswer(f.ontology_key, e.currentTarget.value);
