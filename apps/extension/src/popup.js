@@ -141,31 +141,105 @@ $("companionFill").onclick = async () => {
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) from the native app.`);
 };
 
-// Injected into the page. Self-contained: maps each form field to an ontology key
-// and fills it from the vault. Runs in the page, reads only the DOM, sends nothing out.
+// Injected into the page. Self-contained on-device resolver: understands what each
+// form field MEANS (via a general identity ontology, not per-form rules) and DERIVES
+// the value from your atomic vault facts (compose a full name from parts, reduce a
+// name to an initial when the form asks for one). Runs in the page, reads only the
+// DOM, sends nothing out.
 function fillPage(vault) {
-  const HINTS = [
-    [/full.?name|^name$/i, "full_name"],
-    [/date.?of.?birth|dob|birth/i, "date_of_birth"],
-    [/nationalit/i, "nationality"],
-    [/passport/i, "passport_no"],
-    [/phone|mobile|tel/i, "phone"],
-    [/e.?mail/i, "email"],
-    [/address/i, "address"],
-  ];
-  const keyFor = (el) => {
-    const hay = [el.name, el.id, el.placeholder, el.getAttribute("aria-label"), (el.labels && el.labels[0] && el.labels[0].textContent) || ""].join(" ").toLowerCase();
-    const norm = hay.replace(/[^a-z0-9]+/g, "_");
-    if (vault[norm] !== undefined) return norm;
-    for (const [re, k] of HINTS) if (re.test(hay) && vault[k] !== undefined) return k;
-    return null;
+  const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
+
+  // 1) Canonical "atoms" <- the many ways a user might have named a key.
+  //    General knowledge, applied to every form — not a rule for a specific form.
+  const ALIASES = {
+    given:    ["given name", "given", "first name", "first", "forename", "fname", "christian name"],
+    middle:   ["middle name", "middle", "mname", "middle names", "middle initial", "mi", "m i"],
+    family:   ["family name", "last name", "last", "surname", "lname", "family"],
+    full:     ["full name", "name", "complete name", "legal name", "applicant name", "your name"],
+    email:    ["email", "e mail", "mail", "email address"],
+    phone:    ["phone", "mobile", "telephone", "tel", "cell", "contact number", "phone number", "msisdn"],
+    dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
+    address:  ["address", "street address", "residential address", "addr", "street"],
+    city:     ["city", "town"],
+    state:    ["state", "province", "region"],
+    zip:      ["zip", "zip code", "postal code", "pincode", "pin code", "postcode"],
+    country:  ["country", "nation"],
+    nationality: ["nationality", "citizenship"],
+    passport: ["passport", "passport no", "passport number"],
   };
+  const rawVault = {};
+  for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
+  const atoms = {};
+  for (const [canon, al] of Object.entries(ALIASES)) {
+    for (const key of Object.keys(rawVault)) {
+      if (al.some((a) => key === norm(a))) { atoms[canon] = rawVault[key]; break; }
+    }
+  }
+  const nameParts = [atoms.given, atoms.middle, atoms.family].filter(Boolean);
+
+  // 2) Concepts a form field can ask for, and how to DERIVE the value from atoms.
+  const CONCEPTS = [
+    { key: "full",        syn: ALIASES.full,        val: () => (nameParts.length ? nameParts.join(" ") : atoms.full), name: true },
+    { key: "given",       syn: ALIASES.given,       val: () => atoms.given ?? (atoms.full || "").split(/\s+/)[0], name: true },
+    { key: "middle",      syn: ALIASES.middle,      val: () => atoms.middle, name: true },
+    { key: "family",      syn: ALIASES.family,      val: () => atoms.family ?? (atoms.full || "").split(/\s+/).slice(-1)[0], name: true },
+    { key: "email",       syn: ALIASES.email,       val: () => atoms.email },
+    { key: "phone",       syn: ALIASES.phone,       val: () => atoms.phone },
+    { key: "dob",         syn: ALIASES.dob,         val: () => atoms.dob },
+    { key: "address",     syn: ALIASES.address,     val: () => atoms.address },
+    { key: "city",        syn: ALIASES.city,        val: () => atoms.city },
+    { key: "state",       syn: ALIASES.state,       val: () => atoms.state },
+    { key: "zip",         syn: ALIASES.zip,         val: () => atoms.zip },
+    { key: "country",     syn: ALIASES.country,     val: () => atoms.country },
+    { key: "nationality", syn: ALIASES.nationality, val: () => atoms.nationality ?? atoms.country },
+    { key: "passport",    syn: ALIASES.passport,    val: () => atoms.passport },
+    // Concepts we usually have NO personal atom for: matching one out-scores the
+    // generic "name" concept, so an org/username field is skipped instead of being
+    // wrongly filled with the person's name (unless the user saved such a value).
+    { key: "organization", syn: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"], val: () => rawVault["organization"] ?? rawVault["company"] ?? rawVault["employer"] },
+    { key: "username",     syn: ["username", "user name", "login", "user id", "userid", "handle"], val: () => rawVault["username"] },
+  ];
+
+  // Score how well a field label matches a concept: token overlap against each
+  // synonym phrase, with a bonus when a whole phrase is matched (so "middle" beats
+  // the single shared token "name" for a "middle name" box).
+  const score = (label, syn) => {
+    const lt = new Set(norm(label).split(" ").filter(Boolean));
+    let best = 0;
+    for (const phrase of syn) {
+      const pt = norm(phrase).split(" ").filter(Boolean);
+      if (!pt.length) continue;
+      let hit = 0;
+      for (const t of pt) if (lt.has(t)) hit++;
+      // reward absolute matched tokens so a specific 2-word phrase ("first name")
+      // beats a generic 1-word one ("name"); bonus when the whole phrase matches.
+      const s = hit * (hit / pt.length) * (hit === pt.length ? 1.6 : 1);
+      if (s > best) best = s;
+    }
+    return best;
+  };
+
+  const labelOf = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+    (el.labels && el.labels[0] && el.labels[0].textContent) || "",
+    (el.closest("label") && el.closest("label").textContent) || ""].join(" ");
+
+  // The form itself tells us to reduce a name to an initial: the word "initial",
+  // or a one-character field. No value is hardcoded — the transform is general.
+  const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
+
   let filled = 0;
-  for (const el of document.querySelectorAll("input, textarea, select")) {
-    if (el.type === "password" || el.type === "hidden" || el.disabled) continue;
-    const k = keyFor(el);
-    if (!k) continue;
-    el.value = vault[k];
+  for (const el of document.querySelectorAll("input, textarea")) {
+    if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
+    if (el.disabled || el.readOnly) continue;
+    const label = labelOf(el);
+    let pick = null, top = 0;
+    for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
+    if (!pick || top < 1.5) continue; // require a full-phrase match — avoids false fills
+    let value = pick.val();
+    if (!value) continue;
+    if (pick.name && wantsInitial(label, el)) value = initial(value);
+    el.value = value;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
     filled++;
