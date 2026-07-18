@@ -65,6 +65,8 @@ export function App() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [points, setPoints] = useState<DataPoint[]>([]);
+  const [editKey, setEditKey] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState("");
   const [newProfile, setNewProfile] = useState("");
   const [k, setK] = useState("");
   const [v, setV] = useState("");
@@ -72,6 +74,8 @@ export function App() {
   const [results, setResults] = useState<CatalogSummary[]>([]);
   const [form, setForm] = useState<CatalogSummary | null>(null);
   const [autofill, setAutofill] = useState<AutofillResult | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [learnedMsg, setLearnedMsg] = useState("");
   const [saved, setSaved] = useState<SaveInfo | null>(null);
   const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
   const [translated, setTranslated] = useState<Record<string, string>>({});
@@ -122,6 +126,22 @@ export function App() {
       invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then(setAutofill),
     );
   }
+  // Silent capture: when the user answers a field the vault didn't have, save it to
+  // the active profile's vault automatically (on-device, encrypted) so future forms
+  // fill it. Then re-run autofill so the newly-learned value shows as filled.
+  async function captureAnswer(key: string, raw: string) {
+    const value = raw.trim();
+    if (!value || !selected) return;
+    await guard(invoke("upsert_data_point", { profileId: selected, key, value }));
+    await loadPoints(selected);
+    setAnswers((a) => {
+      const next = { ...a };
+      delete next[key];
+      return next;
+    });
+    setLearnedMsg(`Remembered ${key} in your vault (on-device).`);
+    runAutofill();
+  }
   function saveForm() {
     if (!selected || !form) return;
     setSignInfo(null);
@@ -168,6 +188,17 @@ export function App() {
   async function removePoint(key: string) {
     if (!selected) return;
     await guard(invoke("delete_data_point", { profileId: selected, key }));
+    loadPoints(selected);
+  }
+  function startEdit(dp: DataPoint) {
+    setEditKey(dp.key);
+    setEditVal(dp.value);
+  }
+  async function saveEdit() {
+    if (!selected || editKey === null) return;
+    await guard(invoke("upsert_data_point", { profileId: selected, key: editKey, value: editVal.trim() }));
+    setEditKey(null);
+    setEditVal("");
     loadPoints(selected);
   }
   async function onDataSource(file: File) {
@@ -493,9 +524,34 @@ export function App() {
               {points.map((dp) => (
                 <tr key={dp.key} style={{ borderBottom: "1px solid #eef2f4" }}>
                   <td style={{ padding: "6px 8px", ...mono, width: "35%" }}>{dp.key}</td>
-                  <td style={{ padding: "6px 8px" }}>{dp.value}</td>
-                  <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                    <button onClick={() => removePoint(dp.key)}>remove</button>
+                  <td style={{ padding: "6px 8px" }}>
+                    {editKey === dp.key ? (
+                      <input
+                        value={editVal}
+                        autoFocus
+                        onChange={(e) => setEditVal(e.currentTarget.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit();
+                          if (e.key === "Escape") setEditKey(null);
+                        }}
+                        style={{ padding: "4px 6px", width: "90%" }}
+                      />
+                    ) : (
+                      dp.value
+                    )}
+                  </td>
+                  <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>
+                    {editKey === dp.key ? (
+                      <>
+                        <button onClick={saveEdit}>save</button>{" "}
+                        <button onClick={() => setEditKey(null)}>cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(dp)}>edit</button>{" "}
+                        <button onClick={() => removePoint(dp.key)}>remove</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -613,6 +669,11 @@ export function App() {
                 <button onClick={translateLabels}>Translate labels → हिन्दी (on-device)</button>
                 {transMsg && <span style={{ fontSize: 12, color: "#55666f" }}>{transMsg}</span>}
               </div>
+              <p style={{ fontSize: 12, color: "#55666f", marginTop: 8, marginBottom: 0 }}>
+                Answers you type for missing fields are <b>saved to your vault automatically</b>
+                (on-device, encrypted) so the next form fills them.
+                {learnedMsg && <span style={{ color: "#0a6a60", marginLeft: 6 }}>{learnedMsg}</span>}
+              </p>
             <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>
               <thead>
                 <tr style={{ textAlign: "left", borderBottom: "1px solid #d9e2e6" }}>
@@ -632,7 +693,20 @@ export function App() {
                     </td>
                     <td style={{ padding: "6px 8px", ...mono }}>{f.ontology_key}</td>
                     <td style={{ padding: "6px 8px" }}>
-                      {f.value ?? <em style={{ color: "#b45309" }}>not in vault — add it above</em>}
+                      {f.value ?? (
+                        <input
+                          placeholder="type your answer — it’s remembered"
+                          value={answers[f.ontology_key] ?? ""}
+                          onChange={(e) =>
+                            setAnswers((a) => ({ ...a, [f.ontology_key]: e.currentTarget.value }))
+                          }
+                          onBlur={(e) => captureAnswer(f.ontology_key, e.currentTarget.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") captureAnswer(f.ontology_key, e.currentTarget.value);
+                          }}
+                          style={{ padding: "4px 6px", minWidth: 200 }}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))}
