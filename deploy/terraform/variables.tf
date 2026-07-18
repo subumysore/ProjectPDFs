@@ -24,6 +24,12 @@ variable "domain" {
   default     = "polyglotformfill.mooo.com"
 }
 
+variable "ad_index" {
+  description = "Which availability domain to use (0,1,2). Try others if one is 'Out of host capacity'."
+  type        = number
+  default     = 0
+}
+
 variable "instance_shape" {
   description = "Always-Free eligible shape. x86: VM.Standard.E2.1.Micro. ARM: VM.Standard.A1.Flex."
   type        = string

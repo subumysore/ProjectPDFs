@@ -71,6 +71,12 @@
   .card .ic{width:34px;height:34px;border-radius:9px;background:var(--teal-soft);display:grid;place-items:center;font-size:18px;margin-bottom:12px}
   .card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
   .card p{margin:0;color:var(--muted);font-size:14px}
+  .card.feature{grid-column:1/-1;background:linear-gradient(120% 140% at 0% 0%,var(--teal-soft),var(--surface));border-color:var(--teal);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:26px 28px}
+  .card.feature .ic{width:52px;height:52px;font-size:27px;margin:0;background:linear-gradient(135deg,var(--teal),var(--teal-ink));color:#fff}
+  .card.feature h3{font-size:clamp(19px,2.6vw,25px);margin-bottom:8px}
+  .card.feature p{font-size:15.5px;color:var(--ink);max-width:70ch}
+  .card.feature .flag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-ink);display:block;margin-bottom:6px}
+  @media (max-width:560px){.card.feature{grid-template-columns:1fr}}
 
   /* polyglot band */
   .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:34px;margin-top:8px}
@@ -145,12 +151,22 @@
 </header>
 
 <section id="features" class="wrap">
-  <span class="eyebrow">What it does</span>
-  <h2 class="h2">Everything a form-filler should — without the cloud</h2>
-  <p class="sub">Most tools upload your documents to "process" them. PolyglotFormFill does the processing on your machine.</p>
+  <span class="eyebrow">The headline feature</span>
+  <h2 class="h2">Turn a non-fillable PDF into a form you can actually fill</h2>
+  <p class="sub">A flat PDF with no form fields — or even a photo or scan of one — becomes a real, fillable form
+    in seconds. No “print, hand-write, re-scan.” No uploading it to some website to do it.</p>
   <div class="grid">
+    <div class="card feature">
+      <div class="ic">🧩</div>
+      <div>
+        <span class="flag">Non-fillable → fillable</span>
+        <h3>Any flat PDF, scan, or photo becomes an editable form</h3>
+        <p>Point it at a PDF that has no fillable boxes, or even a picture of a paper form. On-device OCR reads
+          the layout, finds where every field belongs, places real form fields there, and fills them from your
+          vault — all on your machine, nothing uploaded. Then export a clean, filled PDF.</p>
+      </div>
+    </div>
     <div class="card"><div class="ic">🔒</div><h3>On-device, always</h3><p>OCR, translation, filling and signing run locally. Your data never travels to us or anyone.</p></div>
-    <div class="card"><div class="ic">🧩</div><h3>Make any PDF fillable</h3><p>A flat PDF — or a photo/scan of a form with no fields? OCR detects the fields, places them, and fills them.</p></div>
     <div class="card"><div class="ic">🌍</div><h3>Polyglot fill</h3><p>Fill an English form from your data in another language. Translation happens on your device.</p></div>
     <div class="card"><div class="ic">📄</div><h3>Word &amp; Excel too</h3><p>Fills .docx and .xlsx forms — named fields or flat labels — and can export a PDF.</p></div>
     <div class="card"><div class="ic">🧠</div><h3>A vault that learns</h3><p>Answer a new field once; it's remembered — encrypted, on your device — for next time.</p></div>
