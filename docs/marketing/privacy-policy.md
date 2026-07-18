@@ -1,6 +1,6 @@
 # PolyglotFormFill — Privacy Policy
 
-**Effective date:** [DATE] · **Version:** 1.0
+**Effective date:** 18 July 2026 · **Version:** 1.0
 
 > **⚖️ Legal review required — not legal advice.** This document is a drafting template prepared for the
 > PolyglotFormFill product. It must be reviewed and approved by qualified legal counsel licensed in each
@@ -11,12 +11,12 @@
 ---
 
 ## 1. Who we are (Data Controller / Data Fiduciary)
-This Policy is issued by **[LEGAL ENTITY NAME]**, **[registered address]** ("**we**", "**us**", "**our**"),
+This Policy is issued by **Subramanya Mysore (sole proprietor)**, **India** ("**we**", "**us**", "**our**"),
 the entity responsible for the PolyglotFormFill application, browser extension, and website (together, the
 "**Service**"). For the purposes of the GDPR we act as the **data controller**; under the India DPDP Act
 2023 we act as the **Data Fiduciary**; where we process no personal data (see §3), no such role arises.
 
-**Contact / Grievance Officer:** [NAME], [email], [postal address], [phone].
+**Contact / Grievance Officer:** Subramanya Mysore, subumysore@gmail.com, India.
 (India DPDP Act §13 requires a named Grievance Officer; the EU GDPR may require an EU representative and/or
 a Data Protection Officer — confirm with counsel.)
 
@@ -45,7 +45,7 @@ it to any location you did not intend.** Specifically:
      receive, retain, or have access to that transmission.
    - **(b) Web search (optional)** — if you use the in-Service search to locate a form, **only the search
      terms you type** are sent, directly from your Device to the third-party search provider
-     (**[DuckDuckGo]**), to return results. No User Content, vault data, or identifiers are sent. You may
+     (**DuckDuckGo**), to return results. No User Content, vault data, or identifiers are sent. You may
      avoid this entirely by entering a URL instead.
    These are the **only** circumstances in which User Content or search terms leave your Device. Each is
    user-initiated, clearly labelled in the interface, and directed to a destination you selected.
@@ -60,7 +60,7 @@ Depending on how you obtain and use the Service, the following limited, **non-co
   User Content to be uploaded. [Confirm the exact hosts and whether any are operated by us.]
 - **Payments & licensing.** Paid features are unlocked by an **offline, cryptographically-signed license**
   verified **on your Device**; license verification contacts no server and transmits nothing. If you
-  purchase a license, the payment is processed by our payment provider **[PROVIDER]** as an independent
+  purchase a license, the payment is processed by our payment provider **not applicable (no paid features yet)** as an independent
   controller/processor; we receive only the information necessary to issue and support your license
   (e.g. name, email, order id) — never your User Content. [Confirm provider and data elements.]
 - **Voluntary communications.** If you contact support, we process the information you provide to respond.
@@ -100,12 +100,12 @@ access, correct, delete, port, or restrict processing of your Personal Data, to 
 consent, and to lodge a complaint with a supervisory authority (EU) or the Data Protection Board (India).
 **Because your User Content resides solely on your Device and is not held by us, you exercise access and
 deletion of that content directly** (via the Service or by removing local data). To exercise rights over
-the limited non-content data we hold, contact us at [email]; we will respond within the timeframes
+the limited non-content data we hold, contact us at subumysore@gmail.com; we will respond within the timeframes
 required by applicable law. [Counsel to confirm verification process and statutory timelines.]
 
 ## 10. Children
 The Service is not directed to, and we do not knowingly process Personal Data of, children under the age
-of **[13 / 16 / 18 — set per jurisdiction]**. [India DPDP imposes specific requirements for children;
+of **13**. [India DPDP imposes specific requirements for children;
 confirm with counsel.]
 
 ## 11. Changes to this Policy
@@ -113,7 +113,7 @@ We may update this Policy. Material changes will be reflected by updating the "E
 required by law, by additional notice.
 
 ## 12. Contact
-**[LEGAL ENTITY NAME]** · Grievance Officer/Contact: [NAME], [email], [postal address].
+**Subramanya Mysore (sole proprietor)** · Grievance Officer/Contact: [NAME], subumysore@gmail.com, India.
 Data Protection Officer (if appointed): [NAME/email]. EU Representative (if appointed): [NAME/address].
 
 ---
