@@ -1,0 +1,7 @@
+{
+  "name": "com.projectpdfs.host",
+  "description": "ProjectPDFs native messaging host (companion trust anchor)",
+  "path": "__HOST_EXE__",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://__EXTENSION_ID__/"]
+}

@@ -1,7 +1,7 @@
 # RFC-0004: Browser-extension client with built-in security
 
-- **Status:** Accepted — **security core + MV3 scaffold implemented** (2026-07-18);
-  companion bridge + passkey enrolment pending
+- **Status:** Accepted — **security core + MV3 scaffold + companion bridge + passkey enrolment
+  implemented** (2026-07-18); engine reuse + reproducible-build pipeline pending
 - **Author(s):** ProjectPDFs team (explicit user request)
 - **Created:** 2026-07-18
 - **Related:** ADR-0002 (native-over-web decision), REQ-11.1 (fill forms wherever they live),

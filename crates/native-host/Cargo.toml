@@ -1,0 +1,20 @@
+[package]
+name = "native-host"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[[bin]]
+name = "projectpdfs-host"
+path = "src/main.rs"
+
+[lib]
+name = "native_host"
+path = "src/lib.rs"
+
+[dependencies]
+core-store = { path = "../core-store" }
+core-crypto = { path = "../core-crypto" }
+keyring = { version = "3", features = ["windows-native"] }
+serde_json = "1"
+dirs = "5"

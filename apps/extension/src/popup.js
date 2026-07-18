@@ -63,16 +63,28 @@ $("lock").onclick = async () => {
   refresh();
 };
 
-$("fill").onclick = async () => {
-  const r = await send({ type: "getVault" });
-  if (!r.ok) return setMsg(r.error || "Locked", false);
+async function fillActivePage(vault) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const [{ result } = {}] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: fillPage,
-    args: [r.vault],
+    args: [vault],
   });
-  setMsg(`Filled ${result || 0} field(s) on this page.`);
+  return result || 0;
+}
+
+$("fill").onclick = async () => {
+  const r = await send({ type: "getVault" });
+  if (!r.ok) return setMsg(r.error || "Locked", false);
+  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page.`);
+};
+
+// Companion: fetch the vault from the native app (keys never enter the extension).
+$("companionFill").onclick = async () => {
+  setMsg("Contacting native app…");
+  const r = await send({ type: "companionVault" });
+  if (!r.ok) return setMsg(r.error || "Native app unavailable", false);
+  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) from the native app.`);
 };
 
 // Injected into the page. Self-contained: maps each form field to an ontology key
