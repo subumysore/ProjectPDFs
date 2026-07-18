@@ -6,14 +6,15 @@ _Last updated: 2026-07-18. Plain-language summary first; specifics follow._
 ProjectPDFs does all of its work — reading forms, OCR, translation, filling, and signing — **on your
 own device**, and **we never receive, store, or transmit your documents or the data you enter.** The only
 data that leaves is a form *you* choose to submit (sent directly to its recipient) or a web search *you*
-type — and neither passes through our servers.
+type — and neither passes through us.
 
 ## What we do NOT collect
 - We do **not** collect your documents, forms, or the values in your vault.
 - We do **not** use analytics, tracking, advertising identifiers, or crash payloads that
   contain your content.
-- We have **no server that receives your content.** Our servers (if any) only serve assets
-  *down* to you — app updates, fonts, and models — and never receive your data.
+- There is **no account to create and no upload.** App updates, fonts, and language models download
+  one-way to your device (the way any app updates itself) — there is **no channel for your documents or
+  vault to be sent anywhere.**
 
 ## Data stored on your device (only)
 - Your **vault** (profiles and field values) is stored locally and **AES-256 encrypted**. The
