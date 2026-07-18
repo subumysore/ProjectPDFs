@@ -129,6 +129,21 @@ export async function makeFillableAndFill(
     const page = pages[f.rect.page] ?? pages[0];
     if (!page) continue;
     const opts = { x: f.rect.x, y: f.rect.y, width: f.rect.w, height: f.rect.h };
+    const val = vault[f.ontology_key];
+    // If the vault value is an IMAGE (profile photo / signature stored as a data-URI),
+    // draw it onto the page at the field's coordinates instead of a text field.
+    if (typeof val === "string" && val.startsWith("data:image")) {
+      const isPng = /^data:image\/png/i.test(val);
+      const b64 = val.split(",")[1] ?? "";
+      const imgBytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const img = isPng ? await pdf.embedPng(imgBytes) : await pdf.embedJpg(imgBytes);
+      // Fit within the field box, preserving aspect ratio.
+      const scale = Math.min(f.rect.w / img.width, (f.rect.h * 3) / img.height, 1);
+      page.drawImage(img, { x: f.rect.x, y: f.rect.y, width: img.width * scale, height: img.height * scale });
+      created++;
+      filled++;
+      continue;
+    }
     if (f.kind === "CheckBox") {
       const cb = form.createCheckBox(f.ontology_key);
       cb.addToPage(page, opts);

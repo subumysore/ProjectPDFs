@@ -15,7 +15,7 @@ page is live. Two items still need YOU (marked 🧑): a paid dev account and a r
   https://chrome.google.com/webstore/devconsole (accept the agreement; this is identity-bound, only you can do it).
 - **🧑 Real 128×128 icon** — replace the placeholder `apps/extension/icon128.png`
   (currently a 1×1 stand-in) with a proper logo, then rebuild the zip.
-- **Screenshots (≥1, 1280×800):** autofill, make-a-scanned-form-fillable, translated-view, passkey unlock.
+- **Screenshots (1280×800):** one ready at `docs/marketing/store-assets/01-vault-images-language.png` (vault + image + language + lock). More can be generated (autofill, make-fillable, translated view).
   (I can generate these from the real UI on request.)
 - **Support email** for the listing.
 
