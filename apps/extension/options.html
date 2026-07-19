@@ -12,6 +12,14 @@
       .err { color: #9a2c2c; }
       code { background: #f0f4f5; padding: 1px 5px; border-radius: 4px; }
       .muted { color: #55666f; font-size: 13px; }
+      .pack { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #eef2f3; }
+      .pack:first-child { border-top: none; }
+      .pack .lbl { flex: 1; }
+      .pack .lbl small { color: #55666f; }
+      .pack .badge { font-size: 11px; color: #0a6a60; background: #e3f2ef; padding: 2px 7px; border-radius: 999px; }
+      .bar { height: 6px; background: #eef2f3; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+      .bar > i { display: block; height: 100%; width: 0; background: #0d8f83; transition: width .15s; }
+      button.rm { background: #fff; border: 1px solid #d9b3b3; color: #9a2c2c; border-radius: 6px; }
     </style>
   </head>
   <body>
@@ -32,6 +40,20 @@
         popup, enter your passphrase), then click Migrate.
       </div>
       <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size: 16px; margin-top: 0">Language packs</h2>
+      <p class="muted">
+        Install a language pair to fill forms across languages — each pack downloads
+        <b>independently</b> and can be <b>removed anytime</b> to free space. Everything runs
+        on your device; only the model files are downloaded, never your data.
+        <br /><em>Beta: packs download &amp; store today; the on-device translator engine ships next
+        (RFC-0006 Phase 2).</em>
+      </p>
+      <div id="packs">Loading…</div>
+      <div class="muted" id="packsUsage" style="margin-top: 8px"></div>
+      <div class="msg" id="packsMsg"></div>
     </div>
 
     <div class="card">

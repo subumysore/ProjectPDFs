@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "note": "Phase-1 placeholder weights; real Bergamot models in Phase 2.",
+  "packs": [
+    {
+      "id": "en-hi",
+      "from": "en",
+      "to": "hi",
+      "label": "English ↔ हिन्दी (Hindi)",
+      "size": 266240,
+      "sha256": "958df43572b3639baf4474408257708d74456521a91c31122108ed8bba6548a4",
+      "url": "/langpacks/en-hi.bin",
+      "engine": "stub"
+    },
+    {
+      "id": "en-es",
+      "from": "en",
+      "to": "es",
+      "label": "English ↔ Español (Spanish)",
+      "size": 245760,
+      "sha256": "c5135f82f38e80e5693dbbcbc2cc71bf4385ce1752cfd3ba838d006d5f9074a5",
+      "url": "/langpacks/en-es.bin",
+      "engine": "stub"
+    },
+    {
+      "id": "en-fr",
+      "from": "en",
+      "to": "fr",
+      "label": "English ↔ Français (French)",
+      "size": 256000,
+      "sha256": "614f0e11adfde77b5afefd521a0ed6c6b876e7de16dedd45042e8a5818f3063f",
+      "url": "/langpacks/en-fr.bin",
+      "engine": "stub"
+    },
+    {
+      "id": "en-ar",
+      "from": "en",
+      "to": "ar",
+      "label": "English ↔ العربية (Arabic)",
+      "size": 276480,
+      "sha256": "900f533e14907715bb850946af73c3fd160ad0157ab55137a5e6e7c00f5c4996",
+      "url": "/langpacks/en-ar.bin",
+      "engine": "stub"
+    },
+    {
+      "id": "en-zh",
+      "from": "en",
+      "to": "zh",
+      "label": "English ↔ 中文 (Chinese)",
+      "size": 307200,
+      "sha256": "77ef9f4bc94401cd8862d8d85f73e661b02cdc1f1b743684dafa174b5d68bd44",
+      "url": "/langpacks/en-zh.bin",
+      "engine": "stub"
+    }
+  ]
+}

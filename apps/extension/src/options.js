@@ -1,6 +1,7 @@
 // Passkey enrolment. Creates a WebAuthn credential with the PRF extension enabled,
 // stores its id, and marks the vault KDF as webauthn-prf. The actual PRF secret is
 // obtained at UNLOCK time (popup → navigator.credentials.get), never stored.
+import * as packs from "./langpacks.js";
 const $ = (id) => document.getElementById(id);
 function setMsg(text, ok = true) {
   const el = $("msg");
@@ -115,4 +116,77 @@ $("migrate").onclick = async () => {
   }
 };
 
+// ---- Language packs (RFC-0006 Phase 1) ----
+const fmtMB = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
+function setPacksMsg(text, ok = true) {
+  const el = $("packsMsg");
+  el.textContent = text;
+  el.className = "msg " + (ok ? "ok" : "err");
+}
+
+async function renderPacks() {
+  const box = $("packs");
+  let available = [];
+  try {
+    available = await packs.listAvailable();
+  } catch (e) {
+    box.textContent = "Couldn't load the pack list (offline?). " + ((e && e.message) || e);
+    return;
+  }
+  const installed = await packs.listInstalled();
+  const isInstalled = (id) => installed.some((p) => p.id === id);
+  box.textContent = "";
+  if (!available.length) box.textContent = "No language packs published yet.";
+  for (const p of available) {
+    const row = document.createElement("div");
+    row.className = "pack";
+    const lbl = document.createElement("div");
+    lbl.className = "lbl";
+    lbl.innerHTML = `${p.label || p.id} <small>· ${fmtMB(p.size || 0)}</small>`;
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.display = "none";
+    const fill = document.createElement("i");
+    bar.appendChild(fill);
+    lbl.appendChild(bar);
+
+    const btn = document.createElement("button");
+    row.append(lbl, btn);
+
+    if (isInstalled(p.id)) {
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "installed";
+      row.insertBefore(badge, btn);
+      btn.textContent = "Remove";
+      btn.className = "rm";
+      btn.onclick = async () => {
+        btn.disabled = true;
+        await packs.remove(p.id);
+        setPacksMsg(`Removed ${p.label || p.id} — space freed.`);
+        renderPacks();
+      };
+    } else {
+      btn.textContent = "Install";
+      btn.onclick = async () => {
+        btn.disabled = true;
+        bar.style.display = "block";
+        setPacksMsg(`Downloading ${p.label || p.id}…`);
+        try {
+          await packs.install(p, (recv, total) => {
+            fill.style.width = total ? Math.round((recv / total) * 100) + "%" : "100%";
+          });
+          setPacksMsg(`Installed ${p.label || p.id}.`);
+        } catch (e) {
+          setPacksMsg(`Install failed: ${(e && e.message) || e}`, false);
+        }
+        renderPacks();
+      };
+    }
+  }
+  const used = await packs.usageBytes();
+  $("packsUsage").innerHTML = `Installed: <b>${installed.length}</b> pack(s) · Disk used: <b>${fmtMB(used)}</b>`;
+}
+
+renderPacks();
 status();

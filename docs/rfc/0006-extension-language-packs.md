@@ -77,8 +77,12 @@ never any user content. This upholds the privacy invariant.
 - **Reversibility:** fully additive; removing all packs returns the extension to today's behavior.
 
 ## Rollout & migration
-1. Phase 1 — pack manager UI + download/verify/store/remove in IndexedDB, with a **stub** engine
-   behind a flag (proves independent install/unload + quota accounting) and acceptance tests.
+1. Phase 1 — pack manager UI + real download/verify/store/remove in IndexedDB + quota accounting,
+   with a **stub** engine (pass-through) so the download/unload mechanics ship and are testable on
+   their own. Manifest at `<cdn>/langpacks/manifest.json`, weights at `<cdn>/langpacks/<id>.bin`,
+   each verified by `sha256`. Needs a `connect-src` + `host_permissions` entry for the pack CDN
+   (assets DOWN only — no user content sent). Phase-1 weights are small placeholders; real Bergamot
+   weights replace them in Phase 2 with no UI change.
 2. Phase 2 — bundle the Bergamot WASM engine; wire `translate()`; ship the first pair (en↔hi).
 3. Phase 3 — fill-time detection + translate-on-write + translate-for-view; add more pairs to the
    manifest (each independently installable). No migration needed (new, additive stores).
