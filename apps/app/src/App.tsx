@@ -769,7 +769,7 @@ export function App() {
         </div>
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
           <input
-            placeholder="New profile name (e.g. Asha)"
+            placeholder="New profile name (e.g. John)"
             value={newProfile}
             onChange={(e) => setNewProfile(e.currentTarget.value)}
             onKeyDown={(e) => e.key === "Enter" && addProfile()}
