@@ -29,6 +29,10 @@
   .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.05)}
   .shot img{display:block;width:100%;height:auto}
   .step.on{background:linear-gradient(90deg,var(--teal-soft),transparent 60%);border-radius:12px}
+  .hero-vid{margin:22px 0 8px}
+  .hero-vid video{width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:0 12px 34px rgba(0,0,0,.12);background:#000}
+  .hero-vid .cap{margin:8px 2px 0;color:var(--muted);font-size:14px}
+  .hero-vid .cap b{color:var(--ink)}
   footer{margin-top:40px;color:var(--muted);font-size:13px}
 </style>
 </head>
@@ -36,8 +40,12 @@
 <div class="wrap">
   <p><a href="/">← PolyglotFormFill</a></p>
   <h1>Tutorials</h1>
-  <p class="sub">Simple, numbered steps — each with a labelled screenshot. Just read top to bottom.
-    Prefer to listen? Press <b>Play narration</b> and your browser reads each step aloud, in order.</p>
+  <p class="sub">Watch the 15-second video, then follow the labelled steps below.</p>
+
+  <div class="hero-vid">
+    <video src="vid/fill-demo.webm" autoplay muted loop playsinline controls preload="auto"></video>
+    <p class="cap"><b>Watch it fill a form from your vault</b> — one click, entirely on your device. Nothing typed, nothing uploaded.</p>
+  </div>
 
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" data-t="install" aria-selected="true">① Install</button>
