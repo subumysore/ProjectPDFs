@@ -111,8 +111,58 @@ export function App() {
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [err, setErr] = useState("");
+  const [bkPass, setBkPass] = useState("");
+  const [bkMsg, setBkMsg] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+  const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
+
+  // Load per-device id + offline license status once unlocked.
+  useEffect(() => {
+    if (locked) return;
+    invoke<string>("device_id").then(setDeviceId).catch(() => {});
+    invoke<{ licensed: boolean; tier: string; subject: string; reason: string }>("license_status")
+      .then(setLic)
+      .catch(() => {});
+  }, [locked]);
+
+  async function doExport() {
+    if (!selected) return;
+    if (bkPass.length < 8) return setBkMsg("Choose a backup passphrase (8+ characters).");
+    try {
+      const arr = await invoke<number[]>("export_vault", { profileId: selected, passphrase: bkPass });
+      const blob = new Blob([new Uint8Array(arr)], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "polyglotformfill-vault.ppfvault";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBkMsg(`Exported ${points.length} field(s), encrypted. Keep the passphrase safe.`);
+    } catch (e) {
+      setBkMsg("Export failed: " + String(e));
+    }
+  }
+
+  async function doImport(file: File) {
+    if (!selected) return;
+    if (!bkPass) return setBkMsg("Enter the backup passphrase to import.");
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const n = await invoke<number>("import_vault", {
+        profileId: selected,
+        passphrase: bkPass,
+        bytes: Array.from(bytes),
+      });
+      setBkMsg(`Imported ${n} field(s).`);
+      loadPoints(selected);
+    } catch (e) {
+      setBkMsg("Import failed: " + String(e));
+    }
+  }
 
   const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then(setProfiles));
   const loadPoints = (id: string) =>
@@ -794,6 +844,44 @@ export function App() {
               </div>
             )}
           </div>
+        </section>
+      )}
+
+      {selected && !locked && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>Backup &amp; transfer (encrypted)</h2>
+          <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
+            Export this profile's vault to a passphrase-encrypted file and import it on another device
+            — or into the browser extension (same format). There is no plaintext export.
+          </p>
+          <input
+            type="password"
+            placeholder="backup passphrase (remember it!)"
+            value={bkPass}
+            onChange={(e) => setBkPass(e.currentTarget.value)}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button onClick={doExport}>Export encrypted</button>
+            <label style={{ cursor: "pointer", padding: "6px 10px", border: "1px solid #dde6e4", borderRadius: 6 }}>
+              Import file…
+              <input
+                type="file"
+                accept=".ppfvault"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.currentTarget.files?.[0];
+                  if (f) doImport(f);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
+          </div>
+          {bkMsg && <p style={{ fontSize: 13 }}>{bkMsg}</p>}
+          <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 10 }}>
+            Device ID: <code>{deviceId.slice(0, 16)}…</code> · License:{" "}
+            <b>{lic?.licensed ? lic.tier : "free"}</b>
+            {lic && !lic.licensed && lic.reason ? ` — ${lic.reason}` : ""}
+          </p>
         </section>
       )}
 

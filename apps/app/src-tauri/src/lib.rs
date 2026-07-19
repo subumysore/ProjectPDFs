@@ -244,6 +244,115 @@ fn delete_data_point(state: State<AppState>, profile_id: String, key: String) ->
         .map_err(|e| e.to_string())
 }
 
+// ---- Encrypted backup / transfer (ADR-0003) --------------------------------------
+// Export a profile's vault as a passphrase-encrypted blob. Byte-format matches the
+// browser extension (core-crypto: PBKDF2 + AES-256-GCM), so a file exported here
+// imports there and vice-versa. No plaintext export.
+
+#[tauri::command]
+fn export_vault(state: State<AppState>, profile_id: String, passphrase: String) -> Result<Vec<u8>, String> {
+    require_unlocked(&state)?;
+    if passphrase.len() < 8 {
+        return Err("choose a backup passphrase (8+ characters)".into());
+    }
+    let data = state.store.lock().unwrap().vault(&profile_id).map_err(|e| e.to_string())?;
+    let subject = device_id_for(&state.data_dir);
+    let inner = serde_json::json!({ "v": 1, "subject": subject, "data": data });
+    let bytes = serde_json::to_vec(&inner).map_err(|e| e.to_string())?;
+    Ok(core_crypto::export_encrypted(&passphrase, &bytes))
+}
+
+#[tauri::command]
+fn import_vault(
+    state: State<AppState>,
+    profile_id: String,
+    passphrase: String,
+    bytes: Vec<u8>,
+) -> Result<usize, String> {
+    require_unlocked(&state)?;
+    let plain = core_crypto::import_encrypted(&passphrase, &bytes)
+        .map_err(|_| "wrong passphrase or the file was tampered with".to_string())?;
+    let v: serde_json::Value = serde_json::from_slice(&plain).map_err(|e| e.to_string())?;
+    let data = v.get("data").and_then(|d| d.as_object()).ok_or("no data in backup")?;
+    let store = state.store.lock().unwrap();
+    let mut n = 0usize;
+    for (k, val) in data {
+        if let Some(s) = val.as_str() {
+            store
+                .put_data_point(&profile_id, &DataPoint { key: k.clone(), value: s.to_string() })
+                .map_err(|e| e.to_string())?;
+            n += 1;
+        }
+    }
+    Ok(n)
+}
+
+// ---- Per-device identity + offline license (ADR-0011) ----------------------------
+// A random per-install id (NOT hardware fingerprinting — privacy-preserving) used to
+// bind offline licenses to this device. Created once and reused.
+fn device_id_for(dir: &std::path::Path) -> String {
+    let path = dir.join("device.id");
+    if let Ok(s) = std::fs::read_to_string(&path) {
+        let t = s.trim();
+        if !t.is_empty() {
+            return t.to_string();
+        }
+    }
+    let bytes = core_crypto::generate_key();
+    let id: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+    let _ = std::fs::write(&path, &id);
+    id
+}
+
+#[tauri::command]
+fn device_id(state: State<AppState>) -> String {
+    device_id_for(&state.data_dir)
+}
+
+// Vendor Ed25519 public key. The private half stays with the storefront; a license is
+// signed there (after SSO purchase) and bound to a device id. Zero placeholder until the
+// release key is embedded — verification simply fails until then.
+const VENDOR_PUBLIC: [u8; 32] = [0u8; 32];
+
+#[derive(Serialize)]
+struct LicenseStatus {
+    licensed: bool,
+    tier: String,
+    subject: String,
+    reason: String,
+}
+
+fn license_path(dir: &std::path::Path) -> std::path::PathBuf {
+    dir.join("license.token")
+}
+
+fn check_license(dir: &std::path::Path) -> LicenseStatus {
+    let token = std::fs::read_to_string(license_path(dir)).unwrap_or_default();
+    if token.trim().is_empty() {
+        return LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: "no license installed".into() };
+    }
+    let dev = device_id_for(dir);
+    match core_license::verify_on_device(token.trim(), &VENDOR_PUBLIC, now_secs(), &dev) {
+        Ok(lic) => LicenseStatus { licensed: true, tier: lic.tier, subject: lic.subject, reason: String::new() },
+        Err(e) => LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: e.to_string() },
+    }
+}
+
+#[tauri::command]
+fn license_status(state: State<AppState>) -> LicenseStatus {
+    check_license(&state.data_dir)
+}
+
+#[tauri::command]
+fn set_license(state: State<AppState>, token: String) -> Result<LicenseStatus, String> {
+    let dev = device_id_for(&state.data_dir);
+    // Validate (signature, expiry, and device binding) BEFORE storing.
+    core_license::verify_on_device(token.trim(), &VENDOR_PUBLIC, now_secs(), &dev)
+        .map_err(|e| e.to_string())?;
+    std::fs::write(license_path(&state.data_dir), token.trim()).map_err(|e| e.to_string())?;
+    Ok(check_license(&state.data_dir))
+}
+
 /// Search the on-device catalog index (name + tags). Query never leaves the device.
 #[tauri::command]
 fn catalog_search(query: String) -> Vec<CatalogSummary> {
@@ -655,7 +764,12 @@ pub fn run() {
             lock_status,
             set_passphrase,
             unlock,
-            lock_app
+            lock_app,
+            export_vault,
+            import_vault,
+            device_id,
+            license_status,
+            set_license
         ])
         .run(tauri::generate_context!())
         .expect("error while running PolyglotFormFill");

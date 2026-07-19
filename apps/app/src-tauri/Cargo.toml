@@ -26,6 +26,7 @@ core-store = { path = "../../../crates/core-store" }
 core-crypto = { path = "../../../crates/core-crypto" }
 core-catalog = { path = "../../../crates/core-catalog" }
 core-fetch = { path = "../../../crates/core-fetch" }
+core-license = { path = "../../../crates/core-license" }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

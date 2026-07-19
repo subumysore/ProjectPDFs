@@ -101,6 +101,7 @@ dependencies = [
  "core-catalog",
  "core-crypto",
  "core-fetch",
+ "core-license",
  "core-store",
  "keyring",
  "open",
