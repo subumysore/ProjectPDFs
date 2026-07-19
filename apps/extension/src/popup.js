@@ -143,30 +143,37 @@ $("companionFill").onclick = async () => {
 
 // Injected into the page. Self-contained on-device resolver: understands what each
 // form field MEANS (via a general identity ontology, not per-form rules) and DERIVES
-// the value from your atomic vault facts (compose a full name from parts, reduce a
-// name to an initial when the form asks for one). Runs in the page, reads only the
-// DOM, sends nothing out.
+// the value from your atomic vault facts. Two directions, both inherent — no rules
+// engine, no per-form cases:
+//   • SPLIT  — a "Middle Initial" box gets the first letter of your middle name.
+//   • COMBINE — a lone "Address" line absorbs street1+street2+city+state+zip, but if
+//     the form ALSO has separate City/State/Zip fields, that line collapses to just
+//     the street parts. Each atom flows to the most specific field the form exposes;
+//     a coarse field collects exactly the descendants no finer field claimed.
+// Runs in the page, reads only the DOM, sends nothing out.
 function fillPage(vault) {
   const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
 
   // 1) Canonical "atoms" <- the many ways a user might have named a key.
-  //    General knowledge, applied to every form — not a rule for a specific form.
   const ALIASES = {
     given:    ["given name", "given", "first name", "first", "forename", "fname", "christian name"],
     middle:   ["middle name", "middle", "mname", "middle names", "middle initial", "mi", "m i"],
     family:   ["family name", "last name", "last", "surname", "lname", "family"],
     full:     ["full name", "name", "complete name", "legal name", "applicant name", "your name"],
+    street1:  ["address line 1", "address 1", "address1", "street address", "street address 1", "addr1", "address line one", "house number", "house no", "flat no"],
+    street2:  ["address line 2", "address 2", "address2", "addr2", "apartment", "apt", "suite", "unit", "address line two", "landmark"],
+    city:     ["city", "town", "city town", "village"],
+    state:    ["state", "province", "region", "state province"],
+    zip:      ["zip", "zip code", "postal code", "pincode", "pin code", "postcode", "post code"],
+    country:  ["country", "nation"],
+    nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
     phone:    ["phone", "mobile", "telephone", "tel", "cell", "contact number", "phone number", "msisdn"],
     dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
-    address:  ["address", "street address", "residential address", "addr", "street"],
-    city:     ["city", "town"],
-    state:    ["state", "province", "region"],
-    zip:      ["zip", "zip code", "postal code", "pincode", "pin code", "postcode"],
-    country:  ["country", "nation"],
-    nationality: ["nationality", "citizenship"],
     passport: ["passport", "passport no", "passport number"],
+    organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
+    username: ["username", "user name", "login", "user id", "userid", "handle"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
@@ -176,34 +183,33 @@ function fillPage(vault) {
       if (al.some((a) => key === norm(a))) { atoms[canon] = rawVault[key]; break; }
     }
   }
-  const nameParts = [atoms.given, atoms.middle, atoms.family].filter(Boolean);
+  // Atom value, with graceful fallbacks that don't hardcode a form.
+  const atomVal = (key) => {
+    if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
+    if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
+    if (key === "nationality") return atoms.nationality ?? atoms.country;
+    return atoms[key];
+  };
 
-  // 2) Concepts a form field can ask for, and how to DERIVE the value from atoms.
-  const CONCEPTS = [
-    { key: "full",        syn: ALIASES.full,        val: () => (nameParts.length ? nameParts.join(" ") : atoms.full), name: true },
-    { key: "given",       syn: ALIASES.given,       val: () => atoms.given ?? (atoms.full || "").split(/\s+/)[0], name: true },
-    { key: "middle",      syn: ALIASES.middle,      val: () => atoms.middle, name: true },
-    { key: "family",      syn: ALIASES.family,      val: () => atoms.family ?? (atoms.full || "").split(/\s+/).slice(-1)[0], name: true },
-    { key: "email",       syn: ALIASES.email,       val: () => atoms.email },
-    { key: "phone",       syn: ALIASES.phone,       val: () => atoms.phone },
-    { key: "dob",         syn: ALIASES.dob,         val: () => atoms.dob },
-    { key: "address",     syn: ALIASES.address,     val: () => atoms.address },
-    { key: "city",        syn: ALIASES.city,        val: () => atoms.city },
-    { key: "state",       syn: ALIASES.state,       val: () => atoms.state },
-    { key: "zip",         syn: ALIASES.zip,         val: () => atoms.zip },
-    { key: "country",     syn: ALIASES.country,     val: () => atoms.country },
-    { key: "nationality", syn: ALIASES.nationality, val: () => atoms.nationality ?? atoms.country },
-    { key: "passport",    syn: ALIASES.passport,    val: () => atoms.passport },
-    // Concepts we usually have NO personal atom for: matching one out-scores the
-    // generic "name" concept, so an org/username field is skipped instead of being
-    // wrongly filled with the person's name (unless the user saved such a value).
-    { key: "organization", syn: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"], val: () => rawVault["organization"] ?? rawVault["company"] ?? rawVault["employer"] },
-    { key: "username",     syn: ["username", "user name", "login", "user id", "userid", "handle"], val: () => rawVault["username"] },
-  ];
+  // 2) COMPOSITE concepts: a coarse field made of finer member atoms, joined in order.
+  //    Its value excludes any member the form claims with a more-specific field.
+  const COMPOSITES = {
+    full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, fallback: () => atoms.full },
+    address: { syn: ["address", "mailing address", "residential address", "postal address", "full address", "permanent address", "current address"], members: ["street1", "street2", "city", "state", "zip", "country"], sep: ", " },
+  };
 
-  // Score how well a field label matches a concept: token overlap against each
-  // synonym phrase, with a bonus when a whole phrase is matched (so "middle" beats
-  // the single shared token "name" for a "middle name" box).
+  // 3) The full concept list: every atom (except `full`, which is only a composite) as
+  //    an atomic target, plus the two composites.
+  const CONCEPTS = [];
+  for (const [k, syn] of Object.entries(ALIASES)) {
+    if (k === "full") continue;
+    CONCEPTS.push({ key: k, syn, kind: "atom", name: ["given", "middle", "family"].includes(k) });
+  }
+  for (const [k, c] of Object.entries(COMPOSITES)) CONCEPTS.push({ key: k, syn: c.syn, kind: "composite", cmp: c, name: !!c.name });
+
+  // Score how well a field label matches a concept: token overlap against each synonym
+  // phrase; reward absolute matched tokens so a specific 2-word phrase ("first name")
+  // beats a generic 1-word one ("name"), with a bonus for a whole-phrase match.
   const score = (label, syn) => {
     const lt = new Set(norm(label).split(" ").filter(Boolean));
     let best = 0;
@@ -212,8 +218,6 @@ function fillPage(vault) {
       if (!pt.length) continue;
       let hit = 0;
       for (const t of pt) if (lt.has(t)) hit++;
-      // reward absolute matched tokens so a specific 2-word phrase ("first name")
-      // beats a generic 1-word one ("name"); bonus when the whole phrase matches.
       const s = hit * (hit / pt.length) * (hit === pt.length ? 1.6 : 1);
       if (s > best) best = s;
     }
@@ -223,12 +227,9 @@ function fillPage(vault) {
   const labelOf = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
     (el.labels && el.labels[0] && el.labels[0].textContent) || "",
     (el.closest("label") && el.closest("label").textContent) || ""].join(" ");
-
-  // The form itself tells us to reduce a name to an initial: the word "initial",
-  // or a one-character field. No value is hardcoded — the transform is general.
   const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
 
-  let filled = 0;
+  const fields = [];
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
     if (el.disabled || el.readOnly) continue;
@@ -236,7 +237,22 @@ function fillPage(vault) {
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue; // require a full-phrase match — avoids false fills
-    let value = pick.val();
+    fields.push({ el, label, pick });
+  }
+
+  // Which member atoms does the form claim with a dedicated (atomic) field? A composite
+  // then absorbs only the members NOT claimed here.
+  const claimed = new Set(fields.filter((f) => f.pick.kind === "atom").map((f) => f.pick.key));
+
+  let filled = 0;
+  for (const { el, label, pick } of fields) {
+    let value;
+    if (pick.kind === "composite") {
+      const parts = pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean);
+      value = parts.length ? parts.join(pick.cmp.sep) : (pick.cmp.fallback ? pick.cmp.fallback() : "");
+    } else {
+      value = atomVal(pick.key);
+    }
     if (!value) continue;
     if (pick.name && wantsInitial(label, el)) value = initial(value);
     el.value = value;
