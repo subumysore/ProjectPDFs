@@ -3,191 +3,157 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PolyglotFormFill — Video Tutorials</title>
+<title>PolyglotFormFill — Tutorials</title>
 <style>
-  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c}}
   *{box-sizing:border-box}
   [hidden]{display:none!important}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6}
   a{color:var(--teal-ink)}
-  .wrap{max-width:940px;margin:0 auto;padding:40px 20px 80px}
+  .wrap{max-width:820px;margin:0 auto;padding:40px 20px 80px}
   h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.02em;margin:14px 0 4px}
-  .sub{color:var(--muted);max-width:70ch;margin:0 0 8px}
-  .tabs{display:flex;gap:8px;margin:26px 0 16px;flex-wrap:wrap}
+  .sub{color:var(--muted);max-width:66ch;margin:0}
+  .tabs{display:flex;gap:8px;margin:24px 0 8px;flex-wrap:wrap}
   .tab{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 16px;border-radius:999px;font-weight:600;cursor:pointer;font-size:15px}
   .tab[aria-selected="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
-  .player{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.06)}
-  .stage{position:relative;background:linear-gradient(160deg,var(--teal-soft),var(--surface));display:flex;align-items:center;justify-content:center;min-height:420px;padding:22px}
-  .stage img{max-width:100%;max-height:560px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);background:#fff}
-  .ph{width:min(560px,100%);min-height:320px;border:2px dashed var(--teal);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--teal-ink);text-align:center;padding:26px;background:var(--surface)}
-  .ph .big{font-size:34px}
-  .badge{position:absolute;top:14px;left:14px;background:var(--teal-ink);color:#fff;font-size:12px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
-  .cap{padding:16px 20px;border-top:1px solid var(--line)}
-  .cap h3{margin:0 0 4px;font-size:17px}
-  .cap p{margin:0;color:var(--muted);font-size:15px}
-  .controls{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
-  .controls button{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:9px;font-weight:600;cursor:pointer;font-size:14px}
-  .controls .play{background:var(--teal);border-color:var(--teal);color:#fff;min-width:104px}
-  .spacer{flex:1}
-  .toggle{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;cursor:pointer;user-select:none}
-  .rail{display:flex;gap:6px;padding:0 20px 16px;flex-wrap:wrap}
-  .dot{width:26px;height:6px;border-radius:4px;background:var(--line);cursor:pointer;border:none;padding:0}
-  .dot[aria-current="true"]{background:var(--teal)}
-  .note{color:var(--muted);font-size:13px;margin-top:14px}
-  .steps-list{margin-top:22px}
-  .steps-list li{margin:4px 0;color:var(--muted);font-size:14px}
-  .steps-list li b{color:var(--ink)}
+  .bar{display:flex;align-items:center;gap:12px;margin:8px 0 20px;flex-wrap:wrap}
+  .play{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer}
+  .bar .hint{color:var(--muted);font-size:13px}
+  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:22px 0;border-top:1px solid var(--line);scroll-margin-top:16px}
+  .step:first-of-type{border-top:none}
+  .num{width:44px;height:44px;border-radius:50%;background:var(--teal-soft);color:var(--teal-ink);display:grid;place-items:center;font-weight:800;font-size:18px}
+  .step.on .num{background:var(--teal);color:#fff}
+  .step h3{margin:6px 0 4px;font-size:18px;letter-spacing:-.01em}
+  .step p{margin:0 0 12px;color:var(--muted);font-size:15px}
+  .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.05)}
+  .shot img{display:block;width:100%;height:auto}
+  .step.on{background:linear-gradient(90deg,var(--teal-soft),transparent 60%);border-radius:12px}
   footer{margin-top:40px;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <p><a href="/">← PolyglotFormFill</a></p>
-  <h1>Video tutorials</h1>
-  <p class="sub">Two guided walkthroughs with <b>spoken narration</b> (your browser reads each step aloud)
-    synced to the real screens. Press <b>Play</b> — it advances automatically as the narration finishes.
-    Captions are shown for silent viewing.</p>
+  <h1>Tutorials</h1>
+  <p class="sub">Simple, numbered steps — each with a labelled screenshot. Just read top to bottom.
+    Prefer to listen? Press <b>Play narration</b> and your browser reads each step aloud, in order.</p>
 
   <div class="tabs" id="tabs" role="tablist">
-    <button class="tab" role="tab" data-t="install" aria-selected="true">① Install PolyglotFormFill</button>
+    <button class="tab" role="tab" data-t="install" aria-selected="true">① Install</button>
     <button class="tab" role="tab" data-t="use" aria-selected="false">② How to use it</button>
   </div>
 
-  <div class="player">
-    <div class="stage" id="stage">
-      <span class="badge" id="badge">Step 1</span>
-      <img id="img" alt="" />
-      <div class="ph" id="ph" hidden><div class="big">📷</div><div id="phText"></div></div>
-    </div>
-    <div class="cap"><h3 id="title"></h3><p id="caption"></p></div>
-    <div class="controls">
-      <button class="play" id="play">▶ Play</button>
-      <button id="prev">◀ Prev</button>
-      <button id="next">Next ▶</button>
-      <div class="spacer"></div>
-      <label class="toggle"><input type="checkbox" id="audio" checked /> 🔊 Narration</label>
-    </div>
-    <div class="rail" id="rail"></div>
+  <div class="bar">
+    <button class="play" id="play">▶ Play narration</button>
+    <span class="hint">reads the steps aloud &amp; highlights each — click again to stop</span>
   </div>
 
-  <div class="steps-list">
-    <p class="note" id="phNote">Steps marked <b>“your screenshot”</b> are the OS dialogs that live outside our
-      app (Windows SmartScreen, Chrome’s extensions page). Send me those screenshots and they’ll drop straight in;
-      everything inside PolyglotFormFill is shown for real.</p>
-  </div>
+  <div id="steps"></div>
 
-  <footer>Narration uses your browser’s built-in text-to-speech — no audio is sent anywhere, and it works offline.
-    Same privacy promise as the app.</footer>
+  <footer>Narration uses your browser's built-in text-to-speech — nothing is sent anywhere, works offline.
+    Screenshots of the OS install dialogs are illustrations; everything inside the app is the real thing.</footer>
 </div>
 
 <script>
-const TUTORIALS = {
+const T = {
   install: [
-    { img: "img/os-extensions.png",
-      title: "1 · Load it in your browser", cap: "Download the extension zip and unzip it. Open chrome://extensions, turn on Developer mode (top-right), click Load unpacked, and pick the unzipped folder.",
-      say: "First, download the PolyglotFormFill extension and unzip it. Open your browser's extensions page, turn on Developer mode in the top right, click Load unpacked, and choose the folder you just unzipped." },
-    { img: "img/os-pin.png",
-      title: "2 · Pin it to the toolbar", cap: "New extensions hide behind the puzzle-piece icon 🧩. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar.",
-      say: "New extensions are hidden behind the puzzle piece icon near the top right. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar." },
-    { img: "img/ext-01-locked.png",
-      title: "3 · Set your passphrase", cap: "Click the toolbar icon and set a passphrase. Your vault is encrypted on your device and unlocked only by this passphrase.",
-      say: "Click the PolyglotFormFill toolbar icon and set a passphrase. Your details are encrypted on your device, and only this passphrase can unlock them." },
-    { img: "img/ext-02-details.png",
-      title: "4 · Add your details", cap: "A starter set of fields is ready — name, address, phone, email. Type your values (each saves as you go), and the phone country code is pre-filled from your region.",
-      say: "The extension starts you off with common fields — name, address, phone, and email. Type in your values and they save automatically. Notice the phone country code is already filled in from your location." },
-    { img: "img/os-smartscreen.png",
-      title: "5 · (Desktop) Run the installer", cap: "For the desktop app, download the installer. This beta build isn't code-signed yet, so Windows SmartScreen warns ‘unknown publisher’ — click More info, then Run anyway.",
-      say: "If you also want the desktop app, download the installer. Because this beta build isn't signed yet, Windows will warn about an unknown publisher. Click More info, then Run anyway." },
-    { img: "img/app-01-vault.png",
-      title: "6 · (Desktop) Unlock & you're set", cap: "On first launch you set a passphrase, then your encrypted vault opens — the same details, now in the desktop app.",
-      say: "On first launch you set a passphrase, and your encrypted vault opens. You're ready to fill forms on the desktop too." },
+    ["img/os-extensions.png", "Load it in your browser",
+     "Download the extension zip and unzip it. Open chrome://extensions, turn on Developer mode (top-right), click Load unpacked, and pick the unzipped folder.",
+     "First, download the PolyglotFormFill extension and unzip it. Open your browser's extensions page, turn on Developer mode in the top right, click Load unpacked, and choose the folder you just unzipped."],
+    ["img/os-pin.png", "Pin it to your toolbar",
+     "New extensions hide behind the puzzle-piece icon. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar.",
+     "New extensions are hidden behind the puzzle piece icon near the top right. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar."],
+    ["img/ext-01-locked.png", "Set your passphrase",
+     "Click the toolbar icon and set a passphrase. Your vault is encrypted on your device and unlocked only by this passphrase.",
+     "Click the PolyglotFormFill toolbar icon and set a passphrase. Your details are encrypted on your device, and only this passphrase can unlock them."],
+    ["img/ext-02-details.png", "Add your details",
+     "A starter set of fields is ready — name, address, phone, email. Type your values (each saves as you go); the phone country code is pre-filled from your region.",
+     "The extension starts you off with common fields — name, address, phone, and email. Type in your values and they save automatically."],
+    ["img/os-smartscreen.png", "(Desktop) Run the installer",
+     "For the desktop app, download the installer. This beta build isn't code-signed yet, so Windows warns 'unknown publisher' — click More info, then Run anyway.",
+     "If you also want the desktop app, download the installer. Because this beta build isn't signed yet, Windows warns about an unknown publisher. Click More info, then Run anyway."],
+    ["img/app-01-vault.png", "(Desktop) Unlock — you're set",
+     "On first launch you set a passphrase, then your encrypted vault opens — the same details, now in the desktop app.",
+     "On first launch you set a passphrase, and your encrypted vault opens. You're ready to fill forms on the desktop too."],
   ],
   use: [
-    { img: "img/app-02-autofill.png",
-      title: "1 · Pick a form and autofill", cap: "Search for a form, open it, and PolyglotFormFill maps each field to your saved details — PDFs, Word, Excel, and web forms — all on your device.",
-      say: "To fill a form, search for it and open it. PolyglotFormFill matches each field on the form to the details you saved — PDFs, Word, Excel, and web forms — entirely on your device." },
-    { img: "img/ext-02-details.png",
-      title: "2 · It fills intelligently", cap: "It understands meaning, not just labels: a lone ‘Name’ field gets your first, middle and last combined; a ‘Middle initial’ box gets just the letter; a single address line combines your address parts.",
-      say: "It understands what each field means, not just its label. A single Name field gets your first, middle and last names combined. A middle-initial box gets just the letter. And a single address line combines all your address parts automatically." },
-    { img: "img/app-camera.png",
-      title: "3 · Scan an ID with your camera", cap: "Point your camera at an ID, licence, or business card and hit Capture. On-device OCR reads it, extracts the fields (name, date of birth, email…), and saves them to your profile — no typing.",
-      say: "Here's a favourite: point your camera at an ID card, licence, or business card and hit Capture and read. On-device optical character recognition reads it, extracts the fields like name, date of birth, and email, and saves them straight to your profile. No typing, and the image never leaves your device." },
-    { img: "img/ext-03-options.png",
-      title: "4 · One vault, many languages", cap: "In Settings, make the desktop app your single source of truth, install language packs to fill forms across languages, choose your base language, or enrol a passkey — all optional, all on-device.",
-      say: "In Settings you can make the desktop app your single vault so you never retype your data, install language packs to translate forms, choose your base language, or enrol a hardware passkey. Everything stays on your device." },
-    { img: "img/ext-02-details.png",
-      title: "5 · Back up and move devices", cap: "Use Backup / transfer to export an encrypted file with a passphrase you choose. Move it to another device and import — the same file works in the app and the extension.",
-      say: "To move to another device, use Backup and transfer. Export an encrypted file protected by a passphrase you choose. Copy it to your other device and import it — the same file works in both the app and the extension." },
+    ["img/app-02-autofill.png", "Pick a form and autofill",
+     "Search for a form, open it, and PolyglotFormFill maps each field to your saved details — PDFs, Word, Excel, and web forms — all on your device.",
+     "To fill a form, search for it and open it. PolyglotFormFill matches each field to the details you saved — PDFs, Word, Excel, and web forms — entirely on your device."],
+    ["img/ext-02-details.png", "It fills intelligently",
+     "It understands meaning, not just labels: a lone 'Name' field gets your first, middle and last combined; a 'Middle initial' box gets just the letter; one 'Address' line combines your address parts.",
+     "It understands what each field means, not just its label. A single Name field gets your first, middle and last combined. A middle-initial box gets just the letter. And a single address line combines all your address parts."],
+    ["img/app-camera.png", "Scan an ID with your camera",
+     "Point your camera at an ID, licence, or business card and hit Capture. On-device OCR reads it, extracts the fields, and saves them to your profile — no typing, and the image never leaves your device.",
+     "Point your camera at an ID card, licence, or business card and hit Capture and read. On-device OCR reads it, extracts fields like name, date of birth, and email, and saves them straight to your profile. No typing, and the image never leaves your device."],
+    ["img/ext-03-options.png", "One vault, many languages",
+     "In Settings: make the desktop app your single source of truth, install language packs, choose your base language, or enrol a passkey — all optional, all on-device.",
+     "In Settings you can make the desktop app your single vault, install language packs to translate forms, choose your base language, or enrol a hardware passkey. Everything stays on your device."],
+    ["img/ext-02-details.png", "Back up and move devices",
+     "Use Backup / transfer to export an encrypted file with a passphrase you choose. Move it to another device and import — the same file works in the app and the extension.",
+     "To move to another device, use Backup and transfer. Export an encrypted file protected by a passphrase you choose, copy it to your other device, and import it. The same file works in both the app and the extension."],
   ],
 };
 
 const $ = (id) => document.getElementById(id);
-let tab = "install", i = 0, playing = false, timer = null;
+let tab = "install";
+let playing = false, idx = 0;
 
-function steps() { return TUTORIALS[tab]; }
-function render() {
-  const s = steps()[i];
-  $("badge").textContent = `Step ${i + 1} / ${steps().length}`;
-  if (s.img) { $("img").src = s.img; $("img").hidden = false; $("ph").hidden = true; }
-  else { $("img").hidden = true; $("ph").hidden = false; $("phText").textContent = s.ph; }
-  $("title").textContent = s.title;
-  $("caption").textContent = s.cap;
-  const rail = $("rail"); rail.textContent = "";
-  steps().forEach((_, n) => {
-    const b = document.createElement("button");
-    b.className = "dot";
-    if (n === i) b.setAttribute("aria-current", "true");
-    b.onclick = () => { go(n); };
-    rail.appendChild(b);
+function renderSteps() {
+  const box = $("steps");
+  box.textContent = "";
+  T[tab].forEach(([img, title, cap], n) => {
+    const step = document.createElement("section");
+    step.className = "step";
+    step.id = `s${n}`;
+    step.innerHTML = `<div class="num">${n + 1}</div>
+      <div><h3>${title}</h3><p>${cap}</p><div class="shot"><img loading="lazy" alt="${title}" src="${img}"></div></div>`;
+    box.appendChild(step);
   });
 }
 
-function speakOrTime(s) {
-  clearTimeout(timer);
-  const audioOn = $("audio").checked && "speechSynthesis" in window;
-  if (audioOn) {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(s.say);
-    u.rate = 0.98; u.pitch = 1;
+function stopNarration() {
+  playing = false;
+  $("play").textContent = "▶ Play narration";
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  document.querySelectorAll(".step.on").forEach((e) => e.classList.remove("on"));
+}
+function speakStep() {
+  document.querySelectorAll(".step.on").forEach((e) => e.classList.remove("on"));
+  if (idx >= T[tab].length) return stopNarration();
+  const el = $(`s${idx}`);
+  el.classList.add("on");
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const say = T[tab][idx][3];
+  if ("speechSynthesis" in window) {
+    const u = new SpeechSynthesisUtterance(say);
+    u.rate = 0.98;
     const v = speechSynthesis.getVoices().find((x) => /en[-_]/i.test(x.lang));
     if (v) u.voice = v;
-    u.onend = () => { if (playing) advance(); };
+    u.onend = () => { if (playing) { idx++; speakStep(); } };
     speechSynthesis.speak(u);
   } else {
-    // Silent auto-advance paced to reading length.
-    const ms = Math.max(3500, s.say.length * 55);
-    timer = setTimeout(() => { if (playing) advance(); }, ms);
+    setTimeout(() => { if (playing) { idx++; speakStep(); } }, Math.max(3500, say.length * 55));
   }
 }
+$("play").onclick = () => {
+  if (playing) return stopNarration();
+  playing = true; idx = 0;
+  $("play").textContent = "⏹ Stop narration";
+  speakStep();
+};
 
-function advance() {
-  if (i < steps().length - 1) { i++; render(); if (playing) speakOrTime(steps()[i]); }
-  else { stop(); }
-}
-function go(n) { i = n; render(); if (playing) speakOrTime(steps()[i]); }
-function play() { playing = true; $("play").textContent = "⏸ Pause"; speakOrTime(steps()[i]); }
-function stop() {
-  playing = false; $("play").textContent = "▶ Play";
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
-  clearTimeout(timer);
-}
-
-$("play").onclick = () => (playing ? stop() : play());
-$("next").onclick = () => { const p = playing; stop(); if (i < steps().length - 1) i++; render(); if (p) play(); };
-$("prev").onclick = () => { const p = playing; stop(); if (i > 0) i--; render(); if (p) play(); };
-$("audio").onchange = () => { if (playing) { stop(); play(); } };
 document.querySelectorAll(".tab").forEach((t) => {
   t.onclick = () => {
-    stop();
+    stopNarration();
     document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", x === t));
-    tab = t.dataset.t; i = 0; render();
+    tab = t.dataset.t;
+    renderSteps();
   };
 });
-
-// Voices can load late in some browsers.
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
-render();
+renderSteps();
 </script>
 </body>
 </html>
