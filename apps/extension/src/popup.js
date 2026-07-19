@@ -2,6 +2,7 @@
 // Single-source-of-truth: when "desktop vault mode" is on, the popup reads AND writes
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
+import { exportVault, importVault } from "./backup.js";
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 function setMsg(text, ok = true) {
@@ -155,6 +156,53 @@ $("unlockPasskey").onclick = async () => {
   } catch (e) {
     setMsg("Passkey unlock cancelled/failed: " + ((e && e.message) || e), false);
   }
+};
+
+// ---- Encrypted backup / transfer ----
+function downloadBytes(bytes, name) {
+  const blob = new Blob([bytes], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$("export").onclick = async () => {
+  const pass = $("bkPass").value;
+  if (pass.length < 8) return setMsg("Choose a backup passphrase (8+ characters).", false);
+  const r = await readVault();
+  if (!r.ok) return setMsg(r.error || "Locked", false);
+  const keys = Object.keys(r.vault || {});
+  if (!keys.length) return setMsg("Nothing to export yet.", false);
+  const bytes = await exportVault(pass, r.vault, "");
+  downloadBytes(bytes, "polyglotformfill-vault.ppfvault");
+  setMsg(`Exported ${keys.length} field(s), encrypted. Keep the passphrase safe.`);
+};
+
+$("importBtn").onclick = () => $("bkFile").click();
+$("bkFile").onchange = async () => {
+  const file = $("bkFile").files[0];
+  if (!file) return;
+  const pass = $("bkPass").value;
+  if (!pass) { $("bkFile").value = ""; return setMsg("Enter the backup passphrase to import.", false); }
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { data } = await importVault(pass, bytes);
+    const entries = Object.entries(data);
+    for (const [k, v] of entries) {
+      if (COMP.on) await send({ type: "companionUpsert", profileId: await compProfile(), key: k, value: v });
+      else await send({ type: "set", key: k, value: v });
+    }
+    setMsg(`Imported ${entries.length} field(s).`);
+    renderEntries();
+  } catch (e) {
+    setMsg("Import failed: " + ((e && e.message) || e), false);
+  }
+  $("bkFile").value = "";
 };
 
 $("add").onclick = addField;

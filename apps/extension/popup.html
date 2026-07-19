@@ -50,6 +50,16 @@
         <input id="newVal" placeholder="value (e.g. Asha Rao)" />
         <button id="add">Save field</button>
       </div>
+
+      <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
+        <div class="sub" style="margin-bottom: 6px"><b>Backup / transfer</b> — encrypted with a passphrase you choose. Move the file to another device and import it.</div>
+        <input id="bkPass" type="password" placeholder="backup passphrase (remember it!)" />
+        <div class="row">
+          <button id="export">Export encrypted</button>
+          <button id="importBtn">Import file…</button>
+          <input id="bkFile" type="file" accept=".ppfvault,application/octet-stream" class="hidden" />
+        </div>
+      </div>
     </div>
 
     <div style="border-top: 1px solid #e5e5e5; margin: 10px 0 8px; padding-top: 8px">
