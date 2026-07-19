@@ -11,28 +11,30 @@
   [hidden]{display:none!important}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6}
   a{color:var(--teal-ink)}
-  .wrap{max-width:820px;margin:0 auto;padding:40px 20px 80px}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 20px 80px}
   h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.02em;margin:14px 0 4px}
+  h2{font-size:22px;margin:36px 0 6px}
   .sub{color:var(--muted);max-width:66ch;margin:0}
-  .tabs{display:flex;gap:8px;margin:24px 0 8px;flex-wrap:wrap}
-  .tab{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 16px;border-radius:999px;font-weight:600;cursor:pointer;font-size:15px}
-  .tab[aria-selected="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
-  .bar{display:flex;align-items:center;gap:12px;margin:8px 0 20px;flex-wrap:wrap}
-  .play{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-ink)}
+  .vids{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;margin-top:20px}
+  .vcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.05)}
+  .vcard .lbl{display:flex;gap:10px;align-items:center;padding:14px 16px 8px}
+  .vcard .n{width:28px;height:28px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+  .vcard .lbl b{font-size:16px}
+  .vcard video{display:block;width:100%;background:#eef4f3;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .vcard p{margin:0;padding:10px 16px 16px;color:var(--muted);font-size:14px}
+  /* install steps */
+  .bar{display:flex;align-items:center;gap:12px;margin:8px 0 8px;flex-wrap:wrap}
+  .play{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;padding:9px 15px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer}
   .bar .hint{color:var(--muted);font-size:13px}
-  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:22px 0;border-top:1px solid var(--line);scroll-margin-top:16px}
-  .step:first-of-type{border-top:none}
+  .step{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:20px 0;border-top:1px solid var(--line);scroll-margin-top:16px}
   .num{width:44px;height:44px;border-radius:50%;background:var(--teal-soft);color:var(--teal-ink);display:grid;place-items:center;font-weight:800;font-size:18px}
   .step.on .num{background:var(--teal);color:#fff}
-  .step h3{margin:6px 0 4px;font-size:18px;letter-spacing:-.01em}
-  .step p{margin:0 0 12px;color:var(--muted);font-size:15px}
-  .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.05)}
-  .shot img{display:block;width:100%;height:auto}
   .step.on{background:linear-gradient(90deg,var(--teal-soft),transparent 60%);border-radius:12px}
-  .hero-vid{margin:22px 0 8px}
-  .hero-vid video{width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:0 12px 34px rgba(0,0,0,.12);background:#000}
-  .hero-vid .cap{margin:8px 2px 0;color:var(--muted);font-size:14px}
-  .hero-vid .cap b{color:var(--ink)}
+  .step h3{margin:6px 0 4px;font-size:17px}
+  .step p{margin:0 0 12px;color:var(--muted);font-size:15px}
+  .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .shot img{display:block;width:100%;height:auto}
   footer{margin-top:40px;color:var(--muted);font-size:13px}
 </style>
 </head>
@@ -40,128 +42,94 @@
 <div class="wrap">
   <p><a href="/">← PolyglotFormFill</a></p>
   <h1>Tutorials</h1>
-  <p class="sub">Watch the 15-second video, then follow the labelled steps below.</p>
+  <p class="sub">Short videos of the real thing in action, then simple labelled steps to install it.</p>
 
-  <div class="hero-vid">
-    <video src="vid/fill-demo.webm" autoplay muted loop playsinline controls preload="auto"></video>
-    <p class="cap"><b>Watch it fill a form from your vault</b> — one click, entirely on your device. Nothing typed, nothing uploaded.</p>
-  </div>
+  <span class="eyebrow" style="display:block;margin-top:26px">See it in action</span>
+  <h2 style="margin-top:2px">What PolyglotFormFill does</h2>
+  <div class="vids" id="vids"></div>
 
-  <div class="tabs" id="tabs" role="tablist">
-    <button class="tab" role="tab" data-t="install" aria-selected="true">① Install</button>
-    <button class="tab" role="tab" data-t="use" aria-selected="false">② How to use it</button>
-  </div>
-
+  <span class="eyebrow" style="display:block;margin-top:40px">Get set up</span>
+  <h2 style="margin-top:2px">Install it — step by step</h2>
   <div class="bar">
     <button class="play" id="play">▶ Play narration</button>
-    <span class="hint">reads the steps aloud &amp; highlights each — click again to stop</span>
+    <span class="hint">reads the install steps aloud &amp; highlights each — click again to stop</span>
   </div>
-
   <div id="steps"></div>
 
-  <footer>Narration uses your browser's built-in text-to-speech — nothing is sent anywhere, works offline.
-    Screenshots of the OS install dialogs are illustrations; everything inside the app is the real thing.</footer>
+  <footer>Videos are silent screen demos (John Doe is sample data). Narration uses your browser's
+    built-in text-to-speech — nothing is sent anywhere, works offline. OS install dialogs are illustrations;
+    everything inside the app is the real thing.</footer>
 </div>
 
 <script>
-const T = {
-  install: [
-    ["img/os-extensions.png", "Load it in your browser",
-     "Download the extension zip and unzip it. Open chrome://extensions, turn on Developer mode (top-right), click Load unpacked, and pick the unzipped folder.",
-     "First, download the PolyglotFormFill extension and unzip it. Open your browser's extensions page, turn on Developer mode in the top right, click Load unpacked, and choose the folder you just unzipped."],
-    ["img/os-pin.png", "Pin it to your toolbar",
-     "New extensions hide behind the puzzle-piece icon. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar.",
-     "New extensions are hidden behind the puzzle piece icon near the top right. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar."],
-    ["img/ext-01-locked.png", "Set your passphrase",
-     "Click the toolbar icon and set a passphrase. Your vault is encrypted on your device and unlocked only by this passphrase.",
-     "Click the PolyglotFormFill toolbar icon and set a passphrase. Your details are encrypted on your device, and only this passphrase can unlock them."],
-    ["img/ext-02-details.png", "Add your details",
-     "A starter set of fields is ready — name, address, phone, email. Type your values (each saves as you go); the phone country code is pre-filled from your region.",
-     "The extension starts you off with common fields — name, address, phone, and email. Type in your values and they save automatically."],
-    ["img/os-smartscreen.png", "(Desktop) Run the installer",
-     "For the desktop app, download the installer. This beta build isn't code-signed yet, so Windows warns 'unknown publisher' — click More info, then Run anyway.",
-     "If you also want the desktop app, download the installer. Because this beta build isn't signed yet, Windows warns about an unknown publisher. Click More info, then Run anyway."],
-    ["img/app-01-vault.png", "(Desktop) Unlock — you're set",
-     "On first launch you set a passphrase, then your encrypted vault opens — the same details, now in the desktop app.",
-     "On first launch you set a passphrase, and your encrypted vault opens. You're ready to fill forms on the desktop too."],
-  ],
-  use: [
-    ["img/app-02-autofill.png", "Pick a form and autofill",
-     "Search for a form, open it, and PolyglotFormFill maps each field to your saved details — PDFs, Word, Excel, and web forms — all on your device.",
-     "To fill a form, search for it and open it. PolyglotFormFill matches each field to the details you saved — PDFs, Word, Excel, and web forms — entirely on your device."],
-    ["img/ext-02-details.png", "It fills intelligently",
-     "It understands meaning, not just labels: a lone 'Name' field gets your first, middle and last combined; a 'Middle initial' box gets just the letter; one 'Address' line combines your address parts.",
-     "It understands what each field means, not just its label. A single Name field gets your first, middle and last combined. A middle-initial box gets just the letter. And a single address line combines all your address parts."],
-    ["img/app-camera.png", "Scan an ID with your camera",
-     "Point your camera at an ID, licence, or business card and hit Capture. On-device OCR reads it, extracts the fields, and saves them to your profile — no typing, and the image never leaves your device.",
-     "Point your camera at an ID card, licence, or business card and hit Capture and read. On-device OCR reads it, extracts fields like name, date of birth, and email, and saves them straight to your profile. No typing, and the image never leaves your device."],
-    ["img/ext-03-options.png", "One vault, many languages",
-     "In Settings: make the desktop app your single source of truth, install language packs, choose your base language, or enrol a passkey — all optional, all on-device.",
-     "In Settings you can make the desktop app your single vault, install language packs to translate forms, choose your base language, or enrol a hardware passkey. Everything stays on your device."],
-    ["img/ext-02-details.png", "Back up and move devices",
-     "Use Backup / transfer to export an encrypted file with a passphrase you choose. Move it to another device and import — the same file works in the app and the extension.",
-     "To move to another device, use Backup and transfer. Export an encrypted file protected by a passphrase you choose, copy it to your other device, and import it. The same file works in both the app and the extension."],
-  ],
-};
+const VIDEOS = [
+  ["fill", "Fill any form in one click", "Web forms, PDFs, Word & Excel — mapped from your vault, on your device. Nothing typed, nothing uploaded."],
+  ["pdf", "Turn a non-fillable PDF into a fillable one", "A flat or scanned PDF with no boxes? On-device OCR finds the fields, creates them, and fills them."],
+  ["camera", "Scan an ID with your camera", "Snap a licence, ID, or business card. OCR reads it and saves the details to your profile — no typing."],
+  ["vault", "Manage your details", "Your encrypted vault — type a value and it saves as you go. Add or edit fields any time."],
+  ["backup", "Back up & move devices", "Export a passphrase-encrypted file, import it on another device. The same file works in app & extension."],
+];
+const INSTALL = [
+  ["img/os-extensions.png", "Load it in your browser",
+   "Download the extension zip and unzip it. Open chrome://extensions, turn on Developer mode (top-right), click Load unpacked, and pick the unzipped folder.",
+   "First, download the PolyglotFormFill extension and unzip it. Open your browser's extensions page, turn on Developer mode in the top right, click Load unpacked, and choose the folder you just unzipped."],
+  ["img/os-pin.png", "Pin it to your toolbar",
+   "New extensions hide behind the puzzle-piece icon. Click it, find PolyglotFormFill, and click the pin.",
+   "New extensions are hidden behind the puzzle piece icon near the top right. Click it, find PolyglotFormFill, and click the pin so its icon sits on your toolbar."],
+  ["img/ext-01-locked.png", "Set your passphrase",
+   "Click the toolbar icon and set a passphrase. Your vault is encrypted on your device and unlocked only by this passphrase.",
+   "Click the PolyglotFormFill toolbar icon and set a passphrase. Your details are encrypted on your device, and only this passphrase can unlock them."],
+  ["img/ext-02-details.png", "Add your details",
+   "A starter set of fields is ready — name, address, phone, email. Type your values; each saves as you go.",
+   "The extension starts you off with common fields. Type in your values and they save automatically."],
+  ["img/os-smartscreen.png", "(Desktop) Run the installer",
+   "For the desktop app, download the installer. This beta build isn't signed yet, so Windows warns 'unknown publisher' — click More info, then Run anyway.",
+   "If you also want the desktop app, download the installer. Because this beta build isn't signed yet, Windows warns about an unknown publisher. Click More info, then Run anyway."],
+  ["img/app-01-vault.png", "(Desktop) Unlock — you're set",
+   "On first launch you set a passphrase, then your encrypted vault opens — the same details, now in the desktop app.",
+   "On first launch you set a passphrase, and your encrypted vault opens. You're ready to fill forms on the desktop too."],
+];
 
 const $ = (id) => document.getElementById(id);
-let tab = "install";
+
+// videos
+$("vids").innerHTML = VIDEOS.map(([f, title, cap], i) => `
+  <div class="vcard">
+    <div class="lbl"><span class="n">${i + 1}</span><b>${title}</b></div>
+    <video src="vid/${f}.webm" autoplay muted loop playsinline preload="metadata"></video>
+    <p>${cap}</p>
+  </div>`).join("");
+
+// install steps
+$("steps").innerHTML = INSTALL.map(([img, title, cap], n) => `
+  <section class="step" id="s${n}"><div class="num">${n + 1}</div>
+    <div><h3>${title}</h3><p>${cap}</p><div class="shot"><img loading="lazy" alt="${title}" src="${img}"></div></div>
+  </section>`).join("");
+
+// narration — prefer a natural / neural voice so it isn't robotic
+function bestVoice() {
+  const vs = speechSynthesis.getVoices();
+  const prefs = [/natural/i, /neural/i, /google us english/i, /\b(jenny|aria|guy|sonia|libby|emma|michelle)\b/i, /online/i, /google/i, /en[-_]US/i, /en[-_]/i];
+  for (const re of prefs) { const v = vs.find((x) => re.test(x.name) || re.test(x.lang)); if (v) return v; }
+  return vs[0];
+}
 let playing = false, idx = 0;
-
-function renderSteps() {
-  const box = $("steps");
-  box.textContent = "";
-  T[tab].forEach(([img, title, cap], n) => {
-    const step = document.createElement("section");
-    step.className = "step";
-    step.id = `s${n}`;
-    step.innerHTML = `<div class="num">${n + 1}</div>
-      <div><h3>${title}</h3><p>${cap}</p><div class="shot"><img loading="lazy" alt="${title}" src="${img}"></div></div>`;
-    box.appendChild(step);
-  });
-}
-
-function stopNarration() {
-  playing = false;
-  $("play").textContent = "▶ Play narration";
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+function stop() { playing = false; $("play").textContent = "▶ Play narration"; if ("speechSynthesis" in window) speechSynthesis.cancel(); document.querySelectorAll(".step.on").forEach((e) => e.classList.remove("on")); }
+function speak() {
   document.querySelectorAll(".step.on").forEach((e) => e.classList.remove("on"));
-}
-function speakStep() {
-  document.querySelectorAll(".step.on").forEach((e) => e.classList.remove("on"));
-  if (idx >= T[tab].length) return stopNarration();
-  const el = $(`s${idx}`);
-  el.classList.add("on");
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
-  const say = T[tab][idx][3];
+  if (idx >= INSTALL.length) return stop();
+  const el = $(`s${idx}`); el.classList.add("on"); el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const say = INSTALL[idx][3];
   if ("speechSynthesis" in window) {
     const u = new SpeechSynthesisUtterance(say);
-    u.rate = 0.98;
-    const v = speechSynthesis.getVoices().find((x) => /en[-_]/i.test(x.lang));
-    if (v) u.voice = v;
-    u.onend = () => { if (playing) { idx++; speakStep(); } };
+    u.rate = 1.0; u.pitch = 1.0;
+    const v = bestVoice(); if (v) u.voice = v;
+    u.onend = () => { if (playing) { idx++; speak(); } };
     speechSynthesis.speak(u);
-  } else {
-    setTimeout(() => { if (playing) { idx++; speakStep(); } }, Math.max(3500, say.length * 55));
-  }
+  } else { setTimeout(() => { if (playing) { idx++; speak(); } }, Math.max(3500, say.length * 55)); }
 }
-$("play").onclick = () => {
-  if (playing) return stopNarration();
-  playing = true; idx = 0;
-  $("play").textContent = "⏹ Stop narration";
-  speakStep();
-};
-
-document.querySelectorAll(".tab").forEach((t) => {
-  t.onclick = () => {
-    stopNarration();
-    document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", x === t));
-    tab = t.dataset.t;
-    renderSteps();
-  };
-});
+$("play").onclick = () => { if (playing) return stop(); playing = true; idx = 0; $("play").textContent = "⏹ Stop narration"; speak(); };
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
-renderSteps();
 </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
   "permissions": ["storage", "activeTab", "scripting", "nativeMessaging"],
-  "host_permissions": ["https://polyglotformfill.surge.sh/*"],
+  "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "src/background.js", "type": "module" },
   "action": {
     "default_popup": "popup.html",
