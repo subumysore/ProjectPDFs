@@ -27,6 +27,10 @@ pub struct License {
     pub issued_at: i64,
     /// Unix seconds expiry; `0` = perpetual.
     pub expires_at: i64,
+    /// Per-device binding: the device/installation id this token is valid on.
+    /// Empty = not device-bound (valid on any device). Verified fully offline.
+    #[serde(default)]
+    pub device_id: String,
 }
 
 impl License {
@@ -49,6 +53,8 @@ pub enum LicenseError {
     BadSignature,
     /// The license has expired.
     Expired,
+    /// The license is bound to a different device than this one.
+    WrongDevice,
 }
 
 impl std::fmt::Display for LicenseError {
@@ -57,6 +63,7 @@ impl std::fmt::Display for LicenseError {
             LicenseError::Malformed => write!(f, "malformed license token"),
             LicenseError::BadSignature => write!(f, "license signature is invalid"),
             LicenseError::Expired => write!(f, "license has expired"),
+            LicenseError::WrongDevice => write!(f, "license is bound to a different device"),
         }
     }
 }
@@ -96,6 +103,22 @@ pub fn verify(token: &str, vendor_public: &[u8; 32], now: i64) -> Result<License
     Ok(license)
 }
 
+/// App-side, per-device: verify the token AND that it is valid on `this_device`.
+/// A token with an empty `device_id` is accepted on any device; otherwise the token's
+/// `device_id` must equal `this_device`. Fully offline — no server, no phone-home.
+pub fn verify_on_device(
+    token: &str,
+    vendor_public: &[u8; 32],
+    now: i64,
+    this_device: &str,
+) -> Result<License, LicenseError> {
+    let license = verify(token, vendor_public, now)?;
+    if !license.device_id.is_empty() && license.device_id != this_device {
+        return Err(LicenseError::WrongDevice);
+    }
+    Ok(license)
+}
+
 /// Returns this crate's stable module name.
 pub fn module_name() -> &'static str {
     "core-license"
@@ -112,6 +135,7 @@ mod tests {
             features: vec!["docx".into(), "ocr".into(), "translate".into()],
             issued_at: 1_000,
             expires_at: 2_000,
+            device_id: String::new(),
         }
     }
 
@@ -162,5 +186,46 @@ mod tests {
         let kp = core_crypto::SignKeypair::generate();
         assert_eq!(verify("nope", &kp.public_bytes(), 0), Err(LicenseError::Malformed));
         assert_eq!(verify("PPDF1.only-two", &kp.public_bytes(), 0), Err(LicenseError::Malformed));
+    }
+
+    #[test]
+    fn device_bound_license_is_enforced_per_device() {
+        let kp = core_crypto::SignKeypair::generate();
+        let mut bound = pro();
+        bound.device_id = "device-AAA".into();
+        let token = issue(&bound, &kp);
+        // Right device: accepted.
+        assert!(verify_on_device(&token, &kp.public_bytes(), 1_500, "device-AAA").is_ok());
+        // Wrong device: rejected even though the signature is valid.
+        assert_eq!(
+            verify_on_device(&token, &kp.public_bytes(), 1_500, "device-BBB"),
+            Err(LicenseError::WrongDevice)
+        );
+    }
+
+    #[test]
+    fn unbound_license_works_on_any_device() {
+        let kp = core_crypto::SignKeypair::generate();
+        let token = issue(&pro(), &kp); // device_id empty
+        assert!(verify_on_device(&token, &kp.public_bytes(), 1_500, "anything").is_ok());
+    }
+
+    #[test]
+    fn device_id_is_signed_cannot_be_swapped() {
+        // Tampering with the bound device_id breaks the signature.
+        let kp = core_crypto::SignKeypair::generate();
+        let mut bound = pro();
+        bound.device_id = "device-AAA".into();
+        let token = issue(&bound, &kp);
+        let mut parts: Vec<&str> = token.split('.').collect();
+        let mut payload = B64.decode(parts[1]).unwrap();
+        let s = String::from_utf8(payload.clone()).unwrap().replace("device-AAA", "device-BBB");
+        payload = s.into_bytes();
+        let bad = B64.encode(payload);
+        parts[1] = &bad;
+        assert_eq!(
+            verify(&parts.join("."), &kp.public_bytes(), 1_500),
+            Err(LicenseError::BadSignature)
+        );
     }
 }

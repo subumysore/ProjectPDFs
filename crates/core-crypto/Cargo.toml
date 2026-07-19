@@ -11,5 +11,7 @@ x25519-dalek = { version = "2", features = ["static_secrets"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 sha2 = "0.10"
 serde = { version = "1", features = ["derive"] }
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+hmac = "0.12"
 
 # Future: argon2 (passphrase KDF), HKDF for DH output, OS keystore bindings.

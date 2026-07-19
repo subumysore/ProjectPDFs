@@ -76,6 +76,77 @@ pub fn open(key: &SealKey, sealed: &[u8]) -> Result<Vec<u8>, CryptoError> {
     cipher.decrypt(nonce, ciphertext).map_err(|_| CryptoError::Open)
 }
 
+// --- Passphrase-based encrypted export/import (user-directed backup/transfer, ADR-0003) ---
+//
+// A vault backup the user can move to another device. Encrypted with a key derived from
+// an export PASSPHRASE (PBKDF2-HMAC-SHA256) — the passphrase is never stored and the file
+// alone is useless. Whoever knows the passphrase (i.e. the owner) can import. Any identity
+// binding (e.g. an SSO account/subject) lives inside the encrypted, authenticated payload
+// the caller supplies, so it cannot be altered. There is NO plaintext export.
+
+const EXPORT_MAGIC: &[u8; 8] = b"PPFVLT01";
+const EXPORT_ITERS: u32 = 600_000;
+const EXPORT_ITERS_MAX: u32 = 5_000_000; // reject a hostile file that would DoS import
+const EXPORT_HLEN: usize = 8 + 4 + 16; // magic | iters(LE) | salt
+
+fn random_16() -> [u8; 16] {
+    use rand_core::RngCore;
+    let mut b = [0u8; 16];
+    rand_core::OsRng.fill_bytes(&mut b);
+    b
+}
+
+fn derive_passphrase_key(passphrase: &str, salt: &[u8], iters: u32) -> SealKey {
+    let mut key = [0u8; 32];
+    pbkdf2::pbkdf2_hmac::<Sha256>(passphrase.as_bytes(), salt, iters, &mut key);
+    key
+}
+
+/// Encrypt `plaintext` under an export passphrase for user-directed backup/transfer.
+/// Layout: `MAGIC(8) | iters(4 LE) | salt(16) | nonce(12) | ciphertext+tag`. The header
+/// is authenticated as AES-GCM associated data, so it cannot be tampered with.
+pub fn export_encrypted(passphrase: &str, plaintext: &[u8]) -> Vec<u8> {
+    let salt = random_16();
+    let key = derive_passphrase_key(passphrase, &salt, EXPORT_ITERS);
+    let mut header = Vec::with_capacity(EXPORT_HLEN);
+    header.extend_from_slice(EXPORT_MAGIC);
+    header.extend_from_slice(&EXPORT_ITERS.to_le_bytes());
+    header.extend_from_slice(&salt);
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+    let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+    let ct = cipher
+        .encrypt(&nonce, aes_gcm::aead::Payload { msg: plaintext, aad: &header })
+        .expect("AES-GCM encrypt");
+    let mut out = header;
+    out.extend_from_slice(nonce.as_slice());
+    out.extend_from_slice(&ct);
+    out
+}
+
+/// Decrypt a blob produced by [`export_encrypted`]. A wrong passphrase or ANY tampering
+/// (header, nonce, or ciphertext) yields [`CryptoError::Open`].
+pub fn import_encrypted(passphrase: &str, blob: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    if blob.len() < EXPORT_HLEN + NONCE_LEN {
+        return Err(CryptoError::Malformed);
+    }
+    let (header, rest) = blob.split_at(EXPORT_HLEN);
+    if &header[0..8] != EXPORT_MAGIC {
+        return Err(CryptoError::Malformed);
+    }
+    let iters = u32::from_le_bytes(header[8..12].try_into().unwrap());
+    if iters == 0 || iters > EXPORT_ITERS_MAX {
+        return Err(CryptoError::Malformed);
+    }
+    let salt = &header[12..28];
+    let key = derive_passphrase_key(passphrase, salt, iters);
+    let (nonce_bytes, ct) = rest.split_at(NONCE_LEN);
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+    let nonce = Nonce::from_slice(nonce_bytes);
+    cipher
+        .decrypt(nonce, aes_gcm::aead::Payload { msg: ct, aad: header })
+        .map_err(|_| CryptoError::Open)
+}
+
 // --- Ed25519 signing (signatures + provenance) ---
 
 /// An Ed25519 signing keypair (the signer's own key; produced by their authenticator).
@@ -332,5 +403,45 @@ mod tests {
     #[test]
     fn module_name_is_stable() {
         assert_eq!(module_name(), "core-crypto");
+    }
+
+    #[test]
+    fn export_import_roundtrips() {
+        let data = br#"{"subject":"asha@example.com","data":{"first_name":"Asha"}}"#;
+        let blob = export_encrypted("correct horse battery staple", data);
+        let out = import_encrypted("correct horse battery staple", &blob).expect("import");
+        assert_eq!(&out, data);
+    }
+
+    #[test]
+    fn wrong_passphrase_fails() {
+        let blob = export_encrypted("right-pass", b"secret vault");
+        assert_eq!(import_encrypted("wrong-pass", &blob), Err(CryptoError::Open));
+    }
+
+    #[test]
+    fn no_plaintext_leak_and_tamper_detected() {
+        let secret = b"home address 12 MG Road";
+        let mut blob = export_encrypted("pw", secret);
+        // Ciphertext must not contain the plaintext.
+        assert!(!blob.windows(secret.len()).any(|w| w == secret));
+        // Flip a ciphertext byte -> authentication fails.
+        let last = blob.len() - 1;
+        blob[last] ^= 0x01;
+        assert_eq!(import_encrypted("pw", &blob), Err(CryptoError::Open));
+    }
+
+    #[test]
+    fn tampered_header_is_rejected() {
+        let mut blob = export_encrypted("pw", b"x");
+        blob[9] ^= 0x01; // change the iteration count in the authenticated header
+        assert!(import_encrypted("pw", &blob).is_err());
+    }
+
+    #[test]
+    fn hostile_iteration_count_rejected() {
+        let mut blob = export_encrypted("pw", b"x");
+        blob[8..12].copy_from_slice(&u32::MAX.to_le_bytes()); // would DoS the KDF
+        assert_eq!(import_encrypted("pw", &blob), Err(CryptoError::Malformed));
     }
 }
