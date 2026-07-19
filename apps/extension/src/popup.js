@@ -218,6 +218,23 @@ $("bkFile").onchange = async () => {
   $("bkFile").value = "";
 };
 
+// Translate tool — dynamic-imports the (large) engine only when first used.
+$("trBtn").onclick = async () => {
+  const text = $("trIn").value;
+  if (!text.trim()) return;
+  $("trBtn").disabled = true;
+  $("trOut").textContent = "loading…";
+  try {
+    const { translate } = await import("./translate.js");
+    $("trOut").textContent = await translate(text, $("trDir").value, (s) => {
+      $("trOut").textContent = s;
+    });
+  } catch (e) {
+    $("trOut").textContent = "Translate failed: " + ((e && e.message) || e);
+  }
+  $("trBtn").disabled = false;
+};
+
 $("add").onclick = addField;
 $("newVal").addEventListener("keydown", (e) => {
   if (e.key === "Enter") addField();

@@ -66,3 +66,4 @@ apps/app/public/ort/
 apps/extension/dist/
 apps/extension/.chrome-ext-*/
 scripts/license/vendor-key.json
+apps/extension/vendor/transformers/*.wasm

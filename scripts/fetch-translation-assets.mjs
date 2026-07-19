@@ -14,8 +14,9 @@ import { dirname, join } from "node:path";
 const require = createRequire(import.meta.url);
 const publicDir = join(process.cwd(), "apps/app/public");
 
-// 1) onnxruntime-web WASM -> public/ort/
-const ortDist = join(dirname(require.resolve("onnxruntime-web/package.json")), "dist");
+// 1) onnxruntime WASM -> public/ort/. transformers.js v3 BUNDLES the ort runtime in its
+// own dist (there is no separate onnxruntime-web package), so source it from there.
+const ortDist = join(process.cwd(), "apps/app/node_modules/@huggingface/transformers/dist");
 const ortOut = join(publicDir, "ort");
 mkdirSync(ortOut, { recursive: true });
 for (const f of readdirSync(ortDist)) {
