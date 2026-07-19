@@ -169,7 +169,12 @@ function fillPage(vault) {
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
-    phone:    ["phone", "mobile", "telephone", "tel", "cell", "contact number", "phone number", "msisdn"],
+    phonecc:  ["phone country code", "country code", "dialing code", "dial code", "isd code", "std code"],
+    cellphone: ["cell phone", "cell", "mobile", "mobile number", "mobile phone", "cell number", "cellphone"],
+    homephone: ["home phone", "landline", "home number", "residence phone", "home telephone"],
+    phone:    ["phone", "telephone", "tel", "contact number", "phone number", "phone no", "contact no"],
+    gender:   ["gender", "sex"],
+    salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
     passport: ["passport", "passport no", "passport number"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
@@ -183,11 +188,21 @@ function fillPage(vault) {
       if (al.some((a) => key === norm(a))) { atoms[canon] = rawVault[key]; break; }
     }
   }
+  // Prefix a bare phone number with the stored country code (unless it already has one).
+  const withCC = (num) => {
+    const n = (num || "").toString().trim();
+    if (!n) return "";
+    const cc = (atoms.phonecc || "").toString().trim();
+    return cc && !n.startsWith("+") ? cc + " " + n : n;
+  };
   // Atom value, with graceful fallbacks that don't hardcode a form.
   const atomVal = (key) => {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
     if (key === "nationality") return atoms.nationality ?? atoms.country;
+    if (key === "cellphone") return withCC(atoms.cellphone);
+    if (key === "homephone") return withCC(atoms.homephone);
+    if (key === "phone")     return withCC(atoms.cellphone ?? atoms.phone ?? atoms.homephone);
     return atoms[key];
   };
 

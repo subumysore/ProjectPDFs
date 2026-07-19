@@ -3,6 +3,7 @@
 // unlocked, and are dropped on lock (or when the worker is evicted). chrome.storage
 // holds only the SALT and the AES-GCM CIPHERTEXT — never the key, never plaintext.
 import { derivePassphraseKey, deriveWebAuthnKey, seal, open, newSalt } from "./vault.js";
+import { starterVault } from "./seed.js";
 
 let key = null; // CryptoKey (non-extractable), memory-only
 let vault = null; // decrypted { ontology_key: value }, memory-only
@@ -18,7 +19,7 @@ async function unlockPassphrase(passphrase) {
   const k = await derivePassphraseKey(passphrase, salt);
   if (blob) vault = await open(k, blob); // throws on wrong passphrase / tamper
   else {
-    vault = {};
+    vault = starterVault(); // first launch: seed starter keys + inferred country code
     await chrome.storage.local.set({ salt, kdf: "pbkdf2", blob: await seal(k, vault) });
   }
   key = k;
@@ -33,7 +34,7 @@ async function unlockWebAuthn(prfSecretB64) {
   const k = await deriveWebAuthnKey(secret, salt);
   if (blob) vault = await open(k, blob);
   else {
-    vault = {};
+    vault = starterVault(); // first launch: seed starter keys + inferred country code
     await chrome.storage.local.set({ salt, kdf: "webauthn-prf", blob: await seal(k, vault) });
   }
   key = k;
