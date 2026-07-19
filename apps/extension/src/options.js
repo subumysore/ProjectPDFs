@@ -116,6 +116,43 @@ $("migrate").onclick = async () => {
   }
 };
 
+// ---- Single vault / desktop-app companion mode ----
+function setCompMsg(text, ok = true) {
+  const el = $("companionMsg");
+  el.textContent = text;
+  el.className = "msg " + (ok ? "ok" : "err");
+}
+
+async function renderCompanion() {
+  const { companionMode, companionProfile } = await chrome.storage.local.get(["companionMode", "companionProfile"]);
+  $("companionMode").checked = !!companionMode;
+  const box = $("companionProfiles");
+  if (!companionMode) { box.textContent = ""; return; }
+  const pl = await chrome.runtime.sendMessage({ type: "companionProfiles" });
+  if (!pl || !pl.ok) {
+    box.innerHTML = `<span class="err">Desktop companion unavailable: ${(pl && pl.error) || "not registered"}.</span>`;
+    return;
+  }
+  if (!pl.profiles || !pl.profiles.length) {
+    box.innerHTML = `<span class="err">No profiles in the desktop app yet — create one there first.</span>`;
+    return;
+  }
+  const opts = pl.profiles
+    .map((p) => `<option value="${p.id}" ${p.id === companionProfile ? "selected" : ""}>${p.name || p.id}</option>`)
+    .join("");
+  box.innerHTML = `Write to profile: <select id="companionProfileSel">${opts}</select>`;
+  const sel = $("companionProfileSel");
+  if (!companionProfile) await chrome.storage.local.set({ companionProfile: pl.profiles[0].id });
+  sel.onchange = async () => { await chrome.storage.local.set({ companionProfile: sel.value }); setCompMsg("Profile set."); };
+}
+
+$("companionMode").onchange = async () => {
+  const on = $("companionMode").checked;
+  await chrome.storage.local.set({ companionMode: on });
+  setCompMsg(on ? "Desktop vault mode ON — the popup now reads/writes the desktop app vault." : "Desktop vault mode off — using the extension's own vault.");
+  renderCompanion();
+};
+
 // ---- Language packs (RFC-0006 Phase 1) ----
 const fmtMB = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
 function setPacksMsg(text, ok = true) {
@@ -188,5 +225,6 @@ async function renderPacks() {
   $("packsUsage").innerHTML = `Installed: <b>${installed.length}</b> pack(s) · Disk used: <b>${fmtMB(used)}</b>`;
 }
 
+renderCompanion();
 renderPacks();
 status();

@@ -1,4 +1,7 @@
 // Popup UI: unlock (passphrase / passkey), fill the active page, lock.
+// Single-source-of-truth: when "desktop vault mode" is on, the popup reads AND writes
+// through the native companion, so the ONE desktop vault is authoritative — the
+// extension keeps no separate copy.
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 function setMsg(text, ok = true) {
@@ -7,7 +10,34 @@ function setMsg(text, ok = true) {
   el.className = "msg " + (ok ? "ok" : "err");
 }
 
+const COMP = { on: false, profile: "" };
+async function loadCompMode() {
+  const s = await chrome.storage.local.get(["companionMode", "companionProfile"]);
+  COMP.on = !!s.companionMode;
+  COMP.profile = s.companionProfile || "";
+}
+// Resolve (and remember) which desktop profile the extension writes to.
+async function compProfile() {
+  if (COMP.profile) return COMP.profile;
+  const pl = await send({ type: "companionProfiles" });
+  if (pl.ok && pl.profiles && pl.profiles.length) {
+    COMP.profile = pl.profiles[0].id;
+    await chrome.storage.local.set({ companionProfile: COMP.profile });
+  }
+  return COMP.profile;
+}
+
 async function refresh() {
+  await loadCompMode();
+  if (COMP.on) {
+    // No local unlock in desktop-vault mode — the desktop app holds the key.
+    $("locked").classList.add("hidden");
+    $("unlocked").classList.remove("hidden");
+    $("banner").classList.remove("hidden");
+    await renderEntries();
+    return;
+  }
+  $("banner").classList.add("hidden");
   const s = await send({ type: "status" });
   const unlocked = s && s.ok && s.unlocked;
   $("locked").classList.toggle("hidden", unlocked);
@@ -15,12 +45,25 @@ async function refresh() {
   if (unlocked) await renderEntries();
 }
 
+// Read the active vault — the desktop one in companion mode, else the local one.
+async function readVault() {
+  if (COMP.on) {
+    const profileId = await compProfile();
+    return send({ type: "companionVault", profileId: profileId || undefined });
+  }
+  return send({ type: "getVault" });
+}
+
 // Show every saved field with its value + a delete button.
 async function renderEntries() {
-  const r = await send({ type: "getVault" });
+  const r = await readVault();
   const box = $("entries");
   box.textContent = "";
-  const keys = r.ok ? Object.keys(r.vault) : [];
+  if (!r.ok) {
+    box.innerHTML = `<div class="empty">${COMP.on ? "Desktop app vault unavailable — is the app installed & the companion registered? " : ""}${(r.error || "")}</div>`;
+    return;
+  }
+  const keys = Object.keys(r.vault || {});
   if (!keys.length) {
     const p = document.createElement("div");
     p.className = "empty";
@@ -43,7 +86,8 @@ async function renderEntries() {
     x.textContent = "✕";
     x.title = "Delete";
     x.onclick = async () => {
-      await send({ type: "del", key: k });
+      if (COMP.on) await send({ type: "companionDelete", profileId: await compProfile(), key: k });
+      else await send({ type: "del", key: k });
       renderEntries();
     };
     row.append(kEl, vEl, x);
@@ -51,16 +95,23 @@ async function renderEntries() {
   }
 }
 
-// Add / update a field.
+// Add / update a field — write-through to the desktop vault in companion mode.
 async function addField() {
   const key = $("newKey").value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   const value = $("newVal").value;
   if (!key) return setMsg("Enter a field name (e.g. full_name).", false);
-  const r = await send({ type: "set", key, value });
+  let r;
+  if (COMP.on) {
+    const profileId = await compProfile();
+    if (!profileId) return setMsg("No desktop profile found. Create one in the desktop app first.", false);
+    r = await send({ type: "companionUpsert", profileId, key, value });
+  } else {
+    r = await send({ type: "set", key, value });
+  }
   if (!r.ok) return setMsg(r.error || "Locked", false);
   $("newKey").value = "";
   $("newVal").value = "";
-  setMsg(`Saved “${key}”.`);
+  setMsg(`Saved “${key}”${COMP.on ? " to the desktop vault" : ""}.`);
   renderEntries();
 }
 
@@ -128,9 +179,9 @@ async function fillActivePage(vault) {
 }
 
 $("fill").onclick = async () => {
-  const r = await send({ type: "getVault" });
+  const r = await readVault();
   if (!r.ok) return setMsg(r.error || "Locked", false);
-  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page.`);
+  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
 };
 
 // Companion: fetch the vault from the native app (keys never enter the extension).

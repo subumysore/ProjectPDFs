@@ -157,6 +157,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse(await hostRequest({ type: "getVault", profileId }));
           break;
         }
+        case "companionProfiles":
+          sendResponse(await hostRequest({ type: "listProfiles" }));
+          break;
+        case "companionUpsert":
+          // Write-through to the ONE authoritative desktop vault (single source of truth).
+          sendResponse(await hostRequest({ type: "upsertData", profileId: msg.profileId, key: msg.key, value: msg.value }));
+          break;
+        case "companionDelete":
+          sendResponse(await hostRequest({ type: "deleteData", profileId: msg.profileId, key: msg.key }));
+          break;
+        case "companionCreateProfile":
+          sendResponse(await hostRequest({ type: "createProfile", id: msg.id, name: msg.name }));
+          break;
         default:
           sendResponse({ ok: false, error: "unknown message" });
       }

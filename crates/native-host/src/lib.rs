@@ -135,6 +135,79 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
                 Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
             }
         }
+        // Write-through so the extension can act as a thin client over the ONE
+        // authoritative desktop vault (single source of truth).
+        Some("upsertData") => {
+            let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            let key = req.get("key").and_then(|p| p.as_str()).unwrap_or("");
+            let value = req.get("value").and_then(|p| p.as_str()).unwrap_or("");
+            if pid.is_empty() || key.is_empty() {
+                json!({ "ok": false, "error": "profileId and key are required" })
+            } else {
+                let dp = core_store::DataPoint { key: key.to_string(), value: value.to_string() };
+                match store.put_data_point(pid, &dp) {
+                    Ok(()) => json!({ "ok": true }),
+                    Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+                }
+            }
+        }
+        Some("deleteData") => {
+            let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            let key = req.get("key").and_then(|p| p.as_str()).unwrap_or("");
+            if pid.is_empty() || key.is_empty() {
+                json!({ "ok": false, "error": "profileId and key are required" })
+            } else {
+                match store.delete_data_point(pid, key) {
+                    Ok(()) => json!({ "ok": true }),
+                    Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+                }
+            }
+        }
+        Some("createProfile") => {
+            let id = req.get("id").and_then(|p| p.as_str()).unwrap_or("");
+            let name = req.get("name").and_then(|p| p.as_str()).unwrap_or("");
+            if id.is_empty() {
+                json!({ "ok": false, "error": "id is required" })
+            } else {
+                let p = core_store::Profile { id: id.to_string(), name: name.to_string() };
+                match store.put_profile(&p) {
+                    Ok(()) => json!({ "ok": true }),
+                    Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+                }
+            }
+        }
         _ => json!({ "ok": false, "error": "unknown message" }),
+    }
+}
+
+#[cfg(test)]
+mod dispatch_tests {
+    use super::dispatch;
+    use serde_json::json;
+
+    fn store() -> core_store::Store {
+        core_store::Store::open(":memory:", core_crypto::generate_key()).unwrap()
+    }
+
+    #[test]
+    fn write_through_roundtrip() {
+        let s = store();
+        // create a profile, upsert a value, read it back via getVault
+        assert!(dispatch(&s, &json!({"type":"createProfile","id":"p1","name":"Asha"}))["ok"].as_bool().unwrap());
+        assert!(dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"first_name","value":"Asha"}))["ok"].as_bool().unwrap());
+        let v = dispatch(&s, &json!({"type":"getVault","profileId":"p1"}));
+        assert_eq!(v["vault"]["first_name"], "Asha");
+        // update, then delete
+        assert!(dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"first_name","value":"Meera"}))["ok"].as_bool().unwrap());
+        assert_eq!(dispatch(&s, &json!({"type":"getVault","profileId":"p1"}))["vault"]["first_name"], "Meera");
+        assert!(dispatch(&s, &json!({"type":"deleteData","profileId":"p1","key":"first_name"}))["ok"].as_bool().unwrap());
+        assert!(dispatch(&s, &json!({"type":"getVault","profileId":"p1"}))["vault"].get("first_name").is_none());
+    }
+
+    #[test]
+    fn missing_args_error() {
+        let s = store();
+        assert_eq!(dispatch(&s, &json!({"type":"upsertData","key":"k","value":"v"}))["ok"], false);
+        assert_eq!(dispatch(&s, &json!({"type":"deleteData","profileId":"p1"}))["ok"], false);
     }
 }

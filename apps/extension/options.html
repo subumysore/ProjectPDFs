@@ -43,6 +43,21 @@
     </div>
 
     <div class="card">
+      <h2 style="font-size: 16px; margin-top: 0">Single vault (desktop app)</h2>
+      <p class="muted">
+        If you use the desktop app too, make it your <b>single source of truth</b>: the extension
+        reads and writes your details through the desktop app's vault over a local bridge — keys
+        never live in the extension, and you never retype your data in two places.
+        Requires the desktop app installed and its companion registered.
+      </p>
+      <label style="display: flex; align-items: center; gap: 8px">
+        <input type="checkbox" id="companionMode" /> Use the desktop app as my single vault
+      </label>
+      <div id="companionProfiles" class="muted" style="margin-top: 8px"></div>
+      <div class="msg" id="companionMsg"></div>
+    </div>
+
+    <div class="card">
       <h2 style="font-size: 16px; margin-top: 0">Language packs</h2>
       <p class="muted">
         Install a language pair to fill forms across languages — each pack downloads
