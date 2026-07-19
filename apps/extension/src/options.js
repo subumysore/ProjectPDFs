@@ -116,6 +116,18 @@ $("migrate").onclick = async () => {
   }
 };
 
+// ---- Base language ----
+async function renderBaseLang() {
+  const { baseLang } = await chrome.storage.local.get(["baseLang"]);
+  $("baseLang").value = baseLang || "en";
+}
+$("baseLang").onchange = async () => {
+  await chrome.storage.local.set({ baseLang: $("baseLang").value });
+  const el = $("baseLangMsg");
+  el.className = "msg ok";
+  el.textContent = `Base language set to ${$("baseLang").options[$("baseLang").selectedIndex].text}. Install its language pack below to enable on-device translation.`;
+};
+
 // ---- Single vault / desktop-app companion mode ----
 function setCompMsg(text, ok = true) {
   const el = $("companionMsg");
@@ -225,6 +237,7 @@ async function renderPacks() {
   $("packsUsage").innerHTML = `Installed: <b>${installed.length}</b> pack(s) · Disk used: <b>${fmtMB(used)}</b>`;
 }
 
+renderBaseLang();
 renderCompanion();
 renderPacks();
 status();

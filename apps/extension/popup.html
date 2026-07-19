@@ -17,6 +17,9 @@
       .entry { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; }
       .entry .k { font-family: ui-monospace, monospace; color: #0a6a60; min-width: 90px; }
       .entry .v { flex: 1; color: #101a20; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .entry .vin { flex: 1; min-width: 0; font: inherit; color: #101a20; padding: 3px 6px; border: 1px solid #e3eae9; border-radius: 5px; background: #fff; }
+      .entry .vin:focus { outline: none; border-color: #0d8f83; box-shadow: 0 0 0 2px rgba(13,143,131,.15); }
+      .entry .vin::placeholder { color: #b7c2c2; }
       .entry .x { border: none; background: none; color: #9a2c2c; cursor: pointer; font-size: 14px; padding: 0 4px; }
       .empty { color: #55666f; font-size: 12px; margin-bottom: 6px; }
     </style>

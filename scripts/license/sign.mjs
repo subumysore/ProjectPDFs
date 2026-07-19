@@ -1,0 +1,32 @@
+// Shared license signer (storefront side). Produces a token byte-compatible with the
+// Rust core-license verifier. Reused by issue.mjs (manual) and webhook.mjs (automated).
+import { createPrivateKey, sign as edSign } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const dir = dirname(fileURLToPath(import.meta.url));
+let _key;
+function vendorKey() {
+  if (!_key) {
+    const { jwk } = JSON.parse(readFileSync(join(dir, "vendor-key.json"), "utf8"));
+    _key = createPrivateKey({ key: jwk, format: "jwk" });
+  }
+  return _key;
+}
+
+// EXACT field order must match the Rust License struct.
+export function signLicense({
+  subject,
+  tier = "pro",
+  features = ["docx", "ocr", "translate", "companion", "sign"],
+  device = "",
+  issued_at = 1_000_000_000,
+  days = 0,
+}) {
+  const expires_at = days > 0 ? issued_at + days * 86400 : 0;
+  const license = { subject, tier, features, issued_at, expires_at, device_id: device };
+  const json = Buffer.from(JSON.stringify(license), "utf8");
+  const sig = edSign(null, json, vendorKey());
+  return `PPDF1.${json.toString("base64url")}.${Buffer.from(sig).toString("base64url")}`;
+}

@@ -309,10 +309,13 @@ fn device_id(state: State<AppState>) -> String {
     device_id_for(&state.data_dir)
 }
 
-// Vendor Ed25519 public key. The private half stays with the storefront; a license is
-// signed there (after SSO purchase) and bound to a device id. Zero placeholder until the
-// release key is embedded — verification simply fails until then.
-const VENDOR_PUBLIC: [u8; 32] = [0u8; 32];
+// Vendor Ed25519 public key. The private half stays with the storefront (vendor-key.json,
+// gitignored) and signs each device-bound license via scripts/license/issue.mjs. Regenerate
+// with scripts/license/keygen.mjs for production and replace these 32 bytes.
+const VENDOR_PUBLIC: [u8; 32] = [
+    0x12, 0x26, 0x09, 0x89, 0x03, 0x56, 0xe1, 0x44, 0x0e, 0x4b, 0x10, 0xc7, 0xdc, 0x29, 0xd3, 0xc9,
+    0xdf, 0xba, 0xed, 0x88, 0x09, 0x79, 0x48, 0x8f, 0xdb, 0x3c, 0x6c, 0xd0, 0xef, 0x12, 0x8c, 0x37,
+];
 
 #[derive(Serialize)]
 struct LicenseStatus {

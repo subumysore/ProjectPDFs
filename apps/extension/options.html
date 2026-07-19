@@ -43,6 +43,27 @@
     </div>
 
     <div class="card">
+      <h2 style="font-size: 16px; margin-top: 0">Your base language</h2>
+      <p class="muted">
+        The language <b>you</b> think in. Forms in another language will be translated to this for
+        viewing, and your answers translated back into the form's language when filling — all
+        on-device. Install the matching <b>language pack</b> below to enable translation.
+      </p>
+      <label style="display:flex; align-items:center; gap:8px">
+        Base language:
+        <select id="baseLang">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="es">Español (Spanish)</option>
+          <option value="fr">Français (French)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="zh">中文 (Chinese)</option>
+        </select>
+      </label>
+      <div class="msg" id="baseLangMsg"></div>
+    </div>
+
+    <div class="card">
       <h2 style="font-size: 16px; margin-top: 0">Single vault (desktop app)</h2>
       <p class="muted">
         If you use the desktop app too, make it your <b>single source of truth</b>: the extension

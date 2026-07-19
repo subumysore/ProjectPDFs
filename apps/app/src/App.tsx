@@ -110,11 +110,15 @@ export function App() {
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [camOn, setCamOn] = useState(false);
   const [err, setErr] = useState("");
   const [bkPass, setBkPass] = useState("");
   const [bkMsg, setBkMsg] = useState("");
   const [deviceId, setDeviceId] = useState("");
   const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
+  const [licKey, setLicKey] = useState("");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -126,6 +130,14 @@ export function App() {
       .then(setLic)
       .catch(() => {});
   }, [locked]);
+
+  // Attach the live camera stream to the preview element when the camera turns on.
+  useEffect(() => {
+    if (camOn && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [camOn]);
 
   async function doExport() {
     if (!selected) return;
@@ -144,6 +156,21 @@ export function App() {
       setBkMsg(`Exported ${points.length} field(s), encrypted. Keep the passphrase safe.`);
     } catch (e) {
       setBkMsg("Export failed: " + String(e));
+    }
+  }
+
+  async function activateLicense() {
+    if (!licKey.trim()) return setBkMsg("Paste your license key first.");
+    try {
+      const st = await invoke<{ licensed: boolean; tier: string; subject: string; reason: string }>(
+        "set_license",
+        { token: licKey.trim() },
+      );
+      setLic(st);
+      setBkMsg(`Activated: ${st.tier} license for ${st.subject}.`);
+      setLicKey("");
+    } catch (e) {
+      setBkMsg("Activation failed: " + String(e));
     }
   }
 
@@ -353,6 +380,32 @@ export function App() {
     }
     setExtracted([]);
     loadPoints(selected);
+  }
+  // Camera capture → OCR → key/value (snap an ID/form and your profile fills itself).
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      streamRef.current = stream;
+      setCamOn(true);
+    } catch (e) {
+      setErr("Camera unavailable (grant permission?): " + String(e));
+    }
+  }
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCamOn(false);
+  }
+  async function captureFrame() {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+    stopCamera();
+    if (blob) onDataSource(new File([blob], "capture.png", { type: "image/png" }));
   }
   // Open a form (PDF or image) and AUTOMATICALLY make it fillable + fill it:
   //   already has fields → fill them; no fields → OCR-detect, create, fill.
@@ -820,16 +873,29 @@ export function App() {
 
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
             <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8 }}>
-              Import a data source (passport, licence…) — OCR runs on-device
+              Import a data source (passport, licence, business card…) — OCR runs on-device,
+              recognised fields fill your profile
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const f = e.currentTarget.files?.[0];
-                if (f) onDataSource(f);
-              }}
-            />
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.currentTarget.files?.[0];
+                  if (f) onDataSource(f);
+                }}
+              />
+              {!camOn && <button onClick={startCamera}>📷 Scan with camera</button>}
+            </div>
+            {camOn && (
+              <div style={{ marginTop: 10 }}>
+                <video ref={videoRef} playsInline muted style={{ width: "100%", maxWidth: 420, borderRadius: 8, background: "#000" }} />
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  <button onClick={captureFrame}>Capture &amp; read</button>
+                  <button onClick={stopCamera}>Cancel</button>
+                </div>
+              </div>
+            )}
             {ocrPct !== null && <span style={{ marginLeft: 8, fontSize: 12 }}>reading… {ocrPct}%</span>}
             {extracted.length > 0 && (
               <div style={{ marginTop: 8 }}>
@@ -877,11 +943,25 @@ export function App() {
             </label>
           </div>
           {bkMsg && <p style={{ fontSize: 13 }}>{bkMsg}</p>}
-          <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 10 }}>
-            Device ID: <code>{deviceId.slice(0, 16)}…</code> · License:{" "}
-            <b>{lic?.licensed ? lic.tier : "free"}</b>
-            {lic && !lic.licensed && lic.reason ? ` — ${lic.reason}` : ""}
-          </p>
+          <div style={{ borderTop: "1px solid #eef2f3", marginTop: 12, paddingTop: 10 }}>
+            <p style={{ color: "#5a6b6d", fontSize: 12, margin: "0 0 6px" }}>
+              License: <b>{lic?.licensed ? `${lic.tier} (active)` : "Free / beta"}</b>
+              {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" ? ` — ${lic.reason}` : ""}
+              {" · "}This device: <code>{deviceId.slice(0, 12)}…</code>
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                placeholder="paste your license key (PPDF1.…)"
+                value={licKey}
+                onChange={(e) => setLicKey(e.currentTarget.value)}
+                style={{ flex: 1, minWidth: 240 }}
+              />
+              <button onClick={activateLicense}>Activate</button>
+            </div>
+            <p style={{ color: "#5a6b6d", fontSize: 11, marginTop: 6 }}>
+              Free during the beta. A Pro license is bound to this device and verified offline — no server.
+            </p>
+          </div>
         </section>
       )}
 

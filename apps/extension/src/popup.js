@@ -3,6 +3,7 @@
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
 import { exportVault, importVault } from "./backup.js";
+import { fillPdfFromUrl } from "./pdffill.js";
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 function setMsg(text, ok = true) {
@@ -78,10 +79,22 @@ async function renderEntries() {
     const kEl = document.createElement("span");
     kEl.className = "k";
     kEl.textContent = k;
-    const vEl = document.createElement("span");
-    vEl.className = "v";
-    vEl.textContent = r.vault[k];
-    vEl.title = r.vault[k];
+    // Editable value — type directly and it saves on Enter or when you click away.
+    const vEl = document.createElement("input");
+    vEl.className = "vin";
+    vEl.value = r.vault[k] ?? "";
+    vEl.placeholder = "— add value —";
+    const saveVal = async () => {
+      const val = vEl.value;
+      if (val === (r.vault[k] ?? "")) return;
+      let res;
+      if (COMP.on) res = await send({ type: "companionUpsert", profileId: await compProfile(), key: k, value: val });
+      else res = await send({ type: "set", key: k, value: val });
+      if (res && res.ok) { r.vault[k] = val; setMsg(`Saved “${k}”.`); }
+      else setMsg((res && res.error) || "Save failed", false);
+    };
+    vEl.onblur = saveVal;
+    vEl.onkeydown = (e) => { if (e.key === "Enter") vEl.blur(); };
     const x = document.createElement("button");
     x.className = "x";
     x.textContent = "✕";
@@ -229,6 +242,21 @@ async function fillActivePage(vault) {
 $("fill").onclick = async () => {
   const r = await readVault();
   if (!r.ok) return setMsg(r.error || "Locked", false);
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = (tab && tab.url) || "";
+  // A PDF open in the browser? Fill it on-device with pdf-lib and download the result.
+  if (/\.pdf(\?|#|$)/i.test(url)) {
+    setMsg("Filling PDF on-device…");
+    try {
+      const { total, filled, bytes } = await fillPdfFromUrl(url, r.vault);
+      if (!total) return setMsg("This PDF has no fillable fields yet — open it in the desktop app to add fields (OCR) and fill.", false);
+      if (!bytes) return setMsg("Couldn't fill this PDF.", false);
+      downloadBytes(bytes, "filled.pdf");
+      return setMsg(`Filled ${filled}/${total} field(s) — saved filled.pdf.`);
+    } catch (e) {
+      return setMsg("PDF fill failed: " + ((e && e.message) || e), false);
+    }
+  }
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
 };
 

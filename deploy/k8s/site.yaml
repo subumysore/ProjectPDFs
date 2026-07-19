@@ -1,0 +1,83 @@
+# PolyglotFormFill marketing site — co-hosted on the existing hospital-nexus OKE cluster.
+# Fully isolated in its own namespace; shares the nginx ingress + cert-manager only.
+# Stock nginx image + an init container that pulls the site tarball from Oracle Object
+# Storage (no custom image, no registry). Update flow: re-upload the tarball, then
+# `kubectl -n polyglotformfill rollout restart deploy/ppf-site`.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: polyglotformfill
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppf-site
+  namespace: polyglotformfill
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ppf-site }
+  template:
+    metadata:
+      labels: { app: ppf-site }
+    spec:
+      initContainers:
+        - name: fetch-site
+          image: docker.io/library/alpine:3.20
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              apk add --no-cache curl >/dev/null 2>&1 &&
+              curl -fsSL "$SITE_URL" -o /tmp/site.tgz &&
+              tar -xzf /tmp/site.tgz -C /web &&
+              echo "extracted:" && ls /web
+          env:
+            - name: SITE_URL
+              value: "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jCtDSAbfP-E2c8UsCnBa-_pWMhr_-z7fWAK9CBs-bYV83hkH-X8OcTnAG1ronnuS/n/idlqdkwlstnb/b/polyglotformfill-dl/o/ppf-site.tar.gz"
+          volumeMounts:
+            - { name: web, mountPath: /web }
+      containers:
+        - name: nginx
+          image: docker.io/library/nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+          volumeMounts:
+            - { name: web, mountPath: /usr/share/nginx/html, readOnly: true }
+          resources:
+            requests: { cpu: "10m", memory: "16Mi" }
+            limits: { cpu: "200m", memory: "128Mi" }
+      volumes:
+        - name: web
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppf-site
+  namespace: polyglotformfill
+spec:
+  selector: { app: ppf-site }
+  ports:
+    - { port: 80, targetPort: 80 }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ppf-site
+  namespace: polyglotformfill
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [polyglotformfill.mooo.com]
+      secretName: ppf-site-tls
+  rules:
+    - host: polyglotformfill.mooo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ppf-site
+                port: { number: 80 }
