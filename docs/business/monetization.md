@@ -9,10 +9,22 @@ no phone-home). Payment + license issuance happen on the storefront side; the ap
 |---|---|---|
 | Free | $0 | core web-form autofill, **1 profile**, 1 device, basic PDF fill |
 | Pro | **$39 one-time / device** (or $19/yr) | **up to 3 profiles**, 1 device, make-fillable OCR, Word/Excel, translation, signing, backup |
-| Family | **$79 one-time**, up to 5 devices (or $39/yr) | **unlimited profiles**, Pro across the household |
+| Family | **$79 one-time**, up to 5 devices (or $39/yr) | **up to 5 profiles**, Pro across the household |
+
+### Commercial (per-seat, annual, unlimited profiles)
+| Tier | Seats | Price |
+|---|---|---|
+| Team | 5–50 | **$29 / seat / yr** |
+| Business | 51–100 | **$24 / seat / yr** |
+| Scale | 101–500 | **$19 / seat / yr** |
+| Enterprise | 500+ | **Custom** (SSO provisioning, SLA) — contact us |
+
+Market basis: comparable B2B fill/vault tools (1Password Business $7.99/user/mo ≈ $96/yr, Dashlane
+$8/user/mo) — we undercut heavily since it's on-device (no cloud cost), with volume discounts by slab.
 
 **Profile limits** are enforced at launch by the app (`create_profile` checks the active license
-tier: free=1, pro=3, family=unlimited). Free during beta = unlocked.
+tier: free=1, pro=3, family=5, commercial=unlimited). Free during beta = unlocked. Commercial seats
+are provisioned centrally (bulk device-bound tokens or SSO-verified issuance for Enterprise).
 
 Free during public beta; prices take effect at launch. USD; local taxes handled by the MoR.
 
