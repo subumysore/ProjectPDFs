@@ -7,9 +7,12 @@ no phone-home). Payment + license issuance happen on the storefront side; the ap
 ## Pricing (launch)
 | Tier | Price | Notes |
 |---|---|---|
-| Free | $0 | core web-form autofill, 1 profile, basic PDF fill |
-| Pro | **$39 one-time / device** (or $19/yr) | make-fillable OCR, Word/Excel, translation, signing, backup |
-| Family | **$79 one-time**, up to 5 devices (or $39/yr) | Pro across the household |
+| Free | $0 | core web-form autofill, **1 profile**, 1 device, basic PDF fill |
+| Pro | **$39 one-time / device** (or $19/yr) | **up to 3 profiles**, 1 device, make-fillable OCR, Word/Excel, translation, signing, backup |
+| Family | **$79 one-time**, up to 5 devices (or $39/yr) | **unlimited profiles**, Pro across the household |
+
+**Profile limits** are enforced at launch by the app (`create_profile` checks the active license
+tier: free=1, pro=3, family=unlimited). Free during beta = unlocked.
 
 Free during public beta; prices take effect at launch. USD; local taxes handled by the MoR.
 
