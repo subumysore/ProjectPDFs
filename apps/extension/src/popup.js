@@ -280,12 +280,49 @@ $("lock").onclick = async () => {
   refresh();
 };
 
+// Collect the fillable fields' labels from the page (SAME order/skip rules as fillPage),
+// so we can translate a foreign form's labels into English for the ontology to match.
+function collectFillLabels() {
+  const labelOf = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+    (el.labels && el.labels[0] && el.labels[0].textContent) || "",
+    (el.closest("label") && el.closest("label").textContent) || ""].join(" ");
+  const out = [];
+  for (const el of document.querySelectorAll("input, textarea")) {
+    if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
+    if (el.disabled || el.readOnly) continue;
+    out.push(labelOf(el).replace(/\s+/g, " ").trim());
+  }
+  return out;
+}
+
 async function fillActivePage(vault) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  // LANGUAGE-AWARE FILL: if the form is in another language, translate its labels into
+  // English (the ontology's language) so the resolver still matches — on-device. The
+  // form's values are placed as-is, so the SUBMITTED form stays in its own language.
+  let tLabels = null;
+  try {
+    const [{ result: labels } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectFillLabels });
+    if (labels && labels.some(Boolean)) {
+      const { detectLang } = await import("./lang.js");
+      const formLang = detectLang(labels.join(" ")).lang;
+      if (formLang !== "en") {
+        setMsg(`Form looks ${formLang.toUpperCase()} — translating labels on-device (first run downloads the model)…`);
+        const { translateText } = await import("./translate.js");
+        const cache = {};
+        tLabels = [];
+        for (const lab of labels) {
+          if (!lab) { tLabels.push(""); continue; }
+          if (cache[lab] === undefined) { try { cache[lab] = await translateText(lab, formLang, "en", (s) => setMsg(s)); } catch (_) { cache[lab] = lab; } }
+          tLabels.push(cache[lab]);
+        }
+      }
+    }
+  } catch (_) { /* translation unavailable → fill with original labels */ }
   const [{ result } = {}] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: fillPage,
-    args: [vault],
+    args: [vault, tLabels],
   });
   return result || 0;
 }
