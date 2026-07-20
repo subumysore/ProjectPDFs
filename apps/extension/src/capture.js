@@ -50,7 +50,7 @@ $("startCam").onclick = async () => {
         const fields = parseAamva(text);
         if (fields.length >= 3) {
           // Grab the current frame as the DL image BEFORE stopping the stream.
-          fields.unshift({ ontology_key: "drivers_license_image", value: toJpegDataUrl(v) });
+          fields.unshift({ ontology_key: "driver_license_back", value: toJpegDataUrl(v) });
           stopCam();
           v.hidden = true;
           $("snap").hidden = true;
@@ -166,9 +166,10 @@ function toJpegDataUrl(source) {
   return c.toDataURL("image/jpeg", 0.85);
 }
 // Which document-image key to store the whole picture under (spec: document-image-fields).
+// The OCR/printed side is the FRONT; a decoded PDF417 barcode is the BACK.
 function docImageKey(text) {
   if (/passport/i.test(text || "")) return "passport_image";
-  if (/driver|licen[sc]e/i.test(text || "")) return "drivers_license_image";
+  if (/driver|licen[sc]e/i.test(text || "")) return "driver_license_front";
   return "document_image";
 }
 
@@ -185,7 +186,7 @@ async function processImage(canvas) {
     const fields = parseAamva(text);
     if (fields.length >= 3) {
       // A decoded licence barcode → also keep the whole picture as the DL image.
-      fields.unshift({ ontology_key: "drivers_license_image", value: toJpegDataUrl(canvas) });
+      fields.unshift({ ontology_key: "driver_license_back", value: toJpegDataUrl(canvas) });
       $("raw").textContent = text;
       renderResults(fields);
       setMsg(`✓ Read the licence barcode — ${fields.length} field(s), exact (no OCR).`);

@@ -13,10 +13,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   line when the AAMVA "1" marker is garbled; match the address anywhere in a line; recover
   city from "City, ST ZIP" even when the state OCRs wrong; reject junk city tokens (leave a
   field empty rather than emit wrong data).
-- **Document-image fields:** the whole captured picture is saved as `drivers_license_image` /
-  `passport_image` / `document_image` (keyed by detected type), shown as a thumbnail; resolver
-  `drivers_license` + `passport_copy` concepts place it into a form field that asks to ATTACH a
-  copy (drawn fitted+centred; OCR-draw path skips image values). See `docs/specs/document-image-fields.md`.
+- **Document-image fields:** the whole captured picture is saved keyed by type AND side —
+  `driver_license_back` (decoded PDF417 barcode = back), `driver_license_front` (printed/OCR
+  side), `passport_image`, `document_image` — shown as a thumbnail; resolver `drivers_license`
+  (front; also the generic "attach a DL copy" target), `drivers_license_back`, and `passport_copy`
+  concepts place the image into a form field that asks to ATTACH a copy (drawn fitted+centred;
+  OCR-draw path skips image values). See `docs/specs/document-image-fields.md`.
 - **PDF417 back-of-licence barcode scanner:** `@zxing` (vendored, self-contained ESM) +
   `parseAamva()` → exact structured data (name/address/city/state/ZIP+4/DOB/sex/licence#).
   Tried first on any capture; OCR is the fallback. Verified end-to-end in a loaded extension.

@@ -11,10 +11,11 @@ copy — in addition to the structured text fields we already extract.
 
 ### Capture (extension `capture.html`)
 When a captured/uploaded image is processed, in addition to the extracted text fields we
-add ONE **document-image field** to the review list, keyed by the detected document type:
-- Decoded a driver's-licence **PDF417 barcode** → `drivers_license_image`.
+add ONE **document-image field** to the review list, keyed by the detected document type
+AND side (a decoded PDF417 barcode is the BACK; the printed/OCR side is the FRONT):
+- Decoded a driver's-licence **PDF417 barcode** → `driver_license_back`.
+- OCR text matches `/driver|licen[sc]e/i` → `driver_license_front`.
 - OCR text matches `/passport/i` → `passport_image`.
-- OCR text matches `/driver|licen[sc]e/i` → `drivers_license_image`.
 - Otherwise → `document_image`.
 
 The image is stored as a `data:image/jpeg` URI (the full captured frame). It appears in
@@ -29,8 +30,9 @@ the field's rectangle** (the covering widget is removed so the image is visible)
 is best-effort sizing/placement within the form's constraints.
 
 ### Resolver concepts (semantic, not literal)
-- `drivers_license` ← keys like `drivers_license_image`; matches labels "attach driver's
-  licence", "copy of driver licence", "DL copy", "driving licence", "licence copy".
+- `drivers_license` (FRONT) ← `driver_license_front`; matches "attach driver's licence",
+  "copy of driver licence", "DL copy", "DL front", "driving licence", "licence copy".
+- `drivers_license_back` ← `driver_license_back`; matches "DL back", "back of driver licence".
 - `passport_copy` ← `passport_image`; matches "passport copy", "copy of passport",
   "attach passport", "passport scan" (NOT bare "passport", which stays the passport NUMBER).
 - `signature` (existing) ← `signature`; matches "signature", "sign here", "applicant signature".
