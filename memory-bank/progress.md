@@ -2,6 +2,25 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Working (verified) — 2026-07-20 extension/desktop iteration
+- **ID capture (extension):** camera/image → OCR → profile fields; **PDF417 back-of-licence
+  barcode → exact AAMVA fields** (validated end-to-end in a loaded extension: 11 exact fields).
+  Licence OCR fallback parses unlabelled + AAMVA-numbered layouts. OCR preprocessing for glossy IDs.
+- **Intelligent PDF fill:** semantic resolver by field label; **form templates** — W-2 (OCR draw),
+  W-4/W-9 (AcroForm field-name templates, render-verified 5/5 & 6/6), I-9 (AcroForm); OCR fill for
+  XFA/scanned in the persistent viewer; **age derived from DOB**; numbered dependent keys mapped.
+- **Image-valued fields:** photo/signature stored as data-URI, drawn fitted+centred into PDF
+  photo/signature boxes (render-verified).
+- **Interactive filled-PDF viewer** (`<iframe>` blob) — unfilled AcroForm fields stay editable.
+- **Language-aware filling:** `native_language` vault field; on-device form-language detection
+  (8 langs, unit-verified); any-to-any translate via English pivot; bilingual side panel;
+  Devanagari/CJK output fonts (fontkit + hosted Noto, Devanagari render-verified).
+- **Desktop parity:** resolver/templates/lang/fonts ported to `apps/app/src/fill/`; `tsc` + `vite
+  build` green.
+- **Ops:** `deploy/publish-extension.ps1` one-command rebuild+publish (robust OCI upload under PS 5.1).
+- **Known gaps:** translate RUNTIME (model load) unvalidated in a real browser; non-en/hi desktop
+  translation models not yet in `public/models`; glossy-front OCR is best-effort (barcode is exact).
+
 ## Working (verified)
 - Governance scaffold (SDD, Memory Bank, ADR/RFC flow, traceability check) — green.
 - Feasibility spikes: `prototypes/translated-fill`, `prototypes/field-detection-trial`.

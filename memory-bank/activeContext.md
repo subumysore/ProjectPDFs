@@ -3,7 +3,27 @@
 _What is in flight RIGHT NOW. Update at the start and end of every work session. Convert relative dates
 to absolute._
 
-## Current focus
+## Current focus (2026-07-20) — Extension capture + intelligent fill + desktop parity
+- **Live product-iteration session against the running extension** (user testing each change;
+  published via `deploy/publish-extension.ps1` to polyglotformfill.mooo.com; local dev = Load
+  unpacked `apps/extension`, then Reload). Everything on `master`, committed locally, **not pushed**
+  (20-day hold).
+- **Shipped this session:** on-device ID capture (camera/image OCR + **PDF417 back-of-licence
+  barcode → exact AAMVA data**), driver's-licence OCR parsing, OCR fill for XFA/scanned PDFs (W-2),
+  form templates (W-2/W-4/W-9/I-9), image-valued fields (photo/signature drawn into PDF boxes),
+  interactive filled-PDF viewer (`<iframe>`), age-from-DOB derivation, language-aware filling
+  (native_language vault field, form-lang detect, English-pivot translate, side panel, Devanagari/
+  CJK fonts), and **desktop parity** (fill+language logic ported to `apps/app/src/fill/`).
+- **Fixed:** MV3 `object-src blob:` load failure (use iframe); Tesseract default-export import
+  (had killed capture + PDF-OCR); vault re-lock on SW eviction (session-cache restore).
+- **IN FLIGHT (next):** capture the whole DL/passport photo as a document-image field
+  (`drivers_license_image` / `passport_image`) auto-keyed by detected type; SIGNATURE image field;
+  and best-effort sizing/placement when a form asks to ATTACH a DL/passport copy.
+- **Verification:** pure logic unit-tested; capture/barcode/fill validated end-to-end in a loaded
+  Chromium extension + rendered-PDF proofs. Translate RUNTIME (transformers.js model load) still
+  needs a real-browser smoke test; non-en/hi desktop models need provisioning into `public/models`.
+
+## (prior) Current focus
 - **BUILD-EVERYTHING pass complete (overnight, autonomous).** All 14 requirements in progress;
   full app loop plumbed + build/test-verified. Self-hosted OCR + English↔Hindi translation
   (execution-only CSP, zero third-party egress), OS keystore, device signing + provenance, PDF

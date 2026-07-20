@@ -4,6 +4,40 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — Extension capture, intelligent fill & desktop parity (2026-07-20)
+- **On-device ID/document capture (extension):** camera or image file → Tesseract OCR
+  (shared worker, `tess.js`) → `parseFields` heuristics → review-and-save to vault.
+  Grayscale + contrast-stretch + upscale preprocessing for glossy IDs.
+- **PDF417 back-of-licence barcode scanner:** `@zxing` (vendored, self-contained ESM) +
+  `parseAamva()` → exact structured data (name/address/city/state/ZIP+4/DOB/sex/licence#).
+  Tried first on any capture; OCR is the fallback. Verified end-to-end in a loaded extension.
+- **Driver's-licence / ID OCR parsing:** unlabelled + AAMVA-field-number heuristics (surname/
+  given/address/city/state/ZIP/DOB); phone no longer grabs a long ID number.
+- **On-device OCR fill for XFA/LiveCycle & scanned PDFs (W-2):** render→red-dropout→OCR→
+  segment→resolve→draw; runs in the persistent viewer tab.
+- **Form templates:** IRS W-2 (OCR), W-4/W-9 (deterministic AcroForm field-NAME templates),
+  I-9 (AcroForm) — form recognition + per-form field maps (`pdfforms.js`).
+- **Image-valued fields:** store a photo/signature as a field value; drawn fitted+centred into
+  matching PDF photo/signature boxes.
+- **Interactive filled-PDF viewer:** Chrome's native PDF viewer via `<iframe>` (blob) so
+  unfilled AcroForm fields stay editable.
+- **Semantic value derivation:** compute **age from a date of birth** (`age`, `dependent_age`);
+  numbered dependent keys (`dependent_1`) map to the dependent concept.
+- **Language-aware filling (extension + desktop):** `native_language` as a vault profile field;
+  form-language auto-detect (`lang.js`, 8 languages); any-to-any translation via English pivot;
+  bilingual side panel; Devanagari/CJK output fonts (fontkit + hosted Noto). See
+  `docs/specs/language-aware-filling.md`.
+- **Desktop parity:** resolver + form templates + language detection + fonts ported to the Tauri
+  app's TS fill pipeline (`apps/app/src/fill/`); `tsc` + `vite build` verified.
+- **One-command redeploy:** `deploy/publish-extension.ps1` (rebuild zip → publish site).
+
+### Fixed (2026-07-20)
+- Extension failed to load — `blob:` is invalid in MV3 `object-src`; reverted, use `<iframe>`.
+- OCR modules dead — vendored Tesseract exports only a default; `import { createWorker }` threw
+  and killed capture + PDF-OCR. Import the default namespace.
+- Vault re-locked mid-use — MV3 evicts the service worker; mirror the unlocked session into
+  `chrome.storage.session` (memory-only) and restore on respawn.
+
 ### Added
 - Initial SDD + Memory Bank + governance scaffold.
 - Product vision & full requirements (projectBrief pillars #1–#14): privacy-first on-device PDF/form

@@ -12,6 +12,7 @@ const setMsg = (t, ok = true) => { const e = $("msg"); e.textContent = t; e.clas
 const setSaveMsg = (t, ok = true) => { const e = $("saveMsg"); e.textContent = t; e.className = "msg " + (ok ? "ok" : "err"); };
 
 let stream = null;
+let barcodeReader = null;
 
 $("close").onclick = (e) => {
   e.preventDefault();
@@ -21,23 +22,44 @@ $("close").onclick = (e) => {
 };
 
 function stopCam() {
+  if (barcodeReader) { try { barcodeReader.reset(); } catch (_) { /* ignore */ } barcodeReader = null; }
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
 }
 
 $("startCam").onclick = async () => {
   setMsg("Requesting camera…");
+  const v = $("video");
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-    });
-    const v = $("video");
-    v.srcObject = stream;
+    const { BrowserPDF417Reader } = await import("../vendor/zxing.bundle.mjs");
+    barcodeReader = new BrowserPDF417Reader();
     v.hidden = false;
     $("shot").hidden = true;
     $("startCam").hidden = true;
     $("snap").hidden = false;
     $("retake").hidden = true;
-    setMsg("Camera ready — frame the document and press Capture.");
+    setMsg("Scanning… hold the BACK barcode steady in view — it reads automatically. Or press Capture to OCR the front.");
+    // LIVE continuous scan: decodes the PDF417 as soon as ONE frame is sharp, so a blurry
+    // preview no longer blocks it. Requests continuous autofocus. The same live stream is
+    // reused for a manual OCR capture of the printed front.
+    await barcodeReader.decodeFromConstraints(
+      { video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: "continuous" }] } },
+      v,
+      (result) => {
+        if (!result) return;
+        const text = result.getText();
+        const fields = parseAamva(text);
+        if (fields.length >= 3) {
+          stopCam();
+          v.hidden = true;
+          $("snap").hidden = true;
+          $("retake").hidden = false;
+          $("raw").textContent = text;
+          renderResults(fields);
+          setMsg(`✓ Read the licence barcode — ${fields.length} field(s), exact (no OCR).`);
+        }
+      },
+    );
+    stream = v.srcObject; // keep the live stream for a manual OCR snapshot
   } catch (e) {
     setMsg("Couldn't open the camera (" + ((e && e.message) || e) + "). You can choose an image file instead.", false);
   }
@@ -45,14 +67,15 @@ $("startCam").onclick = async () => {
 
 $("snap").onclick = () => {
   const v = $("video");
+  if (!v.videoWidth) { setMsg("Camera still starting — try again in a second.", false); return; }
   const c = $("shot");
-  c.width = v.videoWidth || 1280;
-  c.height = v.videoHeight || 720;
+  c.width = v.videoWidth;
+  c.height = v.videoHeight;
   c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
   v.hidden = true; c.hidden = false;
   $("snap").hidden = true; $("retake").hidden = false;
   stopCam();
-  processImage(c);
+  runOcr(c); // manual capture = OCR the printed front (live scan already covers the barcode)
 };
 
 $("retake").onclick = () => {
