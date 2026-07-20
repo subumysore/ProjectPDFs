@@ -287,8 +287,10 @@ $("fill").onclick = async () => {
       let bin = "";
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       await chrome.storage.session.set({ ppf_filled: btoa(bin) });
-      await chrome.tabs.create({ url: chrome.runtime.getURL("viewer.html") });
-      return setMsg(`Filled ${filled} of ${total} field(s) — opened your filled PDF in a new tab. ✓`);
+      // Replace THIS tab with the filled PDF so the result is unmissable (the browser
+      // forbids editing the original on-screen PDF viewer).
+      await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
+      return setMsg(`Filled ${filled} of ${total} field(s) — showing your filled PDF now. ✓`);
     } catch (e) {
       const msg = /fetch/i.test((e && e.message) || "")
         ? "Couldn't read this PDF from the site. Download the PDF, then open it in the desktop app to fill it."
