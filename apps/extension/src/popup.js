@@ -268,9 +268,12 @@ $("fill").onclick = async () => {
       const { total, filled, bytes } = await fillPdfFromUrl(url, r.vault);
       if (!total) return setMsg("This PDF has no fillable fields. Open it in the desktop app to create fields (OCR) and fill.", false);
       if (!bytes) return setMsg("Couldn't fill this PDF.", false);
-      downloadBytes(bytes, "filled.pdf");
-      // The browser's PDF viewer can't be edited in place, so we fill a copy.
-      return setMsg(`Filled ${filled} of ${total} field(s). The browser can't edit the PDF on screen, so I saved a filled copy — check Downloads for filled.pdf.`);
+      // The browser can't edit the on-screen PDF, so open the filled result in a new tab.
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      await chrome.storage.session.set({ ppf_filled: btoa(bin) });
+      await chrome.tabs.create({ url: chrome.runtime.getURL("viewer.html") });
+      return setMsg(`Filled ${filled} of ${total} field(s) — opened your filled PDF in a new tab. ✓`);
     } catch (e) {
       const msg = /fetch/i.test((e && e.message) || "")
         ? "Couldn't read this PDF from the site. Download the PDF, then open it in the desktop app to fill it."
