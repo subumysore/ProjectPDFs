@@ -75,8 +75,102 @@ export function parseFields(text) {
   // Label-free formats anywhere in the text.
   const email = (text || "").match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
-  const phone = (text || "").match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
-  if (phone) put("cell_phone", (phone[0] ?? "").replace(/\s+/g, " ").trim());
+  // Phone — but ONLY if it looks like one: a formatted number, or exactly 10 digits.
+  // (Avoids grabbing a long unformatted ID/licence number as a phone.)
+  for (const pm of (text || "").match(/\+?\d[\d\s().-]{7,}\d/g) || []) {
+    const digits = pm.replace(/\D/g, "");
+    const hasSep = /[\s().-]/.test(pm.trim());
+    if (digits.length >= 10 && digits.length <= 13 && (hasSep || digits.length === 10)) {
+      put("cell_phone", pm.trim().replace(/\s+/g, " "));
+      break;
+    }
+  }
+
+  idHeuristics(text, out, put);
 
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
+}
+
+// Extract identity fields from UNLABELLED documents — driver's licences / ID cards
+// (AAMVA field numbers, name/address on bare lines). Fills only gaps the label parser
+// left, so it never overrides a labelled form. Best-effort against noisy OCR.
+function idHeuristics(text, out, put) {
+  const lines = (text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const STREET = /\b(WAY|ST|STREET|AVE|AVENUE|RD|ROAD|DR|DRIVE|LN|LANE|BLVD|BOULEVARD|CT|COURT|CIR|PL|PLACE|TER|TERRACE|HWY|PKWY|TRL|LOOP)\b/;
+  const STATE = "AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY";
+  const STATE_RE = new RegExp(`\\b(${STATE})\\b`);
+  const STOP = /DRIVER|LICEN[SC]E|IDENTIFICATION|CLASS|RESTR|ENDORS|DONOR|ORGAN|EYES|HAIR|\bSEX\b|HGT|WGT|\bISS\b|\bEXP\b|\bDLN\b|\bDOB\b|\bUSA\b|VETERAN|COMMISSIONER/i;
+
+  // Name: mostly-uppercase alpha lines (an optional leading AAMVA field number), not
+  // an address/state/keyword line. Surname line first, given-names line next.
+  const nameCands = [];
+  for (const l of lines) {
+    const m = l.match(/^(?:\d{1,2}[a-z]?\s+)?([A-Z][A-Z'’.]+(?:\s+[A-Z][A-Z'’.]+){0,3})$/);
+    if (!m) continue;
+    const name = m[1];
+    if (STREET.test(name) || STATE_RE.test(name) || STOP.test(name)) continue;
+    if (name.replace(/[^A-Z]/g, "").length < 3) continue;
+    nameCands.push(name);
+  }
+  if (nameCands.length && !out.first_name && !out.last_name) {
+    if (nameCands.length >= 2) {
+      put("last_name", nameCands[0].split(/\s+/)[0]);
+      const given = nameCands[1].split(/\s+/);
+      put("first_name", given[0]);
+      if (given.length > 1) put("middle_name", given.slice(1).join(" "));
+    } else {
+      const parts = nameCands[0].split(/\s+/);
+      put("first_name", parts[0]);
+      if (parts.length >= 3) { put("middle_name", parts.slice(1, -1).join(" ")); put("last_name", parts[parts.length - 1]); }
+      else if (parts.length === 2) put("last_name", parts[1]);
+    }
+  }
+
+  // Fallback for NOISY scans (lowercase junk around the caps): anchor on the AAMVA
+  // field numbers, which survive OCR noise. 1 = surname, 2 = first + middle.
+  if (!out.first_name && !out.last_name) {
+    const sur = text.match(/(?:^|[\s—-])1\s+([A-Z][A-Z'’]{2,})\b/);
+    if (sur && !STOP.test(sur[1])) put("last_name", sur[1]);
+    const giv = text.match(/(?:^|\s)2\s+([A-Z][A-Z'’]{2,}(?:\s+[A-Z][A-Z'’]{1,})*)/);
+    if (giv) {
+      const g = giv[1].split(/\s+/);
+      put("first_name", g[0]);
+      if (g.length > 1) put("middle_name", g.slice(1).join(" "));
+    }
+  }
+
+  // Address: a line beginning with a house number and ending in a street type…
+  for (const l of lines) {
+    if (out.address_1) break;
+    const m = l.match(new RegExp(`^(\\d{2,6}\\s+[A-Z0-9].*?${STREET.source})`));
+    if (m) put("address_1", m[1].replace(/\s+/g, " ").trim());
+  }
+  // …or anchor on AAMVA field 8 (address) when the street word is mangled.
+  if (!out.address_1) {
+    const a = text.match(/(?:^|\s)8\s+(\d{2,6}[\sA-Za-z'.!-]+?)(?:\||$)/m);
+    if (a) put("address_1", a[1].replace(/[!|]/g, "").replace(/\s+/g, " ").trim());
+  }
+  // City + state: "<CITY WORDS> <ST>" (state may be fused to the ZIP, e.g. "NC27587").
+  for (const l of lines) {
+    if (out.city) break;
+    const m = l.match(new RegExp(`([A-Z][A-Za-z]+(?:\\s+[A-Z][A-Za-z]+){0,3}?)[,\\s]+(${STATE})(?=\\d|\\b)`));
+    if (m && !STOP.test(m[1]) && !STREET.test(m[1])) {
+      put("city", m[1].replace(/^[A-Z]{1,3}\s+(?=[A-Z][a-z])/, "").trim()); // drop a stray leading token
+      put("state", m[2]);
+    }
+  }
+  // ZIP: 5 digits, possibly fused to the state ("NC27587") or as ZIP+4.
+  const zip = (text || "").match(/\b(?:[A-Z]{2})?(\d{5})(?:-\d{4})?\b/);
+  if (zip) put("zip", zip[1]);
+
+  // Date of birth: pick the date whose year is a plausible birth year (oldest wins).
+  const thisYear = new Date().getFullYear();
+  let bestDob = null;
+  let bestYear = Infinity;
+  for (const dm of (text || "").match(/\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/g) || []) {
+    const y = parseInt(dm.match(/(\d{2,4})$/)[1], 10);
+    const year = y < 100 ? (y > (thisYear % 100) ? 1900 + y : 2000 + y) : y;
+    if (year >= 1900 && year <= thisYear - 14 && year < bestYear) { bestYear = year; bestDob = dm; }
+  }
+  if (bestDob) put("date_of_birth", bestDob);
 }
