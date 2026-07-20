@@ -5,13 +5,12 @@ import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFi
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
-import { translate } from "./translate";
-import type { Direction } from "./translate";
+import { translateText } from "./translate";
 
 // Languages the on-device models support today. A form's "original language" is the
 // language it was authored in (catalogue forms are English); the user's BASE language
 // is their comfort language for viewing + entry.
-const LANGS = { en: "English", hi: "हिन्दी" } as const;
+const LANGS = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" } as const;
 type Lang = keyof typeof LANGS;
 const FORM_LANG: Lang = "en"; // catalogue forms' original language
 
@@ -193,7 +192,15 @@ export function App() {
 
   const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then(setProfiles));
   const loadPoints = (id: string) =>
-    guard(invoke<DataPoint[]>("list_data_points", { profileId: id }).then(setPoints));
+    guard(
+      invoke<DataPoint[]>("list_data_points", { profileId: id }).then((pts) => {
+        setPoints(pts);
+        // native_language is a PROFILE field (spec: language-aware filling) — hydrate
+        // the "Your language" selector from it.
+        const nl = pts.find((p) => p.key === "native_language")?.value;
+        if (nl && nl in LANGS) setBaseLang(nl as Lang);
+      }),
+    );
   const doSearch = (q: string) => {
     setQuery(q);
     guard(invoke<CatalogSummary[]>("catalog_search", { query: q }).then(setResults));
@@ -264,7 +271,7 @@ export function App() {
     const formLang = (form?.lang as Lang) ?? FORM_LANG;
     if (baseLang !== formLang) {
       try {
-        const converted = await translate(value, `${baseLang}-${formLang}` as Direction, setTransMsg);
+        const converted = await translateText(value, baseLang, formLang, setTransMsg);
         if (converted) {
           note = ` — you typed ${LANGS[baseLang]}, saved as ${LANGS[formLang]}: “${converted}”`;
           value = converted;
@@ -307,7 +314,7 @@ export function App() {
     try {
       const map: Record<string, string> = {};
       for (const f of autofill.filled) {
-        map[f.ontology_key] = await translate(f.name, `${formLang}-${baseLang}` as Direction, setTransMsg);
+        map[f.ontology_key] = await translateText(f.name, formLang, baseLang, setTransMsg);
       }
       setTranslated(map);
       setTransMsg(`Translated for viewing (${LANGS[formLang]} → ${LANGS[baseLang]}). You still fill it in ${LANGS[formLang]}.`);
@@ -726,8 +733,11 @@ export function App() {
           id="baselang"
           value={baseLang}
           onChange={(e) => {
-            setBaseLang(e.currentTarget.value as Lang);
+            const lang = e.currentTarget.value as Lang;
+            setBaseLang(lang);
             setTranslated({});
+            // Persist as a profile field so it travels with the vault (and the extension).
+            if (selected) void invoke("upsert_data_point", { profileId: selected, key: "native_language", value: lang }).catch(() => {});
           }}
           style={{ padding: "4px 6px" }}
         >

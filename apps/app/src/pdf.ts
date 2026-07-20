@@ -1,6 +1,21 @@
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-import { PDFDocument, PDFTextField, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFTextField, PDFName, StandardFonts, rgb } from "pdf-lib";
+import { resolveFields, resolveBundle } from "./fill/resolver";
+import { identifyAcroForm } from "./fill/forms";
+import { detectLang } from "./fill/lang";
+
+/** Read a text field's tooltip (/TU) — a human label many good forms set. */
+function fieldTooltip(field: PDFTextField): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const v = (field as any).acroField.dict.lookup(PDFName.of("TU"));
+    if (v && typeof v.decodeText === "function") return v.decodeText();
+  } catch {
+    /* no tooltip */
+  }
+  return "";
+}
 
 /** A field-map entry from the catalog (mirrors core-catalog FieldSpec). */
 export interface CatalogFieldSpec {
@@ -47,26 +62,59 @@ function matchKey(fieldName: string, vault: Record<string, string>): string | un
   return undefined;
 }
 
-/** Fill a PDF's AcroForm text fields from the vault and return the filled bytes. */
+/**
+ * Fill a PDF's AcroForm from the vault and return the filled bytes. Three layers,
+ * strongest first (parity with the extension):
+ *  1) Known-form field-NAME template (W-4/W-9 etc.): setText the exact mapped fields.
+ *  2) Semantic resolver by each field's label (tooltip → name): meaning-matching,
+ *     name composition, address combine/split — not literal key equality.
+ *  3) Legacy matchKey hints as a last resort.
+ * Also returns the detected form language (for language-aware viewing).
+ */
 export async function fillAndExport(
   bytes: ArrayBuffer,
   vault: Record<string, string>,
-): Promise<{ filled: number; total: number; data: Uint8Array }> {
+): Promise<{ filled: number; total: number; data: Uint8Array; formLang: string }> {
   const pdf = await PDFDocument.load(bytes);
   const form = pdf.getForm();
   const fields = form.getFields();
+  const names = fields.map((f) => f.getName());
   let filled = 0;
-  for (const field of fields) {
-    if (field instanceof PDFTextField) {
-      const key = matchKey(field.getName(), vault);
-      if (key) {
-        field.setText(vault[key]);
-        filled++;
-      }
+
+  const acro = identifyAcroForm(names);
+  if (acro) {
+    const bundle = resolveBundle(vault);
+    for (const f of fields) {
+      if (!(f instanceof PDFTextField)) continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rule = acro.fields.find((r: any) => r.m.test(f.getName()));
+      if (!rule) continue;
+      const val = rule.v(bundle);
+      if (val == null || val === "") continue;
+      try { f.setText(String(val)); filled++; } catch { /* skip */ }
     }
+  } else {
+    const textFields = fields.filter((f) => f instanceof PDFTextField) as PDFTextField[];
+    const descriptors = textFields.map((f) => ({
+      label: fieldTooltip(f) || f.getName(),
+      maxLength: (f.getMaxLength && f.getMaxLength()) || -1,
+    }));
+    const values = resolveFields(vault, descriptors);
+    textFields.forEach((f, i) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let v: any = values[i];
+      if (v == null || v === "") {
+        const key = matchKey(f.getName(), vault); // legacy fallback
+        v = key ? vault[key] : undefined;
+      }
+      if (v != null && v !== "") { try { f.setText(String(v)); filled++; } catch { /* skip */ } }
+    });
   }
+
+  const formLang = detectLang(names.join(" ")).lang as string;
+  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
   const data = await pdf.save();
-  return { filled, total: fields.length, data };
+  return { filled, total: fields.length, data, formLang };
 }
 
 /**
