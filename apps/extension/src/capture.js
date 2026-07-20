@@ -49,6 +49,8 @@ $("startCam").onclick = async () => {
         const text = result.getText();
         const fields = parseAamva(text);
         if (fields.length >= 3) {
+          // Grab the current frame as the DL image BEFORE stopping the stream.
+          fields.unshift({ ontology_key: "drivers_license_image", value: toJpegDataUrl(v) });
           stopCam();
           v.hidden = true;
           $("snap").hidden = true;
@@ -142,6 +144,22 @@ function preprocessForOcr(srcCanvas) {
   return c;
 }
 
+// Capture the whole frame (video or canvas) as a JPEG data-URI — the document image.
+function toJpegDataUrl(source) {
+  const w = source.videoWidth || source.width;
+  const h = source.videoHeight || source.height;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  c.getContext("2d").drawImage(source, 0, 0, w, h);
+  return c.toDataURL("image/jpeg", 0.85);
+}
+// Which document-image key to store the whole picture under (spec: document-image-fields).
+function docImageKey(text) {
+  if (/passport/i.test(text || "")) return "passport_image";
+  if (/driver|licen[sc]e/i.test(text || "")) return "drivers_license_image";
+  return "document_image";
+}
+
 // First try to read a PDF417 barcode (the back of a US/Canada driver's licence) —
 // that gives EXACT structured data, no OCR guessing. If there's no barcode, fall back
 // to OCR of the printed text. All on-device.
@@ -154,6 +172,8 @@ async function processImage(canvas) {
     const text = (res && res.getText && res.getText()) || "";
     const fields = parseAamva(text);
     if (fields.length >= 3) {
+      // A decoded licence barcode → also keep the whole picture as the DL image.
+      fields.unshift({ ontology_key: "drivers_license_image", value: toJpegDataUrl(canvas) });
       $("raw").textContent = text;
       renderResults(fields);
       setMsg(`✓ Read the licence barcode — ${fields.length} field(s), exact (no OCR).`);
@@ -172,12 +192,8 @@ async function runOcr(canvas) {
     const text = data.text || "";
     const fields = parseFields(text);
     $("raw").textContent = text.trim() || "(no text recognised)";
-    if (!fields.length) {
-      setMsg("Read the image, but couldn't recognise any profile fields. Try a sharper, straight-on shot.", false);
-      $("resultsCard").hidden = false;
-      $("results").querySelector("tbody").innerHTML = "";
-      return;
-    }
+    // Keep the whole picture as a document image, keyed by detected type (DL/passport/…).
+    fields.unshift({ ontology_key: docImageKey(text), value: toJpegDataUrl(canvas) });
     renderResults(fields);
     setMsg(`Found ${fields.length} field(s) — review below.`);
   } catch (e) {
@@ -192,11 +208,23 @@ function renderResults(fields) {
     const tr = document.createElement("tr");
     const cb = document.createElement("input");
     cb.type = "checkbox"; cb.checked = true; cb.className = "pick";
-    const vin = document.createElement("input");
-    vin.type = "text"; vin.value = value; vin.className = "val";
     const td0 = document.createElement("td"); td0.appendChild(cb);
     const td1 = document.createElement("td"); td1.className = "k"; td1.textContent = ontology_key;
-    const td2 = document.createElement("td"); td2.appendChild(vin);
+    const td2 = document.createElement("td");
+    const isImage = typeof value === "string" && value.startsWith("data:image");
+    if (isImage) {
+      // Show a thumbnail; keep the data-URI in a hidden input so save reads it uniformly.
+      const thumb = document.createElement("img");
+      thumb.src = value;
+      thumb.style.cssText = "max-height:44px;max-width:170px;object-fit:contain;border:1px solid #d9e2e6;border-radius:4px;background:#fff";
+      const hidden = document.createElement("input");
+      hidden.type = "hidden"; hidden.className = "val"; hidden.value = value;
+      td2.append(thumb, hidden);
+    } else {
+      const vin = document.createElement("input");
+      vin.type = "text"; vin.value = value; vin.className = "val";
+      td2.appendChild(vin);
+    }
     tr.dataset.key = ontology_key;
     tr.append(td0, td1, td2);
     tb.appendChild(tr);
