@@ -80,7 +80,10 @@ export function parseFields(text) {
   for (const pm of (text || "").match(/\+?\d[\d\s().-]{7,}\d/g) || []) {
     const digits = pm.replace(/\D/g, "");
     const hasSep = /[\s().-]/.test(pm.trim());
-    if (digits.length >= 10 && digits.length <= 13 && (hasSep || digits.length === 10)) {
+    // A phone is 10 digits (US) or 11 starting with country-code 1 — NOT a 12+ digit
+    // licence/ID number.
+    const phoneLen = digits.length === 10 || (digits.length === 11 && digits[0] === "1");
+    if (phoneLen && (hasSep || digits.length === 10)) {
       put("cell_phone", pm.trim().replace(/\s+/g, " "));
       break;
     }
@@ -136,9 +139,11 @@ export function parseMrz(text) {
     if (m) { const yy = +m[1]; out.expiry_date = `${m[2]}/${m[3]}/${yy < 70 ? 2000 + yy : 1900 + yy}`; }
   };
 
+  // A real MRZ line contains filler '<' (ordinary OCR text — e.g. a licence front — has
+  // NONE), which prevents false MRZ matches; the strict per-format checks below do the rest.
   const lines = (text || "").toUpperCase().split(/\r?\n/)
     .map((l) => l.replace(/[^A-Z0-9<]/g, ""))
-    .filter((l) => l.length >= 28 && l.length <= 46 && (l.includes("<") || /\d/.test(l)));
+    .filter((l) => l.length >= 28 && l.length <= 46 && l.includes("<"));
 
   // TD3 — passport: line 1 starts with the document code then a filler/subtype (P<, PA…).
   const p1 = lines.find((l) => l.length >= 40 && /^P[A-Z<]/.test(l) && l.includes("<<"));

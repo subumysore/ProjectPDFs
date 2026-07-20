@@ -167,10 +167,18 @@ function toJpegDataUrl(source) {
   return c.toDataURL("image/jpeg", 0.85);
 }
 // Which document-image key to store the whole picture under (spec: document-image-fields).
-// The OCR/printed side is the FRONT; a decoded PDF417 barcode is the BACK.
-function docImageKey(text) {
-  if (/passport/i.test(text || "")) return "passport_image";
-  if (/driver|licen[sc]e/i.test(text || "")) return "driver_license_front";
+// A decoded PDF417 barcode = BACK. For OCR text, the BACK carries class/restriction/
+// endorsement boilerplate with none of the front's identity markers; the FRONT carries
+// the name/DOB/address/DLN.
+function docImageKey(text, hasIdentity) {
+  const t = text || "";
+  if (/passport|passeport|pasaporte/i.test(t)) return "passport_image";
+  const backMarkers = /\b(class|restr|restrictions|endorsement|gvwr|commercial|legal presence|organ donor|noncommercial)\b/i.test(t);
+  // The FRONT is what carries the person's identity — if we extracted a name/DOB/address
+  // it's the front; the back (barcode/boilerplate side) has none of that.
+  if (hasIdentity) return "driver_license_front";
+  if (backMarkers) return "driver_license_back";
+  if (/driver|licen[sc]e|\bdln\b/i.test(t)) return "driver_license_front";
   return "document_image";
 }
 
@@ -209,11 +217,16 @@ async function runOcr(canvas) {
     const text = data.text || "";
     const fields = parseFields(text);
     $("raw").textContent = text.trim() || "(no text recognised)";
-    // Keep the whole picture as a document image, keyed by detected type (DL/passport/…).
-    fields.unshift({ ontology_key: docImageKey(text), value: toJpegDataUrl(canvas) });
+    const hasIdentity = fields.some((f) => ["first_name", "last_name", "date_of_birth", "address_1"].includes(f.ontology_key));
+    const key = docImageKey(text, hasIdentity);
+    fields.unshift({ ontology_key: key, value: toJpegDataUrl(canvas) });
     renderResults(fields);
     setBusy(false);
-    setMsg(`Found ${fields.length} field(s) — review below.`);
+    if (key === "driver_license_back" && fields.length === 1) {
+      setMsg("Looks like the BACK of a licence, but the barcode didn't scan (glare/blur). Use Start camera and hold the barcode steady, or upload a sharper, glare-free photo — the barcode reads every field exactly.", false);
+    } else {
+      setMsg(`Found ${fields.length} field(s) — review below.`);
+    }
   } catch (e) {
     setBusy(false);
     setMsg("OCR failed: " + ((e && e.message) || e), false);
