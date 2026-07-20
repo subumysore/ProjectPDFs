@@ -3,16 +3,35 @@
   "name": "PolyglotFormFill Autofill (companion)",
   "version": "0.1.0",
   "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
-  "permissions": ["storage", "activeTab", "scripting", "nativeMessaging"],
-  "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "src/background.js", "type": "module" },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxo11ReAuirRp3AHTJJ+SJpaxEkRr8cZcSvsUJPB92YgJ2Nbek64MJVlAIcR+dKCn1c7tlZ7O/dGT1hd3CLYPWgcOUKJKWLf1a3wOBP6x2WTJ62M7xBHy8+UOgMTxhL5tAK3xWw8BSPvYlA9fVtSDEh6ODztXC8C+LzWJ17ZlH/rihiQtvQWG0NKuoBUxUaK4hVjHaly4kJEPEfi/ugv2pg+0frdVShqZ4hLqLoTEtTmqixV/27s3PvP1HH1Px7KlJhHh8DlQJuYzsPCtScoBkzAN793JPP/M7mLtxrGKkaZzaQFRqQMJtilsFpDg3YtFD40/reUnCRMrklLBDYGtSwIDAQAB",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "PolyglotFormFill Autofill",
-    "default_icon": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" }
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
   "options_page": "options.html",
-  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://polyglotformfill.surge.sh https://objectstorage.us-ashburn-1.oraclecloud.com"
   }
