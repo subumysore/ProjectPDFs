@@ -48,6 +48,22 @@
   <h2 style="margin-top:2px">What PolyglotFormFill does</h2>
   <div class="vids" id="vids"></div>
 
+  <span class="eyebrow" style="display:block;margin-top:40px">Good to know</span>
+  <h2 style="margin-top:2px">Keep &amp; move your data</h2>
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 20px;margin-top:14px">
+    <ol style="line-height:1.7">
+      <li><b>Save your details (do this once):</b> open the popup → <b>Backup / transfer</b> → type a passphrase →
+        <b>Export encrypted</b> → choose where to save the <code>.ppfvault</code> file. That file is your safety net.</li>
+      <li><b>Move to another device / restore:</b> type the same passphrase → <b>Import file…</b> → pick your
+        <code>.ppfvault</code>. Everything comes back — the same file works in the extension and the desktop app.</li>
+      <li><b>Fill a PDF:</b> open the PDF → <b>Fill this page</b> → the completed PDF opens and <b>auto-downloads</b>
+        as <code>&lt;original&gt;-filled.pdf</code>. (Browsers can’t edit the on-screen PDF, so you get the finished copy.)</li>
+      <li><b>Fill a web form:</b> on any normal web form, <b>Fill this page</b> fills the boxes <b>live</b>, on screen.</li>
+      <li><b>Updating without losing data:</b> when a new version ships, replace the files in the <b>same folder</b> and click
+        <b>↻ Reload</b> — never “Remove.” Your vault stays put.</li>
+    </ol>
+  </div>
+
   <span class="eyebrow" style="display:block;margin-top:40px">Get set up</span>
   <h2 style="margin-top:2px">Install it — step by step</h2>
   <div class="bar">
@@ -63,11 +79,11 @@
 
 <script>
 const VIDEOS = [
-  ["fill", "Fill any form in one click", "Web forms, PDFs, Word & Excel — mapped from your vault, on your device. Nothing typed, nothing uploaded."],
-  ["pdf", "Turn a non-fillable PDF into a fillable one", "A flat or scanned PDF with no boxes? On-device OCR finds the fields, creates them, and fills them."],
-  ["camera", "Scan an ID with your camera", "Snap a licence, ID, or business card. OCR reads it and saves the details to your profile — no typing."],
+  ["fill", "Fill a web form in one click", "On any HTML form, click Fill this page — it maps each field to your vault and fills the boxes live, on your device. It's intelligent: a lone ‘Name’ gets first+middle+last; ‘Name of Dependent’ gets your dependant, not you."],
+  ["pdf", "Fill a PDF form", "On a PDF, click Fill this page — it fills from your vault and opens the completed PDF, auto-downloading it as <original>-filled.pdf. (The browser can’t edit the on-screen PDF, so you get the finished copy.)"],
+  ["camera", "Scan an ID with your camera", "Snap a licence, ID, or business card. On-device OCR reads it and saves the details to your profile — no typing, image never leaves your device."],
   ["vault", "Manage your details", "Your encrypted vault — type a value and it saves as you go. Add or edit fields any time."],
-  ["backup", "Back up & move devices", "Export a passphrase-encrypted file, import it on another device. The same file works in app & extension."],
+  ["backup", "Save your data & move devices", "Export encrypted saves a passphrase-locked file — your safety net. Import it on any device (or after an update) to restore everything."],
 ];
 const INSTALL = [
   ["img/os-extensions.png", "Load it in your browser",
