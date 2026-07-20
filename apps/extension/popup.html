@@ -49,6 +49,22 @@
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
+        <div class="sub" style="margin-bottom: 6px"><b>Your language</b> — the language you think in. Forms in another
+          language are translated to this for viewing; the finished form stays in the form's own language.</div>
+        <select id="nativeLang" style="width: 100%">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="es">Español (Spanish)</option>
+          <option value="fr">Français (French)</option>
+          <option value="de">Deutsch (German)</option>
+          <option value="zh">中文 (Chinese)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="ru">Русский (Russian)</option>
+        </select>
+        <div class="sub" id="nativeLangMsg" style="margin-top: 4px; min-height: 14px"></div>
+      </div>
+
+      <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b>Your details</b> — saved encrypted on this device.</div>
         <div id="entries"></div>
         <input id="newKey" placeholder="field (e.g. full_name, email, phone)" />

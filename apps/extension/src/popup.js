@@ -65,7 +65,10 @@ async function renderEntries() {
     box.innerHTML = `<div class="empty">${COMP.on ? "Desktop app vault unavailable — is the app installed & the companion registered? " : ""}${(r.error || "")}</div>`;
     return;
   }
-  const keys = Object.keys(r.vault || {});
+  renderNativeLang(r.vault);
+  // native_language is edited via the dedicated "Your language" dropdown, not the
+  // generic field list.
+  const keys = Object.keys(r.vault || {}).filter((k) => k !== "native_language");
   if (!keys.length) {
     const p = document.createElement("div");
     p.className = "empty";
@@ -317,6 +320,22 @@ $("fill").onclick = async () => {
     }
   }
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
+};
+
+// Native language — a PROFILE field in the vault (spec: language-aware filling).
+function renderNativeLang(vault) {
+  const sel = $("nativeLang");
+  if (!sel) return;
+  sel.value = (vault && vault.native_language) || "en";
+}
+$("nativeLang").onchange = async () => {
+  const value = $("nativeLang").value;
+  let res;
+  if (COMP.on) res = await send({ type: "companionUpsert", profileId: await compProfile(), key: "native_language", value });
+  else res = await send({ type: "set", key: "native_language", value });
+  const el = $("nativeLangMsg");
+  if (res && res.ok) { el.className = "sub"; el.textContent = `Your language: ${$("nativeLang").options[$("nativeLang").selectedIndex].text}.`; }
+  else { el.className = "sub err"; el.textContent = (res && res.error) || "Couldn't save."; }
 };
 
 // Scan an ID / document with the camera → extract profile fields (opens a full tab,

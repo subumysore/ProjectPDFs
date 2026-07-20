@@ -17,6 +17,7 @@ import { PDFDocument, StandardFonts, rgb } from "../vendor/pdf-lib.esm.min.js";
 import { resolveFields } from "./resolver.js";
 import { identifyForm } from "./pdfforms.js";
 import { getTessWorker } from "./tess.js";
+import { detectLang } from "./lang.js";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
 const MAX_PAGES = 3; // cap OCR work — fillable fields are almost always in the first pages
@@ -102,6 +103,11 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
     fullText += " " + segs.map((s) => s.text).join(" ");
   }
 
+  // Detect the form's language (spec: language-aware filling). Used to flag when the
+  // form isn't in the user's native language so the viewer can offer a translated view.
+  const formLang = detectLang(fullText).lang;
+  const nativeLang = (vault && vault.native_language) || "en";
+
   // Phase 2 — recognise the form. Known form → precise template fill; unknown →
   // generic strict fill (only high-confidence "your data" boxes).
   const form = identifyForm(fullText);
@@ -173,5 +179,22 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
 
   onStatus?.(filled ? `filled ${filled} field(s) by reading the form` : "no matching labels found");
   const saved = await out.save();
-  return { total, filled, bytes: saved, pages: nPages, form: form ? form.name : null };
+  // Distinct caption-like labels for the bilingual side panel (Phase 3): short,
+  // readable, de-duplicated, in document order.
+  const seenLabel = new Set();
+  const labels = [];
+  for (const geom of pageData) {
+    for (const s of geom.segs) {
+      const words = s.text.split(/\s+/).filter(Boolean).length;
+      if (words <= 9 && s.text.length >= 3 && s.text.length <= 60 && !seenLabel.has(s.text)) {
+        seenLabel.add(s.text);
+        labels.push(s.text);
+      }
+    }
+  }
+  return {
+    total, filled, bytes: saved, pages: nPages,
+    form: form ? form.name : null,
+    formLang, nativeLang, labels,
+  };
 }

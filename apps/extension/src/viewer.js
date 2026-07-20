@@ -42,6 +42,45 @@ function showEmpty(msg) {
   el.hidden = false;
 }
 
+const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
+
+// Bilingual side panel (Phase 3): a foreign-language form's labels translated into the
+// user's language, on demand (models load only when they click). The original document
+// stays untouched; the finished form remains in its own language (spec invariant).
+function setupLangPanel(res) {
+  if (!res || !res.labels || !res.labels.length) return;
+  const from = res.formLang || "en";
+  const to = res.nativeLang || "en";
+  if (from === to) return; // same language — nothing to translate
+  const panel = document.getElementById("langpanel");
+  document.getElementById("lpNote").textContent =
+    `This form is in ${LANG_NAMES[from] || from}; your language is ${LANG_NAMES[to] || to}. Translate the labels to read it — the filled form itself stays in ${LANG_NAMES[from] || from}.`;
+  panel.hidden = false;
+  const status = document.getElementById("lpStatus");
+  const table = document.getElementById("lpTable");
+  const go = document.getElementById("lpGo");
+  go.onclick = async () => {
+    go.disabled = true;
+    status.textContent = "Loading the on-device translation model (first time downloads it)…";
+    try {
+      const { translateText } = await import("./translate.js");
+      table.innerHTML = "";
+      for (const label of res.labels) {
+        const tr = await translateText(label, from, to, (s) => (status.textContent = s));
+        const row = document.createElement("tr");
+        const a = document.createElement("td"); a.className = "orig"; a.textContent = label;
+        const b = document.createElement("td"); b.className = "tr"; b.textContent = tr;
+        row.append(a, b);
+        table.appendChild(row);
+      }
+      status.textContent = `✓ Translated ${res.labels.length} label(s) — on-device.`;
+    } catch (e) {
+      status.textContent = "Translation failed: " + ((e && e.message) || e);
+      go.disabled = false;
+    }
+  };
+}
+
 (async () => {
   const s = await chrome.storage.session.get([
     "ppf_filled", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
@@ -72,6 +111,7 @@ function showEmpty(msg) {
       }
       setBar(`✓ Filled ${res.filled} field(s)${res.form ? " · " + res.form : ""} on-device — downloading…`);
       await renderAndDownload(res.bytes, name);
+      setupLangPanel(res);
     } catch (e) {
       chrome.storage.session.remove(["ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa"]);
       setBar("OCR failed: " + ((e && e.message) || e));
