@@ -86,8 +86,42 @@ export function parseFields(text) {
     }
   }
 
-  idHeuristics(text, out, put);
+  // Passport MRZ (ICAO 9303) is exact structured data — use it and treat it as
+  // AUTHORITATIVE. Only run the driver's-licence heuristics for NON-passports (they
+  // produce garbage on a passport's layout).
+  const mrz = parseMrz(text);
+  if (mrz.length) {
+    for (const { ontology_key, value } of mrz) out[ontology_key] = value;
+  } else if (!/passport|travel document|pasaporte|passeport/i.test(text)) {
+    idHeuristics(text, out, put);
+  }
 
+  return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
+}
+
+// Parse a passport MRZ (TD3, two ~44-char lines of A–Z/0–9/<). Exact, standardised —
+// the passport equivalent of a driver's-licence barcode.
+export function parseMrz(text) {
+  const out = {};
+  const cands = (text || "").toUpperCase().split(/\r?\n/)
+    .map((l) => l.replace(/[^A-Z0-9<]/g, ""))
+    .filter((l) => l.length >= 28 && l.length <= 46 && l.includes("<"));
+  const l1 = cands.find((l) => /^P[A-Z<]/.test(l) && l.includes("<<"));
+  const l2 = cands.find((l) => /^[A-Z0-9<]{9}\d?[A-Z<]{3}\d{6}/.test(l));
+  if (l1) {
+    const parts = l1.slice(5).split("<<"); // after doc-type + subtype + 3-letter country
+    const surname = parts[0].replace(/</g, " ").trim();
+    if (surname) out.last_name = surname;
+    const given = (parts[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
+    if (given.length) { out.first_name = given[0]; if (given.length > 1) out.middle_name = given.slice(1).join(" "); }
+  }
+  if (l2) {
+    const pno = l2.slice(0, 9).replace(/</g, ""); if (pno) out.passport_no = pno;
+    const nat = l2.slice(10, 13).replace(/</g, ""); if (/^[A-Z]{3}$/.test(nat)) out.nationality = nat;
+    const dob = l2.slice(13, 19).match(/^(\d{2})(\d{2})(\d{2})$/); // YYMMDD
+    if (dob) { const yy = +dob[1]; out.date_of_birth = `${dob[2]}/${dob[3]}/${yy > 30 ? 1900 + yy : 2000 + yy}`; }
+    if (l2[20] === "M" || l2[20] === "F") out.gender = l2[20];
+  }
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 

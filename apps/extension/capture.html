@@ -16,6 +16,18 @@
   button { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 14px; }
   button.primary { background: var(--teal); color: #fff; border-color: var(--teal); font-weight: 600; }
   button:disabled { opacity: .5; cursor: default; }
+  /* Glassy Retake button — clearly distinct from the plain file/secondary buttons. */
+  #retake {
+    background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(13,143,131,.14));
+    border: 1px solid rgba(13,143,131,.5);
+    color: var(--teal-ink);
+    font-weight: 600;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 2px 10px rgba(13,143,131,.18), inset 0 1px 0 rgba(255,255,255,.6);
+  }
+  #retake:hover { background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(13,143,131,.24)); box-shadow: 0 3px 14px rgba(13,143,131,.26), inset 0 1px 0 rgba(255,255,255,.7); }
+  #retake:active { transform: translateY(1px); }
   .muted { color: var(--muted); font-size: 13px; }
   .msg { min-height: 20px; margin-top: 10px; font-size: 14px; }
   .ok { color: var(--teal-ink); } .err { color: #9a2c2c; }
