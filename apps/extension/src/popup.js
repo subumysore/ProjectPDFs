@@ -395,6 +395,75 @@ $("imgFile").onchange = async () => {
   else setMsg((r && r.error) || "Save failed", false);
 };
 
+// ---- View this page in MY language (spec: language-aware filling — the "understand"
+// direction). Translate a foreign form's visible labels INTO the user's native language,
+// in place, so they can READ it. The form still submits in its own language (we only
+// change label text, never field values). Reversible.
+function collectLabelsForView() {
+  const items = [];
+  let i = 0;
+  const seen = new Set();
+  for (const el of document.querySelectorAll("input, textarea, select")) {
+    if (["password", "hidden", "submit", "button", "file"].includes(el.type)) continue;
+    let node = (el.labels && el.labels[0]) || null;
+    if (!node) {
+      const prev = el.previousElementSibling;
+      if (prev && /^(LABEL|SPAN|DIV|P|B|STRONG)$/.test(prev.tagName) && !prev.querySelector("input,textarea,select")) {
+        const t = prev.textContent.trim();
+        if (t && t.length <= 50) node = prev;
+      }
+    }
+    if (node && !seen.has(node) && node.textContent.trim()) {
+      node.setAttribute("data-ppf-i", String(i)); items.push({ i, text: node.textContent.trim() }); seen.add(node); i++;
+    }
+    if (el.placeholder && el.placeholder.trim()) { el.setAttribute("data-ppf-ph", String(i)); items.push({ i, text: el.placeholder.trim() }); i++; }
+  }
+  return items;
+}
+function applyLabelsForView(map) {
+  Object.keys(map).forEach((i) => {
+    const lab = document.querySelector('[data-ppf-i="' + i + '"]');
+    if (lab) { if (!lab.hasAttribute("data-ppf-orig")) lab.setAttribute("data-ppf-orig", lab.textContent); lab.textContent = map[i]; }
+    const ph = document.querySelector('[data-ppf-ph="' + i + '"]');
+    if (ph) { if (!ph.hasAttribute("data-ppf-pho")) ph.setAttribute("data-ppf-pho", ph.placeholder); ph.placeholder = map[i]; }
+  });
+}
+function restoreLabelsForView() {
+  document.querySelectorAll("[data-ppf-orig]").forEach((el) => { el.textContent = el.getAttribute("data-ppf-orig"); el.removeAttribute("data-ppf-orig"); });
+  document.querySelectorAll("[data-ppf-pho]").forEach((el) => { el.placeholder = el.getAttribute("data-ppf-pho"); el.removeAttribute("data-ppf-pho"); });
+}
+
+$("viewLang").onclick = async () => {
+  const r = await readVault();
+  const nativeLang = (r.ok && r.vault && r.vault.native_language) || "en";
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [{ result: items } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectLabelsForView });
+  if (!items || !items.length) return setMsg("No form labels found on this page.", false);
+  const { detectLang } = await import("./lang.js");
+  const formLang = detectLang(items.map((x) => x.text).join(" ")).lang;
+  if (formLang === nativeLang) return setMsg(`This page is already in your language (${nativeLang.toUpperCase()}).`);
+  setMsg(`Translating this page to ${nativeLang.toUpperCase()} on-device (first run downloads the model)…`);
+  try {
+    const { translateText } = await import("./translate.js");
+    const cache = {}; const map = {};
+    for (const it of items) {
+      if (cache[it.text] === undefined) { try { cache[it.text] = await translateText(it.text, formLang, nativeLang, (s) => setMsg(s)); } catch (_) { cache[it.text] = it.text; } }
+      map[it.i] = cache[it.text];
+    }
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: applyLabelsForView, args: [map] });
+    $("restoreLang").classList.remove("hidden");
+    setMsg(`✓ Page shown in ${nativeLang.toUpperCase()}. It still submits in its own language.`);
+  } catch (e) {
+    setMsg("Translation failed: " + ((e && e.message) || e), false);
+  }
+};
+$("restoreLang").onclick = async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: restoreLabelsForView });
+  $("restoreLang").classList.add("hidden");
+  setMsg("Showing the original.");
+};
+
 // Native language — a PROFILE field in the vault (spec: language-aware filling).
 function renderNativeLang(vault) {
   const sel = $("nativeLang");
