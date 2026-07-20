@@ -246,13 +246,7 @@ function renderResults(fields) {
   setSaveMsg("");
 }
 
-$("save").onclick = async () => {
-  // Vault must be unlocked (background holds the key).
-  const st = await send({ type: "status" });
-  if (!st || !st.ok || !st.unlocked) {
-    setSaveMsg("Your vault is locked. Open the PolyglotFormFill popup and unlock it, then save.", false);
-    return;
-  }
+async function doSave() {
   const rows = [...$("results").querySelectorAll("tbody tr")];
   let saved = 0, failed = 0;
   for (const tr of rows) {
@@ -264,4 +258,29 @@ $("save").onclick = async () => {
     if (r && r.ok) saved++; else failed++;
   }
   setSaveMsg(saved ? `Saved ${saved} field(s) to your profile.${failed ? ` (${failed} failed.)` : ""}` : "Nothing saved.", !failed);
+}
+
+$("save").onclick = async () => {
+  // Vault must be unlocked (background holds the key). If locked, unlock RIGHT HERE
+  // instead of sending the user back to the popup.
+  const st = await send({ type: "status" });
+  if (!st || !st.ok || !st.unlocked) {
+    $("unlockRow").hidden = false;
+    $("unlockPass").focus();
+    setSaveMsg("Your vault is locked — enter your passphrase below to unlock and save.", false);
+    return;
+  }
+  doSave();
 };
+
+// Inline unlock (passphrase) + save, so the user never leaves the scan.
+$("unlockBtn").onclick = async () => {
+  const pass = $("unlockPass").value;
+  if (!pass) { setSaveMsg("Enter your vault passphrase.", false); return; }
+  const r = await send({ type: "unlock", passphrase: pass });
+  if (!r || !r.ok) { setSaveMsg((r && r.error) || "Unlock failed — wrong passphrase?", false); return; }
+  $("unlockRow").hidden = true;
+  $("unlockPass").value = "";
+  doSave();
+};
+$("unlockPass") && ($("unlockPass").onkeydown = (e) => { if (e.key === "Enter") $("unlockBtn").click(); });
