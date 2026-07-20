@@ -147,10 +147,19 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
     const outPage = outPages[idx];
     const { segs } = geom;
     if (form) {
-      // Template layer: each rule anchors on a printed label; value flows through
-      // the shared resolver so vault-key naming stays irrelevant.
+      // Template layer: each rule anchors on a printed FIELD CAPTION. Reject
+      // instruction PROSE so a rule can't latch onto a paragraph that merely mentions
+      // the words ("…may be your social security number…"). The tell isn't length —
+      // real captions can be compound ("Employee's social security number For Official
+      // Use Only") — it's sentence vocabulary: prose carries connective/lowercase-flow
+      // words that field captions never do.
+      const PROSE = /\b(may|see|enter|your|you|if|instruction|example|optional|issued|foreign|flow|disregard|proprietor|account|valid|entity|individual|line|about|which|when|from)\b/i;
+      const captions = segs.filter((s) => {
+        const words = s.text.split(/\s+/).filter(Boolean).length;
+        return words <= 9 && s.text.length <= 60 && !PROSE.test(s.text);
+      });
       for (const rule of form.rules) {
-        const seg = segs.find((s) => rule.on.test(s.text));
+        const seg = captions.find((s) => rule.on.test(s.text));
         if (!seg) continue;
         const maxLength = /initial/i.test(rule.ask) ? 1 : -1;
         const val = resolveFields(vault, [{ label: rule.ask, maxLength }])[0];

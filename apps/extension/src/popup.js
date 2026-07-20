@@ -284,29 +284,34 @@ $("fill").onclick = async () => {
     if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
     try {
       const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
-      let { total, filled, bytes: out, xfa } = await fillPdfBytes(bytes, r.vault);
-      let via = "form fields";
-      // Fallback for XFA/LiveCycle (e.g. IRS W-2), scanned, or unlabeled PDFs that
-      // can't be matched by field name: read the PRINTED labels with on-device OCR
-      // and draw the values at their coordinates.
-      if (!filled) {
-        setMsg(xfa ? "XFA / LiveCycle form — reading the printed labels with OCR…" : "No usable field names — reading the form with OCR…");
-        const { fillPdfByOcr } = await import("./pdfocr.js");
-        const ocr = await fillPdfByOcr(bytes, r.vault, (s) => setMsg(s));
-        total = ocr.total; filled = ocr.filled; out = ocr.bytes;
-        via = ocr.form ? `OCR · ${ocr.form}` : "OCR (read the printed labels)";
-      }
-      if (!filled || !out) {
-        return setMsg("I read this form but couldn't find any fields matching your saved details. Add more details in the popup, then try again.", false);
-      }
-      let bin = "";
-      for (let i = 0; i < out.length; i += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(i, i + 0x8000));
       // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
       const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
-      await chrome.storage.session.set({ ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf` });
-      // Replace THIS tab with the filled PDF so the result is unmissable.
+      const acro = await fillPdfBytes(bytes, r.vault);
+      // Trust the AcroForm layer only when it's a real, non-XFA form that actually
+      // filled. XFA/LiveCycle hybrids (W-2/W-4/W-9) expose an unreliable AcroForm
+      // shadow — OCR reads their true printed labels instead.
+      if (acro.filled && acro.bytes && !acro.xfa) {
+        // Fast path: matched by AcroForm field names. Show the result in the viewer.
+        let bin = "";
+        for (let i = 0; i < acro.bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, acro.bytes.subarray(i, i + 0x8000));
+        await chrome.storage.session.set({ ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf` });
+        await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
+        return setMsg(`Filled ${acro.filled} of ${acro.total} field(s) via form fields — showing your filled PDF. ✓`);
+      }
+      // OCR path (XFA/LiveCycle like the IRS W-2, scanned, or unlabeled). Hand the
+      // SOURCE bytes + vault to the VIEWER TAB, which runs the OCR there — a closing
+      // popup can no longer interrupt it (OCR can take several seconds per page). The
+      // decrypted vault sits in ephemeral session storage only and is removed the
+      // moment the viewer has read it.
+      await chrome.storage.session.set({
+        ppf_src: fetched.b64,
+        ppf_vault: r.vault,
+        ppf_name: `${base}-filled.pdf`,
+        ppf_mode: "ocr",
+        ppf_xfa: !!acro.xfa,
+      });
       await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
-      return setMsg(`Filled ${filled} field(s) via ${via} — showing your filled PDF. ✓`);
+      return setMsg("Reading the form with OCR in the opened tab — watch the progress there. ✓");
     } catch (e) {
       return setMsg("PDF fill failed: " + ((e && e.message) || e), false);
     }

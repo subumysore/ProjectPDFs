@@ -31,31 +31,18 @@ export const FORMS = [
       { on: /employee.{0,3}s?\s+address and zip/i, ask: "address", place: "below" },
     ],
   },
-  {
-    id: "irs-w9",
-    name: "IRS W-9 (Request for Taxpayer ID)",
-    detect: [/request for taxpayer/i, /\bform\s*w-?9\b/i],
-    minDetect: 1,
-    rules: [
-      { on: /^name\b/i, ask: "name", place: "right" },
-      { on: /number.{0,3}\s+street.*apt|address.*number.*street/i, ask: "street address", place: "right" },
-      { on: /city.*state.*zip/i, ask: "address", place: "right" },
-      { on: /social security number/i, ask: "social security number", place: "below" },
-    ],
-  },
-  {
-    id: "irs-w4",
-    name: "IRS W-4 (Employee's Withholding)",
-    detect: [/employee.{0,3}s? withholding certificate/i, /\bform\s*w-?4\b/i],
-    minDetect: 1,
-    rules: [
-      { on: /first name and middle initial/i, ask: "first name", place: "right" },
-      { on: /^last name$/i, ask: "last name", place: "right" },
-      { on: /address$/i, ask: "street address", place: "right" },
-      { on: /city.*town.*state.*zip/i, ask: "address", place: "right" },
-      { on: /social security number/i, ask: "social security number", place: "right" },
-    ],
-  },
+  // W-9 and W-4 are RECOGNISED but deliberately have NO label-anchored rules. They
+  // are dense XFA-hybrid forms whose AcroForm names don't resolve (0–2 fills) AND
+  // whose printed field captions blur into surrounding instruction prose, so OCR
+  // can't isolate a clean caption to anchor to (verified: label-anchoring either
+  // fills nothing or risks landing on an instruction paragraph). Recognising them
+  // with empty rules keeps them OUT of the generic strict-OCR path (which could
+  // misfire on their prose) — they degrade safely to "recognised, not filled". The
+  // foolproof path for these is a FIXED-COORDINATE template (record each box's
+  // position for the form version, calibrated to a detected landmark), the approach
+  // commercial tax software uses. Tracked as follow-up.
+  { id: "irs-w9", name: "IRS W-9 (Request for Taxpayer ID)", detect: [/request for taxpayer/i, /\bform\s*w-?9\b/i], minDetect: 1, rules: [] },
+  { id: "irs-w4", name: "IRS W-4 (Employee's Withholding)", detect: [/employee.{0,3}s? withholding certificate/i, /\bform\s*w-?4\b/i], minDetect: 1, rules: [] },
   {
     id: "uscis-i9",
     name: "Form I-9 (Employment Eligibility)",
