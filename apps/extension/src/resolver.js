@@ -67,8 +67,10 @@ export function resolveFields(vault, fields) {
     username: ["username", "user name", "login", "user id", "userid", "handle"],
     // A DIFFERENT person's name (dependent/nominee/etc.) — filled from the user's own
     // dependent-name key if they have one, and skipped (never the user's name) if not.
-    dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
-    dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth"],
+    dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name",
+      "dependent 1", "dependent1", "dependant 1", "dependent 2", "dependent2", "first dependent", "second dependent", "child name", "child 1", "child 1 name"],
+    dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth",
+      "dependent 1 dob", "dependent1 dob", "dependant 1 dob", "dependent 2 dob", "dependent 1 date of birth"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;

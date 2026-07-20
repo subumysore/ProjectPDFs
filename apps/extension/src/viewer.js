@@ -1,10 +1,7 @@
-// Renders the filled PDF to canvases with pdf.js so the result is ALWAYS visible
-// (no dependency on Chrome's PDF plugin), and — for the OCR path — RUNS the OCR fill
-// here in this persistent tab. Running OCR in the viewer (not the popup) means a
-// closing popup can no longer interrupt a fill that takes several seconds per page.
-import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
-pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
-
+// Shows the filled PDF in Chrome's NATIVE PDF viewer via <embed> (a blob URL), so
+// AcroForm fields we couldn't auto-fill stay EDITABLE on screen — the user completes
+// the rest and re-downloads. For the OCR path, the fill runs HERE in this persistent
+// tab (a closing popup can't interrupt it) before the result is shown.
 const stage = document.getElementById("stage");
 const barText = document.querySelector("#bar span");
 const setBar = (t) => { if (barText) barText.textContent = t; };
@@ -16,30 +13,22 @@ function b64ToBytes(b64) {
   return d;
 }
 
-async function renderAndDownload(data, name) {
+function renderAndDownload(data, name) {
+  const url = URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
   const dl = document.getElementById("dl");
-  // Copy the bytes first — getDocument may detach the buffer.
-  dl.href = URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
+  dl.href = url;
   dl.download = name;
   document.title = name;
-  dl.click(); // auto-download the completed form
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
-  for (let n = 1; n <= pdf.numPages; n++) {
-    const page = await pdf.getPage(n);
-    const vp = page.getViewport({ scale: 1.5 });
-    const c = document.createElement("canvas");
-    c.width = vp.width;
-    c.height = vp.height;
-    c.className = "pg";
-    stage.appendChild(c);
-    await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
-  }
+  // Show it in Chrome's interactive PDF viewer — AcroForm fields remain fillable.
+  document.getElementById("pdf").src = url + "#toolbar=1&navpanes=0";
+  dl.click(); // also auto-download the completed form
 }
 
 function showEmpty(msg) {
   const el = document.getElementById("empty");
   if (msg) el.textContent = msg;
   el.hidden = false;
+  document.getElementById("main").style.display = "none"; // hide the empty embed
 }
 
 const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };

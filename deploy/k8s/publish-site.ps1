@@ -35,7 +35,14 @@ if (Test-Path $tgz) { Remove-Item -Force $tgz }
 tar -czf $tgz -C $siteDir .
 
 Write-Host "3/4  Uploading to Object Storage ($BUCKET/$OBJECT)..." -ForegroundColor Cyan
-oci os object put -ns $NS_OBJ -bn $BUCKET --name $OBJECT --file $tgz --force
+# oci writes progress to stderr; in PowerShell 5.1 that becomes a NativeCommandError
+# which, under $ErrorActionPreference=Stop, aborts the script even on success. Drop to
+# Continue for just this native call and gate on the real exit code.
+$ErrorActionPreference = "Continue"
+oci os object put -ns $NS_OBJ -bn $BUCKET --name $OBJECT --file $tgz --force 2>$null | Out-Null
+$uploadCode = $LASTEXITCODE
+$ErrorActionPreference = "Stop"
+if ($uploadCode -ne 0) { throw "oci upload failed (exit $uploadCode)" }
 
 Write-Host "4/4  Restarting pods to pull the new content..." -ForegroundColor Cyan
 kubectl -n $K8S_NS rollout restart "deploy/$DEPLOY"
