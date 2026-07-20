@@ -63,6 +63,8 @@ export function resolveFields(vault, fields) {
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
     passport: ["passport", "passport no", "passport number"],
+    photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "headshot", "photo id"],
+    signature: ["signature", "sign", "sign here", "signed", "autograph", "applicant signature"],
     ssn:      ["ssn", "social security number", "social security no", "ss number", "social security", "sin", "social insurance number"],
     taxid:    ["tax id", "taxpayer id", "taxpayer identification number", "taxpayer identification", "tin", "itin"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],

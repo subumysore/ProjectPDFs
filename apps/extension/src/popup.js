@@ -82,8 +82,20 @@ async function renderEntries() {
     const kEl = document.createElement("span");
     kEl.className = "k";
     kEl.textContent = k;
+    // Image values show as a thumbnail, not a giant data-URI in a text box.
+    const isImage = typeof r.vault[k] === "string" && r.vault[k].startsWith("data:image");
+    let vEl;
+    if (isImage) {
+      vEl = document.createElement("img");
+      vEl.src = r.vault[k];
+      vEl.alt = k;
+      vEl.style.cssText = "max-height:34px;max-width:150px;object-fit:contain;border:1px solid #d9e2e6;border-radius:4px;background:#fff";
+      row.append(kEl, vEl, makeDelete(k));
+      box.appendChild(row);
+      continue;
+    }
     // Editable value — type directly and it saves on Enter or when you click away.
-    const vEl = document.createElement("input");
+    vEl = document.createElement("input");
     vEl.className = "vin";
     vEl.value = r.vault[k] ?? "";
     vEl.placeholder = "— add value —";
@@ -98,17 +110,21 @@ async function renderEntries() {
     };
     vEl.onblur = saveVal;
     vEl.onkeydown = (e) => { if (e.key === "Enter") vEl.blur(); };
+    row.append(kEl, vEl, makeDelete(k));
+    box.appendChild(row);
+  }
+
+  function makeDelete(key) {
     const x = document.createElement("button");
     x.className = "x";
     x.textContent = "✕";
     x.title = "Delete";
     x.onclick = async () => {
-      if (COMP.on) await send({ type: "companionDelete", profileId: await compProfile(), key: k });
-      else await send({ type: "del", key: k });
+      if (COMP.on) await send({ type: "companionDelete", profileId: await compProfile(), key });
+      else await send({ type: "del", key });
       renderEntries();
     };
-    row.append(kEl, vEl, x);
-    box.appendChild(row);
+    return x;
   }
 }
 
@@ -320,6 +336,26 @@ $("fill").onclick = async () => {
     }
   }
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
+};
+
+// Add an IMAGE field (photo / signature) — stored as a data-URI value in the vault,
+// then DRAWN into matching PDF photo/signature boxes at fill time.
+$("imgFile").onchange = async () => {
+  const file = $("imgFile").files && $("imgFile").files[0];
+  if (!file) return;
+  const key = ($("imgKey").value.trim() || "signature").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(new Error("couldn't read the image"));
+    r.readAsDataURL(file);
+  }).catch((e) => { setMsg(e.message, false); return null; });
+  if (!dataUrl) return;
+  let r;
+  if (COMP.on) r = await send({ type: "companionUpsert", profileId: await compProfile(), key, value: dataUrl });
+  else r = await send({ type: "set", key, value: dataUrl });
+  if (r && r.ok) { setMsg(`Saved image “${key}”.`); $("imgKey").value = ""; $("imgFile").value = ""; renderEntries(); }
+  else setMsg((r && r.error) || "Save failed", false);
 };
 
 // Native language — a PROFILE field in the vault (spec: language-aware filling).

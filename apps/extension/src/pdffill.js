@@ -18,6 +18,31 @@ function tooltip(field) {
   return "";
 }
 
+// Draw an image data-URI value at a field's on-page rectangle (for photo/signature
+// fields), fitted and centred. Returns true if anything was drawn.
+async function drawImageAtField(pdf, field, dataUrl) {
+  const widgets = field.acroField.getWidgets();
+  if (!widgets || !widgets.length) return false;
+  const isPng = /^data:image\/png/i.test(dataUrl);
+  const bytes = Uint8Array.from(atob(dataUrl.split(",")[1] || ""), (c) => c.charCodeAt(0));
+  const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+  const pages = pdf.getPages();
+  let drew = false;
+  for (const w of widgets) {
+    const rect = w.getRectangle(); // { x, y, width, height } in PDF points
+    let page = pages[0];
+    try {
+      const pRef = w.dict.get(PDFName.of("P"));
+      if (pRef) { const hit = pages.find((pg) => pg.ref.toString() === pRef.toString()); if (hit) page = hit; }
+    } catch (_) { /* fall back to page 0 */ }
+    const scale = Math.min(rect.width / img.width, rect.height / img.height) || 1;
+    const dw = img.width * scale, dh = img.height * scale;
+    page.drawImage(img, { x: rect.x + (rect.width - dw) / 2, y: rect.y + (rect.height - dh) / 2, width: dw, height: dh });
+    drew = true;
+  }
+  return drew;
+}
+
 export async function fillPdfBytes(bytes, vault) {
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
@@ -58,11 +83,20 @@ export async function fillPdfBytes(bytes, vault) {
 
   const values = resolveFields(vault, descriptors);
   let filled = 0;
-  all.forEach((f, i) => {
+  for (let i = 0; i < all.length; i++) {
+    const f = all[i];
     const v = values[i];
-    if (v == null || v === "") return;
+    if (v == null || v === "") continue;
     try {
-      if (f instanceof PDFTextField) { f.setText(String(v)); filled++; }
+      // An IMAGE value (profile photo / signature stored as a data-URI) is DRAWN at the
+      // field's location rather than typed — photo boxes and signature fields.
+      if (typeof v === "string" && v.startsWith("data:image")) {
+        if (await drawImageAtField(pdf, f, v)) {
+          filled++;
+          // Remove the field so its (opaque) widget box doesn't paint over the image.
+          try { form.removeField(f); } catch (_) { /* older pdf-lib: leave the field */ }
+        }
+      } else if (f instanceof PDFTextField) { f.setText(String(v)); filled++; }
       else if (f instanceof PDFDropdown) {
         const match = f.getOptions().find((o) => o.toLowerCase() === String(v).toLowerCase());
         if (match) { f.select(match); filled++; }
@@ -70,7 +104,7 @@ export async function fillPdfBytes(bytes, vault) {
         if (/^(y|yes|true|1|on)$/i.test(String(v))) { f.check(); filled++; }
       }
     } catch (_) { /* skip a field that refuses a value */ }
-  });
+  }
 
   try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
   const out = await pdf.save();
