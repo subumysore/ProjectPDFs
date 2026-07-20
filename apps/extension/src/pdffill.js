@@ -7,7 +7,8 @@
 // its field name. Forms with neither (cryptic XFA/LiveCycle forms like the IRS W-2)
 // can't be matched by name at all — we detect that and report it honestly.
 import { PDFDocument, PDFName, PDFTextField, PDFCheckBox, PDFDropdown } from "../vendor/pdf-lib.esm.min.js";
-import { resolveFields } from "./resolver.js";
+import { resolveFields, resolveBundle } from "./resolver.js";
+import { identifyAcroForm } from "./pdfforms.js";
 
 function tooltip(field) {
   try {
@@ -22,6 +23,25 @@ export async function fillPdfBytes(bytes, vault) {
   const form = pdf.getForm();
   const all = form.getFields();
   if (!all.length) return { total: 0, filled: 0, bytes: null, xfa: false };
+
+  // AcroForm field-NAME template first (W-4/W-9): the field names are cryptic but
+  // stable, so we setText on exactly the mapped fields — deterministic, no OCR.
+  const acroForm = identifyAcroForm(all.map((f) => f.getName()));
+  if (acroForm) {
+    const bundle = resolveBundle(vault);
+    let filled = 0;
+    for (const f of all) {
+      if (!(f instanceof PDFTextField)) continue;
+      const rule = acroForm.fields.find((r) => r.m.test(f.getName()));
+      if (!rule) continue;
+      const value = rule.v(bundle);
+      if (value == null || value === "") continue;
+      try { f.setText(String(value)); filled++; } catch (_) { /* skip */ }
+    }
+    try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
+    const out = await pdf.save();
+    return { total: acroForm.fields.length, filled, bytes: out, xfa: false, templated: true, form: acroForm.name };
+  }
 
   // Label = tooltip if present (human description), else the field name.
   let withTU = 0;

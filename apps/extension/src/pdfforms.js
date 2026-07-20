@@ -62,6 +62,48 @@ export const FORMS = [
   },
 ];
 
+// AcroForm field-NAME templates — for XFA-hybrid forms (W-4/W-9) whose fields have
+// cryptic names (f1_01) and no tooltips, but whose names are STABLE per form version
+// and whose subform grouping is a reliable fingerprint. We identify the form by that
+// signature, then setText on the exact named fields — deterministic, no OCR, no pixel
+// coordinates. Each value comes from resolveBundle() (through the shared resolver).
+// Field→box mappings were derived by rendering every field labelled with its own id
+// and reading the result, so they are verified, not guessed.
+export const ACRO_FORMS = [
+  {
+    id: "irs-w4",
+    name: "IRS W-4 (Employee's Withholding)",
+    sig: /Step1a\[0\]/, // distinctive to the W-4's Step 1 subform
+    fields: [
+      { m: /Step1a\[0\]\.f1_01\[0\]$/, v: (b) => b.firstMiddle }, // First name and middle initial
+      { m: /Step1a\[0\]\.f1_02\[0\]$/, v: (b) => b.lastName },
+      { m: /Step1a\[0\]\.f1_03\[0\]$/, v: (b) => b.street }, // Address
+      { m: /Step1a\[0\]\.f1_04\[0\]$/, v: (b) => b.cityStateZip },
+      { m: /Page1\[0\]\.f1_05\[0\]$/, v: (b) => b.ssn }, // Step 1(b) SSN
+    ],
+  },
+  {
+    id: "irs-w9",
+    name: "IRS W-9 (Request for Taxpayer ID)",
+    sig: /Boxes3a-b_ReadOrder\[0\]/, // distinctive to the W-9's classification subform
+    fields: [
+      { m: /Page1\[0\]\.f1_01\[0\]$/, v: (b) => b.fullName }, // line 1 Name
+      { m: /Address_ReadOrder\[0\]\.f1_07\[0\]$/, v: (b) => b.street }, // line 5 Address
+      { m: /Address_ReadOrder\[0\]\.f1_08\[0\]$/, v: (b) => b.cityStateZip }, // line 6 City/state/ZIP
+      { m: /Page1\[0\]\.f1_11\[0\]$/, v: (b) => b.ssn1 }, // SSN box: area
+      { m: /Page1\[0\]\.f1_12\[0\]$/, v: (b) => b.ssn2 }, // group
+      { m: /Page1\[0\]\.f1_13\[0\]$/, v: (b) => b.ssn3 }, // serial
+    ],
+  },
+];
+
+/** Identify an AcroForm template from the document's field names. Returns it or null. */
+export function identifyAcroForm(fieldNames) {
+  const joined = (fieldNames || []).join(" ");
+  for (const form of ACRO_FORMS) if (form.sig.test(joined)) return form;
+  return null;
+}
+
 /** Identify a form from all OCR'd text on the document. Returns the form or null. */
 export function identifyForm(fullText) {
   const t = (fullText || "").replace(/\s+/g, " ");

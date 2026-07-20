@@ -4,6 +4,38 @@
 // name, take an initial), and context-aware composites (a lone Address absorbs the
 // parts no finer field claims). No rules per form.
 
+// A ready-to-place bundle of the user's own identity values, each derived through
+// the same semantic resolver (so vault-key naming stays irrelevant) plus the small
+// compositions that fixed government-form templates need (name+initial, one-line
+// city/state/ZIP, split SSN parts). Used by AcroForm field-name templates.
+export function resolveBundle(vault) {
+  const ask = (label, maxLength = -1) => resolveFields(vault, [{ label, maxLength }])[0] || "";
+  const first = ask("first name");
+  const mi = ask("middle initial", 1);
+  const middle = ask("middle name");
+  const last = ask("last name");
+  const full = ask("full name") || [first, middle, last].filter(Boolean).join(" ");
+  const city = ask("city");
+  const state = ask("state");
+  const zip = ask("zip");
+  const ssnRaw = ask("social security number");
+  const ssnDigits = ssnRaw.replace(/[^0-9]/g, "");
+  return {
+    firstName: first,
+    firstMiddle: [first, mi].filter(Boolean).join(" "),
+    lastName: last,
+    fullName: full,
+    street: ask("street address"),
+    city, state, zip,
+    cityStateZip: [city, [state, zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),
+    email: ask("email"),
+    ssn: ssnRaw,
+    ssn1: ssnDigits.slice(0, 3),
+    ssn2: ssnDigits.slice(3, 5),
+    ssn3: ssnDigits.slice(5, 9),
+  };
+}
+
 export function resolveFields(vault, fields) {
   const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
