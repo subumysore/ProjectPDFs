@@ -2,14 +2,33 @@
 // The derived AES key + decrypted vault live ONLY in this worker's memory while
 // unlocked, and are dropped on lock (or when the worker is evicted). chrome.storage
 // holds only the SALT and the AES-GCM CIPHERTEXT — never the key, never plaintext.
-import { derivePassphraseKey, deriveWebAuthnKey, seal, open, newSalt } from "./vault.js";
+import { derivePassphraseKey, deriveWebAuthnKey, seal, open, newSalt, exportKeyB64, importKeyB64 } from "./vault.js";
 import { starterVault } from "./seed.js";
 
-let key = null; // CryptoKey (non-extractable), memory-only
+let key = null; // CryptoKey, memory-only (+ mirrored to storage.session, see below)
 let vault = null; // decrypted { ontology_key: value }, memory-only
 
 async function store() {
   return chrome.storage.local.get(["salt", "blob", "kdf"]);
+}
+
+// MV3 evicts this worker after brief idleness, dropping `key`/`vault` and spuriously
+// re-locking mid-use. Mirror the unlocked session into chrome.storage.session — an
+// IN-MEMORY, extension-only area cleared when the browser closes — and restore from it
+// when the worker respawns. Nothing here touches disk.
+async function cacheSession() {
+  if (!key) return;
+  await chrome.storage.session.set({ skey: await exportKeyB64(key), svault: vault });
+}
+async function ensureUnlocked() {
+  if (key && vault) return;
+  const { skey, svault } = await chrome.storage.session.get(["skey", "svault"]);
+  if (!skey) return; // genuinely locked
+  key = await importKeyB64(skey);
+  vault = svault || {};
+}
+async function clearSession() {
+  try { await chrome.storage.session.remove(["skey", "svault"]); } catch (_) { /* ignore */ }
 }
 
 async function unlockPassphrase(passphrase) {
@@ -23,6 +42,7 @@ async function unlockPassphrase(passphrase) {
     await chrome.storage.local.set({ salt, kdf: "pbkdf2", blob: await seal(k, vault) });
   }
   key = k;
+  await cacheSession();
   return Object.keys(vault);
 }
 
@@ -38,17 +58,20 @@ async function unlockWebAuthn(prfSecretB64) {
     await chrome.storage.local.set({ salt, kdf: "webauthn-prf", blob: await seal(k, vault) });
   }
   key = k;
+  await cacheSession();
   return Object.keys(vault);
 }
 
 async function persist() {
   if (!key) throw new Error("locked");
   await chrome.storage.local.set({ blob: await seal(key, vault) });
+  await cacheSession(); // keep the session mirror in step with the latest vault
 }
 
 function lock() {
   key = null;
   vault = null;
+  clearSession();
 }
 
 // Companion mode: talk to the native app's native-messaging host. The vault + keys
@@ -97,19 +120,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse({ ok: true, keys: await unlockWebAuthn(msg.prfSecret) });
           break;
         case "status":
+          await ensureUnlocked();
           sendResponse({ ok: true, unlocked: !!key, keys: vault ? Object.keys(vault) : [] });
           break;
         case "getVault":
+          await ensureUnlocked();
           if (!key) throw new Error("locked");
           sendResponse({ ok: true, vault });
           break;
         case "set":
+          await ensureUnlocked();
           if (!key) throw new Error("locked");
           vault[msg.key] = msg.value; // silent capture back into the vault
           await persist();
           sendResponse({ ok: true });
           break;
         case "del":
+          await ensureUnlocked();
           if (!key) throw new Error("locked");
           delete vault[msg.key];
           await persist();

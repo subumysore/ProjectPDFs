@@ -34,6 +34,11 @@ export function newSalt() {
   return bytesToB64(globalThis.crypto.getRandomValues(new Uint8Array(16)));
 }
 
+// The derived key is EXTRACTABLE so the unlocked session can be cached in
+// chrome.storage.session (in-memory only, extension-only, wiped when the browser
+// closes) — MV3 evicts the service worker, which would otherwise drop the key and
+// spuriously re-lock the vault mid-use. The raw key never touches disk and never
+// leaves the extension's own memory; storage.local still holds only salt + ciphertext.
 /** Derive an AES-256-GCM key from a passphrase (PBKDF2-SHA256). */
 export async function derivePassphraseKey(passphrase, saltB64, iterations = 600_000) {
   const material = await subtle.importKey(
@@ -47,7 +52,7 @@ export async function derivePassphraseKey(passphrase, saltB64, iterations = 600_
     { name: "PBKDF2", salt: b64ToBytes(saltB64), iterations, hash: "SHA-256" },
     material,
     { name: "AES-GCM", length: 256 },
-    false, // non-extractable: the key can't be read back out
+    true, // extractable — only ever exported into memory-only session storage
     ["encrypt", "decrypt"],
   );
 }
@@ -59,9 +64,19 @@ export async function deriveWebAuthnKey(prfSecretBytes, saltB64) {
     { name: "HKDF", hash: "SHA-256", salt: b64ToBytes(saltB64), info: new TextEncoder().encode("projectpdfs-vault") },
     material,
     { name: "AES-GCM", length: 256 },
-    false,
+    true, // extractable — see note above
     ["encrypt", "decrypt"],
   );
+}
+
+/** Export a derived key to raw base64 (for memory-only session caching). */
+export async function exportKeyB64(key) {
+  return bytesToB64(new Uint8Array(await subtle.exportKey("raw", key)));
+}
+
+/** Re-import a raw base64 AES-256-GCM key (from session cache). */
+export async function importKeyB64(b64) {
+  return subtle.importKey("raw", b64ToBytes(b64), { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
 }
 
 /** Encrypt a JSON-able object → compact "ivB64.ctB64" string. */
