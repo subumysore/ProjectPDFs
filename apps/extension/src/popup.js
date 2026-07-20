@@ -289,7 +289,9 @@ $("fill").onclick = async () => {
       if (!out) return setMsg("Couldn't fill this PDF.", false);
       let bin = "";
       for (let i = 0; i < out.length; i += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(i, i + 0x8000));
-      await chrome.storage.session.set({ ppf_filled: btoa(bin) });
+      // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
+      const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
+      await chrome.storage.session.set({ ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf` });
       // Replace THIS tab with the filled PDF so the result is unmissable.
       await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
       return setMsg(`Filled ${filled} of ${total} field(s) — showing your filled PDF. ✓`);

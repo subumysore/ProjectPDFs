@@ -5,7 +5,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf
 
 (async () => {
   const stage = document.getElementById("stage");
-  const { ppf_filled } = await chrome.storage.session.get("ppf_filled");
+  const { ppf_filled, ppf_name } = await chrome.storage.session.get(["ppf_filled", "ppf_name"]);
   if (!ppf_filled) {
     document.getElementById("empty").hidden = false;
     return;
@@ -14,7 +14,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf
   const data = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
   // Download link (copy the bytes first — getDocument may detach the buffer).
-  document.getElementById("dl").href = URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
+  const name = ppf_name || "filled.pdf";
+  const dl = document.getElementById("dl");
+  dl.href = URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
+  dl.download = name;
+  document.title = name;
+  // Auto-download the completed form so the user gets the file without an extra click.
+  dl.click();
   try {
     const pdf = await pdfjsLib.getDocument({ data }).promise;
     for (let n = 1; n <= pdf.numPages; n++) {

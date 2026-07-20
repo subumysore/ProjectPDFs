@@ -23,8 +23,13 @@ try {
 }
 
 export const DIRECTIONS = {
-  "en-hi": "Xenova/opus-mt-en-hi",
-  "hi-en": "Xenova/opus-mt-hi-en",
+  "en-hi": "Xenova/opus-mt-en-hi", "hi-en": "Xenova/opus-mt-hi-en",
+  "en-es": "Xenova/opus-mt-en-es", "es-en": "Xenova/opus-mt-es-en",
+  "en-fr": "Xenova/opus-mt-en-fr", "fr-en": "Xenova/opus-mt-fr-en",
+  "en-de": "Xenova/opus-mt-en-de", "de-en": "Xenova/opus-mt-de-en",
+  "en-zh": "Xenova/opus-mt-en-zh", "zh-en": "Xenova/opus-mt-zh-en",
+  "en-ar": "Xenova/opus-mt-en-ar", "ar-en": "Xenova/opus-mt-ar-en",
+  "en-ru": "Xenova/opus-mt-en-ru", "ru-en": "Xenova/opus-mt-ru-en",
 };
 
 const cache = {};
