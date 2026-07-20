@@ -4,7 +4,7 @@
 // then writes the checked pairs to the vault via the background (same path the popup
 // uses). Everything is on-device; only the OCR model downloads.
 import { getTessWorker } from "./tess.js";
-import { parseFields } from "./parse.js";
+import { parseFields, parseAamva } from "./parse.js";
 
 const $ = (id) => document.getElementById(id);
 const send = (m) => chrome.runtime.sendMessage(m);
@@ -52,7 +52,7 @@ $("snap").onclick = () => {
   v.hidden = true; c.hidden = false;
   $("snap").hidden = true; $("retake").hidden = false;
   stopCam();
-  runOcr(c);
+  processImage(c);
 };
 
 $("retake").onclick = () => {
@@ -75,7 +75,7 @@ $("file").onchange = async (e) => {
     c.hidden = false; $("video").hidden = true;
     $("startCam").hidden = false; $("snap").hidden = true; $("retake").hidden = true;
     URL.revokeObjectURL(img.src);
-    runOcr(c);
+    processImage(c);
   };
   img.onerror = () => setMsg("Couldn't read that image.", false);
   img.src = URL.createObjectURL(f);
@@ -117,6 +117,27 @@ function preprocessForOcr(srcCanvas) {
   }
   ctx.putImageData(im, 0, 0);
   return c;
+}
+
+// First try to read a PDF417 barcode (the back of a US/Canada driver's licence) —
+// that gives EXACT structured data, no OCR guessing. If there's no barcode, fall back
+// to OCR of the printed text. All on-device.
+async function processImage(canvas) {
+  $("resultsCard").hidden = true;
+  setMsg("Checking for a driver's-licence barcode…");
+  try {
+    const { BrowserPDF417Reader } = await import("../vendor/zxing.bundle.mjs");
+    const res = await new BrowserPDF417Reader().decodeFromImageUrl(canvas.toDataURL("image/png"));
+    const text = (res && res.getText && res.getText()) || "";
+    const fields = parseAamva(text);
+    if (fields.length >= 3) {
+      $("raw").textContent = text;
+      renderResults(fields);
+      setMsg(`✓ Read the licence barcode — ${fields.length} field(s), exact (no OCR).`);
+      return;
+    }
+  } catch (_) { /* no barcode → OCR the printed text */ }
+  return runOcr(canvas);
 }
 
 async function runOcr(canvas) {

@@ -91,6 +91,47 @@ export function parseFields(text) {
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 
+// Parse the AAMVA payload decoded from a US/Canada driver's-licence PDF417 barcode
+// (the barcode on the BACK). This is STRUCTURED data — exact, no OCR guessing.
+// Elements are 3-letter codes followed by their value, one per line.
+export function parseAamva(text) {
+  const out = {};
+  const put = (k, v) => { const val = (v || "").replace(/[,]+$/, "").trim(); if (val && !out[k]) out[k] = val; };
+  const get = (code) => {
+    const m = (text || "").match(new RegExp(`(?:^|[\\n\\r])${code}([^\\n\\r]*)`));
+    return m ? m[1].trim() : "";
+  };
+
+  put("last_name", get("DCS") || get("DAB"));
+  put("first_name", get("DAC") || get("DCT"));
+  put("middle_name", get("DAD"));
+  // Older licences pack the whole name into DAA as "LAST,FIRST,MIDDLE".
+  if (!out.last_name && !out.first_name) {
+    const daa = get("DAA");
+    if (daa) { const p = daa.split(/,/); put("last_name", p[0]); put("first_name", p[1]); put("middle_name", p.slice(2).join(" ")); }
+  }
+  put("address_1", get("DAG"));
+  put("address_2", get("DAH"));
+  put("city", get("DAI"));
+  put("state", get("DAJ"));
+  const zip = get("DAK").replace(/\s/g, "");
+  if (zip) put("zip", zip.length > 5 ? `${zip.slice(0, 5)}-${zip.slice(5, 9)}` : zip);
+  const country = get("DCG");
+  put("country", country);
+  put("license_number", get("DAQ"));
+  put("gender", ({ 1: "M", 2: "F" })[get("DBC")] || "");
+  // DOB: US = MMDDCCYY, Canada = CCYYMMDD.
+  const dbb = get("DBB").replace(/\D/g, "");
+  if (dbb.length === 8) {
+    const usa = !/CAN/i.test(country);
+    const dob = usa
+      ? `${dbb.slice(0, 2)}/${dbb.slice(2, 4)}/${dbb.slice(4, 8)}`
+      : `${dbb.slice(4, 6)}/${dbb.slice(6, 8)}/${dbb.slice(0, 4)}`;
+    put("date_of_birth", dob);
+  }
+  return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
+}
+
 // Extract identity fields from UNLABELLED documents — driver's licences / ID cards
 // (AAMVA field numbers, name/address on bare lines). Fills only gaps the label parser
 // left, so it never overrides a labelled form. Best-effort against noisy OCR.
