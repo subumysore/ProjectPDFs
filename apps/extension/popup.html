@@ -27,6 +27,7 @@
   <body>
     <h1>PolyglotFormFill Autofill</h1>
     <p class="sub">Encrypted on-device vault. Nothing leaves your device.</p>
+    <div class="msg" id="msg" style="position:sticky;top:0;z-index:20;background:#fff;padding:4px 0;font-weight:600"></div>
 
     <div id="locked">
       <input id="pass" type="password" placeholder="Vault passphrase" />
@@ -83,7 +84,6 @@
       </div>
     </div>
 
-    <div class="msg" id="msg"></div>
     <script type="module" src="src/popup.js"></script>
   </body>
 </html>
