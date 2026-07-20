@@ -50,5 +50,10 @@ Write-Host ("     Built {0}  ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB
 Write-Host "2/3  Publishing the site (tar -> Object Storage -> restart pods)..." -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot "k8s\publish-site.ps1")
 
-Write-Host "3/3  Done. Download: https://polyglotformfill.mooo.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
-Write-Host "     Tip: reload the unpacked extension IN PLACE (don't Remove) so your vault survives." -ForegroundColor DarkGray
+Write-Host "3/3  Done. Public download: https://polyglotformfill.mooo.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
+Write-Host ""
+Write-Host "NOTE: this publishes the DOWNLOADABLE zip to the website. It does NOT load the" -ForegroundColor Yellow
+Write-Host "      extension into your Chrome (Chrome has no CLI for that)." -ForegroundColor Yellow
+Write-Host "For LOCAL testing you don't need the zip at all:" -ForegroundColor Cyan
+Write-Host ("  1. chrome://extensions -> Load unpacked -> {0}" -f $ext) -ForegroundColor Cyan
+Write-Host "  2. After each change, just click Reload on the card (same ID -> vault survives)." -ForegroundColor Cyan
