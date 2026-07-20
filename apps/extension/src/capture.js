@@ -13,7 +13,12 @@ const setSaveMsg = (t, ok = true) => { const e = $("saveMsg"); e.textContent = t
 
 let stream = null;
 
-$("close").onclick = (e) => { e.preventDefault(); stopCam(); window.close(); };
+$("close").onclick = (e) => {
+  e.preventDefault();
+  stopCam();
+  // window.close() can't close a tab the extension opened; remove it via tabs API.
+  chrome.tabs.getCurrent((t) => { if (t && t.id != null) chrome.tabs.remove(t.id); else window.close(); });
+};
 
 function stopCam() {
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }

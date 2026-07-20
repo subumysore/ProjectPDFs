@@ -45,7 +45,16 @@ export function parseFields(text) {
     }
   };
 
-  for (const raw of (text || "").split(/\r?\n/)) {
+  // Split lines that pack several "Label: value" pairs (common on IDs, e.g.
+  // "City: Springfield State: IL Zip: 62704") so each label is captured on its own
+  // instead of the first swallowing the rest. Only split before a KNOWN field label
+  // (safe — arbitrary "Word:" text won't fragment a normal value).
+  const NEXT_LABEL = /\s+(?=(?:name|first name|middle name|last name|dob|date of birth|address|city|town|state|province|zip|zip code|postal code|country|nationality|sex|gender|phone|mobile|email)\s*[:\-]\s)/i;
+  const rawLines = [];
+  for (const l of (text || "").split(/\r?\n/)) {
+    for (const seg of l.split(NEXT_LABEL)) rawLines.push(seg);
+  }
+  for (const raw of rawLines) {
     const line = raw.trim();
     if (!line) continue;
     // "Label: value", "Label - value", or "Label   value" (2+ spaces).

@@ -2,7 +2,11 @@
 // the extension; the ~11 MB English model is fetched once from our asset host, then
 // cached (assets-DOWN only — no user content leaves the device). Used by both the PDF
 // OCR fill and the camera/image key-value capture.
-import { createWorker } from "../vendor/tesseract/tesseract.esm.min.js";
+// The vendored build exposes ONLY a default export (the Tesseract namespace); there is
+// no named `createWorker`. Importing it as a named binding throws a module-load error
+// that silently kills every module in the import chain (capture page, PDF OCR).
+import Tesseract from "../vendor/tesseract/tesseract.esm.min.js";
+const createWorker = Tesseract.createWorker;
 
 const TESS_BASE = chrome.runtime.getURL("vendor/tesseract/");
 // Self-hosted English model (prefix PAR). Tesseract fetches `${langPath}/eng.traineddata.gz`.
