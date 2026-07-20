@@ -18,6 +18,7 @@ import { resolveFields } from "./resolver.js";
 import { identifyForm } from "./pdfforms.js";
 import { getTessWorker } from "./tess.js";
 import { detectLang } from "./lang.js";
+import { makeFontPicker } from "./fonts.js";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
 const MAX_PAGES = 3; // cap OCR work — fillable fields are almost always in the first pages
@@ -85,7 +86,7 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
   const src = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   const doc = await pdfjsLib.getDocument({ data: src.slice(0) }).promise;
   const out = await PDFDocument.load(src.slice(0), { ignoreEncryption: true });
-  const font = await out.embedFont(StandardFonts.Helvetica);
+  const pickFont = await makeFontPicker(out); // picks a script-appropriate font per value
   const outPages = out.getPages();
   const worker = await getTessWorker(onStatus);
   const nPages = Math.min(doc.numPages, MAX_PAGES);
@@ -115,7 +116,7 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
 
   let total = 0;
   let filled = 0;
-  const drawInto = (outPage, geom, bbox, value, place) => {
+  const drawInto = async (outPage, geom, bbox, value, place) => {
     const { scale, pageHeightPts } = geom;
     const labelH = Math.max(9, (bbox.y1 - bbox.y0) / scale);
     const size = Math.min(11, Math.max(8, labelH * 0.95));
@@ -125,12 +126,14 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
       ? pageHeightPts - bbox.y1 / scale + 1               // baseline on the label line
       : pageHeightPts - bbox.y1 / scale - labelH - 3;     // one line below (inside the box)
     try {
+      const font = await pickFont(value); // Devanagari/CJK values get an embedded Noto font
       outPage.drawText(String(value), { x, y, size, font, color: rgb(0.04, 0.13, 0.55) });
       return true;
     } catch (_) { return false; }
   };
 
-  pageData.forEach((geom, idx) => {
+  for (let idx = 0; idx < pageData.length; idx++) {
+    const geom = pageData[idx];
     const outPage = outPages[idx];
     const { segs } = geom;
     if (form) {
@@ -160,22 +163,22 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
           if (w) box = { x0: w.bbox.x0, y0: seg.bbox.y0, x1: w.bbox.x1, y1: seg.bbox.y1 };
         }
         total++;
-        if (drawInto(outPage, geom, box, val, rule.place)) filled++;
+        if (await drawInto(outPage, geom, box, val, rule.place)) filled++;
       }
     } else {
       // Generic strict path for unknown forms.
       const labels = segs.filter((s) => s.text.length >= 3 && s.text.length <= 44 && !NOT_MINE.test(s.text));
-      if (!labels.length) return;
+      if (!labels.length) continue;
       total += labels.length;
       const values = resolveFields(vault, labels.map((l) => ({ label: l.text, maxLength: -1 })));
       const seen = new Set();
-      labels.forEach((lab, i) => {
+      for (let i = 0; i < labels.length; i++) {
         const v = values[i];
-        if (v == null || v === "" || seen.has(String(v))) return;
-        if (drawInto(outPage, geom, lab.bbox, v, "below")) { filled++; seen.add(String(v)); }
-      });
+        if (v == null || v === "" || seen.has(String(v))) continue;
+        if (await drawInto(outPage, geom, labels[i].bbox, v, "below")) { filled++; seen.add(String(v)); }
+      }
     }
-  });
+  }
 
   onStatus?.(filled ? `filled ${filled} field(s) by reading the form` : "no matching labels found");
   const saved = await out.save();
