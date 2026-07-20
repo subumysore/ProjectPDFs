@@ -31,8 +31,10 @@ export function resolveFields(vault, fields) {
     passport: ["passport", "passport no", "passport number"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
-    // "Someone else" name fields — must NOT be filled with the user's own name.
-    other_person: ["dependent", "nominee", "guardian", "spouse", "beneficiary", "next of kin", "emergency contact", "father", "mother", "witness"],
+    // A DIFFERENT person's name (dependent/nominee/etc.) — filled from the user's own
+    // dependent-name key if they have one, and skipped (never the user's name) if not.
+    dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
+    dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
