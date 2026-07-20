@@ -99,29 +99,63 @@ export function parseFields(text) {
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 
-// Parse a passport MRZ (TD3, two ~44-char lines of A–Z/0–9/<). Exact, standardised —
-// the passport equivalent of a driver's-licence barcode.
+// Parse an ICAO-9303 MRZ — the INTERNATIONAL standard on every country's passport and
+// most national ID cards. Handles all three formats: TD3 (passport, 2×44), TD1 (ID
+// card, 3×30), TD2 (2×36). Exact, checksummed, OCR-friendly (OCR-B). The number field
+// is `passport_no` for a passport (P…) else `id_number`.
 export function parseMrz(text) {
   const out = {};
-  const cands = (text || "").toUpperCase().split(/\r?\n/)
+  const setName = (field) => {
+    const p = field.split("<<");
+    const sur = (p[0] || "").replace(/</g, " ").trim();
+    if (sur) out.last_name = sur;
+    const g = (p[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
+    if (g.length) { out.first_name = g[0]; if (g.length > 1) out.middle_name = g.slice(1).join(" "); }
+  };
+  const setDob = (yymmdd) => {
+    const m = (yymmdd || "").match(/^(\d{2})(\d{2})(\d{2})$/);
+    if (m) { const yy = +m[1]; out.date_of_birth = `${m[2]}/${m[3]}/${yy > 30 ? 1900 + yy : 2000 + yy}`; }
+  };
+  const setNat = (s) => { const n = (s || "").replace(/</g, ""); if (/^[A-Z]{3}$/.test(n)) out.nationality = n; };
+  const setSex = (s) => { if (s === "M" || s === "F") out.gender = s; };
+
+  const lines = (text || "").toUpperCase().split(/\r?\n/)
     .map((l) => l.replace(/[^A-Z0-9<]/g, ""))
-    .filter((l) => l.length >= 28 && l.length <= 46 && l.includes("<"));
-  const l1 = cands.find((l) => /^P[A-Z<]/.test(l) && l.includes("<<"));
-  const l2 = cands.find((l) => /^[A-Z0-9<]{9}\d?[A-Z<]{3}\d{6}/.test(l));
-  if (l1) {
-    const parts = l1.slice(5).split("<<"); // after doc-type + subtype + 3-letter country
-    const surname = parts[0].replace(/</g, " ").trim();
-    if (surname) out.last_name = surname;
-    const given = (parts[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
-    if (given.length) { out.first_name = given[0]; if (given.length > 1) out.middle_name = given.slice(1).join(" "); }
+    .filter((l) => l.length >= 28 && l.length <= 46 && (l.includes("<") || /\d/.test(l)));
+
+  // TD3 — passport: line 1 starts with the document code then a filler/subtype (P<, PA…).
+  const p1 = lines.find((l) => l.length >= 40 && /^P[A-Z<]/.test(l) && l.includes("<<"));
+  const p2 = lines.find((l) => l.length >= 40 && l !== p1 && /^[A-Z0-9<]{9}\d?[A-Z<]{3}\d{6}/.test(l));
+  if (p1 && p2) {
+    setName(p1.slice(5));
+    out.passport_no = p2.slice(0, 9).replace(/</g, "");
+    setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20]);
+    return finalMrz(out);
   }
-  if (l2) {
-    const pno = l2.slice(0, 9).replace(/</g, ""); if (pno) out.passport_no = pno;
-    const nat = l2.slice(10, 13).replace(/</g, ""); if (/^[A-Z]{3}$/.test(nat)) out.nationality = nat;
-    const dob = l2.slice(13, 19).match(/^(\d{2})(\d{2})(\d{2})$/); // YYMMDD
-    if (dob) { const yy = +dob[1]; out.date_of_birth = `${dob[2]}/${dob[3]}/${yy > 30 ? 1900 + yy : 2000 + yy}`; }
-    if (l2[20] === "M" || l2[20] === "F") out.gender = l2[20];
+  // TD1 — ID card: 3 lines of ~30; name is on line 3, numbers on lines 1–2.
+  const t1 = lines.filter((l) => l.length >= 28 && l.length <= 32);
+  if (t1.length >= 3) {
+    // The name line has "<<" and NO digits; the doc-number/data lines carry digits.
+    const nameLine = t1.find((l) => l.includes("<<") && !/\d/.test(l)) || t1[2];
+    const l1 = t1.find((l) => /^[A-Z<]{2}[A-Z]{3}\d/.test(l)) || t1[0];
+    const l2 = t1.find((l) => /^\d{6}\d[MF<]/.test(l));
+    setName(nameLine);
+    if (l1) out.id_number = l1.slice(5, 14).replace(/</g, "");
+    if (l2) { setDob(l2.slice(0, 6)); setSex(l2[7]); setNat(l2.slice(15, 18)); }
+    return finalMrz(out);
   }
+  // TD2 — 2 lines of ~36; name on line 1, numbers on line 2.
+  const t2 = lines.filter((l) => l.length >= 34 && l.length <= 38);
+  if (t2.length >= 2) {
+    const l1 = t2.find((l) => l.includes("<<") && !/\d/.test(l)) || t2[0]; // name line (no digits)
+    const l2 = t2.find((l) => l !== l1 && /^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}/.test(l)) || t2[1];
+    setName(l1.slice(5));
+    if (l2) { out.id_number = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20]); }
+    return finalMrz(out);
+  }
+  return [];
+}
+function finalMrz(out) {
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 

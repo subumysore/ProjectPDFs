@@ -9,10 +9,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   (shared worker, `tess.js`) → `parseFields` heuristics → review-and-save to vault.
   Grayscale + contrast-stretch + upscale preprocessing for glossy IDs, plus
   **over-exposure/glare correction** (gamma-darkening when the image is washed out).
-- **Passport MRZ parsing (ICAO 9303, `parseMrz`):** a passport's two machine-readable
-  lines are exact structured data — parse surname/given/passport-no/nationality/DOB/sex,
-  treated as authoritative. The driver's-licence heuristics no longer run on passports
-  (they produced garbage). Verified on a real passport OCR.
+- **MRZ parsing — international (ICAO 9303, `parseMrz`):** the machine-readable zone is a
+  worldwide standard; parse ALL three formats — TD3 (passports), TD1 & TD2 (national ID
+  cards) — surname/given/doc-no/nationality/DOB/sex, treated as authoritative. Driver's-
+  licence heuristics no longer run on passports. Verified against ICAO specimen strings
+  (TD1/TD2/TD3) and a real USA passport OCR.
 - **Inline unlock on the scan page**; **glassy Retake button**; profile identity-matching
   helper (`profileMatch.js`, name+DOB) toward create/overwrite-a-profile-from-scan (RFC-0007).
 - **Driver's-licence OCR robustness:** recover surname from the line above the given-names
