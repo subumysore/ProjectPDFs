@@ -33,7 +33,7 @@ Copy-Item (Join-Path $ext "src\*.js") (Join-Path $stage "src")
 $v = Join-Path $ext "vendor"; $vd = Join-Path $stage "vendor"
 Copy-Item (Join-Path $v "pdf-lib.esm.min.js"),(Join-Path $v "fontkit.bundle.mjs") $vd
 Copy-Item (Join-Path $v "pdfjs\pdf.min.mjs"),(Join-Path $v "pdfjs\pdf.worker.min.mjs") (Join-Path $vd "pdfjs")
-Copy-Item (Join-Path $v "transformers\transformers.web.min.js"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.mjs"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.wasm") (Join-Path $vd "transformers")
+Copy-Item (Join-Path $v "transformers\transformers.bundle.mjs"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.mjs"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.wasm") (Join-Path $vd "transformers")
 Copy-Item (Join-Path $v "tesseract\worker.min.js"),(Join-Path $v "tesseract\tesseract.esm.min.js"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm.js") (Join-Path $vd "tesseract")
 
 # sanity: fail loudly if a required file is missing

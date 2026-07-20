@@ -2,7 +2,9 @@
 // (vendored, script-src 'self') with the ONNX WASM runtime, loading the opus-mt models
 // from OUR self-hosted origin — so the text never leaves the device; only the model
 // weights are downloaded (assets down). Mirrors the desktop app's translate.ts.
-import { pipeline, env } from "../vendor/transformers/transformers.web.min.js";
+// Self-contained bundle (esbuild — resolves onnxruntime internally; the pre-min build
+// had an unresolved bare `onnxruntime-common` import that broke translation entirely).
+import { pipeline, env } from "../vendor/transformers/transformers.bundle.mjs";
 
 // Self-hosted model base (Object Storage). transformers.js fetches
 // `${remoteHost}/${model}/resolve/${revision}/<file>`.

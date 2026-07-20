@@ -25,7 +25,7 @@ These gate the launch date more than the code does:
 |---|---|---|
 | A1 | Multi-profile + create/overwrite-from-scan (RFC-0007) | �  in progress |
 | A2 | Full QA pass — extension, every feature end-to-end in a loaded browser; fix bugs | ⬜ |
-| A3 | Validate the translation RUNTIME in a real browser (gates language features) | ⬜ |
+| A3 | Validate the translation RUNTIME in a real browser | ✅ FIXED (was broken: bare import) + validated "Name"->"Nombre" |
 | A4 | Desktop runtime QA (Tauri) — E writes the test script; **O runs it** (needs the app) | ⬜ |
 | A5 | Security self-review (CSP, permissions least-privilege, data handling, crypto) + fixes | ⬜ |
 | A6 | Payments wiring — Buy buttons + webhook + on-device license activation (needs B3 IDs) | ⬜ |

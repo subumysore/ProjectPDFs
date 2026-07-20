@@ -50,6 +50,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **One-command redeploy:** `deploy/publish-extension.ps1` (rebuild zip → publish site).
 
 ### Fixed (2026-07-20)
+- **Translation runtime was entirely broken** (every language feature): the vendored
+  `transformers.web.min.js` had an unresolved bare import (`onnxruntime-common`) that fails
+  in an unbundled extension. Re-bundled `@huggingface/transformers` v3 self-contained via
+  esbuild (`transformers.bundle.mjs`) + matching ONNX WASM. **Validated end-to-end in a loaded
+  extension: "Name" → "Nombre".** Also adds MRZ passport `expiry_date` (+ best-effort issue date)
+  and a capture-page processing spinner.
 - Extension failed to load — `blob:` is invalid in MV3 `object-src`; reverted, use `<iframe>`.
 - OCR modules dead — vendored Tesseract exports only a default; `import { createWorker }` threw
   and killed capture + PDF-OCR. Import the default namespace.
