@@ -27,7 +27,9 @@ function stopCam() {
 $("startCam").onclick = async () => {
   setMsg("Requesting camera…");
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+    });
     const v = $("video");
     v.srcObject = stream;
     v.hidden = false;
@@ -79,12 +81,50 @@ $("file").onchange = async (e) => {
   img.src = URL.createObjectURL(f);
 };
 
+// Preprocess for OCR: upscale small captures so text is large enough, convert to
+// grayscale, and stretch contrast. This markedly helps OCR on glossy/low-contrast IDs
+// (it can't fix motion blur or extreme glare — those need a better photo).
+function preprocessForOcr(srcCanvas) {
+  const MIN_W = 1700;
+  const scale = srcCanvas.width < MIN_W ? MIN_W / srcCanvas.width : 1;
+  const w = Math.round(srcCanvas.width * scale);
+  const h = Math.round(srcCanvas.height * scale);
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(srcCanvas, 0, 0, w, h);
+  const im = ctx.getImageData(0, 0, w, h);
+  const d = im.data;
+  // Grayscale + gather a robust min/max (1st–99th percentile) for contrast stretch.
+  const hist = new Uint32Array(256);
+  const gray = new Uint8Array(w * h);
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+    const g = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
+    gray[j] = g; hist[g]++;
+  }
+  const total = w * h;
+  let lo = 0, hi = 255, cum = 0;
+  for (let v = 0; v < 256; v++) { cum += hist[v]; if (cum > total * 0.01) { lo = v; break; } }
+  cum = 0;
+  for (let v = 255; v >= 0; v--) { cum += hist[v]; if (cum > total * 0.01) { hi = v; break; } }
+  const range = Math.max(1, hi - lo);
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+    let g = ((gray[j] - lo) * 255 / range) | 0;
+    g = g < 0 ? 0 : g > 255 ? 255 : g;
+    d[i] = d[i + 1] = d[i + 2] = g;
+  }
+  ctx.putImageData(im, 0, 0);
+  return c;
+}
+
 async function runOcr(canvas) {
   $("resultsCard").hidden = true;
   setMsg("Reading the image on-device…");
   try {
     const worker = await getTessWorker(setMsg);
-    const { data } = await worker.recognize(canvas);
+    const { data } = await worker.recognize(preprocessForOcr(canvas));
     const text = data.text || "";
     const fields = parseFields(text);
     $("raw").textContent = text.trim() || "(no text recognised)";
