@@ -180,10 +180,23 @@ function idHeuristics(text, out, put) {
     }
   }
 
-  // Address: a line beginning with a house number and ending in a street type…
+  // Surname (AAMVA field 1) when we have given names but the "1" marker was garbled:
+  // it's on the line just BEFORE the given-names line — take its all-caps name token.
+  if (out.first_name && !out.last_name) {
+    const gi = lines.findIndex((l) => l.includes(out.first_name));
+    if (gi > 0) {
+      const tok = lines[gi - 1].split(/[^A-Za-z]+/).find(
+        (t) => /^[A-Z]{3,}$/.test(t) && !STOP.test(t) && !STATE_RE.test(t) && !STREET.test(t) && t !== out.first_name,
+      );
+      if (tok) put("last_name", tok);
+    }
+  }
+
+  // Address: a house number + street type ANYWHERE in a line (the AAMVA "8" marker
+  // often OCRs to junk, so don't require the line to start with the number).
   for (const l of lines) {
     if (out.address_1) break;
-    const m = l.match(new RegExp(`^(\\d{2,6}\\s+[A-Z0-9].*?${STREET.source})`));
+    const m = l.match(new RegExp(`(\\d{2,6}\\s+[A-Z][A-Za-z .]*?${STREET.source})`));
     if (m) put("address_1", m[1].replace(/\s+/g, " ").trim());
   }
   // …or anchor on AAMVA field 8 (address) when the street word is mangled.
@@ -191,13 +204,21 @@ function idHeuristics(text, out, put) {
     const a = text.match(/(?:^|\s)8\s+(\d{2,6}[\sA-Za-z'.!-]+?)(?:\||$)/m);
     if (a) put("address_1", a[1].replace(/[!|]/g, "").replace(/\s+/g, " ").trim());
   }
+  // A plausible city is multi-word or ≥5 chars — reject 3-letter OCR garbage ("INS").
+  const okCity = (c) => c && !STOP.test(c) && !STREET.test(c) && (/\s/.test(c.trim()) || c.trim().length >= 5);
   // City + state: "<CITY WORDS> <ST>" (state may be fused to the ZIP, e.g. "NC27587").
   for (const l of lines) {
     if (out.city) break;
     const m = l.match(new RegExp(`([A-Z][A-Za-z]+(?:\\s+[A-Z][A-Za-z]+){0,3}?)[,\\s]+(${STATE})(?=\\d|\\b)`));
-    if (m && !STOP.test(m[1]) && !STREET.test(m[1])) {
-      put("city", m[1].replace(/^[A-Z]{1,3}\s+(?=[A-Z][a-z])/, "").trim()); // drop a stray leading token
-      put("state", m[2]);
+    if (m && okCity(m[1])) { put("city", m[1].trim()); put("state", m[2]); }
+  }
+  // Fallback: "<City>, <XX> <5-digit ZIP>" — recover the CITY even when the state OCRs
+  // wrong (e.g. "WAKE FOREST, No 27587"); only accept the state if it's a real US state.
+  if (!out.city) {
+    const m = (text || "").match(/([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3}),?\s+([A-Za-z]{2})\s+\d{5}/);
+    if (m && okCity(m[1])) {
+      put("city", m[1].trim());
+      if (STATE_RE.test(m[2].toUpperCase())) put("state", m[2].toUpperCase());
     }
   }
   // ZIP: 5 digits, possibly fused to the state ("NC27587") or as ZIP+4.

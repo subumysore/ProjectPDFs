@@ -16,22 +16,18 @@ to absolute._
   CJK fonts), and **desktop parity** (fill+language logic ported to `apps/app/src/fill/`).
 - **Fixed:** MV3 `object-src blob:` load failure (use iframe); Tesseract default-export import
   (had killed capture + PDF-OCR); vault re-lock on SW eviction (session-cache restore).
-- **RESUME POINT (2026-07-20, paused for a machine reboot + new camera test):**
-  - **User is rebooting to try a NEW/better camera.** DO NOT tweak the front-OCR parser until the
-    new camera's results are seen. The reliable path is the BACK PDF417 barcode (proven: 11 exact
-    fields) via LIVE continuous scan; front-OCR is best-effort.
-  - **Known front-OCR junk to fix AFTER the camera test** (queued, NOT applied): `city=INS`,
-    `state=IN` false matches + address trailing noise ("Fy Lola"). Fix = make `idHeuristics` in
-    `parse.js` conservative: truncate AAMVA field-8 address at the street-type word; reject city
-    tokens <5 chars / single short garbage (leave empty rather than emit wrong data).
-  - **Doc-image feature IN PROGRESS (WIP committed, spec `docs/specs/document-image-fields.md`):**
-    DONE — `capture.js` adds `drivers_license_image`/`passport_image`/`document_image` (whole picture,
-    keyed by type) to the review list with thumbnails; `resolver.js` has `drivers_license` +
-    `passport_copy` concepts; `pdffill.js` already draws image values into field rects (feature B).
-    PENDING — guard `pdfocr.js` to SKIP image (data:URI) values in the OCR-draw path; re-sync
-    `apps/app/src/fill/resolver.ts`; end-to-end test (barcode→image row; form "attach DL copy"→drawn);
-    then deploy (`deploy/publish-extension.ps1`) + close governance (ADR-0016 update / traceability /
-    changelog).
+- **DONE (2026-07-20, after the new-camera test — DEPLOYED):**
+  - **Front-OCR licence parsing improved + made conservative** (`parse.js` `idHeuristics`): recover
+    surname from the line above the given-names line (garbled AAMVA "1"); match address anywhere in
+    a line; recover city from "City, ST ZIP" even when the state OCRs wrong; reject junk city tokens
+    (the earlier `city=INS/state=IN` case). New camera now yields name+address+city+zip+dob.
+  - **Over-exposure/glare filter** in `preprocessForOcr` (gamma-darken washed-out images).
+  - **Doc-image feature COMPLETE:** capture saves the whole picture as `drivers_license_image` /
+    `passport_image` / `document_image` (thumbnail in review); `resolver.js` `drivers_license` +
+    `passport_copy` concepts; `pdffill.js` draws image values into field rects; `pdfocr.js` skips
+    image values in the OCR-draw path; desktop `resolver.ts` re-synced (tsc green). Spec
+    `docs/specs/document-image-fields.md`, ADR-0016.
+  - Reliable licence path remains the BACK PDF417 barcode (exact) via LIVE continuous scan.
   - Everything on `master`, committed locally, NOT pushed (20-day hold). Local dev: Load unpacked
     `apps/extension`, then Reload.
 - **Verification:** pure logic unit-tested; capture/barcode/fill validated end-to-end in a loaded

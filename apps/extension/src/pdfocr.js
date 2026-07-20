@@ -117,6 +117,8 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
   let total = 0;
   let filled = 0;
   const drawInto = async (outPage, geom, bbox, value, place) => {
+    // Image values (data: URIs) belong in AcroForm image draws, not text-drawn here.
+    if (typeof value === "string" && value.startsWith("data:image")) return false;
     const { scale, pageHeightPts } = geom;
     const labelH = Math.max(9, (bbox.y1 - bbox.y0) / scale);
     const size = Math.min(11, Math.max(8, labelH * 0.95));

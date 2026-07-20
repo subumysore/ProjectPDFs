@@ -125,9 +125,10 @@ function preprocessForOcr(srcCanvas) {
   // Grayscale + gather a robust min/max (1st–99th percentile) for contrast stretch.
   const hist = new Uint32Array(256);
   const gray = new Uint8Array(w * h);
+  let sum = 0, bright = 0;
   for (let i = 0, j = 0; i < d.length; i += 4, j++) {
     const g = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
-    gray[j] = g; hist[g]++;
+    gray[j] = g; hist[g]++; sum += g; if (g > 225) bright++;
   }
   const total = w * h;
   let lo = 0, hi = 255, cum = 0;
@@ -135,9 +136,20 @@ function preprocessForOcr(srcCanvas) {
   cum = 0;
   for (let v = 255; v >= 0; v--) { cum += hist[v]; if (cum > total * 0.01) { hi = v; break; } }
   const range = Math.max(1, hi - lo);
-  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
-    let g = ((gray[j] - lo) * 255 / range) | 0;
+  // OVER-EXPOSED / glary image? (bright mean, or lots of near-white pixels.) If so, apply
+  // a gamma>1 curve AFTER the contrast stretch to darken blown-out highlights and pull
+  // washed-out text back. Precomputed as a 256-entry LUT (fast).
+  const overexposed = sum / total > 170 || bright / total > 0.35;
+  const gamma = overexposed ? 1.8 : 1.0;
+  const lut = new Uint8Array(256);
+  for (let v = 0; v < 256; v++) {
+    let g = (v - lo) * 255 / range;
     g = g < 0 ? 0 : g > 255 ? 255 : g;
+    if (gamma !== 1) g = 255 * Math.pow(g / 255, gamma);
+    lut[v] = g < 0 ? 0 : g > 255 ? 255 : g | 0;
+  }
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+    const g = lut[gray[j]];
     d[i] = d[i + 1] = d[i + 2] = g;
   }
   ctx.putImageData(im, 0, 0);

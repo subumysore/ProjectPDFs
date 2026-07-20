@@ -65,6 +65,13 @@ export function resolveFields(vault, fields) {
     passport: ["passport", "passport no", "passport number"],
     photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "headshot", "photo id"],
     signature: ["signature", "sign", "sign here", "signed", "autograph", "applicant signature"],
+    // Document IMAGES to attach into a form (values are data:image URIs). Vault keys
+    // drivers_license_image / passport_image map here; form labels asking to ATTACH a
+    // copy resolve to the stored image (drawn into the field). Bare "passport" stays the
+    // passport NUMBER, so passport_copy uses only copy/scan/attach phrasings.
+    drivers_license: ["drivers license image", "driver license image", "dl image", "drivers license copy", "driver license copy", "copy of driver license", "copy of drivers license", "attach driver license", "attach drivers license", "driving license", "driver license", "drivers license", "license copy", "dl copy",
+      "driving licence", "driver licence", "drivers licence", "driving licence copy", "copy of driving licence", "licence copy"],
+    passport_copy: ["passport image", "passport copy", "copy of passport", "attach passport", "passport scan", "passport photo page"],
     ssn:      ["ssn", "social security number", "social security no", "ss number", "social security", "sin", "social insurance number"],
     taxid:    ["tax id", "taxpayer id", "taxpayer identification number", "taxpayer identification", "tin", "itin"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],

@@ -7,7 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 ### Added — Extension capture, intelligent fill & desktop parity (2026-07-20)
 - **On-device ID/document capture (extension):** camera or image file → Tesseract OCR
   (shared worker, `tess.js`) → `parseFields` heuristics → review-and-save to vault.
-  Grayscale + contrast-stretch + upscale preprocessing for glossy IDs.
+  Grayscale + contrast-stretch + upscale preprocessing for glossy IDs, plus
+  **over-exposure/glare correction** (gamma-darkening when the image is washed out).
+- **Driver's-licence OCR robustness:** recover surname from the line above the given-names
+  line when the AAMVA "1" marker is garbled; match the address anywhere in a line; recover
+  city from "City, ST ZIP" even when the state OCRs wrong; reject junk city tokens (leave a
+  field empty rather than emit wrong data).
+- **Document-image fields:** the whole captured picture is saved as `drivers_license_image` /
+  `passport_image` / `document_image` (keyed by detected type), shown as a thumbnail; resolver
+  `drivers_license` + `passport_copy` concepts place it into a form field that asks to ATTACH a
+  copy (drawn fitted+centred; OCR-draw path skips image values). See `docs/specs/document-image-fields.md`.
 - **PDF417 back-of-licence barcode scanner:** `@zxing` (vendored, self-contained ESM) +
   `parseAamva()` → exact structured data (name/address/city/state/ZIP+4/DOB/sex/licence#).
   Tried first on any capture; OCR is the fallback. Verified end-to-end in a loaded extension.
