@@ -284,14 +284,21 @@ $("fill").onclick = async () => {
     if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
     try {
       const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
-      const { total, filled, bytes: out, xfa } = await fillPdfBytes(bytes, r.vault);
-      if (!total) return setMsg("This PDF has no fillable form fields. (The desktop app can OCR-create fields.)", false);
+      let { total, filled, bytes: out, xfa } = await fillPdfBytes(bytes, r.vault);
+      let via = "form fields";
+      // Fallback for XFA/LiveCycle (e.g. IRS W-2), scanned, or unlabeled PDFs that
+      // can't be matched by field name: read the PRINTED labels with on-device OCR
+      // and draw the values at their coordinates.
       if (!filled) {
-        return setMsg(xfa
-          ? `This is an XFA / LiveCycle form (like many IRS PDFs). Its ${total} fields have no readable labels, so no browser tool can match them — use the desktop app, which reads the printed labels via OCR.`
-          : `Filled 0 of ${total}. This form's fields have no readable names/labels, so I couldn't tell what to fill. The desktop app can read the printed labels via OCR.`, false);
+        setMsg(xfa ? "XFA / LiveCycle form — reading the printed labels with OCR…" : "No usable field names — reading the form with OCR…");
+        const { fillPdfByOcr } = await import("./pdfocr.js");
+        const ocr = await fillPdfByOcr(bytes, r.vault, (s) => setMsg(s));
+        total = ocr.total; filled = ocr.filled; out = ocr.bytes;
+        via = ocr.form ? `OCR · ${ocr.form}` : "OCR (read the printed labels)";
       }
-      if (!out) return setMsg("Couldn't fill this PDF.", false);
+      if (!filled || !out) {
+        return setMsg("I read this form but couldn't find any fields matching your saved details. Add more details in the popup, then try again.", false);
+      }
       let bin = "";
       for (let i = 0; i < out.length; i += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(i, i + 0x8000));
       // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
@@ -299,7 +306,7 @@ $("fill").onclick = async () => {
       await chrome.storage.session.set({ ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf` });
       // Replace THIS tab with the filled PDF so the result is unmissable.
       await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
-      return setMsg(`Filled ${filled} of ${total} field(s) — showing your filled PDF. ✓`);
+      return setMsg(`Filled ${filled} field(s) via ${via} — showing your filled PDF. ✓`);
     } catch (e) {
       return setMsg("PDF fill failed: " + ((e && e.message) || e), false);
     }
@@ -324,8 +331,10 @@ $("companionFill").onclick = async () => {
 //     the form ALSO has separate City/State/Zip fields, that line collapses to just
 //     the street parts. Each atom flows to the most specific field the form exposes;
 //     a coarse field collects exactly the descendants no finer field claimed.
-// Runs in the page, reads only the DOM, sends nothing out.
-function fillPage(vault) {
+// Runs in the page, reads only the DOM, sends nothing out. tLabels (optional) is an
+// array of English-translated field labels aligned to collectFillLabels(), used when the
+// form is in another language so the (English) ontology can match it.
+function fillPage(vault, tLabels) {
   const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
 
@@ -421,10 +430,12 @@ function fillPage(vault) {
   const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
 
   const fields = [];
+  let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
     if (el.disabled || el.readOnly) continue;
-    const label = labelOf(el);
+    const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
+    fi++;
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue; // require a full-phrase match — avoids false fills

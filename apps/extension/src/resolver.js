@@ -29,6 +29,8 @@ export function resolveFields(vault, fields) {
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
     passport: ["passport", "passport no", "passport number"],
+    ssn:      ["ssn", "social security number", "social security no", "ss number", "social security", "sin", "social insurance number"],
+    taxid:    ["tax id", "taxpayer id", "taxpayer identification number", "taxpayer identification", "tin", "itin"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
     // A DIFFERENT person's name (dependent/nominee/etc.) — filled from the user's own
