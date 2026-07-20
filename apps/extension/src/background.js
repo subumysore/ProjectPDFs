@@ -170,6 +170,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         case "companionCreateProfile":
           sendResponse(await hostRequest({ type: "createProfile", id: msg.id, name: msg.name }));
           break;
+        case "fetchBytes": {
+          // Fetch a URL (e.g. a PDF) from the service worker and return base64 bytes.
+          try {
+            const res = await fetch(msg.url);
+            if (!res.ok) { sendResponse({ ok: false, error: "HTTP " + res.status }); break; }
+            const buf = new Uint8Array(await res.arrayBuffer());
+            let bin = "";
+            for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+            sendResponse({ ok: true, b64: btoa(bin) });
+          } catch (e) {
+            sendResponse({ ok: false, error: (e && e.message) || String(e) });
+          }
+          break;
+        }
         default:
           sendResponse({ ok: false, error: "unknown message" });
       }

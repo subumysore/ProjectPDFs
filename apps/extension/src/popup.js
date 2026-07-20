@@ -3,7 +3,7 @@
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
 import { exportVault, importVault } from "./backup.js";
-import { fillPdfFromUrl } from "./pdffill.js";
+import { fillPdfBytes } from "./pdffill.js";
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
 function setMsg(text, ok = true) {
@@ -278,24 +278,23 @@ $("fill").onclick = async () => {
   const url = (tab && tab.url) || "";
   // A PDF open in the browser? Fill it on-device with pdf-lib and download the result.
   if (/\.pdf(\?|#|$)/i.test(url)) {
-    setMsg("Filling PDF on-device…");
+    setMsg("Reading the PDF…");
+    // Fetch the PDF bytes in the BACKGROUND service worker (robust — not tied to the popup).
+    const fetched = await send({ type: "fetchBytes", url });
+    if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
     try {
-      const { total, filled, bytes } = await fillPdfFromUrl(url, r.vault);
-      if (!total) return setMsg("This PDF has no fillable fields. Open it in the desktop app to create fields (OCR) and fill.", false);
-      if (!bytes) return setMsg("Couldn't fill this PDF.", false);
-      // The browser can't edit the on-screen PDF, so open the filled result in a new tab.
+      const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
+      const { total, filled, bytes: out } = await fillPdfBytes(bytes, r.vault);
+      if (!total) return setMsg("This PDF has no fillable form fields. (The desktop app can OCR-create fields.)", false);
+      if (!out) return setMsg("Couldn't fill this PDF.", false);
       let bin = "";
-      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      for (let i = 0; i < out.length; i += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(i, i + 0x8000));
       await chrome.storage.session.set({ ppf_filled: btoa(bin) });
-      // Replace THIS tab with the filled PDF so the result is unmissable (the browser
-      // forbids editing the original on-screen PDF viewer).
+      // Replace THIS tab with the filled PDF so the result is unmissable.
       await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
-      return setMsg(`Filled ${filled} of ${total} field(s) — showing your filled PDF now. ✓`);
+      return setMsg(`Filled ${filled} of ${total} field(s) — showing your filled PDF. ✓`);
     } catch (e) {
-      const msg = /fetch/i.test((e && e.message) || "")
-        ? "Couldn't read this PDF from the site. Download the PDF, then open it in the desktop app to fill it."
-        : "PDF fill failed: " + ((e && e.message) || e);
-      return setMsg(msg, false);
+      return setMsg("PDF fill failed: " + ((e && e.message) || e), false);
     }
   }
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
