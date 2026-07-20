@@ -5,6 +5,7 @@ quick-scan history; the ADRs hold the context, options, and consequences._
 
 | Date | Decision | ADR | Status |
 |---|---|---|---|
+| 2026-07-20 | On-device ID capture (PDF417 barcode-first / OCR fallback) + layered intelligent fill + image-valued fields + interactive iframe viewer + language-aware filling + desktop parity | [ADR-0016](../docs/adr/0016-extension-id-capture-and-intelligent-fill.md) | Accepted |
 | 2026-07-16 | Registered roles & verifiable workflows | [ADR-0010](../docs/adr/0010-registered-roles-verifiable-workflows.md) | Accepted (principle) |
 | 2026-07-16 | Authority-scoped verifiable provenance (no vendor backdoor) | [ADR-0009](../docs/adr/0009-authority-scoped-provenance.md) | Accepted (principle) |
 | 2026-07-16 | Multi-party document workflow | [ADR-0008](../docs/adr/0008-multi-party-document-workflow.md) | Accepted (principle) |
