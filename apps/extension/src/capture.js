@@ -9,6 +9,7 @@ import { parseFields, parseAamva } from "./parse.js";
 const $ = (id) => document.getElementById(id);
 const send = (m) => chrome.runtime.sendMessage(m);
 const setMsg = (t, ok = true) => { const e = $("msg"); e.textContent = t; e.className = "msg " + (ok ? "ok" : "err"); };
+const setBusy = (on, text) => { const b = $("busy"); if (b) { b.classList.toggle("on", on); if (text) $("busyText").textContent = text; } };
 const setSaveMsg = (t, ok = true) => { const e = $("saveMsg"); e.textContent = t; e.className = "msg " + (ok ? "ok" : "err"); };
 
 let stream = null;
@@ -178,6 +179,7 @@ function docImageKey(text) {
 // to OCR of the printed text. All on-device.
 async function processImage(canvas) {
   $("resultsCard").hidden = true;
+  setBusy(true, "Checking for a barcode…");
   setMsg("Checking for a driver's-licence barcode…");
   try {
     const { BrowserPDF417Reader } = await import("../vendor/zxing.bundle.mjs");
@@ -189,6 +191,7 @@ async function processImage(canvas) {
       fields.unshift({ ontology_key: "driver_license_back", value: toJpegDataUrl(canvas) });
       $("raw").textContent = text;
       renderResults(fields);
+      setBusy(false);
       setMsg(`✓ Read the licence barcode — ${fields.length} field(s), exact (no OCR).`);
       return;
     }
@@ -198,9 +201,10 @@ async function processImage(canvas) {
 
 async function runOcr(canvas) {
   $("resultsCard").hidden = true;
+  setBusy(true, "Reading the image on-device…");
   setMsg("Reading the image on-device…");
   try {
-    const worker = await getTessWorker(setMsg);
+    const worker = await getTessWorker((s) => setBusy(true, s));
     const { data } = await worker.recognize(preprocessForOcr(canvas));
     const text = data.text || "";
     const fields = parseFields(text);
@@ -208,8 +212,10 @@ async function runOcr(canvas) {
     // Keep the whole picture as a document image, keyed by detected type (DL/passport/…).
     fields.unshift({ ontology_key: docImageKey(text), value: toJpegDataUrl(canvas) });
     renderResults(fields);
+    setBusy(false);
     setMsg(`Found ${fields.length} field(s) — review below.`);
   } catch (e) {
+    setBusy(false);
     setMsg("OCR failed: " + ((e && e.message) || e), false);
   }
 }

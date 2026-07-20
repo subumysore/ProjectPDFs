@@ -92,6 +92,18 @@ export function parseFields(text) {
   const mrz = parseMrz(text);
   if (mrz.length) {
     for (const { ontology_key, value } of mrz) out[ontology_key] = value;
+    // Issue date isn't in the MRZ — best-effort from the printed zone: a "DD MON YYYY"
+    // date that is neither the DOB nor the (MRZ) expiry, with a recent-past year.
+    const MON = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+    const known = new Set([out.date_of_birth, out.expiry_date]);
+    const thisYear = new Date().getFullYear();
+    for (const mm of (text || "").matchAll(/\b(\d{1,2})\s+([A-Z]{3})[A-Z.]*\s+(\d{4})\b/gi)) {
+      const mo = MON[mm[2].toUpperCase()];
+      if (!mo) continue;
+      const d = `${mo}/${mm[1].padStart(2, "0")}/${mm[3]}`;
+      const yr = Number(mm[3]);
+      if (!known.has(d) && yr >= 2000 && yr <= thisYear && !out.issue_date) out.issue_date = d;
+    }
   } else if (!/passport|travel document|pasaporte|passeport/i.test(text)) {
     idHeuristics(text, out, put);
   }
@@ -118,6 +130,11 @@ export function parseMrz(text) {
   };
   const setNat = (s) => { const n = (s || "").replace(/</g, ""); if (/^[A-Z]{3}$/.test(n)) out.nationality = n; };
   const setSex = (s) => { if (s === "M" || s === "F") out.gender = s; };
+  // Expiry years are in the future, so a 2-digit year pivots to 20xx (unlike DOB).
+  const setExp = (yymmdd) => {
+    const m = (yymmdd || "").match(/^(\d{2})(\d{2})(\d{2})$/);
+    if (m) { const yy = +m[1]; out.expiry_date = `${m[2]}/${m[3]}/${yy < 70 ? 2000 + yy : 1900 + yy}`; }
+  };
 
   const lines = (text || "").toUpperCase().split(/\r?\n/)
     .map((l) => l.replace(/[^A-Z0-9<]/g, ""))
@@ -129,7 +146,7 @@ export function parseMrz(text) {
   if (p1 && p2) {
     setName(p1.slice(5));
     out.passport_no = p2.slice(0, 9).replace(/</g, "");
-    setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20]);
+    setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20]); setExp(p2.slice(21, 27));
     return finalMrz(out);
   }
   // TD1 — ID card: 3 lines of ~30; name is on line 3, numbers on lines 1–2.
@@ -141,7 +158,7 @@ export function parseMrz(text) {
     const l2 = t1.find((l) => /^\d{6}\d[MF<]/.test(l));
     setName(nameLine);
     if (l1) out.id_number = l1.slice(5, 14).replace(/</g, "");
-    if (l2) { setDob(l2.slice(0, 6)); setSex(l2[7]); setNat(l2.slice(15, 18)); }
+    if (l2) { setDob(l2.slice(0, 6)); setSex(l2[7]); setExp(l2.slice(8, 14)); setNat(l2.slice(15, 18)); }
     return finalMrz(out);
   }
   // TD2 — 2 lines of ~36; name on line 1, numbers on line 2.
@@ -150,7 +167,7 @@ export function parseMrz(text) {
     const l1 = t2.find((l) => l.includes("<<") && !/\d/.test(l)) || t2[0]; // name line (no digits)
     const l2 = t2.find((l) => l !== l1 && /^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}/.test(l)) || t2[1];
     setName(l1.slice(5));
-    if (l2) { out.id_number = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20]); }
+    if (l2) { out.id_number = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20]); setExp(l2.slice(21, 27)); }
     return finalMrz(out);
   }
   return [];
