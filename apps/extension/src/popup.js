@@ -184,16 +184,31 @@ function downloadBytes(bytes, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function toBase64(bytes) {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
 $("export").onclick = async () => {
   const pass = $("bkPass").value;
   if (pass.length < 8) return setMsg("Choose a backup passphrase (8+ characters).", false);
   const r = await readVault();
   if (!r.ok) return setMsg(r.error || "Locked", false);
-  const keys = Object.keys(r.vault || {});
-  if (!keys.length) return setMsg("Nothing to export yet.", false);
+  const withVal = Object.entries(r.vault || {}).filter(([, v]) => v && String(v).trim());
+  if (!withVal.length) return setMsg("Your fields are empty — type some values first, then export.", false);
   const bytes = await exportVault(pass, r.vault, "");
-  downloadBytes(bytes, "polyglotformfill-vault.ppfvault");
-  setMsg(`Exported ${keys.length} field(s), encrypted. Keep the passphrase safe.`);
+  try {
+    // chrome.downloads is reliable from a popup and shows a Save dialog (saveAs).
+    await chrome.downloads.download({
+      url: "data:application/octet-stream;base64," + toBase64(bytes),
+      filename: "polyglotformfill-vault.ppfvault",
+      saveAs: true,
+    });
+    setMsg(`Exporting ${withVal.length} filled field(s) — choose where to save the file.`);
+  } catch (e) {
+    setMsg("Export failed: " + ((e && e.message) || e), false);
+  }
 };
 
 $("importBtn").onclick = () => $("bkFile").click();
