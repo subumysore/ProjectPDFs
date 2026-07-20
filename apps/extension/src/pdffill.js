@@ -1,34 +1,50 @@
-// On-device PDF form filling for the browser — the same engine the desktop app uses
-// (pdf-lib), so "Fill this page" works on PDFs too. Fetches the PDF, fills its AcroForm
-// fields from your vault using the shared semantic resolver, and returns the completed
-// bytes for download. Nothing is uploaded.
-import { PDFDocument, PDFTextField, PDFCheckBox, PDFDropdown } from "../vendor/pdf-lib.esm.min.js";
+// On-device PDF form filling for the browser (pdf-lib). Fetches the PDF, fills its
+// AcroForm fields from your vault using the shared semantic resolver, and returns the
+// completed bytes. Nothing is uploaded.
+//
+// A field is matched by the best readable label we can find: its TOOLTIP (/TU — a
+// human-readable description many well-built forms set, e.g. "Employee's name"), else
+// its field name. Forms with neither (cryptic XFA/LiveCycle forms like the IRS W-2)
+// can't be matched by name at all — we detect that and report it honestly.
+import { PDFDocument, PDFName, PDFTextField, PDFCheckBox, PDFDropdown } from "../vendor/pdf-lib.esm.min.js";
 import { resolveFields } from "./resolver.js";
+
+function tooltip(field) {
+  try {
+    const v = field.acroField.dict.lookup(PDFName.of("TU"));
+    if (v && typeof v.decodeText === "function") return v.decodeText();
+  } catch (_) { /* no tooltip */ }
+  return "";
+}
 
 export async function fillPdfBytes(bytes, vault) {
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
   const all = form.getFields();
-  if (!all.length) return { total: 0, filled: 0, bytes: null };
+  if (!all.length) return { total: 0, filled: 0, bytes: null, xfa: false };
 
-  // Resolve every field by its name (labels come from the PDF field names).
-  const descriptors = all.map((f) => ({
-    label: f.getName(),
-    maxLength: (f instanceof PDFTextField && f.getMaxLength()) || -1,
-  }));
+  // Label = tooltip if present (human description), else the field name.
+  let withTU = 0;
+  let bracketNames = 0;
+  const descriptors = all.map((f) => {
+    const name = f.getName();
+    const tu = tooltip(f);
+    if (tu) withTU++;
+    if (name.includes("[")) bracketNames++; // LiveCycle/XFA naming signature
+    return { label: tu || name, maxLength: (f instanceof PDFTextField && f.getMaxLength()) || -1 };
+  });
+  // An XFA/LiveCycle form: mostly bracket-named fields and no tooltips — unmappable by name.
+  const xfa = withTU === 0 && bracketNames > all.length / 2;
+
   const values = resolveFields(vault, descriptors);
-
   let filled = 0;
   all.forEach((f, i) => {
     const v = values[i];
     if (v == null || v === "") return;
     try {
-      if (f instanceof PDFTextField) {
-        f.setText(String(v));
-        filled++;
-      } else if (f instanceof PDFDropdown) {
-        const opts = f.getOptions();
-        const match = opts.find((o) => o.toLowerCase() === String(v).toLowerCase());
+      if (f instanceof PDFTextField) { f.setText(String(v)); filled++; }
+      else if (f instanceof PDFDropdown) {
+        const match = f.getOptions().find((o) => o.toLowerCase() === String(v).toLowerCase());
         if (match) { f.select(match); filled++; }
       } else if (f instanceof PDFCheckBox) {
         if (/^(y|yes|true|1|on)$/i.test(String(v))) { f.check(); filled++; }
@@ -38,13 +54,11 @@ export async function fillPdfBytes(bytes, vault) {
 
   try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
   const out = await pdf.save();
-  return { total: all.length, filled, bytes: out };
+  return { total: all.length, filled, bytes: out, xfa };
 }
 
-// Fetch a PDF from a URL (works for the active tab under activeTab) and fill it.
 export async function fillPdfFromUrl(url, vault) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`couldn't fetch the PDF (HTTP ${res.status})`);
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  return fillPdfBytes(bytes, vault);
+  return fillPdfBytes(new Uint8Array(await res.arrayBuffer()), vault);
 }

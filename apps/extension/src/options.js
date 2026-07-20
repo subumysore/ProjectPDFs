@@ -1,7 +1,6 @@
 // Passkey enrolment. Creates a WebAuthn credential with the PRF extension enabled,
 // stores its id, and marks the vault KDF as webauthn-prf. The actual PRF secret is
 // obtained at UNLOCK time (popup → navigator.credentials.get), never stored.
-import * as packs from "./langpacks.js";
 const $ = (id) => document.getElementById(id);
 function setMsg(text, ok = true) {
   const el = $("msg");
@@ -165,79 +164,69 @@ $("companionMode").onchange = async () => {
   renderCompanion();
 };
 
-// ---- Language packs (RFC-0006 Phase 1) ----
-const fmtMB = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
-function setPacksMsg(text, ok = true) {
-  const el = $("packsMsg");
-  el.textContent = text;
-  el.className = "msg " + (ok ? "ok" : "err");
+// ---- Translation languages (download at will; nothing bundled) ----
+const LANGS = [
+  { code: "hi", name: "हिन्दी (Hindi)" },
+  { code: "es", name: "Español (Spanish)" },
+  { code: "fr", name: "Français (French)" },
+  { code: "de", name: "Deutsch (German)" },
+  { code: "zh", name: "中文 (Chinese)" },
+  { code: "ar", name: "العربية (Arabic)" },
+  { code: "ru", name: "Русский (Russian)" },
+];
+// Guess the region's language from the OS locale/timezone (on-device, no network).
+function localeLang() {
+  try {
+    const r = (new Intl.Locale(navigator.language).region || "").toUpperCase();
+    const byRegion = { IN: "hi", ES: "es", MX: "es", AR: "es", FR: "fr", DE: "de", AT: "de", CH: "de", CN: "zh", TW: "zh", SA: "ar", AE: "ar", EG: "ar", RU: "ru" };
+    if (byRegion[r]) return byRegion[r];
+    const l = (navigator.language || "").slice(0, 2).toLowerCase();
+    if (LANGS.some((x) => x.code === l)) return l;
+  } catch (_) { /* ignore */ }
+  return "";
 }
 
-async function renderPacks() {
-  const box = $("packs");
-  let available = [];
-  try {
-    available = await packs.listAvailable();
-  } catch (e) {
-    box.textContent = "Couldn't load the pack list (offline?). " + ((e && e.message) || e);
-    return;
-  }
-  const installed = await packs.listInstalled();
-  const isInstalled = (id) => installed.some((p) => p.id === id);
+async function renderLanguages() {
+  const { baseLang } = await chrome.storage.local.get(["baseLang"]);
+  const suggest = new Set([baseLang, localeLang()].filter((c) => c && c !== "en"));
+  $("langSuggest").innerHTML = suggest.size
+    ? `Suggested for you: <b>${[...suggest].map((c) => (LANGS.find((l) => l.code === c) || {}).name || c).join(", ")}</b> (your base language / region).`
+    : "";
+  const box = $("langList");
   box.textContent = "";
-  if (!available.length) box.textContent = "No language packs published yet.";
-  for (const p of available) {
+  for (const { code, name } of LANGS) {
     const row = document.createElement("div");
     row.className = "pack";
     const lbl = document.createElement("div");
     lbl.className = "lbl";
-    lbl.innerHTML = `${p.label || p.id} <small>· ${fmtMB(p.size || 0)}</small>`;
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.style.display = "none";
-    const fill = document.createElement("i");
-    bar.appendChild(fill);
-    lbl.appendChild(bar);
-
+    lbl.innerHTML = `${name} <small>· English ↔ ${code} · ~220 MB</small>` + (suggest.has(code) ? ' <span class="badge">suggested</span>' : "");
     const btn = document.createElement("button");
+    btn.textContent = "Download";
+    btn.onclick = async () => {
+      btn.disabled = true;
+      setLangMsg(`Downloading ${name} — first time only, then cached…`);
+      try {
+        const { translate } = await import("./translate.js");
+        await translate("hello", `en-${code}`, (s) => setLangMsg(`${name}: ${s}`));
+        await translate("hello", `${code}-en`, (s) => setLangMsg(`${name}: ${s}`));
+        setLangMsg(`✓ ${name} ready — works offline now.`);
+        btn.textContent = "Downloaded ✓";
+      } catch (e) {
+        setLangMsg(`Download failed for ${name}: ${(e && e.message) || e}`, false);
+        btn.disabled = false;
+      }
+    };
     row.append(lbl, btn);
-
-    if (isInstalled(p.id)) {
-      const badge = document.createElement("span");
-      badge.className = "badge";
-      badge.textContent = "installed";
-      row.insertBefore(badge, btn);
-      btn.textContent = "Remove";
-      btn.className = "rm";
-      btn.onclick = async () => {
-        btn.disabled = true;
-        await packs.remove(p.id);
-        setPacksMsg(`Removed ${p.label || p.id} — space freed.`);
-        renderPacks();
-      };
-    } else {
-      btn.textContent = "Install";
-      btn.onclick = async () => {
-        btn.disabled = true;
-        bar.style.display = "block";
-        setPacksMsg(`Downloading ${p.label || p.id}…`);
-        try {
-          await packs.install(p, (recv, total) => {
-            fill.style.width = total ? Math.round((recv / total) * 100) + "%" : "100%";
-          });
-          setPacksMsg(`Installed ${p.label || p.id}.`);
-        } catch (e) {
-          setPacksMsg(`Install failed: ${(e && e.message) || e}`, false);
-        }
-        renderPacks();
-      };
-    }
+    box.appendChild(row);
   }
-  const used = await packs.usageBytes();
-  $("packsUsage").innerHTML = `Installed: <b>${installed.length}</b> pack(s) · Disk used: <b>${fmtMB(used)}</b>`;
+}
+function setLangMsg(text, ok = true) {
+  const el = $("langMsg");
+  el.textContent = text;
+  el.className = "msg " + (ok ? "ok" : "err");
 }
 
 renderBaseLang();
 renderCompanion();
-renderPacks();
+renderLanguages();
 status();

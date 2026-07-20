@@ -284,8 +284,13 @@ $("fill").onclick = async () => {
     if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
     try {
       const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
-      const { total, filled, bytes: out } = await fillPdfBytes(bytes, r.vault);
+      const { total, filled, bytes: out, xfa } = await fillPdfBytes(bytes, r.vault);
       if (!total) return setMsg("This PDF has no fillable form fields. (The desktop app can OCR-create fields.)", false);
+      if (!filled) {
+        return setMsg(xfa
+          ? `This is an XFA / LiveCycle form (like many IRS PDFs). Its ${total} fields have no readable labels, so no browser tool can match them — use the desktop app, which reads the printed labels via OCR.`
+          : `Filled 0 of ${total}. This form's fields have no readable names/labels, so I couldn't tell what to fill. The desktop app can read the printed labels via OCR.`, false);
+      }
       if (!out) return setMsg("Couldn't fill this PDF.", false);
       let bin = "";
       for (let i = 0; i < out.length; i += 0x8000) bin += String.fromCharCode.apply(null, out.subarray(i, i + 0x8000));

@@ -79,17 +79,15 @@
     </div>
 
     <div class="card">
-      <h2 style="font-size: 16px; margin-top: 0">Language packs</h2>
+      <h2 style="font-size: 16px; margin-top: 0">Translation languages</h2>
       <p class="muted">
-        Install a language pair to fill forms across languages — each pack downloads
-        <b>independently</b> and can be <b>removed anytime</b> to free space. Everything runs
-        on your device; only the model files are downloaded, never your data.
-        <br /><em>Beta: packs download &amp; store today; the on-device translator engine ships next
-        (RFC-0006 Phase 2).</em>
+        <b>Nothing is bundled.</b> A language's model (~110 MB each direction) downloads only the
+        first time you translate that pair — then it's cached on your device. Download here to
+        pre-load one for offline use. Everything runs on-device; only the model file is fetched, never your data.
       </p>
-      <div id="packs">Loading…</div>
-      <div class="muted" id="packsUsage" style="margin-top: 8px"></div>
-      <div class="msg" id="packsMsg"></div>
+      <div class="muted" id="langSuggest" style="margin-bottom: 8px"></div>
+      <div id="langList">Loading…</div>
+      <div class="msg" id="langMsg"></div>
     </div>
 
     <div class="card">
