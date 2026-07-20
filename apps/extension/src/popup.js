@@ -319,6 +319,13 @@ $("fill").onclick = async () => {
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
 };
 
+// Scan an ID / document with the camera → extract profile fields (opens a full tab,
+// where camera access + on-device OCR run without the popup closing).
+$("scan").onclick = async () => {
+  await chrome.tabs.create({ url: chrome.runtime.getURL("capture.html") });
+  window.close();
+};
+
 // Companion: fetch the vault from the native app (keys never enter the extension).
 $("companionFill").onclick = async () => {
   setMsg("Contacting native app…");

@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Scan to profile · PolyglotFormFill</title>
+<style>
+  :root { --teal:#0d8f83; --teal-ink:#0a6a60; --line:#d9e2e6; --ink:#101a20; --muted:#55666f; }
+  html, body { margin: 0; background: #f6f8f7; color: var(--ink); font: 15px system-ui, sans-serif; }
+  #bar { background: var(--teal); color: #fff; padding: 12px 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  #bar a { color: #fff; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  video, #shot { width: 100%; max-height: 46vh; object-fit: contain; background: #0b1214; border-radius: 8px; display: block; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  button { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 14px; }
+  button.primary { background: var(--teal); color: #fff; border-color: var(--teal); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .msg { min-height: 20px; margin-top: 10px; font-size: 14px; }
+  .ok { color: var(--teal-ink); } .err { color: #9a2c2c; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 7px 6px; border-bottom: 1px solid #eef2f3; font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; }
+  td input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; }
+  .k { font-family: ui-monospace, Consolas, monospace; color: var(--teal-ink); }
+  details { margin-top: 10px; } summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  pre { white-space: pre-wrap; background: #f0f4f5; padding: 10px; border-radius: 8px; font-size: 12px; max-height: 180px; overflow: auto; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div id="bar"><span>📷 Scan to profile — PolyglotFormFill (on-device)</span><a href="#" id="close">Close</a></div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Capture an ID, card, or document</h2>
+      <p class="muted">Point your camera at a licence, ID, or business card — or choose an image file. On-device OCR
+        reads it and proposes profile fields. Nothing leaves your device; only the OCR model is downloaded.</p>
+      <video id="video" autoplay playsinline muted hidden></video>
+      <canvas id="shot" hidden></canvas>
+      <div class="row">
+        <button id="startCam" class="primary">Start camera</button>
+        <button id="snap" class="primary" hidden>📸 Capture</button>
+        <button id="retake" hidden>Retake</button>
+        <label class="muted">or <input type="file" id="file" accept="image/*" /></label>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="card" id="resultsCard" hidden>
+      <h2>Review &amp; save</h2>
+      <p class="muted">Uncheck anything wrong, edit values, then save. These write to your profile fields.</p>
+      <table id="results"><thead><tr><th></th><th>Field</th><th>Value</th></tr></thead><tbody></tbody></table>
+      <div class="row"><button id="save" class="primary">Save checked to profile</button></div>
+      <div class="msg" id="saveMsg"></div>
+      <details><summary>Show raw OCR text</summary><pre id="raw"></pre></details>
+    </div>
+  </div>
+  <script type="module" src="src/capture.js"></script>
+</body>
+</html>

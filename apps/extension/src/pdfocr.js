@@ -13,32 +13,13 @@
 //   5. DRAW the value at the label's coordinates with pdf-lib.
 // Nothing is uploaded. Only the OCR model file is downloaded, never your data.
 import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
-import { createWorker } from "../vendor/tesseract/tesseract.esm.min.js";
 import { PDFDocument, StandardFonts, rgb } from "../vendor/pdf-lib.esm.min.js";
 import { resolveFields } from "./resolver.js";
 import { identifyForm } from "./pdfforms.js";
+import { getTessWorker } from "./tess.js";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
-const TESS_BASE = chrome.runtime.getURL("vendor/tesseract/");
-// Self-hosted English model (prefix PAR on Object Storage). Tesseract fetches
-// `${langPath}/eng.traineddata.gz`.
-const TESS_LANG =
-  "https://objectstorage.us-ashburn-1.oraclecloud.com/p/Ut3vAQ-YK6VmAdptBynqsp7mnc1T5XBvjyAbMs76c0zsK8u6-A0cZBpQOkCBjdLC/n/idlqdkwlstnb/b/polyglotformfill-dl/o/tesseract";
 const MAX_PAGES = 3; // cap OCR work — fillable fields are almost always in the first pages
-
-let _worker = null;
-async function tess(onStatus) {
-  if (_worker) return _worker;
-  onStatus?.("preparing OCR engine (first run downloads the language model, then cached)…");
-  _worker = await createWorker("eng", 1, {
-    workerPath: `${TESS_BASE}worker.min.js`,
-    corePath: TESS_BASE,
-    langPath: TESS_LANG,
-    workerBlobURL: false,
-    gzip: true,
-  });
-  return _worker;
-}
 
 // Render one page and return { canvas, ctx, scale, pageHeightPts }.
 async function renderPage(page, scale) {
@@ -105,7 +86,7 @@ export async function fillPdfByOcr(bytes, vault, onStatus) {
   const out = await PDFDocument.load(src.slice(0), { ignoreEncryption: true });
   const font = await out.embedFont(StandardFonts.Helvetica);
   const outPages = out.getPages();
-  const worker = await tess(onStatus);
+  const worker = await getTessWorker(onStatus);
   const nPages = Math.min(doc.numPages, MAX_PAGES);
 
   // Phase 1 — OCR every page, collect labelled segments + page geometry.
