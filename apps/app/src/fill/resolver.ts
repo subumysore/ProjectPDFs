@@ -75,6 +75,9 @@ export function resolveFields(vault, fields) {
       "dependent 1", "dependent1", "dependant 1", "dependent 2", "dependent2", "first dependent", "second dependent", "child name", "child 1", "child 1 name"],
     dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth",
       "dependent 1 dob", "dependent1 dob", "dependant 1 dob", "dependent 2 dob", "dependent 1 date of birth"],
+    // Derived from a date of birth (age isn't stored — it's computed from the DOB).
+    age:           ["age", "your age", "current age", "age in years", "age yrs"],
+    dependent_age: ["age of dependent", "age of dependant", "dependent age", "dependant age", "child age", "age of child"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
@@ -90,6 +93,19 @@ export function resolveFields(vault, fields) {
     const cc = (atoms.phonecc || "").toString().trim();
     return cc && !n.startsWith("+") ? cc + " " + n : n;
   };
+  // Age isn't stored — DERIVE it from a date of birth (full years to today).
+  const ageFrom = (dob) => {
+    const m = String(dob || "").match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
+    if (!m) return null;
+    let y = parseInt(m[3], 10);
+    if (y < 100) y += y > 30 ? 1900 : 2000;
+    const birth = new Date(y, parseInt(m[1], 10) - 1, parseInt(m[2], 10)); // assume MM/DD/YYYY
+    if (isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+    return age >= 0 && age < 150 ? String(age) : null;
+  };
   const atomVal = (key) => {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
@@ -97,6 +113,8 @@ export function resolveFields(vault, fields) {
     if (key === "cellphone") return withCC(atoms.cellphone);
     if (key === "homephone") return withCC(atoms.homephone);
     if (key === "phone")     return withCC(atoms.cellphone ?? atoms.phone ?? atoms.homephone);
+    if (key === "age")           return atoms.age ?? ageFrom(atoms.dob);
+    if (key === "dependent_age") return atoms.dependent_age ?? ageFrom(atoms.dependent_dob);
     return atoms[key];
   };
 
