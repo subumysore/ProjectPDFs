@@ -50,3 +50,31 @@ export async function translate(text, dir, onStatus) {
   const first = Array.isArray(out) ? out[0] : out;
   return first?.translation_text ?? "";
 }
+
+/** All languages we can translate to/from (English is the pivot hub). */
+export const LANGUAGES = ["en", "hi", "es", "fr", "de", "zh", "ar", "ru"];
+
+/** Is a language pair reachable (directly or by pivoting through English)? */
+export function canTranslate(from, to) {
+  if (from === to) return true;
+  return LANGUAGES.includes(from) && LANGUAGES.includes(to);
+}
+
+/**
+ * Translate between ANY two supported languages, pivoting through English when no
+ * direct model exists (e.g. hi→en→fr). All hops are on-device. Identity data should
+ * NOT be passed here — only labels/questions and free-text answers (per the spec).
+ */
+export async function translateText(text, from, to, onStatus) {
+  if (!text || !text.trim()) return "";
+  if (from === to) return text;
+  const direct = `${from}-${to}`;
+  if (DIRECTIONS[direct]) return translate(text, direct, onStatus);
+  // Pivot via English.
+  if (from !== "en" && to !== "en" && DIRECTIONS[`${from}-en`] && DIRECTIONS[`en-${to}`]) {
+    onStatus?.(`translating ${from}→en→${to} (on-device)…`);
+    const mid = await translate(text, `${from}-en`, onStatus);
+    return translate(mid, `en-${to}`, onStatus);
+  }
+  throw new Error(`no translation path ${from}→${to}`);
+}

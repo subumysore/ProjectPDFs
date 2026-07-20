@@ -19,7 +19,30 @@ export const STARTER_KEYS = [
   "cell_phone",
   "home_phone",
   "email_address",
+  "native_language", // ISO code (en/hi/es/…) — the language the user thinks in (spec: language-aware filling)
 ];
+
+// Region/locale → native language guess (ISO code). On-device; no network.
+const REGION_LANG = {
+  IN: "hi", US: "en", GB: "en", CA: "en", AU: "en", IE: "en", NZ: "en",
+  ES: "es", MX: "es", AR: "es", CO: "es", PE: "es", CL: "es",
+  FR: "fr", BE: "fr", DE: "de", AT: "de", CH: "de",
+  CN: "zh", TW: "zh", HK: "zh", SG: "zh",
+  SA: "ar", AE: "ar", EG: "ar", QA: "ar", KW: "ar",
+  RU: "ru",
+};
+export function guessNativeLanguage() {
+  try {
+    const lang = (self.navigator && self.navigator.language) || "";
+    const two = lang.slice(0, 2).toLowerCase();
+    if (["en", "hi", "es", "fr", "de", "zh", "ar", "ru"].includes(two)) return two;
+    let region = "";
+    try { region = (new Intl.Locale(lang).region || "").toUpperCase(); } catch (_) { /* older engine */ }
+    if (!region && lang.includes("-")) region = lang.split("-").pop().toUpperCase();
+    if (region && REGION_LANG[region]) return REGION_LANG[region];
+  } catch (_) { /* navigator unavailable */ }
+  return "en";
+}
 
 // IANA timezone -> E.164 dialing code. Timezone reflects the machine's physical
 // location better than locale (which is a language preference). Common zones only;
@@ -87,5 +110,6 @@ export function starterVault() {
   const v = {};
   for (const k of STARTER_KEYS) v[k] = "";
   v.phone_country_code = guessDialCode();
+  v.native_language = guessNativeLanguage();
   return v;
 }
