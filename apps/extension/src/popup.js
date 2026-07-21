@@ -788,6 +788,36 @@ function fillPage(vault, tLabels) {
     if (pick.name && wantsInitial(label, el)) value = initial(value);
     if (setFieldValue(el, value)) filled++;
   }
+
+  // Native <select> dropdowns / list boxes (e.g. "Current Nationality"): choose the option
+  // whose text or value SEMANTICALLY matches the concept value ("Indian" -> "India").
+  const nOpt = (s) => String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const optEq = (a, b) => {
+    const x = nOpt(a), y = nOpt(b);
+    if (!x || !y) return false;
+    if (x === y) return true;
+    const [s, l] = x.length <= y.length ? [x, y] : [y, x];
+    return s.length >= 3 && l.startsWith(s);
+  };
+  for (const sel of document.querySelectorAll("select")) {
+    if (sel.disabled) continue;
+    const label = labelOf(sel);
+    let pick = null, top = 0;
+    for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
+    if (!pick || top < 1.5) continue;
+    const value = pick.kind === "composite"
+      ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
+      : atomVal(pick.key);
+    if (!value) continue;
+    const opts = [...sel.options];
+    const match = opts.find((o) => optEq(o.textContent, value) || optEq(o.value, value));
+    if (match) {
+      sel.value = match.value;
+      sel.dispatchEvent(new Event("input", { bubbles: true }));
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      filled++;
+    }
+  }
   return filled;
 }
 
