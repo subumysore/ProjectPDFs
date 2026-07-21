@@ -478,21 +478,41 @@ $("fill").onclick = async () => {
 if ($("signPdf")) $("signPdf").onclick = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = (tab && tab.url) || "";
-  // If we're already in our own viewer (a filled/opened PDF), sign THAT PDF from session.
-  if (/^chrome-extension:\/\/[a-z]+\/viewer\.html/i.test(url)) {
-    // The viewer persists the shown PDF to ppf_sign_src (it clears ppf_filled after render).
-    const s = await chrome.storage.session.get(["ppf_sign_src", "ppf_filled", "ppf_orig", "ppf_name", "ppf_sign_name"]);
-    const b64 = s.ppf_sign_src || s.ppf_filled || s.ppf_orig;
-    if (!b64) return setMsg("Nothing to sign here — open a PDF and Fill it first.", false);
-    await chrome.storage.session.set({ ppf_sign_src: b64, ppf_sign_name: s.ppf_sign_name || (s.ppf_name || "form").replace(/\.pdf$/i, "") });
-    return chrome.tabs.create({ url: chrome.runtime.getURL("sign.html") });
+  const nameFrom = (u) => ((u || "form").split("?")[0].split("#")[0].split("/").pop() || "form").replace(/\.pdf$/i, "") || "form";
+  const s = await chrome.storage.session.get(["ppf_sign_src", "ppf_filled", "ppf_orig", "ppf_name", "ppf_sign_name", "ppf_url"]);
+  let b64 = s.ppf_sign_src || s.ppf_filled || s.ppf_orig || null;
+  let name = s.ppf_sign_name || (s.ppf_name && s.ppf_name.replace(/\.pdf$/i, "")) || nameFrom(s.ppf_url);
+
+  // FALLBACK (robust): no signable bytes in session, but we know the source form URL — REBUILD the
+  // filled PDF from it and sign THAT. This makes Sign work from the viewer even if the viewer tab
+  // is stale / cleared the session, WITHOUT the user having to re-fill. No fragile URL matching.
+  if (!b64 && s.ppf_url) {
+    setMsg("Preparing your filled form to sign…");
+    const fetched = await send({ type: "fetchBytes", url: s.ppf_url });
+    if (fetched && fetched.ok) {
+      try {
+        const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
+        const r = await readVault();
+        let acro = r.ok ? await fillPdfBytes(bytes, r.vault) : null;
+        if (acro && acro.xfa && r.ok) { try { const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes)); if (prox.filled > acro.filled) acro = prox; } catch (_) { /* keep name-based */ } }
+        const outBytes = (acro && acro.bytes) ? acro.bytes : bytes;
+        let bin = ""; for (let i = 0; i < outBytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, outBytes.subarray(i, i + 0x8000));
+        b64 = btoa(bin);
+      } catch (_) { b64 = fetched.b64; } // sign the original if the re-fill fails
+      name = nameFrom(s.ppf_url);
+    }
   }
-  if (!/\.pdf(\?|#|$)/i.test(url)) return setMsg("Open a PDF in the tab first, then Sign / handwrite it.", false);
+
+  // Or a raw PDF is open directly in the tab.
+  if (!b64 && /\.pdf(\?|#|$)/i.test(url)) {
+    const fetched = await send({ type: "fetchBytes", url });
+    if (fetched && fetched.ok) { b64 = fetched.b64; name = nameFrom(url); }
+    else return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + ").", false);
+  }
+
+  if (!b64) return setMsg("Open or Fill a PDF first, then Sign / handwrite it.", false);
   setMsg("Opening the sign tool…");
-  const fetched = await send({ type: "fetchBytes", url });
-  if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + ").", false);
-  const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
-  await chrome.storage.session.set({ ppf_sign_src: fetched.b64, ppf_sign_name: base });
+  await chrome.storage.session.set({ ppf_sign_src: b64, ppf_sign_name: name });
   await chrome.tabs.create({ url: chrome.runtime.getURL("sign.html") });
 };
 
