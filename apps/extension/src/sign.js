@@ -10,10 +10,23 @@ const b64ToBytes = (b64) => { const bin = atob(b64); const d = new Uint8Array(bi
 
 const state = {
   bytes: null, doc: null, page: 1, num: 1, scale: 1.4,
-  tool: "pen", size: 4,
+  tool: "pen", size: 4, color: "#0b1f66",
   overlays: {},          // pageIndex(0-based) -> ink canvas (persisted across page nav)
+  undo: {},              // pageIndex -> [ImageData] snapshots (before each stroke/stamp)
   images: { signature: null, photo: null }, // HTMLImageElement of the saved vault images
 };
+
+// Snapshot the current page's ink BEFORE a change, so Undo can restore it (cap the history).
+function pushUndo() {
+  const ink = $("ink"); const key = state.page - 1;
+  (state.undo[key] || (state.undo[key] = [])).push(ink.getContext("2d").getImageData(0, 0, ink.width, ink.height));
+  if (state.undo[key].length > 40) state.undo[key].shift();
+}
+function doUndo() {
+  const st = state.undo[state.page - 1];
+  if (!st || !st.length) return;
+  const ink = $("ink"); ink.getContext("2d").putImageData(st.pop(), 0, 0); commitToStore();
+}
 
 async function loadVaultImages() {
   try {
@@ -59,8 +72,9 @@ function setupDrawing() {
   const pos = (e) => { const r = ink.getBoundingClientRect(); return { x: (e.clientX - r.left) * (ink.width / r.width), y: (e.clientY - r.top) * (ink.height / r.height) }; };
   ink.addEventListener("pointerdown", (e) => {
     drawing = true; last = pos(e); e.preventDefault();
+    pushUndo(); // record state before this stroke/stamp
     if (state.tool === "pen") {
-      ctx.strokeStyle = "#0b1f66"; ctx.lineWidth = state.size; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.strokeStyle = state.color; ctx.lineWidth = state.size; ctx.lineCap = "round"; ctx.lineJoin = "round";
     } else {
       imgTool = state.images[state.tool];
       base = ctx.getImageData(0, 0, ink.width, ink.height); // snapshot to preview the drag
@@ -98,7 +112,10 @@ function wireToolbar() {
   $("tSig").onclick = () => { if (!state.images.signature) return alert("No saved signature. Draw one in the extension popup (Signature pad) first."); setTool("signature"); };
   $("tPhoto").onclick = () => { if (!state.images.photo) return alert("No saved photo. Add a profile_picture image in the extension popup first."); setTool("photo"); };
   $("size").oninput = () => { state.size = +$("size").value; };
-  $("clear").onclick = () => { const ink = $("ink"); ink.getContext("2d").clearRect(0, 0, ink.width, ink.height); commitToStore(); };
+  $("color").oninput = () => { state.color = $("color").value; };
+  $("undo").onclick = doUndo;
+  window.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); doUndo(); } });
+  $("clear").onclick = () => { pushUndo(); const ink = $("ink"); ink.getContext("2d").clearRect(0, 0, ink.width, ink.height); commitToStore(); };
   $("prev").onclick = async () => { if (state.page > 1) { state.page--; await renderPage(); } };
   $("next").onclick = async () => { if (state.page < state.num) { state.page++; await renderPage(); } };
   $("dl").onclick = (e) => { if ($("dl").textContent.includes("Download")) { e.preventDefault(); download(); } };
