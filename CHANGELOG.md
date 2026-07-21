@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — One-command dev loop: auto-load + hot-reload the extension (2026-07-21)
+- `deploy/dev-launch-chrome.ps1` launches a DEDICATED Chrome (separate persistent profile,
+  main browser untouched) that auto-loads the extension straight from `apps/extension` — no
+  zip, no website, no manual "Load unpacked". Opens the remote-debugging port.
+- `deploy/dev-reload.mjs` hot-reloads that extension via CDP (`chrome.runtime.reload()`),
+  which re-reads the source from disk — so applying the latest code is one command, zero clicks.
+- Fixed the real blocker: the user folder has a SPACE ("Subramanya Mysore"), which split
+  Chrome's `--user-data-dir`/`--load-extension` flags and silently merged into the default
+  profile with no extension. The launcher now passes **8.3 short paths** (no spaces).
+
 ### Changed — "View in my language" is a split view: original left, translation right (2026-07-21)
 - View mode now shows the **untouched original form on the left** (editable) and its
   **native-language representation on the right**, and **auto-runs the translation** so the
