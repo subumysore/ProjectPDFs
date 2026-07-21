@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Fill no longer pops open the translation panel (2026-07-21)
+- On "Fill this page" the bilingual panel opened automatically, showing the translated view
+  the user didn't ask for. The panel now opens **only** in View mode ("View this page in my
+  language"). On Fill it stays closed; the "🌐 Language panel" toggle remains available if the
+  user does want to read it translated. Translation never runs unprompted on Fill.
+
 ### Added — One-command dev loop: auto-load + hot-reload the extension (2026-07-21)
 - `deploy/dev-launch-chrome.ps1` launches a DEDICATED Chrome (separate persistent profile,
   main browser untouched) that auto-loads the extension straight from `apps/extension` — no

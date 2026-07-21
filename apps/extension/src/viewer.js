@@ -228,9 +228,10 @@ function setupLangPanel(res) {
 
   go.onclick = () => render(sel.value);
   sel.onchange = () => render(sel.value); // choosing a language downloads it + re-renders
-  showPanel(true);
-  // On "View this page in my language", show the form in the user's language right away
-  // (the button IS an explicit request to read it translated) — no extra click needed.
+  // Only OPEN the panel when the user explicitly asked to read the form in their language
+  // (View mode). On a plain Fill, keep it closed — just expose the "🌐 Language panel"
+  // toggle so it's there if they want it. Translation never runs unprompted on Fill.
+  showPanel(!!res.autoTranslate);
   if (res.autoTranslate) render(sel.value);
 }
 
