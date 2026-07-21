@@ -73,6 +73,7 @@ function setupLangPanel(res) {
 (async () => {
   const s = await chrome.storage.session.get([
     "ppf_filled", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
+    "ppf_labels", "ppf_formLang", "ppf_nativeLang",
   ]);
   const name = s.ppf_name || "filled.pdf";
 
@@ -113,6 +114,8 @@ function setupLangPanel(res) {
   if (!s.ppf_filled) { showEmpty(); return; }
   try {
     await renderAndDownload(b64ToBytes(s.ppf_filled), name);
+    // Offer the translated-labels panel for a standard (AcroForm) PDF too.
+    setupLangPanel({ labels: s.ppf_labels, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
   } catch (e) {
     stage.innerHTML = `<p style="color:#fff;padding:24px">Couldn't render the PDF: ${(e && e.message) || e}</p>`;
   }

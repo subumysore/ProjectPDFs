@@ -347,10 +347,17 @@ $("fill").onclick = async () => {
       // filled. XFA/LiveCycle hybrids (W-2/W-4/W-9) expose an unreliable AcroForm
       // shadow — OCR reads their true printed labels instead.
       if (acro.filled && acro.bytes && !acro.xfa) {
-        // Fast path: matched by AcroForm field names. Show the result in the viewer.
+        // Fast path: matched by AcroForm field names. Show the result in the viewer,
+        // passing the field labels + languages so the viewer can offer a translated-
+        // labels side panel (view a foreign PDF in your language).
         let bin = "";
         for (let i = 0; i < acro.bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, acro.bytes.subarray(i, i + 0x8000));
-        await chrome.storage.session.set({ ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf` });
+        let formLang = "en";
+        try { const { detectLang } = await import("./lang.js"); if (acro.labels && acro.labels.length) formLang = detectLang(acro.labels.join(" ")).lang; } catch (_) { /* default en */ }
+        await chrome.storage.session.set({
+          ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf`,
+          ppf_labels: acro.labels || [], ppf_formLang: formLang, ppf_nativeLang: (r.vault && r.vault.native_language) || "en",
+        });
         await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
         return setMsg(`Filled ${acro.filled} of ${acro.total} field(s) via form fields — showing your filled PDF. ✓`);
       }
@@ -437,8 +444,13 @@ $("viewLang").onclick = async () => {
   const r = await readVault();
   const nativeLang = (r.ok && r.vault && r.vault.native_language) || "en";
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = (tab && tab.url) || "";
+  // A PDF opens in Chrome's own plugin, whose fields an extension can't reach in place.
+  if (/\.pdf(\?|#|$)/i.test(url)) {
+    return setMsg("This is a PDF. In-page translation works on web forms. For a PDF, click “Fill this page” — the filled-PDF viewer has a “Translate the form's labels” panel that shows them in your language.", false);
+  }
   const [{ result: items } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectLabelsForView });
-  if (!items || !items.length) return setMsg("No form labels found on this page.", false);
+  if (!items || !items.length) return setMsg("No form labels found on this page. (Open a web form, or for a PDF use “Fill this page”.)", false);
   const { detectLang } = await import("./lang.js");
   const formLang = detectLang(items.map((x) => x.text).join(" ")).lang;
   if (formLang === nativeLang) return setMsg(`This page is already in your language (${nativeLang.toUpperCase()}).`);

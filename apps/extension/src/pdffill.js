@@ -108,7 +108,8 @@ export async function fillPdfBytes(bytes, vault) {
 
   try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
   const out = await pdf.save();
-  return { total: all.length, filled, bytes: out, xfa };
+  // Field labels (for the viewer's "view in my language" side panel on AcroForm PDFs).
+  return { total: all.length, filled, bytes: out, xfa, labels: descriptors.map((d) => d.label).filter(Boolean) };
 }
 
 export async function fillPdfFromUrl(url, vault) {
