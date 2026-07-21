@@ -229,6 +229,9 @@ function setupLangPanel(res) {
   go.onclick = () => render(sel.value);
   sel.onchange = () => render(sel.value); // choosing a language downloads it + re-renders
   showPanel(true);
+  // On "View this page in my language", show the form in the user's language right away
+  // (the button IS an explicit request to read it translated) — no extra click needed.
+  if (res.autoTranslate) render(sel.value);
 }
 
 (async () => {
@@ -284,8 +287,9 @@ function setupLangPanel(res) {
     const filled = b64ToBytes(s.ppf_filled);
     await renderFilled(filled, name);
     setupOrigToggle(filled, s.ppf_orig ? b64ToBytes(s.ppf_orig) : null, name, s.ppf_url);
-    // Offer the translated label+value panel for a standard (AcroForm) PDF too.
-    setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
+    // Offer the translated label+value panel for a standard (AcroForm) PDF too. In VIEW
+    // mode (left = original form), auto-translate so the right shows it in your language.
+    setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang, autoTranslate: !!s.ppf_view });
   } catch (e) {
     stage.innerHTML = `<p style="color:#fff;padding:24px">Couldn't render the PDF: ${(e && e.message) || e}</p>`;
   }

@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — "View in my language" is a split view: original left, translation right (2026-07-21)
+- View mode now shows the **untouched original form on the left** (editable) and its
+  **native-language representation on the right**, and **auto-runs the translation** so the
+  right is populated immediately (no extra "Translate" click). Closing the right panel (✕)
+  leaves the left form full-width and fully workable **without reloading it**; the bar's
+  "🌐 Language panel" re-opens it. (A form opened in Chrome's OWN PDF viewer can't host our
+  panel — extensions can't inject into Chrome's PDF plugin — so there is one transition into
+  this split page; after that, opening/closing the panel never reloads the form.)
+
 ### Fixed — Panel header words ("Label"/"Value") shown in the reader's language (2026-07-21)
 - The bilingual panel's column headers were always English ("LABEL · हिन्दी"). Each header word
   is now written in that column's own language (e.g. लेबल · हिन्दी, मान · हिन्दी) via a small
