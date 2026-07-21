@@ -127,6 +127,16 @@ function wireToolbar() {
   state.bytes = b64ToBytes(s.ppf_sign_src);
   $("dl").download = (s.ppf_sign_name || "form") + "-signed.pdf";
   await loadVaultImages();
+  // Show a THUMBNAIL of what each stamp button will insert, so the mapping is unmistakable
+  // (reveals a mis-keyed image immediately).
+  const preview = (btnId, img) => {
+    if (!img) return;
+    const t = document.createElement("img"); t.src = img.src; t.title = "This is what will be stamped";
+    t.style.cssText = "height:22px;vertical-align:middle;margin-left:4px;border:1px solid #fff;border-radius:3px;background:#fff";
+    $(btnId).after(t);
+  };
+  preview("tSig", state.images.signature);
+  preview("tPhoto", state.images.photo);
   state.doc = await pdfjsLib.getDocument({ data: state.bytes.slice(0) }).promise;
   state.num = state.doc.numPages;
   setupDrawing(); wireToolbar();
