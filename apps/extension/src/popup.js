@@ -456,10 +456,11 @@ if ($("signPdf")) $("signPdf").onclick = async () => {
   const url = (tab && tab.url) || "";
   // If we're already in our own viewer (a filled/opened PDF), sign THAT PDF from session.
   if (/^chrome-extension:\/\/[a-z]+\/viewer\.html/i.test(url)) {
-    const s = await chrome.storage.session.get(["ppf_filled", "ppf_orig", "ppf_name"]);
-    const b64 = s.ppf_filled || s.ppf_orig;
+    // The viewer persists the shown PDF to ppf_sign_src (it clears ppf_filled after render).
+    const s = await chrome.storage.session.get(["ppf_sign_src", "ppf_filled", "ppf_orig", "ppf_name", "ppf_sign_name"]);
+    const b64 = s.ppf_sign_src || s.ppf_filled || s.ppf_orig;
     if (!b64) return setMsg("Nothing to sign here — open a PDF and Fill it first.", false);
-    await chrome.storage.session.set({ ppf_sign_src: b64, ppf_sign_name: (s.ppf_name || "form").replace(/\.pdf$/i, "") });
+    await chrome.storage.session.set({ ppf_sign_src: b64, ppf_sign_name: s.ppf_sign_name || (s.ppf_name || "form").replace(/\.pdf$/i, "") });
     return chrome.tabs.create({ url: chrome.runtime.getURL("sign.html") });
   }
   if (!/\.pdf(\?|#|$)/i.test(url)) return setMsg("Open a PDF in the tab first, then Sign / handwrite it.", false);
