@@ -758,6 +758,15 @@ function fillPage(vault, tLabels) {
     if (y.length === 2) y = (+y > new Date().getFullYear() % 100 ? "19" : "20") + y;
     return { day, month, year: +y };
   };
+  // Page-wide date order: forms usually state the required format ONCE (e.g. a DOB hint
+  // "dd/mm/yyyy") and expect it for EVERY date field. Detect it from the whole page as a
+  // fallback for fields (like Passport Expiry) whose own hint doesn't repeat the format.
+  // Slash/dash/dot separators only (a space separator would match ordinary prose).
+  const pageDateFmt = (() => {
+    const hay = (document.body ? document.body.textContent : "").toLowerCase();
+    const m = hay.match(/(d{1,2}|m{1,3}|y{2,4})([\/.\-])(d{1,2}|m{1,3}|y{2,4})\2(d{1,2}|m{1,3}|y{2,4})/);
+    return m ? { tokens: [m[1], m[3], m[4]], sep: m[2] } : null;
+  })();
   const detectDateFmt = (el, label) => {
     // Forms state the required order in various places: placeholder, label, a tooltip, an
     // aria-describedby hint, or a help/error line in the field's container ("Please enter
@@ -776,7 +785,7 @@ function fillPage(vault, tLabels) {
     if (!dt) return value; // not a date — leave as-is
     const pad = (n, w) => String(n).padStart(w, "0");
     if (el.type === "date") return `${dt.year}-${pad(dt.month, 2)}-${pad(dt.day, 2)}`;
-    const f = detectDateFmt(el, label);
+    const f = detectDateFmt(el, label) || pageDateFmt; // field hint, else the page-wide order
     if (f) return f.tokens.map((t) =>
       /^d/.test(t) ? pad(dt.day, t.length)
         : /^m{3}$/.test(t) ? MONTHS[dt.month - 1]
