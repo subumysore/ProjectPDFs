@@ -683,20 +683,26 @@ async function fillPage(vault, tLabels) {
     }
   }
   // Prefix a bare phone number with the stored country code (unless it already has one).
+  // True once we know the form has a SEPARATE country-code field (set after fields are
+  // collected). If so, phone-number fields carry the bare number so the code isn't doubled.
+  let hasCcField = false;
   const withCC = (num) => {
     const n = (num || "").toString().trim();
     if (!n) return "";
+    if (hasCcField) return n; // a dedicated country-code field will carry the code
     const cc = (atoms.phonecc || "").toString().trim();
     return cc && !n.startsWith("+") ? cc + " " + n : n;
   };
-  // Atom value, with graceful fallbacks that don't hardcode a form.
+  // Any phone number the user has — so ANY phone-type field fills even if it asks for a
+  // "mobile" but the number is stored as "home", etc. General, not per-form.
+  const anyPhone = () => atoms.cellphone ?? atoms.phone ?? atoms.homephone;
   const atomVal = (key) => {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
     if (key === "nationality") return atoms.nationality ?? atoms.country;
-    if (key === "cellphone") return withCC(atoms.cellphone);
-    if (key === "homephone") return withCC(atoms.homephone);
-    if (key === "phone")     return withCC(atoms.cellphone ?? atoms.phone ?? atoms.homephone);
+    if (key === "cellphone") return withCC(atoms.cellphone ?? anyPhone());
+    if (key === "homephone") return withCC(atoms.homephone ?? anyPhone());
+    if (key === "phone")     return withCC(anyPhone());
     return atoms[key];
   };
 
@@ -764,6 +770,7 @@ async function fillPage(vault, tLabels) {
   // Which member atoms does the form claim with a dedicated (atomic) field? A composite
   // then absorbs only the members NOT claimed here.
   const claimed = new Set(fields.filter((f) => f.pick.kind === "atom").map((f) => f.pick.key));
+  hasCcField = fields.some((f) => f.pick && f.pick.key === "phonecc"); // affects withCC()
 
   // Reformat a stored date (vault convention MM/DD/YYYY) to match what THIS field asks for.
   // Many forms state the order in the placeholder/label — "dd/mm/yyyy", "DD-MMM-YYYY" — and
@@ -941,6 +948,14 @@ async function fillPage(vault, tLabels) {
       uae: ["United Arab Emirates"], rok: ["South Korea"], prc: ["China"], drc: ["Democratic Republic of the Congo"],
     };
     if (COUNTRY[g]) cands.push(...COUNTRY[g]);
+    // A country-code dropdown may list "+1" OR "United States (+1)" — match both. The user's
+    // dialling code corresponds to their country, so add the country name as a candidate too.
+    if (pick.key === "phonecc") {
+      const digits = String(value).replace(/\D/g, "");
+      if (digits) cands.push(digits, "+" + digits);
+      const cn = atoms.country || atoms.nationality;
+      if (cn) { cands.push(String(cn)); if (COUNTRY[norm(cn)]) cands.push(...COUNTRY[norm(cn)]); }
+    }
     const n2 = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
     // Score an option against the candidates: EXACT (3) > prefix (2) > containment (1).
     // Ranking (not first-match) is essential so "Male" (exact) beats "Female" — which
