@@ -13,16 +13,21 @@ const TESS_BASE = chrome.runtime.getURL("vendor/tesseract/");
 const TESS_LANG =
   "https://objectstorage.us-ashburn-1.oraclecloud.com/p/Ut3vAQ-YK6VmAdptBynqsp7mnc1T5XBvjyAbMs76c0zsK8u6-A0cZBpQOkCBjdLC/n/idlqdkwlstnb/b/polyglotformfill-dl/o/tesseract";
 
-let _worker = null;
-export async function getTessWorker(onStatus) {
-  if (_worker) return _worker;
-  onStatus?.("preparing OCR engine (first run downloads the language model, then cached)…");
-  _worker = await createWorker("eng", 1, {
+// One cached worker PER language pack (e.g. eng, kan, tam, hin, ara, chi_sim…). Packs are
+// fetched on demand from our asset host (assets-DOWN only). This is what makes OCR universal:
+// the caller passes the Tesseract pack for the detected/selected script (langcodes.tessPack).
+const _workers = {};
+export async function getTessWorker(lang = "eng", onStatus) {
+  if (typeof lang === "function") { onStatus = lang; lang = "eng"; } // back-compat: (onStatus)
+  lang = lang || "eng";
+  if (_workers[lang]) return _workers[lang];
+  onStatus?.(`preparing OCR for '${lang}' (first run downloads the language model, then cached)…`);
+  _workers[lang] = await createWorker(lang, 1, {
     workerPath: `${TESS_BASE}worker.min.js`,
     corePath: TESS_BASE,
     langPath: TESS_LANG,
     workerBlobURL: false,
     gzip: true,
   });
-  return _worker;
+  return _workers[lang];
 }

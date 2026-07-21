@@ -5,6 +5,7 @@
 // Self-contained bundle (esbuild — resolves onnxruntime internally; the pre-min build
 // had an unresolved bare `onnxruntime-common` import that broke translation entirely).
 import { pipeline, env } from "../vendor/transformers/transformers.bundle.mjs";
+import { flores, isKnown, allLangs } from "./langcodes.js";
 
 // Self-hosted model base (Object Storage). transformers.js fetches
 // `${remoteHost}/${model}/resolve/${revision}/<file>`.
@@ -34,49 +35,58 @@ export const DIRECTIONS = {
   "en-ru": "Xenova/opus-mt-en-ru", "ru-en": "Xenova/opus-mt-ru-en",
 };
 
+// Universal many-to-many model (FLORES-200 codes) — covers ~200 languages, any→any, no English
+// pivot. This is what makes the engine language-AGNOSTIC (RFC-0008 / ADR-0018). The small opus-mt
+// models above are kept only as an OPTIONAL fast-path for the most common pairs; they are NOT a
+// cap — anything they don't cover falls through to NLLB. Weights are served from OUR storage.
+const NLLB_MODEL = "Xenova/nllb-200-distilled-600M";
+
 const cache = {};
-async function getTranslator(dir, onStatus) {
+async function getOpus(dir, onStatus) {
   if (cache[dir]) return cache[dir];
-  onStatus?.("loading model (first run downloads ~110 MB, then cached)…");
-  const t = await pipeline("translation", DIRECTIONS[dir]);
-  cache[dir] = t;
-  return t;
+  onStatus?.("loading model (first run downloads, then cached)…");
+  cache[dir] = await pipeline("translation", DIRECTIONS[dir]);
+  return cache[dir];
+}
+async function getNllb(onStatus) {
+  if (cache.__nllb) return cache.__nllb;
+  onStatus?.("loading the universal translation model on-device (first run downloads it)…");
+  cache.__nllb = await pipeline("translation", NLLB_MODEL);
+  return cache.__nllb;
 }
 
-/** Translate text in the given direction (e.g. "en-hi"), fully on-device. */
+/** Translate text in a fixed opus-mt direction (e.g. "en-hi"). Back-compat fast-path. */
 export async function translate(text, dir, onStatus) {
   if (!text.trim()) return "";
   if (!DIRECTIONS[dir]) throw new Error(`no model for ${dir}`);
-  const translator = await getTranslator(dir, onStatus);
+  const translator = await getOpus(dir, onStatus);
   const out = await translator(text);
-  const first = Array.isArray(out) ? out[0] : out;
-  return first?.translation_text ?? "";
+  return (Array.isArray(out) ? out[0] : out)?.translation_text ?? "";
 }
 
-/** All languages we can translate to/from (English is the pivot hub). */
-export const LANGUAGES = ["en", "hi", "es", "fr", "de", "zh", "ar", "ru"];
+/** Every language the engine can handle (the registry — not a hard-coded 8). */
+export const LANGUAGES = allLangs();
 
-/** Is a language pair reachable (directly or by pivoting through English)? */
+/** Any pair of known languages is reachable (NLLB is many-to-many). */
 export function canTranslate(from, to) {
   if (from === to) return true;
-  return LANGUAGES.includes(from) && LANGUAGES.includes(to);
+  return isKnown(from) && isKnown(to);
 }
 
 /**
- * Translate between ANY two supported languages, pivoting through English when no
- * direct model exists (e.g. hi→en→fr). All hops are on-device. Identity data should
+ * Translate between ANY two languages, fully on-device. Uses a small direct opus-mt model when
+ * one exists (fast), otherwise the universal NLLB-200 model via FLORES codes. Identity data must
  * NOT be passed here — only labels/questions and free-text answers (per the spec).
  */
 export async function translateText(text, from, to, onStatus) {
   if (!text || !text.trim()) return "";
   if (from === to) return text;
   const direct = `${from}-${to}`;
-  if (DIRECTIONS[direct]) return translate(text, direct, onStatus);
-  // Pivot via English.
-  if (from !== "en" && to !== "en" && DIRECTIONS[`${from}-en`] && DIRECTIONS[`en-${to}`]) {
-    onStatus?.(`translating ${from}→en→${to} (on-device)…`);
-    const mid = await translate(text, `${from}-en`, onStatus);
-    return translate(mid, `en-${to}`, onStatus);
+  if (DIRECTIONS[direct]) return translate(text, direct, onStatus); // fast-path for common pairs
+  if (isKnown(from) && isKnown(to)) {
+    const t = await getNllb(onStatus);
+    const out = await t(text, { src_lang: flores(from), tgt_lang: flores(to) });
+    return (Array.isArray(out) ? out[0] : out)?.translation_text ?? "";
   }
   throw new Error(`no translation path ${from}→${to}`);
 }

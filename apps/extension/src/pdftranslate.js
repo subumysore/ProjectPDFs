@@ -63,9 +63,11 @@ export async function translateScannedPdf(bytes, { to = "en", from = "", onStatu
   const pdfjsLib = await import("../vendor/pdfjs/pdf.min.mjs");
   const { getTessWorker } = await import("./tess.js");
   const { translateText } = await import("./translate.js");
+  const { tessPack } = await import("./langcodes.js");
   try { pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs"); } catch (_) { /* ignore */ }
   const doc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
-  const worker = await getTessWorker((s) => onStatus(s));
+  // OCR in the SOURCE script's Tesseract pack (Kannada→kan, Tamil→tam, …); default English.
+  const worker = await getTessWorker(from ? tessPack(from) : "eng", (s) => onStatus(s));
   const pages = [];
   for (let p = 1; p <= doc.numPages; p++) {
     onStatus(`Reading page ${p} of ${doc.numPages} (on-device OCR)…`);

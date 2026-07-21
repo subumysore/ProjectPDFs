@@ -1,15 +1,9 @@
-// On-device language detection for a form's extracted text. Script ranges settle the
-// non-Latin languages outright; a small stop-word/diacritic vote separates the Latin
-// ones (en/es/fr/de). Pure and deterministic — unit-tested. Returns an ISO code from
-// the set we can translate (en/hi/es/fr/de/zh/ar/ru), defaulting to "en".
-export const SUPPORTED_LANGS = ["en", "hi", "es", "fr", "de", "zh", "ar", "ru"];
-
-const SCRIPTS = [
-  [/[ऀ-ॿ]/g, "hi"], // Devanagari
-  [/[一-鿿]/g, "zh"], // CJK unified
-  [/[؀-ۿ]/g, "ar"], // Arabic
-  [/[Ѐ-ӿ]/g, "ru"], // Cyrillic
-];
+// On-device language detection for a form's extracted text. ANY script is settled by the
+// universal registry's Unicode-range detector (langcodes.detectScript — Indic/CJK/Arabic/…);
+// a small stop-word/diacritic vote separates the Latin languages (en/es/fr/de). Pure and
+// deterministic — unit-tested. Returns an ISO code (any known language), defaulting to "en".
+import { detectScript, allLangs } from "./langcodes.js";
+export const SUPPORTED_LANGS = allLangs(); // no longer a fixed 8 — the full registry
 
 // Frequent function words per Latin language (accent-stripped forms included).
 const WORDS = {
@@ -25,18 +19,9 @@ export function detectLang(text) {
   const t = (text || "").trim();
   if (!t) return { lang: "en", confidence: 0 };
 
-  // Non-Latin scripts: whichever script has the most characters wins if it's a
-  // meaningful share of the letters.
-  let bestScript = null;
-  let bestCount = 0;
-  for (const [re, lang] of SCRIPTS) {
-    const n = (t.match(re) || []).length;
-    if (n > bestCount) { bestCount = n; bestScript = lang; }
-  }
-  const letters = (t.match(/\p{L}/gu) || []).length || 1;
-  if (bestScript && bestCount / letters > 0.15) {
-    return { lang: bestScript, confidence: Math.min(1, bestCount / letters) };
-  }
+  // ANY non-Latin script (Kannada, Tamil, Telugu, CJK, Arabic, …) via the registry.
+  const s = detectScript(t);
+  if (s) return { lang: s.lang, confidence: Math.min(1, s.share) };
 
   // Latin: stop-word vote + diacritic tie-breaks.
   const tokens = t.toLowerCase().replace(/[^a-zäöüßçñàèùâêîôûœ¿¡'\s]/g, " ").split(/\s+/).filter(Boolean);
