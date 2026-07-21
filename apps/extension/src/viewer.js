@@ -204,6 +204,16 @@ function setupLangPanel(res) {
     fromSel.value = from;
   }
   if (ocr) ocr.onchange = () => { if (fromRow) fromRow.hidden = !ocr.checked; go.textContent = ocr.checked ? "Read with OCR & translate" : "Translate the form's labels & values"; };
+  // Auto-suggest OCR when the text layer is empty or garbage (scanned / legacy non-Unicode font).
+  // We can't know the real source language from garbage text, so we prompt the user to pick it.
+  const badLayer = res.bytes && textLayerLooksBad(items.map((i) => i.label).join(" "));
+  if (badLayer && ocr) {
+    ocr.checked = true;
+    if (fromRow) fromRow.hidden = false;
+    go.textContent = "Read with OCR & translate";
+    const note = document.getElementById("lpNote");
+    if (note) note.textContent = "This form's text can't be read directly (it's scanned or uses a non-standard font). Pick the form's language below and I'll read it with on-device OCR.";
+  }
 
   const status = document.getElementById("lpStatus");
   const table = document.getElementById("lpTable");

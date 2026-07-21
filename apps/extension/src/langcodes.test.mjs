@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detectScript, flores, tessPack, isKnown, allLangs } from "./langcodes.js";
+import { detectScript, flores, tessPack, isKnown, allLangs, textLayerLooksBad } from "./langcodes.js";
+
+test("textLayerLooksBad flags empty + legacy-font garbage, passes real English", () => {
+  assert.equal(textLayerLooksBad(""), true);
+  assert.equal(textLayerLooksBad("2 aea)€Sdd*rdd ct& adJrJ dd ವರ್ಷ".replace(/[^\x00-\x7f]/g, "")), true); // Kannada legacy-font extract (garbage Latin+symbols)
+  assert.equal(textLayerLooksBad("Surname Given and middle names Date of birth Place of birth Nationality"), false);
+});
 
 test("detects Indic + CJK + other scripts (not just the old 8)", () => {
   assert.equal(detectScript("ನಮೂನೆ ಕರ್ನಾಟಕ ಸ್ಟ್ಯಾಂಪ್").lang, "kn"); // Kannada

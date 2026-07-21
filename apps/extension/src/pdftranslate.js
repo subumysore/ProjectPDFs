@@ -65,7 +65,11 @@ export async function translateScannedPdf(bytes, { to = "en", from = "", onStatu
   const { translateText } = await import("./translate.js");
   const { tessPack } = await import("./langcodes.js");
   try { pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs"); } catch (_) { /* ignore */ }
-  const doc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+  // CID fonts (Kannada/Tamil/CJK legacy fonts, like Karnataka govt forms) render BLANK without
+  // cMaps + the standard-font data → OCR would get nothing. Point pdf.js at the packaged assets.
+  let cMapUrl, standardFontDataUrl;
+  try { cMapUrl = chrome.runtime.getURL("vendor/pdfjs/cmaps/"); standardFontDataUrl = chrome.runtime.getURL("vendor/pdfjs/standard_fonts/"); } catch (_) { /* test/node */ }
+  const doc = await pdfjsLib.getDocument({ data: bytes.slice(0), cMapUrl, cMapPacked: true, standardFontDataUrl }).promise;
   // OCR in the SOURCE script's Tesseract pack (Kannada→kan, Tamil→tam, …); default English.
   const worker = await getTessWorker(from ? tessPack(from) : "eng", (s) => onStatus(s));
   const pages = [];

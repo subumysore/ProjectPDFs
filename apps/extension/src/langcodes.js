@@ -81,6 +81,21 @@ export const allLangs = () => Object.keys(LANGS);
  * Returns { lang, script, share } or null when the text is Latin/undetermined (the
  * caller then falls back to a Latin word-vote for en/es/fr/de/…).
  */
+// Does an extracted text layer look UNUSABLE — empty (scanned image) or garbage (a legacy
+// non-Unicode font, e.g. Kannada Nudi/Baraha, which extracts as symbol-heavy pseudo-Latin)?
+// When true, the viewer auto-suggests the render→OCR path instead of text-layer translation.
+export function textLayerLooksBad(text) {
+  const t = (text || "").trim();
+  const letters = (t.match(/\p{L}/gu) || []).length;
+  if (letters < 8) return true; // (near-)empty text layer → scanned
+  const nonSpace = t.replace(/\s/g, "");
+  const symbols = (nonSpace.match(/[^\p{L}\p{N}]/gu) || []).length;
+  const symbolRatio = symbols / (nonSpace.length || 1);
+  const toks = t.toLowerCase().split(/[^a-zà-ɏ]+/).filter((x) => x.length >= 2);
+  const wordish = toks.filter((x) => /[aeiou]/.test(x)).length / (toks.length || 1);
+  return symbolRatio > 0.18 || wordish < 0.45; // lots of symbols, or few vowel-bearing words
+}
+
 export function detectScript(text) {
   const t = (text || "");
   const letters = (t.match(/\p{L}/gu) || []).length || 1;
