@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Panel header words ("Label"/"Value") shown in the reader's language (2026-07-21)
+- The bilingual panel's column headers were always English ("LABEL · हिन्दी"). Each header word
+  is now written in that column's own language (e.g. लेबल · हिन्दी, मान · हिन्दी) via a small
+  fixed `UI_TERMS` dictionary for the 8 supported languages — no MT needed for two words.
+
 ### Fixed — Warn before a fill discards edits made in Chrome's PDF viewer (2026-07-21)
 - Filling re-fetches the ORIGINAL PDF from its URL (extensions cannot read the edited state
   of Chrome's built-in PDF plugin — no API exists), so selections a user made in that viewer

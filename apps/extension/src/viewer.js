@@ -124,6 +124,19 @@ import { toScript } from "./translit.js";
 
 const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
 const LANG_SHORT = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
+// The panel's own column words ("Label"/"Value") in each supported language, so the
+// header reads in the reader's language too — not just the data.
+const UI_TERMS = {
+  en: { label: "Label", value: "Value" },
+  hi: { label: "लेबल", value: "मान" },
+  es: { label: "Etiqueta", value: "Valor" },
+  fr: { label: "Étiquette", value: "Valeur" },
+  de: { label: "Bezeichnung", value: "Wert" },
+  zh: { label: "标签", value: "值" },
+  ar: { label: "التسمية", value: "القيمة" },
+  ru: { label: "Метка", value: "Значение" },
+};
+const uiTerm = (lang, key) => (UI_TERMS[lang] || UI_TERMS.en)[key];
 
 // Bilingual side panel: read a form's labels AND the values that will fill it, in ANY
 // language you choose. The language dropdown is ordered your-language first, then the
@@ -169,7 +182,7 @@ function setupLangPanel(res) {
       `This form is in ${LANG_NAMES[from] || from}. Reading it in ${LANG_NAMES[to] || to}: each label AND the value that fills it.`;
     if (to === from) {
       // Same language as the form — nothing to translate; show the form's own text.
-      table.innerHTML = `<tr><th>Label</th><th>Value</th></tr>`;
+      table.innerHTML = `<tr><th>${uiTerm(from, "label")} · ${LANG_SHORT[from] || from}</th><th>${uiTerm(from, "value")} · ${LANG_SHORT[from] || from}</th></tr>`;
       for (const it of items) {
         const row = document.createElement("tr");
         const a = document.createElement("td"); a.className = "tr"; a.textContent = it.label;
@@ -186,8 +199,10 @@ function setupLangPanel(res) {
       const cache = {};
       const tr = async (t) => { if (!t) return ""; if (cache[t] === undefined) cache[t] = await translateText(t, from, to, (s) => (status.textContent = s)); return cache[t]; };
       const oShort = LANG_SHORT[from] || from, tShort = LANG_SHORT[to] || to;
+      // Each header word is written in that column's OWN language (source vs chosen).
       table.innerHTML =
-        `<tr><th>Label · ${oShort}</th><th>Label · ${tShort}</th><th>Value · ${oShort}</th><th>Value · ${tShort}</th></tr>`;
+        `<tr><th>${uiTerm(from, "label")} · ${oShort}</th><th>${uiTerm(to, "label")} · ${tShort}</th>` +
+        `<th>${uiTerm(from, "value")} · ${oShort}</th><th>${uiTerm(to, "value")} · ${tShort}</th></tr>`;
       let n = 0;
       for (const it of items) {
         const tl = await tr(it.label);
