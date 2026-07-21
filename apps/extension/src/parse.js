@@ -75,17 +75,21 @@ export function parseFields(text) {
   // Label-free formats anywhere in the text.
   const email = (text || "").match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
-  // Phone — but ONLY if it looks like one: a formatted number, or exactly 10 digits.
-  // (Avoids grabbing a long unformatted ID/licence number as a phone.)
-  for (const pm of (text || "").match(/\+?\d[\d\s().-]{7,}\d/g) || []) {
-    const digits = pm.replace(/\D/g, "");
-    const hasSep = /[\s().-]/.test(pm.trim());
-    // A phone is 10 digits (US) or 11 starting with country-code 1 — NOT a 12+ digit
-    // licence/ID number.
-    const phoneLen = digits.length === 10 || (digits.length === 11 && digits[0] === "1");
-    if (phoneLen && (hasSep || digits.length === 10)) {
-      put("cell_phone", pm.trim().replace(/\s+/g, " "));
-      break;
+  // Phone — but ONLY if it looks like one AND the document plausibly has a phone. IDs /
+  // driver's licences carry NO phone number, so their date/ID digits (e.g. an EXP date
+  // "11/30/2029" fused with a field number) must never be misread as one.
+  const isIdDoc = /driver|licen[sc]e|\bdln\b|\bdob\b|\bexp\b|\biss\b|identification|passport|\bclass\b|endors|restr/i.test(text || "");
+  if (!isIdDoc) {
+    for (const pm of (text || "").match(/\+?\d[\d\s().-]{7,}\d/g) || []) {
+      const digits = pm.replace(/\D/g, "");
+      const hasSep = /[\s().-]/.test(pm.trim());
+      // A phone is 10 digits (US) or 11 starting with country-code 1 — and must be
+      // FORMATTED (has separators); a bare 10-digit run is too easily an ID/date artefact.
+      const phoneLen = digits.length === 10 || (digits.length === 11 && digits[0] === "1");
+      if (phoneLen && hasSep) {
+        put("cell_phone", pm.trim().replace(/\s+/g, " "));
+        break;
+      }
     }
   }
 
@@ -329,4 +333,12 @@ function idHeuristics(text, out, put) {
     if (year >= 1900 && year <= thisYear - 14 && year < bestYear) { bestYear = year; bestDob = dm; }
   }
   if (bestDob) put("date_of_birth", bestDob);
+
+  // Licence expiry / issue (front of a driver's licence): AAMVA markers 4b EXP / 4a ISS.
+  // Document-qualified keys (dl_*) so a passport's dates never overwrite them.
+  const DATE = "(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4})";
+  const exp = text.match(new RegExp(`\\b(?:4b\\s*)?EXP\\b[^0-9]{0,8}${DATE}`, "i"));
+  if (exp) put("dl_expiry_date", exp[1]);
+  const iss = text.match(new RegExp(`\\b(?:4a\\s*)?ISS\\b[^0-9]{0,8}${DATE}`, "i"));
+  if (iss) put("dl_issue_date", iss[1]);
 }

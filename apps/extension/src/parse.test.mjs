@@ -91,6 +91,15 @@ test("parseFields: passport MRZ is authoritative (DL heuristics skipped)", () =>
   assert.equal(r.passport_no, "L898902C3");
 });
 
+test("DL front OCR: EXP/ISS -> dl dates, no date digits misread as a phone", () => {
+  const dl = "NORTH CAROLINA DRIVER LICENSE\n4d DLN 000026610696\n3 DOB 11/30/1968\n4b EXP 11/30/2029\n1 MYSORE\n2 SUBRAMANYA\n4a ISS 03/16/2023";
+  const r = map(parseFields(dl));
+  assert.equal(r.dl_expiry_date, "11/30/2029");
+  assert.equal(r.dl_issue_date, "03/16/2023");
+  assert.equal(r.date_of_birth, "11/30/1968");
+  assert.equal(r.cell_phone, undefined); // a licence has no phone number
+});
+
 test("parseFields: splits a packed 'City: .. State: .. Zip: ..' line", () => {
   const r = map(parseFields("City: Springfield State: IL Zip: 62704"));
   assert.equal(r.city, "Springfield");
