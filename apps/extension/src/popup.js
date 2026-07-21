@@ -148,6 +148,13 @@ async function addField() {
   renderEntries();
 }
 
+if ($("resetVault")) $("resetVault").onclick = async (e) => {
+  e.preventDefault();
+  if (!confirm("Reset the vault?\n\nThis ERASES all saved details on this device and lets you set a NEW passphrase. It cannot be undone (that's what the encryption guarantees).")) return;
+  await send({ type: "resetVault" });
+  $("pass").value = "";
+  setMsg("Vault reset — type a new passphrase and click Unlock to start fresh.");
+};
 $("unlock").onclick = async () => {
   const r = await send({ type: "unlock", passphrase: $("pass").value });
   $("pass").value = "";

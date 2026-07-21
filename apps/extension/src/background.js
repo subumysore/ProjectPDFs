@@ -36,8 +36,12 @@ async function unlockPassphrase(passphrase) {
   if (blob && kdf && kdf !== "pbkdf2") throw new Error("this vault uses a passkey — unlock with the passkey");
   if (!salt) salt = newSalt();
   const k = await derivePassphraseKey(passphrase, salt);
-  if (blob) vault = await open(k, blob); // throws on wrong passphrase / tamper
-  else {
+  if (blob) {
+    // Opening decrypts + authenticates (AES-GCM). A wrong passphrase (or a tampered blob)
+    // throws a raw "OperationError" — translate it to a message the user can act on.
+    try { vault = await open(k, blob); }
+    catch { throw new Error("Incorrect passphrase — this vault was created with a different one."); }
+  } else {
     vault = starterVault(); // first launch: seed starter keys + inferred country code
     await chrome.storage.local.set({ salt, kdf: "pbkdf2", blob: await seal(k, vault) });
   }
@@ -118,6 +122,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           break;
         case "unlockWebAuthn":
           sendResponse({ ok: true, keys: await unlockWebAuthn(msg.prfSecret) });
+          break;
+        case "resetVault":
+          // Forgot-passphrase recovery: erase the encrypted vault so a new one can be
+          // created. Destroys saved data on this device (there is no recovery without the
+          // passphrase — that's the point of the encryption).
+          key = null; vault = null;
+          await chrome.storage.local.remove(["salt", "blob", "kdf"]);
+          try { await chrome.storage.session.remove(["skey", "svault"]); } catch (_) { /* ignore */ }
+          sendResponse({ ok: true });
           break;
         case "status":
           await ensureUnlocked();
