@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [0.2.0] — 2026-07-21
+### Packaging — Chrome Web Store update build
+- Bumped extension to **0.2.0** for a Web Store package update (0.1.0 was published Jul 18).
+- `deploy/build-extension-zip.ps1`: builds ONLY the store `.zip` (no website publish) into
+  `dist/`, with a manifest sanity check and a guard that no `*.test.*` files leak in.
+- **Fixed a packaging bug:** `vendor/zxing.bundle.mjs` (the PDF417 barcode scanner) was imported
+  by `capture.js` but omitted from both build scripts — the published build would have had broken
+  barcode scanning. Now included in `build-extension-zip.ps1` and `publish-extension.ps1`.
+- `docs/launch/chrome-web-store-listing.md`: copy-paste store listing, per-permission
+  justifications, data-use declarations, and the manifest-`key`/extension-ID note.
+
 ## [Unreleased]
 ### Added — "✕ Close" in the viewer returns to the original form (2026-07-21)
 - The generated filled/view page now has an explicit **✕ Close** button in the bar that leaves
