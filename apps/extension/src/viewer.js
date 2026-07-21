@@ -125,34 +125,67 @@ import { toScript } from "./translit.js";
 const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
 const LANG_SHORT = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
 
-// Bilingual side panel (Phase 3): a foreign-language form's labels translated into the
-// user's language, on demand (models load only when they click). The original document
-// stays untouched; the finished form remains in its own language (spec invariant).
+// Bilingual side panel: read a form's labels AND the values that will fill it, in ANY
+// language you choose. The language dropdown is ordered your-language first, then the
+// form's own language, then the rest alphabetically; a language's on-device model
+// downloads only when you pick it. The panel is closable (and re-openable from the bar).
 function setupLangPanel(res) {
   const items = (res && res.pairs && res.pairs.length)
     ? res.pairs
     : ((res && res.labels) ? res.labels.map((l) => ({ label: l, value: "" })) : []);
-  if (!items.length) return;
-  const from = res.formLang || "en";
-  const to = res.nativeLang || "en";
-  if (from === to) return; // same language — nothing to translate
   const panel = document.getElementById("langpanel");
-  document.getElementById("lpNote").textContent =
-    `This form is in ${LANG_NAMES[from] || from}; your language is ${LANG_NAMES[to] || to}. Read each label AND the value that will fill it in your language — the filled form itself stays in ${LANG_NAMES[from] || from}.`;
-  panel.hidden = false;
+  const panelToggle = document.getElementById("panelToggle");
+  if (!items.length) { if (panelToggle) panelToggle.hidden = true; return; }
+  const from = res.formLang || "en";
+  const native = res.nativeLang || "en";
+
+  // Close ⇄ re-open wiring (available whether or not there's anything to translate yet).
+  const showPanel = (show) => {
+    panel.hidden = !show;
+    panelToggle.hidden = false;
+    panelToggle.textContent = show ? "🌐 Hide language panel" : "🌐 Language panel";
+  };
+  document.getElementById("lpClose").onclick = () => showPanel(false);
+  panelToggle.onclick = () => showPanel(panel.hidden);
+
+  // Language dropdown: native first, the form's language second, then the rest A→Z.
+  const sel = document.getElementById("lpLang");
+  const rest = Object.keys(LANG_NAMES)
+    .filter((l) => l !== native && l !== from)
+    .sort((a, b) => (LANG_NAMES[a] || a).localeCompare(LANG_NAMES[b] || b));
+  const ordered = [native, ...(from !== native ? [from] : []), ...rest];
+  sel.innerHTML = ordered
+    .map((l) => `<option value="${l}">${LANG_NAMES[l] || l}${l === native ? " — your language" : l === from ? " — form's language" : ""}</option>`)
+    .join("");
+  sel.value = native;
+
   const status = document.getElementById("lpStatus");
   const table = document.getElementById("lpTable");
   const go = document.getElementById("lpGo");
-  go.onclick = async () => {
-    go.disabled = true;
-    status.textContent = "Loading the on-device translation model (first time downloads it)…";
+
+  const render = async (to) => {
+    go.disabled = true; sel.disabled = true;
+    document.getElementById("lpNote").textContent =
+      `This form is in ${LANG_NAMES[from] || from}. Reading it in ${LANG_NAMES[to] || to}: each label AND the value that fills it.`;
+    if (to === from) {
+      // Same language as the form — nothing to translate; show the form's own text.
+      table.innerHTML = `<tr><th>Label</th><th>Value</th></tr>`;
+      for (const it of items) {
+        const row = document.createElement("tr");
+        const a = document.createElement("td"); a.className = "tr"; a.textContent = it.label;
+        const b = document.createElement("td"); b.className = "val"; b.textContent = it.value || "";
+        row.append(a, b); table.appendChild(row);
+      }
+      status.textContent = `This form is already in ${LANG_NAMES[from] || from}.`;
+      go.disabled = false; sel.disabled = false;
+      return;
+    }
+    status.textContent = `Loading the ${LANG_NAMES[to] || to} model on-device (first use downloads it)…`;
     try {
       const { translateText } = await import("./translate.js");
       const cache = {};
       const tr = async (t) => { if (!t) return ""; if (cache[t] === undefined) cache[t] = await translateText(t, from, to, (s) => (status.textContent = s)); return cache[t]; };
       const oShort = LANG_SHORT[from] || from, tShort = LANG_SHORT[to] || to;
-      // Four columns: the original label + your-language label, then the actual value +
-      // its your-language rendering (verbatim for names/numbers, translated for phrases).
       table.innerHTML =
         `<tr><th>Label · ${oShort}</th><th>Label · ${tShort}</th><th>Value · ${oShort}</th><th>Value · ${tShort}</th></tr>`;
       let n = 0;
@@ -171,21 +204,26 @@ function setupLangPanel(res) {
         table.appendChild(row);
         n++;
       }
-      status.textContent = `✓ ${n} field(s) — on-device. Phrases are translated; names & numbers are written in your script (transliterated), not translated. The form itself stays in ${LANG_NAMES[from] || from}.`;
+      status.textContent = `✓ ${n} field(s) in ${LANG_NAMES[to] || to} — on-device. Phrases translated; names & numbers written in that script.`;
     } catch (e) {
       status.textContent = "Translation failed: " + ((e && e.message) || e);
-      go.disabled = false;
     }
+    go.disabled = false; sel.disabled = false;
   };
+
+  go.onclick = () => render(sel.value);
+  sel.onchange = () => render(sel.value); // choosing a language downloads it + re-renders
+  showPanel(true);
 }
 
 (async () => {
   const s = await chrome.storage.session.get([
     "ppf_filled", "ppf_orig", "ppf_url", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
-    "ppf_pairs", "ppf_formLang", "ppf_nativeLang",
+    "ppf_pairs", "ppf_formLang", "ppf_nativeLang", "ppf_view",
   ]);
   const name = s.ppf_name || "filled.pdf";
   setupPanelResize();
+  if (s.ppf_view) document.getElementById("barLabel").textContent = "🌐 Viewing this form in your language — the form is NOT filled";
 
   // OCR path — run the on-device OCR fill right here, streaming progress to the bar.
   if (s.ppf_mode === "ocr" && s.ppf_src) {

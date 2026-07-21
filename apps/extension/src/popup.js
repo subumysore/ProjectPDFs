@@ -331,8 +331,8 @@ async function fillActivePage(vault) {
 // (or hand off to OCR), stash the result + label/value pairs + languages, and open the
 // viewer — which renders the filled PDF AND the bilingual (label + value) side panel.
 // Shared by "Fill this page" and, for a PDF, "View this page in my language".
-async function runPdfFlow(r, tab, url) {
-  setMsg("Reading the PDF…");
+async function runPdfFlow(r, tab, url, view = false) {
+  setMsg(view ? "Reading the PDF to show it in your language…" : "Reading the PDF…");
   // Fetch the PDF bytes in the BACKGROUND service worker (robust — not tied to the popup).
   const fetched = await send({ type: "fetchBytes", url });
   if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
@@ -341,6 +341,24 @@ async function runPdfFlow(r, tab, url) {
     // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
     const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
     const acro = await fillPdfBytes(bytes, r.vault);
+
+    // VIEW-ONLY: "View this page in my language" must NOT fill the form. We still resolve
+    // the label→value pairs (so the panel can show what WOULD fill each field, in your
+    // language), but the document shown is the ORIGINAL, untouched form.
+    if (view) {
+      let obin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) obin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      const pairs = acro.pairs || [];
+      let formLang = "en";
+      try { const { detectLang } = await import("./lang.js"); if (pairs.length) formLang = detectLang(pairs.map((p) => p.label).join(" ")).lang; } catch (_) { /* default en */ }
+      const ob64 = btoa(obin);
+      await chrome.storage.session.set({
+        ppf_filled: ob64, ppf_orig: ob64, ppf_url: url, ppf_name: `${base}.pdf`, ppf_view: true,
+        ppf_pairs: pairs, ppf_formLang: formLang, ppf_nativeLang: (r.vault && r.vault.native_language) || "en",
+      });
+      await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
+      return setMsg("Showing this form in your language — the form itself is NOT filled. ✓");
+    }
     // Trust the AcroForm layer only when it's a real, non-XFA form that actually
     // filled. XFA/LiveCycle hybrids (W-2/W-4/W-9) expose an unreliable AcroForm
     // shadow — OCR reads their true printed labels instead.
@@ -464,7 +482,7 @@ $("viewLang").onclick = async () => {
   if (/\.pdf(\?|#|$)/i.test(url)) {
     const rv = await readVault();
     if (!rv.ok) return setMsg(rv.error || "Locked", false);
-    return runPdfFlow(rv, tab, url);
+    return runPdfFlow(rv, tab, url, true); // VIEW only — do not fill the form
   }
   const [{ result: items } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectLabelsForView });
   if (!items || !items.length) return setMsg("No form labels found on this page. (Open a web form, or for a PDF use “Fill this page”.)", false);

@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — Language panel UX + user-selectable fill language (ADR-0017) (2026-07-20)
+- **"View this page in my language" is now READ-ONLY** — it shows the form and the would-be
+  values in your language and no longer FILLS the document (view-only path via `runPdfFlow(view)`;
+  the viewer shows the original PDF and the bar says "Viewing… NOT filled").
+- **The side panel is closable and re-openable** — an ✕ on the panel and a "🌐 Language panel"
+  toggle in the bar.
+- **Language dropdown in the panel** — read/work with the form in any language, ordered
+  **your language → the form's language → the rest alphabetically**; a language's model
+  **downloads only when you pick it** (lazy).
+- **ADR-0017 (governance):** recorded the owner's decision that **fill language is
+  user-selectable** and the exported form reflects the chosen language — formally **superseding**
+  the previously etched "output always in the form's original language" invariant. Spec/memory
+  updated. Default fill language stays the form's own language; choosing another is explicit.
+  (Implementation of writing translated/transliterated values INTO the exported PDF is the next phase.)
+
 ### Fixed — "Value · <your language>" column is now actually in that language (transliteration) (2026-07-20)
 - The your-language value column showed names/numbers in Latin under a e.g. "हिन्दी" header.
   A name is not *translated* (that hallucinated "Mexico") — it is **transliterated**: its sound
