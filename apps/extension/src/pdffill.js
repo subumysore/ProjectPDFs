@@ -9,6 +9,21 @@
 import { PDFDocument, PDFName, PDFTextField, PDFCheckBox, PDFDropdown } from "../vendor/pdf-lib.esm.min.js";
 import { resolveFields, resolveBundle } from "./resolver.js";
 import { identifyAcroForm } from "./pdfforms.js";
+import { normOpt, fuzzyOptionMatch, pickOption } from "./optmatch.js";
+
+// The user's enumerable values (the concepts that appear as list options / option
+// checkboxes). Used to TICK the checkbox whose label equals one of these.
+function userOptionValues(vault) {
+  const ask = (label) => resolveFields(vault, [{ label, maxLength: -1 }])[0];
+  const out = [];
+  for (const c of ["salutation", "nationality", "country", "state", "marital status", "gender"]) {
+    const v = ask(c); if (v) out.push(String(v));
+  }
+  const g = normOpt(ask("gender"));
+  if (g === "m" || g === "male") out.push("male");
+  if (g === "f" || g === "female") out.push("female");
+  return out;
+}
 
 function tooltip(field) {
   try {
@@ -82,11 +97,12 @@ export async function fillPdfBytes(bytes, vault) {
   const xfa = withTU === 0 && bracketNames > all.length / 2;
 
   const values = resolveFields(vault, descriptors);
+  const optionValues = userOptionValues(vault); // for ticking option-style checkboxes
   let filled = 0;
   for (let i = 0; i < all.length; i++) {
     const f = all[i];
     const v = values[i];
-    if (v == null || v === "") continue;
+    const label = descriptors[i].label;
     try {
       // An IMAGE value (profile photo / signature stored as a data-URI) is DRAWN at the
       // field's location rather than typed — photo boxes and signature fields.
@@ -96,12 +112,26 @@ export async function fillPdfBytes(bytes, vault) {
           // Remove the field so its (opaque) widget box doesn't paint over the image.
           try { form.removeField(f); } catch (_) { /* older pdf-lib: leave the field */ }
         }
-      } else if (f instanceof PDFTextField) { f.setText(String(v)); filled++; }
-      else if (f instanceof PDFDropdown) {
-        const match = f.getOptions().find((o) => o.toLowerCase() === String(v).toLowerCase());
+      } else if (f instanceof PDFTextField) {
+        if (v == null || v === "") continue;
+        f.setText(String(v)); filled++;
+      } else if (f instanceof PDFDropdown || (typeof f.select === "function" && typeof f.getOptions === "function")) {
+        // Dropdown / list box: select the option that SEMANTICALLY matches the value
+        // ("Indian" selects "India"/"Indian"). Fall back to matching an option against
+        // any of the user's enumerable values when the field itself didn't resolve.
+        if (v == null || v === "") continue;
+        const match = pickOption(f.getOptions(), v)
+          || f.getOptions().find((o) => optionValues.some((uv) => fuzzyOptionMatch(o, uv)));
         if (match) { f.select(match); filled++; }
       } else if (f instanceof PDFCheckBox) {
-        if (/^(y|yes|true|1|on)$/i.test(String(v))) { f.check(); filled++; }
+        // A boolean checkbox with a truthy value, OR an OPTION checkbox whose label equals
+        // one of the user's values (e.g. "Indian" under Nationality, "Male" under Sex).
+        const truthy = v != null && v !== "" && /^(y|yes|true|1|on|x|checked)$/i.test(String(v));
+        const optMatch = optionValues.some((uv) => fuzzyOptionMatch(label, uv));
+        if (truthy || optMatch) { f.check(); filled++; }
+      } else if (v != null && v !== "") {
+        // Unknown field type that still accepts text.
+        if (typeof f.setText === "function") { f.setText(String(v)); filled++; }
       }
     } catch (_) { /* skip a field that refuses a value */ }
   }
