@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Sign / annotate · PolyglotFormFill</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #525659; font-family: system-ui, sans-serif; }
+  #bar { background: #0d8f83; color: #fff; padding: 8px 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 5; }
+  #bar b { margin-right: 6px; }
+  #bar button, #bar a { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 6px; padding: 6px 11px; font-weight: 600; cursor: pointer; font-size: 13px; text-decoration: none; }
+  #bar button.on { background: #fff; color: #0a6a60; }
+  #bar button:hover { background: rgba(255,255,255,.3); }
+  #bar .sp { flex: 1; }
+  #bar input[type=range] { width: 90px; }
+  #stage { display: flex; justify-content: center; padding: 20px; overflow: auto; height: calc(100vh - 46px); }
+  #wrap { position: relative; box-shadow: 0 10px 40px rgba(0,0,0,.5); align-self: flex-start; }
+  #pdf, #ink { display: block; }
+  #ink { position: absolute; left: 0; top: 0; touch-action: none; cursor: crosshair; }
+  #hint { color: #cdd6da; font-size: 12px; }
+</style>
+</head>
+<body>
+  <div id="bar">
+    <b>✍️ Sign / annotate</b>
+    <button id="tPen" class="on">✏️ Pen</button>
+    <button id="tSig">✒️ Signature</button>
+    <button id="tPhoto">🖼️ Photo</button>
+    <label style="color:#fff;font-size:12px">Size <input id="size" type="range" min="1" max="10" value="4"></label>
+    <button id="clear">🧽 Clear page</button>
+    <span class="sp"></span>
+    <button id="prev">◀</button>
+    <span id="pageInfo" style="color:#fff;font-size:13px">1 / 1</span>
+    <button id="next">▶</button>
+    <a id="dl" download="signed.pdf">⬇ Download signed PDF</a>
+  </div>
+  <div id="stage">
+    <div id="wrap">
+      <canvas id="pdf"></canvas>
+      <canvas id="ink"></canvas>
+    </div>
+  </div>
+  <div id="hint" style="text-align:center;padding:6px">Pen: draw. Signature/Photo: click-drag to place your saved image. Then Download.</div>
+  <script type="module" src="src/sign.js"></script>
+</body>
+</html>

@@ -448,6 +448,21 @@ $("fill").onclick = async () => {
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
 };
 
+// ✍️ Sign / handwrite: open the current PDF in the annotate tool where the user can draw
+// or stamp their saved signature/photo anywhere, then flatten + download. Works on ANY
+// PDF (printed boxes, scanned forms) — no fillable field required.
+if ($("signPdf")) $("signPdf").onclick = async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = (tab && tab.url) || "";
+  if (!/\.pdf(\?|#|$)/i.test(url)) return setMsg("Open a PDF in the tab first, then Sign / handwrite it.", false);
+  setMsg("Opening the sign tool…");
+  const fetched = await send({ type: "fetchBytes", url });
+  if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + ").", false);
+  const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
+  await chrome.storage.session.set({ ppf_sign_src: fetched.b64, ppf_sign_name: base });
+  await chrome.tabs.create({ url: chrome.runtime.getURL("sign.html") });
+};
+
 // Add an IMAGE field (photo / signature) — stored as a data-URI value in the vault,
 // then DRAWN into matching PDF photo/signature boxes at fill time.
 $("imgFile").onchange = async () => {

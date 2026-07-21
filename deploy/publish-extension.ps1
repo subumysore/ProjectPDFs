@@ -23,7 +23,7 @@ New-Item -ItemType Directory -Force -Path `
   (Join-Path $stage "vendor\tesseract") | Out-Null
 
 # root: manifest, pages, icons
-foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","icon16.png","icon48.png","icon128.png") {
+foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","sign.html","icon16.png","icon48.png","icon128.png") {
   Copy-Item (Join-Path $ext $f) $stage
 }
 # all app source

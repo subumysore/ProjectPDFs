@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Force -Path `
   (Join-Path $stage "vendor\tesseract") | Out-Null
 
 # root: manifest, pages, icons
-foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","icon16.png","icon48.png","icon128.png") {
+foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","sign.html","icon16.png","icon48.png","icon128.png") {
   Copy-Item (Join-Path $ext $f) $stage
 }
 # STRIP the local dev `key` from the STORE manifest. The `key` pins our unpacked dev ID
@@ -48,7 +48,7 @@ Copy-Item (Join-Path $v "transformers\transformers.bundle.mjs"),(Join-Path $v "t
 Copy-Item (Join-Path $v "tesseract\worker.min.js"),(Join-Path $v "tesseract\tesseract.esm.min.js"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm.js") (Join-Path $vd "tesseract")
 
 # sanity: every import-referenced vendor file + key sources must be present
-foreach ($must in "manifest.json","popup.html","viewer.html","capture.html","options.html",
+foreach ($must in "manifest.json","popup.html","viewer.html","capture.html","sign.html","options.html",
   "src\background.js","src\popup.js","src\viewer.js","src\capture.js",
   "vendor\pdf-lib.esm.min.js","vendor\fontkit.bundle.mjs","vendor\zxing.bundle.mjs",
   "vendor\pdfjs\pdf.min.mjs","vendor\transformers\transformers.bundle.mjs",
