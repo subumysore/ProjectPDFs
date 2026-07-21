@@ -116,12 +116,14 @@ export async function fillPdfBytes(bytes, vault) {
         if (v == null || v === "") continue;
         f.setText(String(v)); filled++;
       } else if (f instanceof PDFDropdown || (typeof f.select === "function" && typeof f.getOptions === "function")) {
-        // Dropdown / list box: select the option that SEMANTICALLY matches the value
-        // ("Indian" selects "India"/"Indian"). Fall back to matching an option against
-        // any of the user's enumerable values when the field itself didn't resolve.
-        if (v == null || v === "") continue;
-        const match = pickOption(f.getOptions(), v)
-          || f.getOptions().find((o) => optionValues.some((uv) => fuzzyOptionMatch(o, uv)));
+        // Dropdown / list box / RADIO GROUP: select the option that SEMANTICALLY matches the
+        // field's value ("Indian" -> "India"). When the field itself didn't resolve to a
+        // value (e.g. a radio group named "Group1"), fall back to matching an option against
+        // any of the user's enumerable values (gender/nationality/marital status/…) — this is
+        // what selects the "Married" radio on a Marital-Status group with a generic name.
+        const opts = (typeof f.getOptions === "function" ? f.getOptions() : []) || [];
+        const match = (v != null && v !== "" ? pickOption(opts, v) : null)
+          || opts.find((o) => optionValues.some((uv) => fuzzyOptionMatch(o, uv)));
         if (match) { f.select(match); filled++; }
       } else if (f instanceof PDFCheckBox) {
         // A boolean checkbox with a truthy value, OR an OPTION checkbox whose label equals
