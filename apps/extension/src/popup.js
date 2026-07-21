@@ -291,9 +291,19 @@ $("lock").onclick = async () => {
 // Collect the fillable fields' labels from the page (SAME order/skip rules as fillPage),
 // so we can translate a foreign form's labels into English for the ontology to match.
 function collectFillLabels() {
-  const labelOf = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
-    (el.labels && el.labels[0] && el.labels[0].textContent) || "",
-    (el.closest("label") && el.closest("label").textContent) || ""].join(" ");
+  const labelOf = (el) => {
+    // The visible caption is often a SIBLING (Angular/React forms rarely use <label for>),
+    // and the id can be misspelt (e.g. "passportExpirtyDate"). Read the nearest ancestor's
+    // short text so the real, human-visible label is seen — not just the field's own tags.
+    let gt = "", a = el.parentElement;
+    for (let i = 0; i < 4 && a; i++, a = a.parentElement) {
+      const t = (a.textContent || "").replace(/\s+/g, " ").trim();
+      if (t.length >= 3 && t.length <= 200) { gt = t; break; }
+    }
+    return [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+      (el.labels && el.labels[0] && el.labels[0].textContent) || "",
+      (el.closest("label") && el.closest("label").textContent) || "", gt].join(" ");
+  };
   const out = [];
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
@@ -723,9 +733,19 @@ function fillPage(vault, tLabels) {
     return best;
   };
 
-  const labelOf = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
-    (el.labels && el.labels[0] && el.labels[0].textContent) || "",
-    (el.closest("label") && el.closest("label").textContent) || ""].join(" ");
+  const labelOf = (el) => {
+    // The visible caption is often a SIBLING (Angular/React forms rarely use <label for>),
+    // and the id can be misspelt (e.g. "passportExpirtyDate"). Read the nearest ancestor's
+    // short text so the real, human-visible label is seen — not just the field's own tags.
+    let gt = "", a = el.parentElement;
+    for (let i = 0; i < 4 && a; i++, a = a.parentElement) {
+      const t = (a.textContent || "").replace(/\s+/g, " ").trim();
+      if (t.length >= 3 && t.length <= 200) { gt = t; break; }
+    }
+    return [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+      (el.labels && el.labels[0] && el.labels[0].textContent) || "",
+      (el.closest("label") && el.closest("label").textContent) || "", gt].join(" ");
+  };
   const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
 
   const fields = [];
