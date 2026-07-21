@@ -865,8 +865,13 @@ function fillPage(vault, tLabels) {
       ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
       : atomVal(pick.key);
     if (!value) continue;
+    // Candidate values to match an option against: the raw value plus expansions (a stored
+    // gender "M" should match a "Male" option; "F" -> "Female").
+    const cands = [value];
+    const g = norm(value);
+    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
     const opts = [...sel.options];
-    const match = opts.find((o) => optEq(o.textContent, value) || optEq(o.value, value));
+    const match = opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
     if (match) {
       sel.value = match.value;
       sel.dispatchEvent(new Event("input", { bubbles: true }));
