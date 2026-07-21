@@ -829,6 +829,33 @@ async function fillPage(vault, tLabels) {
     if (ro) el.readOnly = ro;
     return true;
   };
+  // Is the field currently flagged invalid by its own validator? (Angular ng-invalid,
+  // aria-invalid, common error classes.) Used to self-correct the date format.
+  const fieldInvalid = (el) =>
+    el.getAttribute("aria-invalid") === "true" ||
+    /(^|\s)(ng-invalid|is-invalid|invalid|has-error)(\s|$)/.test(el.className || "");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Set a DATE, self-correcting the format: try the detected/preferred order first, and if
+  // the field's own validator rejects it, try the other orders until it's accepted. This
+  // works on the FIRST fill — no dependence on a hint that only appears AFTER a failed try.
+  const setDateSmart = async (el, dt, preferred) => {
+    const p = (n, w) => String(n).padStart(w, "0");
+    const all = [preferred,
+      `${p(dt.day, 2)}/${p(dt.month, 2)}/${dt.year}`,
+      `${p(dt.month, 2)}/${p(dt.day, 2)}/${dt.year}`,
+      `${dt.year}-${p(dt.month, 2)}-${p(dt.day, 2)}`,
+      `${p(dt.day, 2)}-${p(dt.month, 2)}-${dt.year}`,
+      `${p(dt.month, 2)}-${p(dt.day, 2)}-${dt.year}`];
+    const seen = new Set();
+    const cands = all.filter((c) => c && !seen.has(c) && seen.add(c));
+    for (const c of cands) {
+      setFieldValue(el, c);
+      await wait(70);
+      if (!fieldInvalid(el)) return true; // the field accepted this format
+    }
+    setFieldValue(el, cands[0]); // none validated (or no validator) — keep the preferred order
+    return true;
+  };
 
   let filled = 0;
   for (const { el, label, pick } of fields) {
@@ -841,8 +868,12 @@ async function fillPage(vault, tLabels) {
     }
     if (!value) continue;
     if (pick.name && wantsInitial(label, el)) value = initial(value);
-    value = formatDateForField(value, el, label); // adapt dates to the field's requested format
-    if (setFieldValue(el, value)) filled++;
+    const dt = parseVaultDate(value);
+    if (dt && el.type !== "date") {
+      if (await setDateSmart(el, dt, formatDateForField(value, el, label))) filled++;
+    } else {
+      if (setFieldValue(el, formatDateForField(value, el, label))) filled++;
+    }
   }
 
   // Native <select> dropdowns / list boxes (e.g. "Current Nationality"): choose the option
@@ -885,7 +916,6 @@ async function fillPage(vault, tLabels) {
   // chooser (standard roles / common widget roots), open it, then click the option whose
   // VISIBLE TEXT matches the value. Only widgets that resolve to a concept + have a value are
   // opened, so unrelated menus are never touched.
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const hosts = [...document.querySelectorAll(
     'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"]',
   )].filter((h) => h.tagName !== "SELECT" && !h.closest("select"));
