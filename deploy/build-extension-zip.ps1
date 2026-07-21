@@ -27,6 +27,16 @@ New-Item -ItemType Directory -Force -Path `
 foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","icon16.png","icon48.png","icon128.png") {
   Copy-Item (Join-Path $ext $f) $stage
 }
+# STRIP the local dev `key` from the STORE manifest. The `key` pins our unpacked dev ID
+# (ikocic...), but the published item has its own Google-assigned key; uploading a package
+# whose key differs from the item's is REJECTED ("key field value ... doesn't match the
+# current item"). The store manages the key/ID, so the uploaded manifest must omit it.
+# (The local apps\extension\manifest.json keeps its key for dev — only the zip drops it.)
+$mPath = Join-Path $stage "manifest.json"
+$m = Get-Content $mPath -Raw | ConvertFrom-Json
+$m.PSObject.Properties.Remove("key")
+$m | ConvertTo-Json -Depth 20 | Set-Content $mPath -Encoding utf8
+Write-Host "     Stripped dev 'key' from the store manifest." -ForegroundColor DarkGray
 # all app source (production .js only - exclude tests)
 Get-ChildItem (Join-Path $ext "src\*.js") | Where-Object { $_.Name -notlike "*.test.*" } | Copy-Item -Destination (Join-Path $stage "src")
 
