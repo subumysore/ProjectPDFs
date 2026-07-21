@@ -276,6 +276,16 @@ async function doSave() {
     const r = await send({ type: "set", key, value });
     if (r && r.ok) saved++; else failed++;
   }
+  if (saved && !failed) {
+    // Done — release the camera and close this scan tab, returning to the previous screen.
+    setSaveMsg(`Saved ${saved} field(s) to your profile — closing…`, true);
+    stopCam();
+    setTimeout(async () => {
+      try { const t = await chrome.tabs.getCurrent(); if (t && t.id != null) return chrome.tabs.remove(t.id); } catch (_) { /* fall through */ }
+      window.close();
+    }, 800);
+    return;
+  }
   setSaveMsg(saved ? `Saved ${saved} field(s) to your profile.${failed ? ` (${failed} failed.)` : ""}` : "Nothing saved.", !failed);
 }
 
