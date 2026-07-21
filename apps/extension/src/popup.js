@@ -3,7 +3,21 @@
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
 import { exportVault, importVault } from "./backup.js";
-import { fillPdfBytes } from "./pdffill.js";
+import { fillPdfBytes, fillPdfByProximity } from "./pdffill.js";
+import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
+
+// Pull the printed text layer (positions in PDF user space) so opaque XFA/LiveCycle forms can be
+// filled by PROXIMITY to each box's real caption instead of its meaningless field name.
+async function extractPdfTexts(bytes) {
+  const doc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+  const texts = [];
+  for (let pi = 0; pi < doc.numPages; pi++) {
+    const tc = await (await doc.getPage(pi + 1)).getTextContent();
+    for (const it of tc.items) { const s = (it.str || "").trim(); if (s) texts.push({ page: pi, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 10, s }); }
+  }
+  return texts;
+}
 import { fillPage } from "./pagefill.js";
 const $ = (id) => document.getElementById(id);
 const send = (msg) => chrome.runtime.sendMessage(msg);
@@ -359,7 +373,15 @@ async function runPdfFlow(r, tab, url, view = false) {
     const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
     // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
     const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
-    const acro = await fillPdfBytes(bytes, r.vault);
+    let acro = await fillPdfBytes(bytes, r.vault);
+    // Opaque XFA/LiveCycle form (meaningless field names): fill by proximity to printed captions.
+    // Use it when it beats the name-based pass (e.g. the Japan MOFA visa form fills ~0 by name).
+    if (!view && acro.xfa) {
+      try {
+        const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes));
+        if (prox.filled > acro.filled) acro = prox;
+      } catch (_) { /* keep the name-based result */ }
+    }
 
     // VIEW-ONLY: "View this page in my language" must NOT fill the form. We still resolve
     // the label→value pairs (so the panel can show what WOULD fill each field, in your

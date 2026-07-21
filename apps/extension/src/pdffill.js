@@ -10,6 +10,7 @@ import { PDFDocument, PDFName, PDFTextField, PDFCheckBox, PDFDropdown } from "..
 import { resolveFields, resolveBundle } from "./resolver.js";
 import { identifyAcroForm } from "./pdfforms.js";
 import { normOpt, fuzzyOptionMatch, pickOption } from "./optmatch.js";
+import { planProximityFill } from "./pdfproximity.js";
 
 // The user's enumerable values (the concepts that appear as list options / option
 // checkboxes). Used to TICK the checkbox whose label equals one of these.
@@ -146,6 +147,44 @@ export async function fillPdfBytes(bytes, vault) {
     .map((d, i) => ({ label: d.label, value: values[i] == null ? "" : String(values[i]) }))
     .filter((p) => p.label);
   return { total: all.length, filled, bytes: out, xfa, pairs };
+}
+
+// Geometry of every field's widget(s), in PDF user space — the input the proximity labeler needs.
+function fieldGeometry(pdf, form) {
+  const pageRefs = pdf.getPages().map((p) => p.ref);
+  const fields = [];
+  for (const f of form.getFields()) {
+    const ws = f.acroField.getWidgets();
+    if (!ws.length) continue;
+    const kind = (typeof f.select === "function" && typeof f.getOptions === "function") ? "choice" : "text";
+    const widgets = ws.map((w) => ({ page: pageRefs.findIndex((pr) => pr === w.P()), rect: w.getRectangle() }));
+    let options = null; if (kind === "choice") { try { options = f.getOptions(); } catch { options = []; } }
+    fields.push({ id: f.getName(), field: f, kind, page: widgets[0].page, rect: widgets[0].rect, options, widgets });
+  }
+  return fields;
+}
+
+// Fill a PDF whose field NAMES are meaningless (XFA/LiveCycle, OCR'd flats) by matching each box
+// to its nearest PRINTED caption. `texts` are the pdf.js text-layer items (the caller extracts
+// them, so this stays free of any pdf.js dependency and remains unit-testable).
+export async function fillPdfByProximity(bytes, vault, texts) {
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  const form = pdf.getForm();
+  const fields = fieldGeometry(pdf, form);
+  const { assignments, skipped } = planProximityFill(fields, texts, vault, resolveFields);
+  const byId = new Map(fields.map((f) => [f.id, f.field]));
+  let filled = 0;
+  for (const a of assignments) {
+    const f = byId.get(a.id);
+    try {
+      if (a.option != null) { f.select(a.option); filled++; }
+      else if (typeof f.setText === "function") { f.setText(String(a.value)); filled++; }
+    } catch (_) { /* skip a field that refuses the value */ }
+  }
+  try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
+  const out = await pdf.save();
+  const pairs = assignments.map((a) => ({ label: a.caption, value: String(a.value) })).filter((p) => p.label);
+  return { total: fields.length, filled, skipped, bytes: out, xfa: true, pairs, proximity: true };
 }
 
 export async function fillPdfFromUrl(url, vault) {

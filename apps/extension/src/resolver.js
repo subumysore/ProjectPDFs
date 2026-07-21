@@ -67,10 +67,13 @@ export function resolveFields(vault, fields) {
     phone:    ["phone", "telephone", "tel", "contact number", "phone number", "phone no", "contact no"],
     gender:   ["gender", "sex"],
     marital:  ["marital status", "marital", "civil status", "relationship status", "marital state", "marital condition"],
+    occupation: ["occupation", "profession", "current profession", "current occupation", "job title", "designation", "position held", "profession or occupation", "occupation and position"],
+    birthplace: ["place of birth", "birth place", "city of birth", "town of birth", "pob", "birthplace"],
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     appdate:  ["date of application", "application date", "today's date", "todays date", "current date", "date of submission", "submission date", "date signed", "signature date", "date of signature", "date of filling", "date filled", "dated", "date of declaration"],
     passport: ["passport", "passport no", "passport number"],
+    passport_type: ["passport type", "type of passport", "category of passport"],
     // Document-qualified dates (a DL, passport, and other IDs each have their OWN expiry).
     passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration"],
     passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
@@ -146,6 +149,7 @@ export function resolveFields(vault, fields) {
   };
 
   const COMPOSITES = {
+    givenmiddle: { syn: ["given and middle names", "given and middle name", "given middle names", "first and middle name", "first and middle names", "given names and middle names"], members: ["given", "middle"], sep: " ", name: true, fallback: () => atoms.given },
     full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, fallback: () => atoms.full },
     address: { syn: ["address", "mailing address", "residential address", "postal address", "full address", "permanent address", "current address"], members: ["street1", "street2", "city", "state", "zip", "country"], sep: ", " },
   };

@@ -15,6 +15,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Proximity form-filling for opaque XFA / OCR'd PDFs (2026-07-21)
+- New reusable `src/pdfproximity.js`: fills PDFs whose AcroForm field names are meaningless
+  (LiveCycle/XFA exports like `T2`, `RB3`, `emp_adr`) by matching each box to its nearest PRINTED
+  caption + section header — **purely geometric, no per-form rules**. Resolves caption→value with
+  the shared semantic resolver. Handles: long labels that overrun the box edge, radio groups with
+  opaque export values (via per-option printed labels), dropdown/list boxes, day-first date
+  reformat from a `(Day)/(Month)/(Year)` hint, and a whole-word/stem **entity guard** that leaves
+  employer/ship/hotel/guarantor/inviter/partner boxes blank (never the applicant's own identity).
+- `src/pdffill.js`: new `fillPdfByProximity(bytes, vault, texts)`; `popup.js` extracts the pdf.js
+  text layer and uses it whenever a form is detected as XFA/opaque and it beats the name-based pass.
+- Resolver gained `occupation`, `birthplace`, `passport_type` concepts and a `given+middle` composite.
+- **Proven on the real Japan MOFA visa form (000124525.pdf):** 16 applicant fields filled correctly
+  (name, DOB day-first, place of birth, sex, marital, nationality dropdown, passport type/no/expiry,
+  address, phone, email, occupation) with all other-entity blocks correctly left blank.
+- Tests: `pdfproximity.test.mjs`, `pdffill.proximity.test.mjs` (104 total passing).
+
 ### Added — Pro gating (Translation & image fields) + Lemon Squeezy setup guide (2026-07-21)
 - Gating matrix decided (owner): **Free** = autofill (web+PDF) + ID/passport scanning + 1 profile;
   **Pro** = on-device translation + photo/signature fields; **Family** = profiles + sync.
