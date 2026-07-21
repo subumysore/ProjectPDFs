@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — Filling no longer auto-downloads the PDF (2026-07-20)
+- The viewer used to auto-save the filled PDF to Downloads on every fill, piling up
+  `…-filled (2).pdf`, `(3)`, … The result is now just **shown** in the interactive viewer;
+  the **Download PDF** link in the bar is armed so the user saves it only when they choose to.
+
 ### Changed — "View this page in my language" now works on PDFs (shows translated labels+values) (2026-07-20)
 - Previously the in-page translate button dead-ended on a PDF with a message (a PDF renders in
   Chrome's plugin, whose text an extension can't rewrite in place). Now, on a PDF, the button runs

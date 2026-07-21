@@ -28,17 +28,18 @@ function showPdf(data, name) {
   return url;
 }
 
-function renderAndDownload(data, name) {
-  const url = showPdf(data, name);
-  document.getElementById("dl").click(); // also auto-download the completed form
-  return url;
+// Show the filled PDF WITHOUT auto-downloading it. The "Download PDF" link in the bar
+// is armed (via showPdf) so the user saves it only when THEY choose to — no more silent
+// files piling up in the Downloads folder on every fill.
+function renderFilled(data, name) {
+  return showPdf(data, name);
 }
 
 // Wire the "Show original form" button.
 //   - If we know WHERE the form came from (`origUrl`, e.g. a web/local PDF the user
 //     opened), the button NAVIGATES the tab back to that real location — the browser
-//     returns to the original form exactly where it lived. (The filled PDF was already
-//     auto-downloaded, so nothing is lost.)
+//     returns to the original form exactly where it lived. (Use "Download PDF" first if
+//     you want to keep the filled copy — it is no longer saved automatically.)
 //   - Otherwise (no URL: a scanned image / OCR path) it falls back to a blank⇄filled
 //     toggle rendered in place from the stashed original bytes.
 function setupOrigToggle(filled, orig, name, origUrl) {
@@ -186,7 +187,7 @@ function setupLangPanel(res) {
         return;
       }
       setBar(`✓ Filled ${res.filled} field(s)${res.form ? " · " + res.form : ""} on-device — downloading…`);
-      await renderAndDownload(res.bytes, name);
+      await renderFilled(res.bytes, name);
       setupOrigToggle(res.bytes, bytes, name, s.ppf_url); // original = the pre-OCR source / its URL
       setupLangPanel(res);
     } catch (e) {
@@ -201,7 +202,7 @@ function setupLangPanel(res) {
   if (!s.ppf_filled) { showEmpty(); return; }
   try {
     const filled = b64ToBytes(s.ppf_filled);
-    await renderAndDownload(filled, name);
+    await renderFilled(filled, name);
     setupOrigToggle(filled, s.ppf_orig ? b64ToBytes(s.ppf_orig) : null, name, s.ppf_url);
     // Offer the translated label+value panel for a standard (AcroForm) PDF too.
     setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
