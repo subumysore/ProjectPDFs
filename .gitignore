@@ -67,3 +67,5 @@ apps/extension/dist/
 apps/extension/.chrome-ext-*/
 scripts/license/vendor-key.json
 apps/extension/vendor/transformers/*.wasm
+docs/marketing/site/pitch/PolyglotFormFill-pitch.mp4
+docs/marketing/site/pitch/shots/
