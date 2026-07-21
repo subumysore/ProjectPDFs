@@ -759,7 +759,15 @@ function fillPage(vault, tLabels) {
     return { day, month, year: +y };
   };
   const detectDateFmt = (el, label) => {
-    const hay = `${el.placeholder || ""} ${label || ""} ${el.getAttribute("title") || ""}`.toLowerCase();
+    // Forms state the required order in various places: placeholder, label, a tooltip, an
+    // aria-describedby hint, or a help/error line in the field's container ("Please enter
+    // the date in dd/mm/yyyy"). Search all of them.
+    const parts = [el.placeholder, label, el.getAttribute("title")];
+    const db = el.getAttribute("aria-describedby");
+    if (db) db.split(/\s+/).forEach((id) => { const n = document.getElementById(id); if (n) parts.push(n.textContent); });
+    const box = el.closest("div, fieldset, li, section, td");
+    if (box) parts.push(box.textContent.slice(0, 400));
+    const hay = parts.filter(Boolean).join(" ").toLowerCase();
     const m = hay.match(/(d{1,2}|m{1,3}|y{2,4})([\/.\- ])(d{1,2}|m{1,3}|y{2,4})\2(d{1,2}|m{1,3}|y{2,4})/);
     return m ? { tokens: [m[1], m[3], m[4]], sep: m[2] } : null;
   };
