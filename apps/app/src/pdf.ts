@@ -4,6 +4,7 @@ import { PDFDocument, PDFTextField, PDFName, StandardFonts, rgb } from "pdf-lib"
 import { resolveFields, resolveBundle } from "./fill/resolver";
 import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
+import { planProximityFill } from "./fill/pdfproximity";
 
 /** Read a text field's tooltip (/TU) — a human label many good forms set. */
 function fieldTooltip(field: PDFTextField): string {
@@ -71,6 +72,46 @@ function matchKey(fieldName: string, vault: Record<string, string>): string | un
  *  3) Legacy matchKey hints as a last resort.
  * Also returns the detected form language (for language-aware viewing).
  */
+// Extract the pdf.js text layer (positions in PDF user space) so opaque XFA/LiveCycle forms can be
+// filled by PROXIMITY to each box's printed caption instead of its meaningless field name.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function extractTexts(bytes: ArrayBuffer): Promise<any[]> {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice() }).promise;
+  const texts: any[] = [];
+  for (let pi = 0; pi < doc.numPages; pi++) {
+    const tc = await (await doc.getPage(pi + 1)).getTextContent();
+    for (const it of tc.items as any[]) { const s = (it.str || "").trim(); if (s) texts.push({ page: pi, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 10, s }); }
+  }
+  return texts;
+}
+
+/** Fill a PDF whose field NAMES are meaningless (XFA/LiveCycle) by matching each box to its nearest
+ *  printed caption — the SAME shared planner the extension uses, applied with the desktop's pdf-lib. */
+export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, string>): Promise<{ filled: number; total: number; data: Uint8Array }> {
+  const pdf = await PDFDocument.load(bytes);
+  const form = pdf.getForm();
+  const pageRefs = pdf.getPages().map((p) => p.ref);
+  const texts = await extractTexts(bytes);
+  const fields: any[] = [];
+  for (const f of form.getFields()) {
+    const ws = (f as any).acroField.getWidgets(); if (!ws.length) continue;
+    const kind = (typeof (f as any).select === "function" && typeof (f as any).getOptions === "function") ? "choice" : "text";
+    const widgets = ws.map((w: any) => ({ page: pageRefs.findIndex((pr) => pr === w.P()), rect: w.getRectangle() }));
+    let options: any = null; if (kind === "choice") { try { options = (f as any).getOptions(); } catch { options = []; } }
+    fields.push({ id: f.getName(), field: f, kind, page: widgets[0].page, rect: widgets[0].rect, options, widgets });
+  }
+  const { assignments } = planProximityFill(fields, texts, vault, resolveFields);
+  const byId = new Map(fields.map((f) => [f.id, f.field]));
+  let filled = 0;
+  for (const a of assignments) {
+    const f: any = byId.get(a.id);
+    try { if (a.option != null) { f.select(a.option); filled++; } else if (typeof f.setText === "function") { f.setText(String(a.value)); filled++; } } catch { /* skip */ }
+  }
+  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
+  return { filled, total: fields.length, data: await pdf.save() };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 export async function fillAndExport(
   bytes: ArrayBuffer,
   vault: Record<string, string>,
@@ -80,6 +121,24 @@ export async function fillAndExport(
   const fields = form.getFields();
   const names = fields.map((f) => f.getName());
   let filled = 0;
+
+  // Opaque XFA/LiveCycle form (bracket names, no tooltips) → fill by proximity to printed captions,
+  // matching the extension. Use it when it beats the name-based pass.
+  const bracketNames = names.filter((n) => n.includes("[")).length;
+  const withTU = fields.filter((f) => f instanceof PDFTextField && fieldTooltip(f)).length;
+  if (withTU === 0 && bracketNames > names.length / 2) {
+    try {
+      const prox = await fillByProximity(bytes, vault);
+      const nameGuess = names.filter((n) => resolveFields(vault, [{ label: n }])[0]).length;
+      if (prox.filled > nameGuess) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const texts = await extractTexts(bytes).catch(() => [] as any[]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const formLang = detectLang(texts.map((x: any) => x.s).join(" ")).lang as string;
+        return { ...prox, formLang };
+      }
+    } catch { /* fall back to name-based */ }
+  }
 
   const acro = identifyAcroForm(names);
   if (acro) {
