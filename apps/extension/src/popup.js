@@ -942,9 +942,20 @@ async function fillPage(vault, tLabels) {
     };
     if (COUNTRY[g]) cands.push(...COUNTRY[g]);
     const n2 = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-    const optMatches = (o) => {
+    // Score an option against the candidates: EXACT (3) > prefix (2) > containment (1).
+    // Ranking (not first-match) is essential so "Male" (exact) beats "Female" — which
+    // merely CONTAINS "male" (fe-male) — instead of whichever appears first in the list.
+    const scoreOpt = (o) => {
       const ot = n2((o.textContent || "").trim());
-      return cands.some((cv) => { const c = n2(cv); return c && ot && (ot === c || (c.length >= 4 && ot.startsWith(c)) || (c.length >= 4 && ot.includes(c)) || (ot.length >= 4 && c.includes(ot))); });
+      let best = 0;
+      for (const cv of cands) {
+        const c = n2(cv);
+        if (!c || !ot) continue;
+        if (ot === c) best = Math.max(best, 3);
+        else if ((c.length >= 3 && ot.startsWith(c)) || (ot.length >= 3 && c.startsWith(ot))) best = Math.max(best, 2);
+        else if ((c.length >= 4 && ot.includes(c)) || (ot.length >= 4 && c.includes(ot))) best = Math.max(best, 1);
+      }
+      return best;
     };
     try {
       const opener = h.querySelector('input, [role="combobox"], [class*="control"], [class*="selection"], [class*="toggle"], [class*="trigger"]') || h;
@@ -968,7 +979,9 @@ async function fillPage(vault, tLabels) {
       const opts = [...document.querySelectorAll(
         '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
       )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
-      const opt = opts.find(optMatches) || (box && opts.length === 1 ? opts[0] : null);
+      let opt = null, bestScore = 0;
+      for (const o of opts) { const s = scoreOpt(o); if (s > bestScore) { bestScore = s; opt = o; } }
+      if (!opt && box && opts.length === 1) opt = opts[0]; // typed-to-filter left exactly one
       if (opt) {
         opt.scrollIntoView && opt.scrollIntoView({ block: "nearest" });
         opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
