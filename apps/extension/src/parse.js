@@ -346,4 +346,19 @@ function idHeuristics(text, out, put) {
   if (exp) put("dl_expiry_date", exp[1]);
   const iss = text.match(new RegExp(`\\b(?:4a\\s*)?ISS\\b[^0-9]{0,8}${DATE}`, "i"));
   if (iss) put("dl_issue_date", iss[1]);
+
+  // OCR artifact cleanup: a driver's licence prints "CLASS <X>" (e.g. C) right beside the
+  // name, and OCR can FUSE that class letter onto the end of a name ("VISHWANATHAN" -> the
+  // stored "VISHWANATHANC"). If a name ends with the class letter AND stripping it still
+  // leaves a real (≥5-char) name with no trailing space, drop the stray letter.
+  const cls = (text.match(/\bCLASS\s*([A-EM])\b/i) || [])[1];
+  if (cls) {
+    const C = cls.toUpperCase();
+    for (const k of ["first_name", "middle_name", "last_name"]) {
+      const v = out[k];
+      if (v && v.length >= 6 && v.toUpperCase().endsWith(C) && !/\s/.test(v.slice(-2))) {
+        out[k] = v.slice(0, -1);
+      }
+    }
+  }
 }

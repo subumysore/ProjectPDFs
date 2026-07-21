@@ -100,6 +100,12 @@ test("DL front OCR: EXP/ISS -> dl dates, no date digits misread as a phone", () 
   assert.equal(r.cell_phone, undefined); // a licence has no phone number
 });
 
+test("DL OCR: a fused CLASS letter is stripped from a name", () => {
+  const r = map(parseFields("DRIVER LICENSE\n1 MYSORE\n2 SUBRAMANYA VISHWANATHANC\n9 CLASS C\n15 SEX M"));
+  assert.equal(r.middle_name, "VISHWANATHAN");
+  assert.equal(r.first_name, "SUBRAMANYA");
+});
+
 test("parseFields: splits a packed 'City: .. State: .. Zip: ..' line", () => {
   const r = map(parseFields("City: Springfield State: IL Zip: 62704"));
   assert.equal(r.city, "Springfield");
