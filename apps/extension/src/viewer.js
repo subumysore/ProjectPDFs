@@ -122,8 +122,24 @@ function showEmpty(msg) {
 import { isTranslatableValue } from "./valuefmt.js";
 import { toScript } from "./translit.js";
 
-const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
-const LANG_SHORT = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
+// Every language the engine supports (the registry), with native display names — so a reader
+// can view a form in ANY language, and pick ANY source language for a scanned/legacy-font form.
+const LANG_NAMES = {
+  en: "English", es: "Español", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano",
+  nl: "Nederlands", vi: "Tiếng Việt", id: "Bahasa Indonesia", tr: "Türkçe",
+  hi: "हिन्दी (Hindi)", mr: "मराठी (Marathi)", ne: "नेपाली (Nepali)", kn: "ಕನ್ನಡ (Kannada)",
+  ta: "தமிழ் (Tamil)", te: "తెలుగు (Telugu)", ml: "മലയാളം (Malayalam)", bn: "বাংলা (Bengali)",
+  gu: "ગુજરાતી (Gujarati)", pa: "ਪੰਜਾਬੀ (Punjabi)", or: "ଓଡ଼ିଆ (Odia)", si: "සිංහල (Sinhala)",
+  ur: "اردو (Urdu)", ar: "العربية (Arabic)", fa: "فارسی (Persian)", ru: "Русский", uk: "Українська",
+  zh: "中文", ja: "日本語", ko: "한국어", th: "ไทย", he: "עברית", el: "Ελληνικά",
+};
+const LANG_SHORT = {
+  en: "English", es: "Español", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano",
+  nl: "Nederlands", vi: "Tiếng Việt", id: "Indonesia", tr: "Türkçe", hi: "हिन्दी", mr: "मराठी",
+  ne: "नेपाली", kn: "ಕನ್ನಡ", ta: "தமிழ்", te: "తెలుగు", ml: "മലയാളം", bn: "বাংলা", gu: "ગુજરાતી",
+  pa: "ਪੰਜਾਬੀ", or: "ଓଡ଼ିଆ", si: "සිංහල", ur: "اردو", ar: "العربية", fa: "فارسی", ru: "Русский",
+  uk: "Українська", zh: "中文", ja: "日本語", ko: "한국어", th: "ไทย", he: "עברית", el: "Ελληνικά",
+};
 // The panel's own column words ("Label"/"Value") in each supported language, so the
 // header reads in the reader's language too — not just the data.
 const UI_TERMS = {
