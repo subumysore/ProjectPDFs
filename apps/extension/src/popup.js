@@ -20,6 +20,8 @@ async function extractPdfTexts(bytes) {
 }
 import { fillPage } from "./pagefill.js";
 const $ = (id) => document.getElementById(id);
+// Show the loaded version in the header so it's always obvious which code is running.
+try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
 const send = (msg) => chrome.runtime.sendMessage(msg);
 function setMsg(text, ok = true) {
   const el = $("msg");
