@@ -27,7 +27,7 @@ function stopCam() {
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
 }
 
-$("startCam").onclick = async () => {
+async function startCamera() {
   setMsg("Requesting camera…");
   const v = $("video");
   try {
@@ -66,7 +66,8 @@ $("startCam").onclick = async () => {
   } catch (e) {
     setMsg("Couldn't open the camera (" + ((e && e.message) || e) + "). You can choose an image file instead.", false);
   }
-};
+}
+$("startCam").onclick = startCamera;
 
 $("snap").onclick = () => {
   const v = $("video");
@@ -78,15 +79,16 @@ $("snap").onclick = () => {
   v.hidden = true; c.hidden = false;
   $("snap").hidden = true; $("retake").hidden = false;
   stopCam();
-  runOcr(c); // manual capture = OCR the printed front (live scan already covers the barcode)
+  // Try the barcode FIRST (fast, exact — for a captured BACK), then fall back to OCR
+  // (for the printed front). Avoids running slow OCR on a barcode image.
+  processImage(c);
 };
 
 $("retake").onclick = () => {
+  // Go STRAIGHT back to the live camera — no intermediate "Start camera" step.
   $("resultsCard").hidden = true;
-  $("startCam").hidden = false;
-  $("retake").hidden = true;
   $("shot").hidden = true;
-  setMsg("");
+  startCamera();
 };
 
 $("file").onchange = async (e) => {

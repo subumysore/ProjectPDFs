@@ -29,9 +29,16 @@
   #retake:hover { background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(13,143,131,.24)); box-shadow: 0 3px 14px rgba(13,143,131,.26), inset 0 1px 0 rgba(255,255,255,.7); }
   #retake:active { transform: translateY(1px); }
   .muted { color: var(--muted); font-size: 13px; }
-  /* Busy spinner — reassures the user while the barcode/OCR runs (a few seconds). */
-  #busy { display: none; align-items: center; gap: 10px; margin-top: 12px; color: var(--teal-ink); font-weight: 600; }
-  #busy.on { display: flex; }
+  /* Busy spinner — a full centred OVERLAY so it's always visible while the barcode/OCR
+     runs (a few seconds), even over a large captured image. */
+  #busy { display: none; }
+  #busy.on {
+    display: flex; position: fixed; inset: 0; z-index: 50;
+    flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    background: rgba(247, 250, 250, .86); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    color: var(--teal-ink); font-weight: 700; font-size: 16px; text-align: center; padding: 24px;
+  }
+  #busy.on .spin { width: 44px; height: 44px; border-width: 5px; }
   .spin { width: 22px; height: 22px; border: 3px solid #d9e2e6; border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .msg { min-height: 20px; margin-top: 10px; font-size: 14px; }
