@@ -377,6 +377,7 @@ async function runPdfFlow(r, tab, url, view = false) {
       for (let i = 0; i < bytes.length; i += 0x8000) obin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       await chrome.storage.session.set({
         ppf_filled: btoa(bin), ppf_orig: btoa(obin), ppf_url: url, ppf_name: `${base}-filled.pdf`,
+        ppf_view: false, // this IS a fill — clear any stale view-mode flag from a prior "View"
         ppf_pairs: pairs, ppf_formLang: formLang, ppf_nativeLang: (r.vault && r.vault.native_language) || "en",
       });
       await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
@@ -394,6 +395,7 @@ async function runPdfFlow(r, tab, url, view = false) {
       ppf_name: `${base}-filled.pdf`,
       ppf_mode: "ocr",
       ppf_xfa: !!acro.xfa,
+      ppf_view: false, // this IS a fill — clear any stale view-mode flag
     });
     await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
     return setMsg("Reading the form with OCR in the opened tab — watch the progress there. ✓");
