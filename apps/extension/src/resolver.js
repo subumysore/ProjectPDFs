@@ -69,6 +69,8 @@ export function resolveFields(vault, fields) {
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     passport: ["passport", "passport no", "passport number"],
+    passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration"],
+    passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on"],
     photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "headshot", "photo id"],
     signature: ["signature", "sign", "sign here", "signed", "autograph", "applicant signature"],
     // Document IMAGES to attach into a form (values are data:image URIs). Vault keys

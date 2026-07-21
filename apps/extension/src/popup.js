@@ -297,7 +297,7 @@ function collectFillLabels() {
   const out = [];
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
-    if (el.disabled || el.readOnly) continue;
+    if (el.disabled) continue; // NOTE: readOnly fields ARE included (date pickers are often readOnly)
     out.push(labelOf(el).replace(/\s+/g, " ").trim());
   }
   return out;
@@ -628,7 +628,9 @@ $("companionFill").onclick = async () => {
 // array of English-translated field labels aligned to collectFillLabels(), used when the
 // form is in another language so the (English) ontology can match it.
 function fillPage(vault, tLabels) {
-  const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const norm = (s) => (s || "").toString()
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])([0-9])/g, "$1 $2") // split camelCase / letter-digit
+    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
 
   // 1) Canonical "atoms" <- the many ways a user might have named a key.
@@ -651,8 +653,10 @@ function fillPage(vault, tLabels) {
     phone:    ["phone", "telephone", "tel", "contact number", "phone number", "phone no", "contact no"],
     gender:   ["gender", "sex"],
     salutation: ["salutation", "title", "prefix", "honorific"],
-    dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
+    dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     passport: ["passport", "passport no", "passport number"],
+    passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration", "expiry date of passport"],
+    passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "issue date of passport"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
     dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
@@ -726,7 +730,7 @@ function fillPage(vault, tLabels) {
   let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
-    if (el.disabled || el.readOnly) continue;
+    if (el.disabled) continue; // readOnly fields ARE included (date pickers) — see setFieldValue
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
     let pick = null, top = 0;
@@ -739,6 +743,36 @@ function fillPage(vault, tLabels) {
   // then absorbs only the members NOT claimed here.
   const claimed = new Set(fields.filter((f) => f.pick.kind === "atom").map((f) => f.pick.key));
 
+  // Expand a 2-digit year in a slashed/dashed date (birth/expiry): "11/30/68" -> "11/30/1968".
+  const expandYear = (v) => {
+    const m = String(v).match(/^(\d{1,2})([\/.\-])(\d{1,2})\2(\d{2})$/);
+    if (!m) return v;
+    const yy = +m[4], cy = new Date().getFullYear() % 100;
+    return `${m[1]}${m[2]}${m[3]}${m[2]}${yy > cy ? 1900 + yy : 2000 + yy}`;
+  };
+  const toISO = (v) => {
+    const m = String(v).match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/); // assume MM/DD/YYYY
+    if (!m) return null;
+    let y = m[3]; if (y.length === 2) y = (+y > new Date().getFullYear() % 100 ? "19" : "20") + y;
+    return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  };
+  // Set a value in a way FRAMEWORKS honour: React/Angular ignore a plain `el.value =`,
+  // and date pickers are often readOnly. Use the native value setter, briefly clear
+  // readOnly, format for <input type="date">, and fire a full event sequence.
+  const setFieldValue = (el, value) => {
+    let v = value;
+    if (el.type === "date") { const iso = toISO(value); if (!iso) return false; v = iso; }
+    else v = expandYear(value);
+    const ro = el.readOnly; if (ro) el.readOnly = false;
+    try { el.focus(); } catch (_) { /* ignore */ }
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const desc = Object.getOwnPropertyDescriptor(proto, "value");
+    if (desc && desc.set) desc.set.call(el, v); else el.value = v;
+    for (const t of ["keydown", "keypress", "input", "keyup", "change", "blur"]) el.dispatchEvent(new Event(t, { bubbles: true }));
+    if (ro) el.readOnly = ro;
+    return true;
+  };
+
   let filled = 0;
   for (const { el, label, pick } of fields) {
     let value;
@@ -750,10 +784,7 @@ function fillPage(vault, tLabels) {
     }
     if (!value) continue;
     if (pick.name && wantsInitial(label, el)) value = initial(value);
-    el.value = value;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-    filled++;
+    if (setFieldValue(el, value)) filled++;
   }
   return filled;
 }
