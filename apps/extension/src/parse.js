@@ -98,14 +98,14 @@ export function parseFields(text) {
     // Issue date isn't in the MRZ — best-effort from the printed zone: a "DD MON YYYY"
     // date that is neither the DOB nor the (MRZ) expiry, with a recent-past year.
     const MON = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
-    const known = new Set([out.date_of_birth, out.expiry_date]);
+    const known = new Set([out.date_of_birth, out.passport_expiry_date]);
     const thisYear = new Date().getFullYear();
     for (const mm of (text || "").matchAll(/\b(\d{1,2})\s+([A-Z]{3})[A-Z.]*\s+(\d{4})\b/gi)) {
       const mo = MON[mm[2].toUpperCase()];
       if (!mo) continue;
       const d = `${mo}/${mm[1].padStart(2, "0")}/${mm[3]}`;
       const yr = Number(mm[3]);
-      if (!known.has(d) && yr >= 2000 && yr <= thisYear && !out.issue_date) out.issue_date = d;
+      if (!known.has(d) && yr >= 2000 && yr <= thisYear && !out.passport_issue_date) out.passport_issue_date = d;
     }
   } else if (!/passport|travel document|pasaporte|passeport/i.test(text)) {
     idHeuristics(text, out, put);
@@ -136,7 +136,7 @@ export function parseMrz(text) {
   // Expiry years are in the future, so a 2-digit year pivots to 20xx (unlike DOB).
   const setExp = (yymmdd) => {
     const m = (yymmdd || "").match(/^(\d{2})(\d{2})(\d{2})$/);
-    if (m) { const yy = +m[1]; out.expiry_date = `${m[2]}/${m[3]}/${yy < 70 ? 2000 + yy : 1900 + yy}`; }
+    if (m) { const yy = +m[1]; out.passport_expiry_date = `${m[2]}/${m[3]}/${yy < 70 ? 2000 + yy : 1900 + yy}`; }
   };
 
   // A real MRZ line contains filler '<' (ordinary OCR text — e.g. a licence front — has
@@ -210,15 +210,19 @@ export function parseAamva(text) {
   put("country", country);
   put("license_number", get("DAQ"));
   put("gender", ({ 1: "M", 2: "F" })[get("DBC")] || "");
-  // DOB: US = MMDDCCYY, Canada = CCYYMMDD.
-  const dbb = get("DBB").replace(/\D/g, "");
-  if (dbb.length === 8) {
-    const usa = !/CAN/i.test(country);
-    const dob = usa
-      ? `${dbb.slice(0, 2)}/${dbb.slice(2, 4)}/${dbb.slice(4, 8)}`
-      : `${dbb.slice(4, 6)}/${dbb.slice(6, 8)}/${dbb.slice(0, 4)}`;
-    put("date_of_birth", dob);
-  }
+  // Dates: US = MMDDCCYY, Canada = CCYYMMDD. DBB = date of birth, DBA = licence expiry,
+  // DBD = licence issue. Expiry/issue are DOCUMENT-QUALIFIED (dl_*) since a passport/other
+  // ID carries its own expiry — the vault must not conflate them.
+  const usa = !/CAN/i.test(country);
+  const fmtDate = (code) => {
+    const s = get(code).replace(/\D/g, "");
+    if (s.length !== 8) return "";
+    return usa ? `${s.slice(0, 2)}/${s.slice(2, 4)}/${s.slice(4, 8)}`
+               : `${s.slice(4, 6)}/${s.slice(6, 8)}/${s.slice(0, 4)}`;
+  };
+  put("date_of_birth", fmtDate("DBB"));
+  put("dl_expiry_date", fmtDate("DBA"));
+  put("dl_issue_date", fmtDate("DBD"));
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 

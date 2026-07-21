@@ -57,12 +57,13 @@ test("camelCase field names and dotted abbreviations resolve", () => {
   assert.equal(one(v, "firstName"), "Asha");
 });
 
-test("passport issue/expiry dates resolve from vault keys", () => {
-  const v = { expiry_date: "11/30/2029", issue_date: "03/16/2023" };
+test("document-qualified dates: DL vs passport don't conflate", () => {
+  const v = { dl_expiry_date: "08/09/2033", dl_issue_date: "03/16/2023", passport_expiry_date: "11/30/2029", passport_issue_date: "05/01/2019" };
   assert.equal(one(v, "Passport Expiry Date"), "11/30/2029");
-  assert.equal(one(v, "Date of Expiry"), "11/30/2029");
-  assert.equal(one(v, "Passport Issue Date"), "03/16/2023");
-  assert.equal(one(v, "Passport Issuance"), "03/16/2023");
+  assert.equal(one(v, "License Expiry Date"), "08/09/2033");
+  assert.equal(one(v, "Date of Expiry"), "11/30/2029"); // bare expiry defaults to passport
+  assert.equal(one(v, "Passport Valid From"), "05/01/2019");
+  assert.equal(one(v, "License Issue Date"), "03/16/2023");
 });
 
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {

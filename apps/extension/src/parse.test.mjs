@@ -53,7 +53,7 @@ test("MRZ TD3: passport (2×44) — name, number, nationality, DOB, sex, expiry"
   assert.equal(r.nationality, "UTO");
   assert.equal(r.date_of_birth, "08/12/1974");
   assert.equal(r.gender, "F");
-  assert.equal(r.expiry_date, "04/15/2012");
+  assert.equal(r.passport_expiry_date, "04/15/2012"); // document-qualified (passport)
 });
 
 test("MRZ TD1: national ID card (3×30)", () => {
