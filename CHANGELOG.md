@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — "View this page in my language" now works on PDFs (shows translated labels+values) (2026-07-20)
+- Previously the in-page translate button dead-ended on a PDF with a message (a PDF renders in
+  Chrome's plugin, whose text an extension can't rewrite in place). Now, on a PDF, the button runs
+  the **same pipeline as Fill** and opens the viewer with the **bilingual side panel** — every
+  label AND value shown in the user's language, exactly the post-fill translated view they asked
+  for. The PDF fill pipeline was extracted into a shared `runPdfFlow` used by both buttons.
+
 ### Changed — "Show original form" now returns to the form's real location (2026-07-20)
 - The viewer records the form's source URL (`ppf_url`) when filling a web/local PDF. The bar
   button now reads **"Go to original form ↗"** and **navigates the tab back to that URL** — the
