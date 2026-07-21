@@ -15,6 +15,10 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "allowJs": true,
+    "checkJs": false,
+    "baseUrl": ".",
+    "paths": { "@engine/*": ["../extension/src/*"] },
     "types": ["vite/client"]
   },
   "include": ["src"]
