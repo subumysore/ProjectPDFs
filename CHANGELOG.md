@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — "Show original form" now returns to the form's real location (2026-07-20)
+- The viewer records the form's source URL (`ppf_url`) when filling a web/local PDF. The bar
+  button now reads **"Go to original form ↗"** and **navigates the tab back to that URL** — the
+  browser returns to the original form exactly where it lived (the filled PDF was already
+  auto-downloaded, so nothing is lost). When there is no source URL (a scanned image / OCR of
+  local bytes), it falls back to the previous in-place blank⇄filled toggle.
+
 ### Fixed — Bilingual panel: show original labels + stop mangling name/number values (2026-07-20)
 - **Original-language labels now shown alongside your language.** The side panel is now four
   columns: **Label · <form lang> | Label · <your lang> | Value · <form lang> | Value · <your lang>**.

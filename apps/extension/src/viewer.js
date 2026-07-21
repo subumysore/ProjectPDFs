@@ -34,13 +34,28 @@ function renderAndDownload(data, name) {
   return url;
 }
 
-// Wire the "Show original form ⇄ Show filled form" toggle. `orig` may be null (OCR
-// path or no source stashed) — then the button stays hidden.
-function setupOrigToggle(filled, orig, name) {
+// Wire the "Show original form" button.
+//   - If we know WHERE the form came from (`origUrl`, e.g. a web/local PDF the user
+//     opened), the button NAVIGATES the tab back to that real location — the browser
+//     returns to the original form exactly where it lived. (The filled PDF was already
+//     auto-downloaded, so nothing is lost.)
+//   - Otherwise (no URL: a scanned image / OCR path) it falls back to a blank⇄filled
+//     toggle rendered in place from the stashed original bytes.
+function setupOrigToggle(filled, orig, name, origUrl) {
   const btn = document.getElementById("toggleOrig");
   const label = document.getElementById("barLabel");
-  if (!orig || !orig.length) return;
+  const canNavigate = !!origUrl && /^(https?|file|blob|chrome-extension):/i.test(origUrl);
+  if (!canNavigate && (!orig || !orig.length)) return; // nothing to show
   btn.hidden = false;
+
+  if (canNavigate) {
+    btn.textContent = "Go to original form ↗";
+    btn.title = origUrl;
+    btn.onclick = () => { window.location.href = origUrl; }; // back to where the form lives
+    return;
+  }
+
+  // Fallback: in-place blank⇄filled toggle (no source URL, e.g. a scanned image).
   let showingOrig = false;
   const base = name.replace(/-filled\.pdf$/i, "").replace(/\.pdf$/i, "");
   btn.onclick = () => {
@@ -142,7 +157,7 @@ function setupLangPanel(res) {
 
 (async () => {
   const s = await chrome.storage.session.get([
-    "ppf_filled", "ppf_orig", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
+    "ppf_filled", "ppf_orig", "ppf_url", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
     "ppf_pairs", "ppf_formLang", "ppf_nativeLang",
   ]);
   const name = s.ppf_name || "filled.pdf";
@@ -172,7 +187,7 @@ function setupLangPanel(res) {
       }
       setBar(`✓ Filled ${res.filled} field(s)${res.form ? " · " + res.form : ""} on-device — downloading…`);
       await renderAndDownload(res.bytes, name);
-      setupOrigToggle(res.bytes, bytes, name); // original = the pre-OCR source
+      setupOrigToggle(res.bytes, bytes, name, s.ppf_url); // original = the pre-OCR source / its URL
       setupLangPanel(res);
     } catch (e) {
       chrome.storage.session.remove(["ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa"]);
@@ -187,7 +202,7 @@ function setupLangPanel(res) {
   try {
     const filled = b64ToBytes(s.ppf_filled);
     await renderAndDownload(filled, name);
-    if (s.ppf_orig) setupOrigToggle(filled, b64ToBytes(s.ppf_orig), name);
+    setupOrigToggle(filled, s.ppf_orig ? b64ToBytes(s.ppf_orig) : null, name, s.ppf_url);
     // Offer the translated label+value panel for a standard (AcroForm) PDF too.
     setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
   } catch (e) {
