@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Clean up benign camera console warning (2026-07-20)
+- **Removed the `autoplay` attribute from the scan `<video>`** so the @zxing barcode reader
+  owns `play()`. With `autoplay`, the browser started playback first and zxing's
+  `canplay → tryPlayVideo` then logged a harmless "Trying to play video that is already
+  playing." warning that surfaced in the extension's Errors panel. Behaviour is unchanged
+  (zxing still starts the stream); the console is now clean. (The other Errors-panel line —
+  "Connecting to 'data:application/octet-stream;base64,…'" — is Chrome noting a bundled WASM
+  runtime loaded as an inline `data:` URI; expected and required by the offline-only design.)
+
 ### Added — Viewer original/filled toggle, bilingual values & a real test suite (2026-07-20)
 - **"Show original form" toggle in the filled-PDF viewer:** the result view now keeps both
   the original (blank) and filled bytes and switches between them (bar label + download link

@@ -54,7 +54,11 @@
       <p class="muted">Point your camera at a licence, ID, or business card — or choose an image file.
         <b>For a US/Canada driver's licence, scan the BACK (the barcode)</b> — it reads every field exactly.
         Otherwise on-device OCR reads the printed text. Nothing leaves your device.</p>
-      <video id="video" autoplay playsinline muted hidden></video>
+      <!-- No `autoplay`: the @zxing reader (decodeFromConstraints) attaches the stream and
+           calls play() itself. With autoplay, the browser starts playback first, then zxing's
+           canplay→tryPlayVideo sees it already playing and logs a benign "already playing"
+           warning. Letting zxing own play() keeps the console clean. -->
+      <video id="video" playsinline muted hidden></video>
       <canvas id="shot" hidden></canvas>
       <div class="row">
         <button id="startCam" class="primary">Start camera</button>
