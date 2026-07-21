@@ -254,6 +254,16 @@ function setupLangPanel(res) {
   ]);
   const name = s.ppf_name || "filled.pdf";
   setupPanelResize();
+  // ✍️ Sign / handwrite — open the CURRENTLY shown PDF in the annotate tool (works right
+  // from the viewer; no need for a .pdf tab URL).
+  let signB64 = s.ppf_filled || s.ppf_orig || null;
+  const signBtn = document.getElementById("signViewer");
+  if (signBtn) signBtn.onclick = async () => {
+    if (!signB64) return;
+    await chrome.storage.session.set({ ppf_sign_src: signB64, ppf_sign_name: (name || "form").replace(/\.pdf$/i, "") });
+    await chrome.tabs.create({ url: chrome.runtime.getURL("sign.html") });
+  };
+
   // ✕ Close — leave this generated view and return to the original form. Prefer the real
   // source URL (back to where the form lives); else step back in history; else close the tab.
   document.getElementById("closeViewer").onclick = () => {
@@ -291,6 +301,7 @@ function setupLangPanel(res) {
       }
       setBar(`✓ Filled ${res.filled} field(s)${res.form ? " · " + res.form : ""} on-device — downloading…`);
       await renderFilled(res.bytes, name);
+      { let bin = ""; for (let i = 0; i < res.bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, res.bytes.subarray(i, i + 0x8000)); signB64 = btoa(bin); } // enable ✍️ Sign for the OCR result
       setupOrigToggle(res.bytes, bytes, name, s.ppf_url); // original = the pre-OCR source / its URL
       setupLangPanel(res);
     } catch (e) {
