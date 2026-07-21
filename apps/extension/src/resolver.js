@@ -66,6 +66,7 @@ export function resolveFields(vault, fields) {
     homephone: ["home phone", "landline", "home number", "residence phone", "home telephone"],
     phone:    ["phone", "telephone", "tel", "contact number", "phone number", "phone no", "contact no"],
     gender:   ["gender", "sex"],
+    marital:  ["marital status", "marital", "civil status", "relationship status", "marital state", "marital condition"],
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     passport: ["passport", "passport no", "passport number"],

@@ -66,6 +66,11 @@ test("document-qualified dates: DL vs passport don't conflate", () => {
   assert.equal(one(v, "License Issue Date"), "03/16/2023");
 });
 
+test("marital status resolves (fills the field / ticks the right option checkbox)", () => {
+  assert.equal(one({ marital_status: "Married" }, "Marital Status"), "Married");
+  assert.equal(one({ marital_status: "Single" }, "Civil Status"), "Single");
+});
+
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {
   assert.equal(one({ first_name: "Asha" }, "Favourite Colour"), null);
 });
