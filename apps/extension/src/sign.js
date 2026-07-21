@@ -15,7 +15,9 @@ const state = {
   undo: {},              // pageIndex -> [ImageData] snapshots (before each stroke/stamp)
   stamps: [],            // [{ key, img, src }] — EVERY image saved in the vault, user picks which
   currentStamp: null,    // the image chosen to stamp
+  vault: null,           // the unlocked vault, so we can ALSO fill fields here (any order)
 };
+const toast = (m) => { const h = $("hint"); if (h) h.textContent = m; };
 
 // Snapshot the current page's ink BEFORE a change, so Undo can restore it (cap the history).
 function pushUndo() {
@@ -49,6 +51,7 @@ async function loadVaultImages() {
   try {
     const r = await chrome.runtime.sendMessage({ type: "getVault" });
     if (r && r.ok && r.vault) {
+      state.vault = r.vault; // reused by the "Fill fields" button so signing & filling share one doc
       const mk = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
       // EVERY image the user has saved becomes its own labelled stamp — no guessing which one.
       for (const [k, val] of Object.entries(r.vault)) {
@@ -78,6 +81,35 @@ async function renderPage() {
   const store = inkFor(state.page - 1, ink.width, ink.height);
   const ctx = ink.getContext("2d"); ctx.clearRect(0, 0, ink.width, ink.height); ctx.drawImage(store, 0, 0);
   $("pageInfo").textContent = `${state.page} / ${state.num}`;
+}
+
+// Re-open the working PDF after its bytes change (e.g. after auto-filling fields), keeping
+// any ink/stamp overlays the user has already drawn (they live on separate canvases and are
+// composited at Download time, so they survive a re-render).
+async function reloadFromBytes() {
+  state.doc = await pdfjsLib.getDocument({ data: state.bytes.slice(0) }).promise;
+  state.num = state.doc.numPages;
+  if (state.page > state.num) state.page = 1;
+  await renderPage();
+}
+
+// Auto-fill the form's fields from the vault, right here in the sign surface — so the user can
+// fill BEFORE or AFTER signing. Order is never mandated: ink overlays are flattened over
+// whatever the filled bytes are at Download.
+async function fillFieldsHere() {
+  if (!state.vault) return toast("Vault is locked — open the extension popup and unlock it, then try Fill again.");
+  const btn = $("tFill"); const label = btn.textContent; btn.textContent = "Filling…"; btn.disabled = true;
+  try {
+    const { fillPdfBytes } = await import("./pdffill.js");
+    const res = await fillPdfBytes(state.bytes, state.vault);
+    if (res && res.bytes && res.filled) {
+      state.bytes = res.bytes; await reloadFromBytes();
+      toast(`Filled ${res.filled} of ${res.total} field(s). Draw / stamp anywhere and then Download.`);
+    } else {
+      toast("No fillable form fields matched here — use Pen, Text, or your image stamps to place values by hand.");
+    }
+  } catch (e) { toast("Fill failed: " + (e && e.message || e)); }
+  finally { btn.textContent = label; btn.disabled = false; }
 }
 
 // ---- drawing / stamping on the visible overlay, mirrored into the per-page store ----
@@ -141,6 +173,7 @@ async function download() {
 }
 
 function wireToolbar() {
+  $("tFill").onclick = fillFieldsHere;
   $("tPen").onclick = () => setTool("pen");
   $("tText").onclick = () => setTool("text");
   buildStampButtons(); // one labelled thumbnail button per saved image

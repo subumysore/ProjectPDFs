@@ -22,6 +22,7 @@
 <body>
   <div id="bar">
     <b>✍️ Sign / annotate</b>
+    <button id="tFill" title="Auto-fill the form's fields from your vault (any order — before or after signing)">🖊️ Fill fields</button>
     <button id="tPen" class="on">✏️ Pen</button>
     <button id="tText">🇹 Text</button>
     <span id="stamps" style="display:inline-flex;gap:6px;align-items:center"></span>
@@ -41,7 +42,7 @@
       <canvas id="ink"></canvas>
     </div>
   </div>
-  <div id="hint" style="text-align:center;padding:6px">Pen: draw. Signature/Photo: click-drag to place your saved image. Then Download.</div>
+  <div id="hint" style="text-align:center;padding:6px">Fill fields auto-fills the form from your vault. Pen: draw. Stamp buttons: click one, then click the form to place that image. Fill and sign in any order — then Download.</div>
   <script type="module" src="src/sign.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PolyglotFormFill Autofill (companion)",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Privacy-first form autofill. Encrypted vault unlocked by passphrase or passkey (WebAuthn). No data leaves your device.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxo11ReAuirRp3AHTJJ+SJpaxEkRr8cZcSvsUJPB92YgJ2Nbek64MJVlAIcR+dKCn1c7tlZ7O/dGT1hd3CLYPWgcOUKJKWLf1a3wOBP6x2WTJ62M7xBHy8+UOgMTxhL5tAK3xWw8BSPvYlA9fVtSDEh6ODztXC8C+LzWJ17ZlH/rihiQtvQWG0NKuoBUxUaK4hVjHaly4kJEPEfi/ugv2pg+0frdVShqZ4hLqLoTEtTmqixV/27s3PvP1HH1Px7KlJhHh8DlQJuYzsPCtScoBkzAN793JPP/M7mLtxrGKkaZzaQFRqQMJtilsFpDg3YtFD40/reUnCRMrklLBDYGtSwIDAQAB",
   "permissions": [
