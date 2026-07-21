@@ -5,6 +5,9 @@ import { resolveFields, resolveBundle } from "./fill/resolver";
 import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
 import { planProximityFill } from "./fill/pdfproximity";
+// Sign/annotate ENGINE — shared with the extension (flatten drawn overlays into the PDF). The
+// drawing canvas is a per-platform UI layer; this flattening core is identical on both.
+export { flattenOverlays } from "@engine/signflatten.js";
 
 /** Read a text field's tooltip (/TU) — a human label many good forms set. */
 function fieldTooltip(field: PDFTextField): string {
