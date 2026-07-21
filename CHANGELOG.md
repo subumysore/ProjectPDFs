@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — "Value · <your language>" column is now actually in that language (transliteration) (2026-07-20)
+- The your-language value column showed names/numbers in Latin under a e.g. "हिन्दी" header.
+  A name is not *translated* (that hallucinated "Mexico") — it is **transliterated**: its sound
+  written in the reader's script. New on-device `translit.toScript`: "Pranav Subramanya" → प्रणव
+  सुब्रमन्य, "12" → १२ (Hindi/Arabic digits localised), Russian → Cyrillic, Arabic → Arabic script.
+  **Latin-script targets (es/fr/de) correctly keep the original spelling**; Chinese passes through
+  (no phonetic letter script). Genuine word-phrases are still translated. Phonetic → approximate;
+  `translit.test.mjs` locks the invariants (53 extension tests green).
+
 ### Fixed — Language-panel resize now sticks (iframe-drag bug) (2026-07-20)
 - Dragging the panel's resize handle "stuck" / kept resizing after release because the PDF
   `<iframe>` swallowed the mouse events, so the parent page never saw `mousemove`/`mouseup`.

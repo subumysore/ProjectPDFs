@@ -120,6 +120,7 @@ function showEmpty(msg) {
 }
 
 import { isTranslatableValue } from "./valuefmt.js";
+import { toScript } from "./translit.js";
 
 const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
 const LANG_SHORT = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
@@ -158,7 +159,9 @@ function setupLangPanel(res) {
       for (const it of items) {
         const tl = await tr(it.label);
         const ov = it.value || "";
-        const tv = ov ? (isTranslatableValue(ov) ? await tr(ov) : ov) : "";
+        // A genuine word-phrase is TRANSLATED; a name/number/ID is TRANSLITERATED into the
+        // target's script (same sound, reader's letters) — never machine-translated.
+        const tv = ov ? (isTranslatableValue(ov) ? await tr(ov) : toScript(ov, to)) : "";
         const row = document.createElement("tr");
         const a = document.createElement("td"); a.className = "orig"; a.textContent = it.label;
         const b = document.createElement("td"); b.className = "tr"; b.textContent = tl;
@@ -168,7 +171,7 @@ function setupLangPanel(res) {
         table.appendChild(row);
         n++;
       }
-      status.textContent = `✓ Translated ${n} field(s) — on-device. Names & numbers are shown as-is (they don't translate); the form itself stays in ${LANG_NAMES[from] || from}.`;
+      status.textContent = `✓ ${n} field(s) — on-device. Phrases are translated; names & numbers are written in your script (transliterated), not translated. The form itself stays in ${LANG_NAMES[from] || from}.`;
     } catch (e) {
       status.textContent = "Translation failed: " + ((e && e.message) || e);
       go.disabled = false;
