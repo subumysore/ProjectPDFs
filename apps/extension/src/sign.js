@@ -13,7 +13,8 @@ const state = {
   tool: "pen", size: 4, color: "#0b1f66",
   overlays: {},          // pageIndex(0-based) -> ink canvas (persisted across page nav)
   undo: {},              // pageIndex -> [ImageData] snapshots (before each stroke/stamp)
-  images: { signature: null, photo: null }, // HTMLImageElement of the saved vault images
+  stamps: [],            // [{ key, img, src }] — EVERY image saved in the vault, user picks which
+  currentStamp: null,    // the image chosen to stamp
 };
 
 // Snapshot the current page's ink BEFORE a change, so Undo can restore it (cap the history).
@@ -28,15 +29,33 @@ function doUndo() {
   const ink = $("ink"); ink.getContext("2d").putImageData(st.pop(), 0, 0); commitToStore();
 }
 
+// Tool selection (module-level so drawing + toolbar share it).
+function clearActive() { document.querySelectorAll("#bar button.on").forEach((b) => b.classList.remove("on")); }
+function setTool(t) { state.tool = t; state.currentStamp = null; clearActive(); const map = { pen: "tPen", text: "tText" }; if (map[t] && $(map[t])) $(map[t]).classList.add("on"); }
+function selectStamp(st, btn) { state.tool = "stamp"; state.currentStamp = st.img; clearActive(); btn.classList.add("on"); }
+// One labelled button per saved image — the user picks exactly which to place (with a thumbnail).
+function buildStampButtons() {
+  const box = $("stamps"); if (!box) return; box.innerHTML = "";
+  for (const st of state.stamps) {
+    const b = document.createElement("button");
+    b.title = `Place: ${st.key} (click once, then click the form)`;
+    b.innerHTML = `<img src="${st.src}" style="height:16px;vertical-align:middle;border:1px solid #fff;border-radius:2px;background:#fff;margin-right:3px">${st.key}`;
+    b.onclick = () => selectStamp(st, b);
+    box.appendChild(b);
+  }
+}
+
 async function loadVaultImages() {
   try {
     const r = await chrome.runtime.sendMessage({ type: "getVault" });
     if (r && r.ok && r.vault) {
       const mk = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
-      const v = r.vault;
-      const sig = v.signature; const photo = v.profile_picture || v.photo || v.passport_image;
-      if (typeof sig === "string" && sig.startsWith("data:image")) state.images.signature = await mk(sig);
-      if (typeof photo === "string" && photo.startsWith("data:image")) state.images.photo = await mk(photo);
+      // EVERY image the user has saved becomes its own labelled stamp — no guessing which one.
+      for (const [k, val] of Object.entries(r.vault)) {
+        if (typeof val === "string" && val.startsWith("data:image")) {
+          const img = await mk(val); if (img) state.stamps.push({ key: k, img, src: val });
+        }
+      }
     }
   } catch (_) { /* vault locked / unavailable — pen still works */ }
 }
@@ -79,13 +98,14 @@ function setupDrawing() {
       if (txt) { pushUndo(); ctx.fillStyle = state.color; ctx.textBaseline = "top"; ctx.font = `${Math.max(11, state.size * 4.5)}px system-ui, sans-serif`; ctx.fillText(txt, p0.x, p0.y); commitToStore(); }
       return;
     }
+    if (state.tool === "stamp" && !state.currentStamp) return; // stamp tool but nothing chosen
     drawing = true; last = p0; e.preventDefault();
     pushUndo(); // record state before this stroke/stamp
     if (state.tool === "pen") {
       ctx.strokeStyle = state.color; ctx.lineWidth = state.size; ctx.lineCap = "round"; ctx.lineJoin = "round";
-    } else {
-      imgTool = state.images[state.tool];
-      base = ctx.getImageData(0, 0, ink.width, ink.height); // snapshot to preview the drag
+    } else if (state.tool === "stamp") {
+      imgTool = state.currentStamp;
+      base = ctx.getImageData(0, 0, ink.width, ink.height); // snapshot to preview the drag/resize
     }
   });
   ink.addEventListener("pointermove", (e) => {
@@ -97,7 +117,13 @@ function setupDrawing() {
       ctx.drawImage(imgTool, p.x - w / 2, p.y - h / 2, w, h);
     }
   });
-  window.addEventListener("pointerup", () => { if (drawing) { drawing = false; imgTool = null; commitToStore(); } });
+  window.addEventListener("pointerup", () => {
+    if (!drawing) return;
+    drawing = false;
+    const wasStamp = !!imgTool; imgTool = null;
+    commitToStore();
+    if (wasStamp) setTool("pen"); // ONE-SHOT: placing an image reverts to Pen so a later click can't duplicate it
+  });
 }
 
 async function download() {
@@ -115,11 +141,9 @@ async function download() {
 }
 
 function wireToolbar() {
-  const setTool = (t) => { state.tool = t; for (const id of ["tPen", "tText", "tSig", "tPhoto"]) $(id).classList.remove("on"); $({ pen: "tPen", text: "tText", signature: "tSig", photo: "tPhoto" }[t]).classList.add("on"); };
   $("tPen").onclick = () => setTool("pen");
   $("tText").onclick = () => setTool("text");
-  $("tSig").onclick = () => { if (!state.images.signature) return alert("No saved signature. Draw one in the extension popup (Signature pad) first."); setTool("signature"); };
-  $("tPhoto").onclick = () => { if (!state.images.photo) return alert("No saved photo. Add a profile_picture image in the extension popup first."); setTool("photo"); };
+  buildStampButtons(); // one labelled thumbnail button per saved image
   $("size").oninput = () => { state.size = +$("size").value; };
   $("color").oninput = () => { state.color = $("color").value; };
   $("undo").onclick = doUndo;
@@ -136,16 +160,6 @@ function wireToolbar() {
   state.bytes = b64ToBytes(s.ppf_sign_src);
   $("dl").download = (s.ppf_sign_name || "form") + "-signed.pdf";
   await loadVaultImages();
-  // Show a THUMBNAIL of what each stamp button will insert, so the mapping is unmistakable
-  // (reveals a mis-keyed image immediately).
-  const preview = (btnId, img) => {
-    if (!img) return;
-    const t = document.createElement("img"); t.src = img.src; t.title = "This is what will be stamped";
-    t.style.cssText = "height:22px;vertical-align:middle;margin-left:4px;border:1px solid #fff;border-radius:3px;background:#fff";
-    $(btnId).after(t);
-  };
-  preview("tSig", state.images.signature);
-  preview("tPhoto", state.images.photo);
   state.doc = await pdfjsLib.getDocument({ data: state.bytes.slice(0) }).promise;
   state.num = state.doc.numPages;
   setupDrawing(); wireToolbar();
