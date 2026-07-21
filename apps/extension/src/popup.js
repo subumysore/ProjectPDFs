@@ -469,6 +469,33 @@ $("imgFile").onchange = async () => {
   else setMsg((r && r.error) || "Save failed", false);
 };
 
+// ---- Handwrite a signature on the pad → saved as the "signature" image, drawn into any
+// signature box on a form (reuses the image-field pipeline). Pointer + touch.
+if ($("sigPad")) {
+  const pad = $("sigPad");
+  const ctx = pad.getContext("2d");
+  ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#101a20";
+  let drawing = false, dirty = false, last = null;
+  const pos = (e) => { const r = pad.getBoundingClientRect(); return { x: (e.clientX - r.left) * (pad.width / r.width), y: (e.clientY - r.top) * (pad.height / r.height) }; };
+  const start = (e) => { drawing = true; dirty = true; last = pos(e); e.preventDefault(); };
+  const move = (e) => { if (!drawing) return; const p = pos(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; e.preventDefault(); };
+  const end = () => { drawing = false; };
+  pad.addEventListener("pointerdown", start);
+  pad.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", end);
+  $("sigClear").onclick = () => { ctx.clearRect(0, 0, pad.width, pad.height); dirty = false; };
+  $("sigSave").onclick = async () => {
+    if (!dirty) return setMsg("Draw your signature first.", false);
+    if (!(await ensurePro("Handwritten signature"))) return; // signature = Pro
+    const dataUrl = pad.toDataURL("image/png");
+    const r = COMP.on
+      ? await send({ type: "companionUpsert", profileId: await compProfile(), key: "signature", value: dataUrl })
+      : await send({ type: "set", key: "signature", value: dataUrl });
+    if (r && r.ok) { setMsg("Signature saved — it'll fill signature boxes on forms."); renderEntries(); }
+    else setMsg((r && r.error) || "Save failed", false);
+  };
+}
+
 // ---- View this page in MY language (spec: language-aware filling — the "understand"
 // direction). Translate a foreign form's visible labels INTO the user's native language,
 // in place, so they can READ it. The form still submits in its own language (we only

@@ -80,6 +80,12 @@
           <input id="imgKey" placeholder="field (e.g. signature, photo)" style="flex: 1" />
           <input id="imgFile" type="file" accept="image/*" style="flex: 1" />
         </div>
+        <div class="sub" style="margin: 10px 0 4px">Or <b>✍️ handwrite your signature</b> — drawn into signature boxes on any form:</div>
+        <canvas id="sigPad" width="290" height="110" style="width:100%;border:1px dashed #b7c2c2;border-radius:8px;background:#fff;touch-action:none;cursor:crosshair"></canvas>
+        <div class="row" style="margin-top:4px">
+          <button id="sigSave">Save signature</button>
+          <button id="sigClear">Clear</button>
+        </div>
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
