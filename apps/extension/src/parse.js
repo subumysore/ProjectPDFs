@@ -209,7 +209,12 @@ export function parseAamva(text) {
   put("city", get("DAI"));
   put("state", get("DAJ"));
   const zip = get("DAK").replace(/\s/g, "");
-  if (zip) put("zip", zip.length > 5 ? `${zip.slice(0, 5)}-${zip.slice(5, 9)}` : zip);
+  // US ZIP+4 is 9 digits -> "12345-6789" (drop a "-0000" filler). A Canadian postal code
+  // is alphanumeric ("M5H2N2") and must be left as-is (never dashed like a US zip).
+  if (zip) {
+    if (/^\d{9}$/.test(zip)) put("zip", /0000$/.test(zip) ? zip.slice(0, 5) : `${zip.slice(0, 5)}-${zip.slice(5, 9)}`);
+    else put("zip", zip);
+  }
   const country = get("DCG");
   put("country", country);
   put("license_number", get("DAQ"));

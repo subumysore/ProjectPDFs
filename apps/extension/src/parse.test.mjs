@@ -20,7 +20,7 @@ test("AAMVA: US licence — name, address, DOB (MMDDCCYY), sex", () => {
   assert.equal(r.address_1, "123 MAPLE ST");
   assert.equal(r.city, "SPRINGFIELD");
   assert.equal(r.state, "IL");
-  assert.equal(r.zip, "62704-0000");
+  assert.equal(r.zip, "62704"); // ZIP+4 with a 0000 filler collapses to the 5-digit zip
   assert.equal(r.license_number, "D1234567");
   assert.equal(r.gender, "M");
   assert.equal(r.date_of_birth, "01/15/1985");
