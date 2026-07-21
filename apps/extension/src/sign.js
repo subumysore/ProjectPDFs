@@ -71,7 +71,15 @@ function setupDrawing() {
   let drawing = false, last = null, base = null, imgTool = null;
   const pos = (e) => { const r = ink.getBoundingClientRect(); return { x: (e.clientX - r.left) * (ink.width / r.width), y: (e.clientY - r.top) * (ink.height / r.height) }; };
   ink.addEventListener("pointerdown", (e) => {
-    drawing = true; last = pos(e); e.preventDefault();
+    const p0 = pos(e);
+    // TEXT tool: a single click asks for the text and stamps it at that spot (type on a form).
+    if (state.tool === "text") {
+      e.preventDefault();
+      const txt = prompt("Text to place here:");
+      if (txt) { pushUndo(); ctx.fillStyle = state.color; ctx.textBaseline = "top"; ctx.font = `${Math.max(11, state.size * 4.5)}px system-ui, sans-serif`; ctx.fillText(txt, p0.x, p0.y); commitToStore(); }
+      return;
+    }
+    drawing = true; last = p0; e.preventDefault();
     pushUndo(); // record state before this stroke/stamp
     if (state.tool === "pen") {
       ctx.strokeStyle = state.color; ctx.lineWidth = state.size; ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -107,8 +115,9 @@ async function download() {
 }
 
 function wireToolbar() {
-  const setTool = (t) => { state.tool = t; for (const id of ["tPen", "tSig", "tPhoto"]) $(id).classList.remove("on"); $({ pen: "tPen", signature: "tSig", photo: "tPhoto" }[t]).classList.add("on"); };
+  const setTool = (t) => { state.tool = t; for (const id of ["tPen", "tText", "tSig", "tPhoto"]) $(id).classList.remove("on"); $({ pen: "tPen", text: "tText", signature: "tSig", photo: "tPhoto" }[t]).classList.add("on"); };
   $("tPen").onclick = () => setTool("pen");
+  $("tText").onclick = () => setTool("text");
   $("tSig").onclick = () => { if (!state.images.signature) return alert("No saved signature. Draw one in the extension popup (Signature pad) first."); setTool("signature"); };
   $("tPhoto").onclick = () => { if (!state.images.photo) return alert("No saved photo. Add a profile_picture image in the extension popup first."); setTool("photo"); };
   $("size").oninput = () => { state.size = +$("size").value; };
