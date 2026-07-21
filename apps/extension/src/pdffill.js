@@ -108,8 +108,12 @@ export async function fillPdfBytes(bytes, vault) {
 
   try { form.updateFieldAppearances(); } catch (_) { /* best-effort */ }
   const out = await pdf.save();
-  // Field labels (for the viewer's "view in my language" side panel on AcroForm PDFs).
-  return { total: all.length, filled, bytes: out, xfa, labels: descriptors.map((d) => d.label).filter(Boolean) };
+  // Label→value pairs (for the viewer's "view in my language" side panel: shows each
+  // field's label AND the value that fills it, both in the user's language).
+  const pairs = descriptors
+    .map((d, i) => ({ label: d.label, value: values[i] == null ? "" : String(values[i]) }))
+    .filter((p) => p.label);
+  return { total: all.length, filled, bytes: out, xfa, pairs };
 }
 
 export async function fillPdfFromUrl(url, vault) {

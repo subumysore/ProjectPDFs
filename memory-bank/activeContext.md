@@ -4,6 +4,12 @@ _What is in flight RIGHT NOW. Update at the start and end of every work session.
 to absolute._
 
 ## Current focus (2026-07-20) — Extension capture + intelligent fill + desktop parity
+- **Just shipped (2026-07-20 late):** viewer **"Show original form" toggle** (both blank +
+  filled bytes retained; `ppf_orig`); bilingual side panel now shows **translated VALUES**
+  alongside labels (`fillPdfBytes` returns `pairs`) and is **width-resizable**; **automated
+  test suite** for the extension's pure-logic modules — `parse`/`resolver`/`profileMatch`/
+  `forms`/`lang` `.test.mjs` + a `test` script in the extension package (`pnpm -r test`),
+  **42 tests green**. Goal: convert the manual per-change testing into fast regression tests.
 - **Live product-iteration session against the running extension** (user testing each change;
   published via `deploy/publish-extension.ps1` to polyglotformfill.mooo.com; local dev = Load
   unpacked `apps/extension`, then Reload). Everything on `master`, committed locally, **not pushed**

@@ -352,11 +352,16 @@ $("fill").onclick = async () => {
         // labels side panel (view a foreign PDF in your language).
         let bin = "";
         for (let i = 0; i < acro.bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, acro.bytes.subarray(i, i + 0x8000));
+        const pairs = acro.pairs || [];
         let formLang = "en";
-        try { const { detectLang } = await import("./lang.js"); if (acro.labels && acro.labels.length) formLang = detectLang(acro.labels.join(" ")).lang; } catch (_) { /* default en */ }
+        try { const { detectLang } = await import("./lang.js"); if (pairs.length) formLang = detectLang(pairs.map((p) => p.label).join(" ")).lang; } catch (_) { /* default en */ }
+        // Keep the ORIGINAL (unfilled) bytes too, so the viewer can offer a
+        // "Show original form" toggle (re-fill manually, compare, or download blank).
+        let obin = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) obin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
         await chrome.storage.session.set({
-          ppf_filled: btoa(bin), ppf_name: `${base}-filled.pdf`,
-          ppf_labels: acro.labels || [], ppf_formLang: formLang, ppf_nativeLang: (r.vault && r.vault.native_language) || "en",
+          ppf_filled: btoa(bin), ppf_orig: btoa(obin), ppf_name: `${base}-filled.pdf`,
+          ppf_pairs: pairs, ppf_formLang: formLang, ppf_nativeLang: (r.vault && r.vault.native_language) || "en",
         });
         await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("viewer.html") });
         return setMsg(`Filled ${acro.filled} of ${acro.total} field(s) via form fields — showing your filled PDF. ✓`);

@@ -48,7 +48,11 @@ test("migration: passphrase vault re-seals under a WebAuthn key, opens the same"
   await assert.rejects(() => open(pass, blob2)); // old passphrase no longer opens it
 });
 
-test("keys are non-extractable", async () => {
+test("keys are extractable (required to cache the unlocked session in chrome.storage.session)", async () => {
+  // MV3 evicts the service worker and drops in-memory state, which was re-locking the
+  // vault mid-use. The unlocked key is exported and stashed in chrome.storage.session
+  // (in-memory, cleared when the browser closes) so it survives eviction — which
+  // requires the key to be extractable. See ensureUnlocked / exportKeyB64 in vault.js.
   const key = await derivePassphraseKey("pw", newSalt(), 50_000);
-  assert.equal(key.extractable, false);
+  assert.equal(key.extractable, true);
 });

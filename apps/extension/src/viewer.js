@@ -13,15 +13,67 @@ function b64ToBytes(b64) {
   return d;
 }
 
-function renderAndDownload(data, name) {
-  const url = URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
+function pdfUrl(data) {
+  return URL.createObjectURL(new Blob([data.slice()], { type: "application/pdf" }));
+}
+
+// Show a set of PDF bytes in the interactive viewer and point the Download link at it.
+function showPdf(data, name) {
+  const url = pdfUrl(data);
   const dl = document.getElementById("dl");
   dl.href = url;
   dl.download = name;
   document.title = name;
-  // Show it in Chrome's interactive PDF viewer — AcroForm fields remain fillable.
   document.getElementById("pdf").src = url + "#toolbar=1&navpanes=0";
-  dl.click(); // also auto-download the completed form
+  return url;
+}
+
+function renderAndDownload(data, name) {
+  const url = showPdf(data, name);
+  document.getElementById("dl").click(); // also auto-download the completed form
+  return url;
+}
+
+// Wire the "Show original form ⇄ Show filled form" toggle. `orig` may be null (OCR
+// path or no source stashed) — then the button stays hidden.
+function setupOrigToggle(filled, orig, name) {
+  const btn = document.getElementById("toggleOrig");
+  const label = document.getElementById("barLabel");
+  if (!orig || !orig.length) return;
+  btn.hidden = false;
+  let showingOrig = false;
+  const base = name.replace(/-filled\.pdf$/i, "").replace(/\.pdf$/i, "");
+  btn.onclick = () => {
+    showingOrig = !showingOrig;
+    if (showingOrig) {
+      showPdf(orig, `${base}-original.pdf`);
+      btn.textContent = "Show filled form";
+      label.textContent = "○ Original (blank) form — PolyglotFormFill";
+    } else {
+      showPdf(filled, name);
+      btn.textContent = "Show original form";
+      label.textContent = "✓ Your filled form — PolyglotFormFill (on-device)";
+    }
+  };
+}
+
+// Drag-to-resize the language side panel (width only).
+function setupPanelResize() {
+  const panel = document.getElementById("langpanel");
+  const grip = document.getElementById("lpGrip");
+  if (!panel || !grip) return;
+  let startX = 0, startW = 0;
+  const move = (e) => {
+    const w = Math.min(820, Math.max(260, startW + (startX - e.clientX)));
+    panel.style.width = w + "px";
+  };
+  const up = () => { grip.classList.remove("drag"); window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+  grip.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startX = e.clientX; startW = panel.getBoundingClientRect().width;
+    grip.classList.add("drag");
+    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+  });
 }
 
 function showEmpty(msg) {
@@ -37,13 +89,16 @@ const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Espa�
 // user's language, on demand (models load only when they click). The original document
 // stays untouched; the finished form remains in its own language (spec invariant).
 function setupLangPanel(res) {
-  if (!res || !res.labels || !res.labels.length) return;
+  const items = (res && res.pairs && res.pairs.length)
+    ? res.pairs
+    : ((res && res.labels) ? res.labels.map((l) => ({ label: l, value: "" })) : []);
+  if (!items.length) return;
   const from = res.formLang || "en";
   const to = res.nativeLang || "en";
   if (from === to) return; // same language — nothing to translate
   const panel = document.getElementById("langpanel");
   document.getElementById("lpNote").textContent =
-    `This form is in ${LANG_NAMES[from] || from}; your language is ${LANG_NAMES[to] || to}. Translate the labels to read it — the filled form itself stays in ${LANG_NAMES[from] || from}.`;
+    `This form is in ${LANG_NAMES[from] || from}; your language is ${LANG_NAMES[to] || to}. Read each label AND the value that will fill it in your language — the filled form itself stays in ${LANG_NAMES[from] || from}.`;
   panel.hidden = false;
   const status = document.getElementById("lpStatus");
   const table = document.getElementById("lpTable");
@@ -53,16 +108,20 @@ function setupLangPanel(res) {
     status.textContent = "Loading the on-device translation model (first time downloads it)…";
     try {
       const { translateText } = await import("./translate.js");
-      table.innerHTML = "";
-      for (const label of res.labels) {
-        const tr = await translateText(label, from, to, (s) => (status.textContent = s));
+      const cache = {};
+      const tr = async (t) => { if (!t) return ""; if (cache[t] === undefined) cache[t] = await translateText(t, from, to, (s) => (status.textContent = s)); return cache[t]; };
+      table.innerHTML = "<tr><th>Label</th><th>Value</th></tr>";
+      let n = 0;
+      for (const it of items) {
+        const [tl, tv] = [await tr(it.label), it.value ? await tr(it.value) : ""];
         const row = document.createElement("tr");
-        const a = document.createElement("td"); a.className = "orig"; a.textContent = label;
-        const b = document.createElement("td"); b.className = "tr"; b.textContent = tr;
-        row.append(a, b);
+        const b = document.createElement("td"); b.className = "tr"; b.textContent = tl; b.title = it.label;
+        const c = document.createElement("td"); c.className = "val"; c.textContent = tv; c.title = it.value || "";
+        row.append(b, c);
         table.appendChild(row);
+        n++;
       }
-      status.textContent = `✓ Translated ${res.labels.length} label(s) — on-device.`;
+      status.textContent = `✓ Translated ${n} field(s) — on-device. Values are shown for reference; the form is filled in ${LANG_NAMES[from] || from}.`;
     } catch (e) {
       status.textContent = "Translation failed: " + ((e && e.message) || e);
       go.disabled = false;
@@ -72,10 +131,11 @@ function setupLangPanel(res) {
 
 (async () => {
   const s = await chrome.storage.session.get([
-    "ppf_filled", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
-    "ppf_labels", "ppf_formLang", "ppf_nativeLang",
+    "ppf_filled", "ppf_orig", "ppf_name", "ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa",
+    "ppf_pairs", "ppf_formLang", "ppf_nativeLang",
   ]);
   const name = s.ppf_name || "filled.pdf";
+  setupPanelResize();
 
   // OCR path — run the on-device OCR fill right here, streaming progress to the bar.
   if (s.ppf_mode === "ocr" && s.ppf_src) {
@@ -101,6 +161,7 @@ function setupLangPanel(res) {
       }
       setBar(`✓ Filled ${res.filled} field(s)${res.form ? " · " + res.form : ""} on-device — downloading…`);
       await renderAndDownload(res.bytes, name);
+      setupOrigToggle(res.bytes, bytes, name); // original = the pre-OCR source
       setupLangPanel(res);
     } catch (e) {
       chrome.storage.session.remove(["ppf_src", "ppf_vault", "ppf_mode", "ppf_xfa"]);
@@ -113,11 +174,13 @@ function setupLangPanel(res) {
   // Render path — a PDF already filled by the popup (AcroForm).
   if (!s.ppf_filled) { showEmpty(); return; }
   try {
-    await renderAndDownload(b64ToBytes(s.ppf_filled), name);
-    // Offer the translated-labels panel for a standard (AcroForm) PDF too.
-    setupLangPanel({ labels: s.ppf_labels, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
+    const filled = b64ToBytes(s.ppf_filled);
+    await renderAndDownload(filled, name);
+    if (s.ppf_orig) setupOrigToggle(filled, b64ToBytes(s.ppf_orig), name);
+    // Offer the translated label+value panel for a standard (AcroForm) PDF too.
+    setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang });
   } catch (e) {
     stage.innerHTML = `<p style="color:#fff;padding:24px">Couldn't render the PDF: ${(e && e.message) || e}</p>`;
   }
-  chrome.storage.session.remove("ppf_filled");
+  chrome.storage.session.remove(["ppf_filled", "ppf_orig"]);
 })();

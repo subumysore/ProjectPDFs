@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — Viewer original/filled toggle, bilingual values & a real test suite (2026-07-20)
+- **"Show original form" toggle in the filled-PDF viewer:** the result view now keeps both
+  the original (blank) and filled bytes and switches between them (bar label + download link
+  follow), instead of only offering the filled download. Original comes from the pre-OCR
+  source (OCR path) or the stashed unfilled bytes (`ppf_orig`, AcroForm path).
+- **Bilingual side panel now shows VALUES, not just labels:** each row renders the field's
+  label AND the value that will fill it, both translated into the user's language (on-device);
+  per-string translation cache; the filled form itself still stays in the form's own language.
+  `fillPdfBytes` now returns label+value `pairs`. Panel is **resizable width-wise** (drag handle).
+- **Automated regression suite for the extension's pure-logic modules** — the scenarios
+  previously verified by hand are now `node --test` unit tests (`pnpm -r test` runs them):
+  `parse.test.mjs` (AAMVA US/CA, MRZ TD1/TD2/TD3, phone-vs-DLN, passport-authoritative),
+  `resolver.test.mjs` (semantic aliases, age-from-DOB, dependent DOB, SSN split, composites),
+  `profileMatch.test.mjs` (identity match by name+DOB), `forms.test.mjs` (W-2/W-4/W-9/I-9
+  recognition), `lang.test.mjs` (8-language detection). Added the missing `test` script to the
+  extension package so these run in CI. **42 tests green.** Corrected one stale vault test
+  (keys are intentionally extractable now — required for the session cache that survives MV3
+  service-worker eviction).
+
 ### Added — Extension capture, intelligent fill & desktop parity (2026-07-20)
 - **On-device ID/document capture (extension):** camera or image file → Tesseract OCR
   (shared worker, `tess.js`) → `parseFields` heuristics → review-and-save to vault.
