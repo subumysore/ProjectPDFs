@@ -4,17 +4,21 @@
 # and the vault you set up here survives across launches. Opens the remote-debugging
 # port so `deploy\dev-reload.mjs` can hot-reload the extension after every change.
 #
-# Usage:  .\deploy\dev-launch-chrome.ps1
+# Usage:  .\deploy\dev-launch-chrome.ps1                 # opens a blank tab
+#         .\deploy\dev-launch-chrome.ps1 -Url <pdf-url>  # optionally open a PDF to test against
 #
 # Chrome has no CLI to install an extension into an ALREADY-RUNNING browser, so this
 # starts its own instance. Your normal Chrome (bookmarks, tabs) is untouched.
+#
+# NOTE: nothing is auto-opened by default. Pass -Url only if you want a page loaded on
+# launch. The extension itself never contacts any external site (privacy invariant).
+param([string]$Url = "")
 
 $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ext  = Join-Path $root "apps\extension"
-$profile = Join-Path $env:LOCALAPPDATA "ppf-dev-chrome"   # persistent dev profile
+$profileDir = Join-Path $env:LOCALAPPDATA "ppf-dev-chrome"   # persistent dev profile
 $port = 9222
-$testUrl = "https://themodernfirm.com/wp-content/uploads/2017/12/Sample-Fillable-PDF.pdf"
 
 $chrome = @(
   "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
@@ -31,7 +35,7 @@ if ($busy) {
   return
 }
 
-if (-not (Test-Path $profile)) { New-Item -ItemType Directory -Force -Path $profile | Out-Null }
+if (-not (Test-Path $profileDir)) { New-Item -ItemType Directory -Force -Path $profileDir | Out-Null }
 
 # CRITICAL: both paths sit under a user folder with a SPACE ("Subramanya Mysore").
 # Chrome splits --user-data-dir=/--load-extension= at the space and silently ignores
@@ -39,7 +43,7 @@ if (-not (Test-Path $profile)) { New-Item -ItemType Directory -Force -Path $prof
 # paths (no spaces) so Chrome parses each flag as one argument.
 $fso = New-Object -ComObject Scripting.FileSystemObject
 $extShort  = $fso.GetFolder($ext).ShortPath
-$profShort = $fso.GetFolder($profile).ShortPath
+$profShort = $fso.GetFolder($profileDir).ShortPath
 
 $chromeArgs = @(
   "--user-data-dir=$profShort",
@@ -47,9 +51,9 @@ $chromeArgs = @(
   "--remote-debugging-port=$port",
   "--no-first-run",
   "--no-default-browser-check",
-  "--test-type",                       # suppresses the "unsupported flag" warning bubble
-  $testUrl
+  "--test-type"                        # suppresses the "unsupported flag" warning bubble
 )
+if ($Url) { $chromeArgs += $Url }      # only open a page if the caller explicitly asked for one
 Write-Host "Launching dev Chrome with the extension loaded from:" -ForegroundColor Cyan
 Write-Host "  $ext" -ForegroundColor Cyan
 Start-Process -FilePath $chrome -ArgumentList $chromeArgs
