@@ -763,7 +763,17 @@ async function fillPage(vault, tLabels) {
     fi++;
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
-    if (!pick || top < 1.5) continue; // require a full-phrase match — avoids false fills
+    if (!pick || top < 1.5) {
+      // Fall back to the field's SEMANTIC HTML type when the label is missing/unclear —
+      // a phone input is type="tel" (or autocomplete/inputmode tel); email is type="email".
+      const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+      if (el.type === "tel" || /\btel\b/.test(ac) || el.getAttribute("inputmode") === "tel") {
+        pick = CONCEPTS.find((c) => c.key === "phone");
+      } else if (el.type === "email" || /\bemail\b/.test(ac)) {
+        pick = CONCEPTS.find((c) => c.key === "email");
+      }
+      if (!pick) continue; // still nothing — require a real match to avoid false fills
+    }
     fields.push({ el, label, pick });
   }
 
