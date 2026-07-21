@@ -407,8 +407,23 @@ $("fill").onclick = async () => {
   if (!r.ok) return setMsg(r.error || "Locked", false);
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = (tab && tab.url) || "";
-  // A PDF open in the browser? Fill it on-device with pdf-lib and download the result.
-  if (/\.pdf(\?|#|$)/i.test(url)) return runPdfFlow(r, tab, url);
+  // A PDF open in the browser? Fill it on-device with pdf-lib and show the result.
+  if (/\.pdf(\?|#|$)/i.test(url)) {
+    // Filling starts from the ORIGINAL PDF re-fetched from its URL. Selections the user
+    // made in Chrome's OWN built-in PDF viewer live inside that plugin and are NOT
+    // readable by any extension — so they can't be merged and would be replaced. Warn
+    // FIRST (never silently discard manual work), and steer to the order that works:
+    // fill first, then complete the rest in the viewer that opens.
+    const notViewer = !/^chrome-extension:\/\/[a-z]+\/viewer\.html/i.test(url); // our own viewer is fine
+    if (notViewer && !confirm(
+      "Fill this form from your vault?\n\n" +
+      "This starts from the ORIGINAL form. Any changes you already made in the browser's " +
+      "PDF viewer (e.g. a dropdown choice or checkbox) can't be read by the extension and " +
+      "will NOT be kept.\n\n" +
+      "Tip: click Fill FIRST, then complete the remaining fields in the viewer that opens.",
+    )) return setMsg("Cancelled — nothing was changed.");
+    return runPdfFlow(r, tab, url);
+  }
   setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
 };
 

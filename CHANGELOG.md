@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Warn before a fill discards edits made in Chrome's PDF viewer (2026-07-21)
+- Filling re-fetches the ORIGINAL PDF from its URL (extensions cannot read the edited state
+  of Chrome's built-in PDF plugin — no API exists), so selections a user made in that viewer
+  were silently replaced. Filling a PDF now shows a **confirm** first, explaining the edits
+  can't be merged and recommending the order that works (fill first, then complete the rest in
+  the extension's own viewer). Our own viewer is exempt from the prompt. Also added a Download
+  tooltip: to keep fields completed on screen, use the PDF's own Save (the extension's Download
+  link saves the pre-edit filled bytes).
+
 ### Changed — Language panel UX + user-selectable fill language (ADR-0017) (2026-07-20)
 - **"View this page in my language" is now READ-ONLY** — it shows the form and the would-be
   values in your language and no longer FILLS the document (view-only path via `runPdfFlow(view)`;

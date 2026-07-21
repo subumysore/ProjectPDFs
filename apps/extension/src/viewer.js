@@ -224,6 +224,10 @@ function setupLangPanel(res) {
   const name = s.ppf_name || "filled.pdf";
   setupPanelResize();
   if (s.ppf_view) document.getElementById("barLabel").textContent = "🌐 Viewing this form in your language — the form is NOT filled";
+  // Manual edits made on screen live in Chrome's PDF plugin, which "Download PDF" (a blob
+  // of the pre-edit bytes) can't see. Tell the user to use the PDF's own Save for those.
+  const dlLink = document.getElementById("dl");
+  if (dlLink) dlLink.title = "Downloads the filled PDF. To keep fields you complete on screen, use the PDF viewer's own Save (💾) instead.";
 
   // OCR path — run the on-device OCR fill right here, streaming progress to the bar.
   if (s.ppf_mode === "ocr" && s.ppf_src) {
