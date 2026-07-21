@@ -774,8 +774,11 @@ function fillPage(vault, tLabels) {
     const parts = [el.placeholder, label, el.getAttribute("title")];
     const db = el.getAttribute("aria-describedby");
     if (db) db.split(/\s+/).forEach((id) => { const n = document.getElementById(id); if (n) parts.push(n.textContent); });
-    const box = el.closest("div, fieldset, li, section, td");
-    if (box) parts.push(box.textContent.slice(0, 400));
+    // The hint often sits in a sibling within the field's form-GROUP, not the input's
+    // immediate wrapper — search a form-group-like ancestor (falls back a few levels up).
+    const box = el.closest("[class*='form'], [class*='field'], [class*='group'], [class*='date'], fieldset, li, tr, section, td")
+      || (el.parentElement && el.parentElement.parentElement) || el.parentElement;
+    if (box) parts.push(box.textContent.slice(0, 500));
     const hay = parts.filter(Boolean).join(" ").toLowerCase();
     const m = hay.match(/(d{1,2}|m{1,3}|y{2,4})([\/.\- ])(d{1,2}|m{1,3}|y{2,4})\2(d{1,2}|m{1,3}|y{2,4})/);
     return m ? { tokens: [m[1], m[3], m[4]], sep: m[2] } : null;
