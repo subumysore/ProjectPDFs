@@ -745,31 +745,46 @@ function fillPage(vault, tLabels) {
   // then absorbs only the members NOT claimed here.
   const claimed = new Set(fields.filter((f) => f.pick.kind === "atom").map((f) => f.pick.key));
 
-  // Expand a 2-digit year in a slashed/dashed date (birth/expiry): "11/30/68" -> "11/30/1968".
-  const expandYear = (v) => {
-    const m = String(v).match(/^(\d{1,2})([\/.\-])(\d{1,2})\2(\d{2})$/);
-    if (!m) return v;
-    const yy = +m[4], cy = new Date().getFullYear() % 100;
-    return `${m[1]}${m[2]}${m[3]}${m[2]}${yy > cy ? 1900 + yy : 2000 + yy}`;
-  };
-  const toISO = (v) => {
-    const m = String(v).match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/); // assume MM/DD/YYYY
+  // Reformat a stored date (vault convention MM/DD/YYYY) to match what THIS field asks for.
+  // Many forms state the order in the placeholder/label — "dd/mm/yyyy", "DD-MMM-YYYY" — and
+  // <input type="date"> needs ISO. Honour it; non-date values pass through untouched.
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const parseVaultDate = (v) => {
+    const m = String(v).match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
     if (!m) return null;
-    let y = m[3]; if (y.length === 2) y = (+y > new Date().getFullYear() % 100 ? "19" : "20") + y;
-    return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+    const a = +m[1], b = +m[2]; let y = m[3];
+    const [month, day] = (a > 12 && b <= 12) ? [b, a] : [a, b]; // stored MM/DD; swap only if impossible
+    if (day > 31 || month > 12) return null;
+    if (y.length === 2) y = (+y > new Date().getFullYear() % 100 ? "19" : "20") + y;
+    return { day, month, year: +y };
   };
-  // Set a value in a way FRAMEWORKS honour: React/Angular ignore a plain `el.value =`,
-  // and date pickers are often readOnly. Use the native value setter, briefly clear
-  // readOnly, format for <input type="date">, and fire a full event sequence.
+  const detectDateFmt = (el, label) => {
+    const hay = `${el.placeholder || ""} ${label || ""} ${el.getAttribute("title") || ""}`.toLowerCase();
+    const m = hay.match(/(d{1,2}|m{1,3}|y{2,4})([\/.\- ])(d{1,2}|m{1,3}|y{2,4})\2(d{1,2}|m{1,3}|y{2,4})/);
+    return m ? { tokens: [m[1], m[3], m[4]], sep: m[2] } : null;
+  };
+  const formatDateForField = (value, el, label) => {
+    const dt = parseVaultDate(value);
+    if (!dt) return value; // not a date — leave as-is
+    const pad = (n, w) => String(n).padStart(w, "0");
+    if (el.type === "date") return `${dt.year}-${pad(dt.month, 2)}-${pad(dt.day, 2)}`;
+    const f = detectDateFmt(el, label);
+    if (f) return f.tokens.map((t) =>
+      /^d/.test(t) ? pad(dt.day, t.length)
+        : /^m{3}$/.test(t) ? MONTHS[dt.month - 1]
+          : /^m/.test(t) ? pad(dt.month, t.length)
+            : t.length === 2 ? String(dt.year).slice(-2) : String(dt.year)).join(f.sep);
+    return `${pad(dt.month, 2)}/${pad(dt.day, 2)}/${dt.year}`; // default: US MM/DD/YYYY, 4-digit year
+  };
+  // Set a value in a way FRAMEWORKS honour: React/Angular ignore a plain `el.value =`, and
+  // date pickers are often readOnly. Use the native value setter, briefly clear readOnly,
+  // and fire a full event sequence.
   const setFieldValue = (el, value) => {
-    let v = value;
-    if (el.type === "date") { const iso = toISO(value); if (!iso) return false; v = iso; }
-    else v = expandYear(value);
     const ro = el.readOnly; if (ro) el.readOnly = false;
     try { el.focus(); } catch (_) { /* ignore */ }
     const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const desc = Object.getOwnPropertyDescriptor(proto, "value");
-    if (desc && desc.set) desc.set.call(el, v); else el.value = v;
+    if (desc && desc.set) desc.set.call(el, value); else el.value = value;
     for (const t of ["keydown", "keypress", "input", "keyup", "change", "blur"]) el.dispatchEvent(new Event(t, { bubbles: true }));
     if (ro) el.readOnly = ro;
     return true;
@@ -786,6 +801,7 @@ function fillPage(vault, tLabels) {
     }
     if (!value) continue;
     if (pick.name && wantsInitial(label, el)) value = initial(value);
+    value = formatDateForField(value, el, label); // adapt dates to the field's requested format
     if (setFieldValue(el, value)) filled++;
   }
 
