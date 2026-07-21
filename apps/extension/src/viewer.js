@@ -83,7 +83,10 @@ function showEmpty(msg) {
   document.getElementById("main").style.display = "none"; // hide the empty embed
 }
 
+import { isTranslatableValue } from "./valuefmt.js";
+
 const LANG_NAMES = { en: "English", hi: "हिन्दी (Hindi)", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
+const LANG_SHORT = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" };
 
 // Bilingual side panel (Phase 3): a foreign-language form's labels translated into the
 // user's language, on demand (models load only when they click). The original document
@@ -110,18 +113,26 @@ function setupLangPanel(res) {
       const { translateText } = await import("./translate.js");
       const cache = {};
       const tr = async (t) => { if (!t) return ""; if (cache[t] === undefined) cache[t] = await translateText(t, from, to, (s) => (status.textContent = s)); return cache[t]; };
-      table.innerHTML = "<tr><th>Label</th><th>Value</th></tr>";
+      const oShort = LANG_SHORT[from] || from, tShort = LANG_SHORT[to] || to;
+      // Four columns: the original label + your-language label, then the actual value +
+      // its your-language rendering (verbatim for names/numbers, translated for phrases).
+      table.innerHTML =
+        `<tr><th>Label · ${oShort}</th><th>Label · ${tShort}</th><th>Value · ${oShort}</th><th>Value · ${tShort}</th></tr>`;
       let n = 0;
       for (const it of items) {
-        const [tl, tv] = [await tr(it.label), it.value ? await tr(it.value) : ""];
+        const tl = await tr(it.label);
+        const ov = it.value || "";
+        const tv = ov ? (isTranslatableValue(ov) ? await tr(ov) : ov) : "";
         const row = document.createElement("tr");
-        const b = document.createElement("td"); b.className = "tr"; b.textContent = tl; b.title = it.label;
-        const c = document.createElement("td"); c.className = "val"; c.textContent = tv; c.title = it.value || "";
-        row.append(b, c);
+        const a = document.createElement("td"); a.className = "orig"; a.textContent = it.label;
+        const b = document.createElement("td"); b.className = "tr"; b.textContent = tl;
+        const c = document.createElement("td"); c.className = "origval"; c.textContent = ov;
+        const d = document.createElement("td"); d.className = "val"; d.textContent = tv;
+        row.append(a, b, c, d);
         table.appendChild(row);
         n++;
       }
-      status.textContent = `✓ Translated ${n} field(s) — on-device. Values are shown for reference; the form is filled in ${LANG_NAMES[from] || from}.`;
+      status.textContent = `✓ Translated ${n} field(s) — on-device. Names & numbers are shown as-is (they don't translate); the form itself stays in ${LANG_NAMES[from] || from}.`;
     } catch (e) {
       status.textContent = "Translation failed: " + ((e && e.message) || e);
       go.disabled = false;

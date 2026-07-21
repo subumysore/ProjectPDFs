@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Bilingual panel: show original labels + stop mangling name/number values (2026-07-20)
+- **Original-language labels now shown alongside your language.** The side panel is now four
+  columns: **Label · <form lang> | Label · <your lang> | Value · <form lang> | Value · <your lang>**.
+- **Values are no longer machine-translated when they're names/numbers/IDs/emails/dates.** A field
+  value is the user's own data and is the same in every language; running proper nouns through the
+  MT model produced garbage (a dependent's name "Pranav Subramanya" was hallucinated into "Mexico";
+  a name was truncated to nonsense). New pure, unit-tested gate `valuefmt.isTranslatableValue`
+  translates only genuine word-phrases (e.g. "married", "self employed") and shows everything else
+  verbatim. `valuefmt.test.mjs` locks the behaviour (now 47 extension tests green).
+
 ### Fixed — Clean up benign camera console warning (2026-07-20)
 - **Removed the `autoplay` attribute from the scan `<video>`** so the @zxing barcode reader
   owns `play()`. With `autoplay`, the browser started playback first and zxing's
