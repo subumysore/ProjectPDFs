@@ -637,7 +637,7 @@ $("companionFill").onclick = async () => {
 // Runs in the page, reads only the DOM, sends nothing out. tLabels (optional) is an
 // array of English-translated field labels aligned to collectFillLabels(), used when the
 // form is in another language so the (English) ontology can match it.
-function fillPage(vault, tLabels) {
+async function fillPage(vault, tLabels) {
   const norm = (s) => (s || "").toString()
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])([0-9])/g, "$1 $2") // split camelCase / letter-digit
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -878,6 +878,55 @@ function fillPage(vault, tLabels) {
       sel.dispatchEvent(new Event("change", { bubbles: true }));
       filled++;
     }
+  }
+
+  // CUSTOM dropdowns (any framework — ng-select, mat-select, react-select, PrimeNG, or an
+  // ARIA combobox). We don't target a specific site: we detect a widget that BEHAVES like a
+  // chooser (standard roles / common widget roots), open it, then click the option whose
+  // VISIBLE TEXT matches the value. Only widgets that resolve to a concept + have a value are
+  // opened, so unrelated menus are never touched.
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const hosts = [...document.querySelectorAll(
+    'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"]',
+  )].filter((h) => h.tagName !== "SELECT" && !h.closest("select"));
+  const seen = new Set();
+  for (const h of hosts) {
+    if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
+    seen.add(h);
+    let pick = null, top = 0;
+    const label = labelOf(h);
+    for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
+    if (!pick || top < 1.5) continue;
+    const value = pick.kind === "composite"
+      ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
+      : atomVal(pick.key);
+    if (!value) continue;
+    const cands = [value]; const g = norm(value);
+    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
+    try {
+      const opener = h.querySelector('input, [role="combobox"], [class*="control"], [class*="selection"], [class*="toggle"], [class*="trigger"]') || h;
+      opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      opener.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      if (opener.click) opener.click();
+      opener.focus && opener.focus();
+      await wait(200); // let the option list render (overlays may attach to <body>)
+      const opts = [...document.querySelectorAll(
+        '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
+      )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
+      const opt = opts.find((o) => cands.some((cv) => optEq(o.textContent.trim(), cv)))
+        || opts.find((o) => cands.some((cv) => optEq((o.textContent || "").trim().split(/\n|\s{2,}/)[0], cv)));
+      if (opt) {
+        opt.scrollIntoView && opt.scrollIntoView({ block: "nearest" });
+        opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        opt.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        if (opt.click) opt.click();
+        filled++;
+        await wait(80);
+      } else {
+        document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        opener.blur && opener.blur();
+      }
+    } catch (_) { /* leave this widget alone on any error */ }
   }
   return filled;
 }
