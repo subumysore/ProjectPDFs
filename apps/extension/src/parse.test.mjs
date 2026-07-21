@@ -100,6 +100,14 @@ test("DL front OCR: EXP/ISS -> dl dates, no date digits misread as a phone", () 
   assert.equal(r.cell_phone, undefined); // a licence has no phone number
 });
 
+test("DL OCR: expiry/issue classified by year even when EXP/ISS markers are garbled", () => {
+  const dl = "DRIVER LICENSE\n1 DOE\n2 JOHN\n3 D0B 11/30/1968\n4b EXP 11/30/2029\n4a 1SS 03/16/2023\n11/30/68";
+  const r = map(parseFields(dl));
+  assert.equal(r.date_of_birth, "11/30/1968");
+  assert.equal(r.dl_expiry_date, "11/30/2029"); // future-dated
+  assert.equal(r.dl_issue_date, "03/16/2023");  // recent past, not the DOB
+});
+
 test("DL OCR: a fused CLASS letter is stripped from a name", () => {
   const r = map(parseFields("DRIVER LICENSE\n1 MYSORE\n2 SUBRAMANYA VISHWANATHANC\n9 CLASS C\n15 SEX M"));
   assert.equal(r.middle_name, "VISHWANATHAN");

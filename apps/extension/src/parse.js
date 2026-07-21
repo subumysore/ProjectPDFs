@@ -328,24 +328,26 @@ function idHeuristics(text, out, put) {
   const zip = (text || "").match(/\b(?:[A-Z]{2})?(\d{5})(?:-\d{4})?\b/);
   if (zip) put("zip", zip[1]);
 
-  // Date of birth: pick the date whose year is a plausible birth year (oldest wins).
+  // Classify the dates on a driver's licence by their YEAR — robust to messy OCR that
+  // garbles the "EXP"/"ISS" markers. DOB = oldest birth-plausible year; EXPIRY = a date in
+  // the FUTURE (licence validity); ISSUE = a recent PAST date that isn't the DOB. A cleanly
+  // read EXP/ISS marker takes priority when present. Keys are document-qualified (dl_*).
   const thisYear = new Date().getFullYear();
-  let bestDob = null;
-  let bestYear = Infinity;
-  for (const dm of (text || "").match(/\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/g) || []) {
-    const y = parseInt(dm.match(/(\d{2,4})$/)[1], 10);
-    const year = y < 100 ? (y > (thisYear % 100) ? 1900 + y : 2000 + y) : y;
-    if (year >= 1900 && year <= thisYear - 14 && year < bestYear) { bestYear = year; bestDob = dm; }
-  }
-  if (bestDob) put("date_of_birth", bestDob);
+  const yearOf = (dm) => { const y = +dm.match(/(\d{2,4})$/)[1]; return String(dm.match(/(\d{2,4})$/)[1]).length <= 2 ? (y > thisYear % 100 ? 1900 + y : 2000 + y) : y; };
+  const dates = ((text || "").match(/\b\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}\b/g) || []).map((dm) => ({ raw: dm, year: yearOf(dm) }));
+  const births = dates.filter((d) => d.year >= 1900 && d.year <= thisYear - 14).sort((a, b) => a.year - b.year);
+  if (births[0]) put("date_of_birth", births[0].raw);
+  const dob = births[0] && births[0].raw;
 
-  // Licence expiry / issue (front of a driver's licence): AAMVA markers 4b EXP / 4a ISS.
-  // Document-qualified keys (dl_*) so a passport's dates never overwrite them.
   const DATE = "(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4})";
-  const exp = text.match(new RegExp(`\\b(?:4b\\s*)?EXP\\b[^0-9]{0,8}${DATE}`, "i"));
-  if (exp) put("dl_expiry_date", exp[1]);
-  const iss = text.match(new RegExp(`\\b(?:4a\\s*)?ISS\\b[^0-9]{0,8}${DATE}`, "i"));
-  if (iss) put("dl_issue_date", iss[1]);
+  const expM = text.match(new RegExp(`\\bEXP\\b[^0-9]{0,8}${DATE}`, "i"));
+  const issM = text.match(new RegExp(`\\bISS\\b[^0-9]{0,8}${DATE}`, "i"));
+  const future = dates.filter((d) => d.year > thisYear).sort((a, b) => b.year - a.year);
+  const recentPast = dates.filter((d) => d.raw !== dob && d.year <= thisYear && d.year > thisYear - 20).sort((a, b) => b.year - a.year);
+  const expiry = (expM && expM[1]) || (future[0] && future[0].raw);
+  if (expiry) put("dl_expiry_date", expiry);
+  const issue = (issM && issM[1]) || (recentPast.find((d) => d.raw !== expiry) || {}).raw;
+  if (issue) put("dl_issue_date", issue);
 
   // OCR artifact cleanup: a driver's licence prints "CLASS <X>" (e.g. C) right beside the
   // name, and OCR can FUSE that class letter onto the end of a name ("VISHWANATHAN" -> the
