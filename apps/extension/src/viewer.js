@@ -201,7 +201,10 @@ function setupLangPanel(res) {
         const b = document.createElement("td"); b.className = "val"; b.textContent = it.value || "";
         row.append(a, b); table.appendChild(row);
       }
-      status.textContent = `This form is already in ${LANG_NAMES[from] || from}.`;
+      // Honest: from===to means we didn't detect a different language in the EXTRACTED text.
+      // That can mean it's genuinely your language OR its text couldn't be read (scanned / a
+      // legacy non-Unicode font like many Indian govt forms) — which needs OCR, not text MT.
+      status.textContent = `No translatable text was detected here — this form is already in ${LANG_NAMES[from] || from}, OR its text couldn't be read (scanned / non-standard font). On-device OCR translation for such forms is in progress.`;
       go.disabled = false; sel.disabled = false;
       return;
     }
@@ -273,7 +276,7 @@ function setupLangPanel(res) {
     else if (history.length > 1) history.back();
     else window.close();
   };
-  if (s.ppf_view) document.getElementById("barLabel").textContent = "🌐 Viewing this form in your language — the form is NOT filled";
+  if (s.ppf_view) document.getElementById("barLabel").textContent = "🌐 Language view (read-only) — the form is NOT filled";
   // Manual edits made on screen live in Chrome's PDF plugin, which "Download PDF" (a blob
   // of the pre-edit bytes) can't see. Tell the user to use the PDF's own Save for those.
   const dlLink = document.getElementById("dl");

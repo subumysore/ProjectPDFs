@@ -15,6 +15,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Universal language support: foundation + honest UX (2026-07-21) — RFC-0008 / ADR-0018
+- **The product must be language-AGNOSTIC** (polyglot), not a fixed 8-language list. First step:
+  `src/langcodes.js` — a registry mapping ISO → FLORES-200 (NLLB) → Tesseract pack, with
+  Unicode-range script detection covering all major scripts (Kannada, Tamil, Telugu, Malayalam,
+  Bengali, Gujarati, Punjabi, Odia, Sinhala, Devanagari, Arabic, CJK, Kana, Hangul, Thai, Hebrew,
+  Greek, Cyrillic…). Adding a language = one data row. Tested (`langcodes.test.mjs`).
+- **Honest viewer UX:** the language view no longer claims "Viewing this form in your language"
+  when nothing was translated; a form whose text can't be read (scanned / legacy non-Unicode font,
+  e.g. Karnataka govt Kannada forms) is reported as such instead of "already in English".
+- Design recorded: **RFC-0008** (universal support: NLLB-200 translation + dynamic Tesseract OCR
+  packs + render→OCR fallback for garbage text layers) and **ADR-0018** (language-agnostic engine).
+- PENDING (proof-gated, per RFC-0008): host NLLB + priority OCR packs on object storage; wire the
+  universal any→any translate + render→OCR fallback; validate in-browser on Kannada/CJK/RTL before
+  marking the capability done. Confirmed in this session: the Kannada form renders correctly in the
+  browser (so render→OCR is viable), and its text layer is legacy-font garbage (so OCR is required).
+
 ### Fixed — proximity result reached the viewer + passport issue date (2026-07-21)
 - **popup.js:** proximity-filled PDFs were flagged `xfa:true`, so the viewer fast-path rejected them
   and the OCR fallback re-filled from scratch — DISCARDING the proximity fill. Marital status, dates,
