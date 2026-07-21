@@ -674,10 +674,18 @@ if ($("licActivate")) {
     const m = $("licMsg"); m.className = "sub"; m.textContent = "Verifying on-device…";
     const { verifyLicense, saveLicenseToken, getDeviceId } = await import("./license.js");
     const ent = await verifyLicense(token, { deviceId: await getDeviceId() });
-    if (!ent.licensed) { m.className = "sub err"; m.textContent = ent.reason || "That token isn't valid."; return; }
+    if (!ent.licensed) {
+      m.className = "sub err"; m.textContent = ent.reason || "That token isn't valid.";
+      // Surface the REAL reason at the top too (the license box may be scrolled out of view),
+      // so a device-binding / expiry failure isn't mistaken for "nothing happened".
+      setMsg("License not activated: " + (ent.reason || "invalid token") + ". (A token is tied to the device ID shown in the License section — re-issue it for THIS device if you switched browsers/profiles.)", false);
+      return;
+    }
     await saveLicenseToken(token);
     $("licToken").value = "";
     m.className = "sub ok"; m.textContent = `Activated — ${TIER_LABEL[ent.tier] || ent.tier}${ent.subject ? " (" + ent.subject + ")" : ""}.`;
+    // Clear the stale Pro-gate error from the TOP bar and confirm there — this is the message the user sees.
+    setMsg(`Pro activated ✓ — ${TIER_LABEL[ent.tier] || ent.tier}. Translation & "View in my language" are unlocked; click the feature again.`);
     refreshLicenseUI();
   };
   $("licRemove").onclick = async () => {
