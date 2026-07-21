@@ -178,6 +178,18 @@ function setupLangPanel(res) {
 
   const render = async (to) => {
     go.disabled = true; sel.disabled = true;
+    // Translation = Pro (gating matrix). Verify the license on-device before translating.
+    try {
+      const { isPro } = await import("./license.js");
+      if (!(await isPro())) {
+        document.getElementById("lpNote").textContent =
+          "🔒 Reading a form in your language is a Pro feature.";
+        table.innerHTML = "";
+        status.innerHTML = 'Activate your license in the extension popup, or <a href="https://polyglotformfill.mooo.com/#pricing" target="_blank" style="color:#0a6a60">Get Pro →</a>';
+        go.disabled = false; sel.disabled = false;
+        return;
+      }
+    } catch (_) { /* if the check fails, fall through (fail-open is fine for a read-only view) */ }
     document.getElementById("lpNote").textContent =
       `This form is in ${LANG_NAMES[from] || from}. Reading it in ${LANG_NAMES[to] || to}: each label AND the value that fills it.`;
     if (to === from) {

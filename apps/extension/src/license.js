@@ -110,3 +110,13 @@ export async function getEntitlement() {
 export function hasFeature(entitlement, feature) {
   return !!entitlement && entitlement.licensed && entitlement.features.includes(feature);
 }
+
+// Tier gating (gating matrix: Translation & image fields = Pro; profiles/sync = Family).
+export const TIER_RANK = { free: 0, pro: 1, family: 2 };
+export function tierAtLeast(entitlement, minTier) {
+  return (TIER_RANK[entitlement && entitlement.tier] || 0) >= (TIER_RANK[minTier] || 0);
+}
+/** True if the current stored license is Pro or higher (verified on-device). */
+export async function isPro() {
+  return tierAtLeast(await getEntitlement(), "pro");
+}

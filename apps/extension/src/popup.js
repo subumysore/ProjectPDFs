@@ -256,6 +256,7 @@ $("bkFile").onchange = async () => {
 $("trBtn").onclick = async () => {
   const text = $("trIn").value;
   if (!text.trim()) return;
+  if (!(await ensurePro("On-device translation"))) return; // Translation = Pro
   $("trBtn").disabled = true;
   $("trOut").textContent = "loading…";
   try {
@@ -434,6 +435,7 @@ $("fill").onclick = async () => {
 $("imgFile").onchange = async () => {
   const file = $("imgFile").files && $("imgFile").files[0];
   if (!file) return;
+  if (!(await ensurePro("Photo / signature image fields"))) { $("imgFile").value = ""; return; } // images = Pro
   const key = ($("imgKey").value.trim() || "signature").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
   const dataUrl = await new Promise((res, rej) => {
     const r = new FileReader();
@@ -488,6 +490,7 @@ function restoreLabelsForView() {
 }
 
 $("viewLang").onclick = async () => {
+  if (!(await ensurePro("Reading a form in your language"))) return; // Translation = Pro
   const r = await readVault();
   const nativeLang = (r.ok && r.vault && r.vault.native_language) || "en";
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -527,6 +530,14 @@ $("restoreLang").onclick = async () => {
   $("restoreLang").classList.add("hidden");
   setMsg("Showing the original.");
 };
+
+// Gate a Pro-only feature. Returns true if licensed (Pro+); else shows an upsell and false.
+async function ensurePro(feature) {
+  const { isPro } = await import("./license.js");
+  if (await isPro()) return true;
+  setMsg(`🔒 ${feature} is a Pro feature. Activate your license below, or Get Pro → polyglotformfill.mooo.com/#pricing`, false);
+  return false;
+}
 
 // ---- Licensing (offline, ADR-0015/0011): paste the signed token from a Lemon Squeezy
 // purchase; verify it on-device against the embedded vendor public key. No phone-home.

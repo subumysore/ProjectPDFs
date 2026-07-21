@@ -15,6 +15,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Pro gating (Translation & image fields) + Lemon Squeezy setup guide (2026-07-21)
+- Gating matrix decided (owner): **Free** = autofill (web+PDF) + ID/passport scanning + 1 profile;
+  **Pro** = on-device translation + photo/signature fields; **Family** = profiles + sync.
+- Enforced on-device: `license.js` gains `tierAtLeast`/`isPro`; the popup gates "View in my
+  language", the translate tool, and image-field upload behind Pro; the viewer's language panel
+  shows a Pro upsell instead of translating when unlicensed. All verified locally (no phone-home).
+- `docs/launch/lemonsqueezy-setup.md`: step-by-step owner guide (products, variant IDs, webhook
+  secret, device-binding choice, deployment, PPP, and the store "in-app purchases" switch).
+
 ### Added — Extension offline licensing (Lemon Squeezy → on-device verify) (2026-07-21)
 - `apps/extension/src/license.js`: the JS counterpart of the Rust `core-license` crate — verifies
   a signed `PPDF1.…` token **on-device** with Web Crypto Ed25519 against the embedded vendor
