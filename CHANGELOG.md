@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — Language-panel resize now sticks (iframe-drag bug) (2026-07-20)
+- Dragging the panel's resize handle "stuck" / kept resizing after release because the PDF
+  `<iframe>` swallowed the mouse events, so the parent page never saw `mousemove`/`mouseup`.
+  The drag now disables the iframe's pointer events for its duration (and suppresses text
+  selection), and ends on `mouseup`/`blur`. Panel is `flex: 0 0 auto` so the set width holds.
+
 ### Changed — Filling no longer auto-downloads the PDF (2026-07-20)
 - The viewer used to auto-save the filled PDF to Downloads on every fill, piling up
   `…-filled (2).pdf`, `(3)`, … The result is now just **shown** in the interactive viewer;

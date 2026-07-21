@@ -73,23 +73,43 @@ function setupOrigToggle(filled, orig, name, origUrl) {
   };
 }
 
-// Drag-to-resize the language side panel (width only).
+// Drag-to-resize the language side panel (width only). The PDF is in an <iframe>: while
+// the pointer is over it, the iframe swallows mouse events so the parent never sees
+// mousemove/mouseup and the drag would "stick". We disable pointer events on the iframe
+// for the duration of the drag so every move/up reaches us, then restore them.
 function setupPanelResize() {
   const panel = document.getElementById("langpanel");
   const grip = document.getElementById("lpGrip");
+  const pdf = document.getElementById("pdf");
   if (!panel || !grip) return;
-  let startX = 0, startW = 0;
+  let startX = 0, startW = 0, dragging = false;
   const move = (e) => {
+    if (!dragging) return;
     const w = Math.min(820, Math.max(260, startW + (startX - e.clientX)));
     panel.style.width = w + "px";
+    e.preventDefault();
   };
-  const up = () => { grip.classList.remove("drag"); window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+  const up = () => {
+    if (!dragging) return;
+    dragging = false;
+    grip.classList.remove("drag");
+    if (pdf) pdf.style.pointerEvents = "";       // give the PDF its clicks back
+    document.body.style.userSelect = "";
+  };
   grip.addEventListener("mousedown", (e) => {
     e.preventDefault();
-    startX = e.clientX; startW = panel.getBoundingClientRect().width;
+    dragging = true;
+    startX = e.clientX;
+    startW = panel.getBoundingClientRect().width;
     grip.classList.add("drag");
-    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+    if (pdf) pdf.style.pointerEvents = "none";    // let move/up reach the parent page
+    document.body.style.userSelect = "none";      // no text selection while dragging
   });
+  // Listen for the whole document's lifetime (not add/removed per drag) so a mouseup
+  // that lands anywhere — including after the pointer briefly left the window — ends it.
+  window.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", up);
+  window.addEventListener("blur", up);            // window lost focus mid-drag → stop
 }
 
 function showEmpty(msg) {
