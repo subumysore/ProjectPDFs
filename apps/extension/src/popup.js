@@ -528,6 +528,44 @@ $("restoreLang").onclick = async () => {
   setMsg("Showing the original.");
 };
 
+// ---- Licensing (offline, ADR-0015/0011): paste the signed token from a Lemon Squeezy
+// purchase; verify it on-device against the embedded vendor public key. No phone-home.
+const TIER_LABEL = { free: "Free plan", pro: "Pro ✓", family: "Family ✓" };
+async function refreshLicenseUI() {
+  const { getEntitlement, getDeviceId } = await import("./license.js");
+  const dev = await getDeviceId();
+  const d = $("licDevice"); if (d) d.textContent = dev;
+  const ent = await getEntitlement();
+  const st = $("licStatus"); if (st) st.textContent = TIER_LABEL[ent.tier] || (ent.licensed ? "Licensed ✓" : "Free plan");
+  $("licRemove").classList.toggle("hidden", !ent.licensed);
+  $("licBuy").classList.toggle("hidden", !!ent.licensed);
+  if (!ent.licensed && ent.reason) { const m = $("licMsg"); m.className = "sub err"; m.textContent = ent.reason; }
+}
+if ($("licActivate")) {
+  $("licActivate").onclick = async () => {
+    const token = ($("licToken").value || "").trim();
+    if (!token) return;
+    const m = $("licMsg"); m.className = "sub"; m.textContent = "Verifying on-device…";
+    const { verifyLicense, saveLicenseToken, getDeviceId } = await import("./license.js");
+    const ent = await verifyLicense(token, { deviceId: await getDeviceId() });
+    if (!ent.licensed) { m.className = "sub err"; m.textContent = ent.reason || "That token isn't valid."; return; }
+    await saveLicenseToken(token);
+    $("licToken").value = "";
+    m.className = "sub ok"; m.textContent = `Activated — ${TIER_LABEL[ent.tier] || ent.tier}${ent.subject ? " (" + ent.subject + ")" : ""}.`;
+    refreshLicenseUI();
+  };
+  $("licRemove").onclick = async () => {
+    const { clearLicense } = await import("./license.js");
+    await clearLicense();
+    const m = $("licMsg"); m.className = "sub"; m.textContent = "License removed — back to Free.";
+    refreshLicenseUI();
+  };
+  $("licCopyDev").onclick = async () => {
+    try { await navigator.clipboard.writeText($("licDevice").textContent); const m = $("licMsg"); m.className = "sub ok"; m.textContent = "Device ID copied."; } catch (_) {}
+  };
+  refreshLicenseUI();
+}
+
 // Native language — a PROFILE field in the vault (spec: language-aware filling).
 function renderNativeLang(vault) {
   const sel = $("nativeLang");

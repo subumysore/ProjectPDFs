@@ -105,6 +105,24 @@
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
+        <div class="sub" style="margin-bottom: 6px">
+          <b>License</b> — <span id="licStatus">Free plan</span>. Unlock Pro by pasting the license
+          token from your purchase. Verified on-device — no account, no phone-home.
+        </div>
+        <div class="sub" style="margin-bottom: 4px">This device's ID (needed at checkout):
+          <code id="licDevice" style="font-size:11px;color:#0a6a60">…</code>
+          <button id="licCopyDev" style="padding:1px 6px;font-size:11px">copy</button>
+        </div>
+        <textarea id="licToken" placeholder="Paste your license token (PPDF1.…)" style="width:100%;height:52px;font:11px ui-monospace,monospace;box-sizing:border-box"></textarea>
+        <div class="row" style="margin-top:4px">
+          <button id="licActivate">Activate license</button>
+          <button id="licRemove" class="hidden">Remove license</button>
+          <a id="licBuy" href="https://polyglotformfill.mooo.com/#pricing" target="_blank" style="align-self:center;font-size:12px">Get Pro →</a>
+        </div>
+        <div class="sub" id="licMsg" style="margin-top:4px;min-height:14px"></div>
+      </div>
+
+      <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b>Backup / transfer</b> — encrypted with a passphrase you choose. Move the file to another device and import it.</div>
         <input id="bkPass" type="password" placeholder="backup passphrase (remember it!)" />
         <div class="row">

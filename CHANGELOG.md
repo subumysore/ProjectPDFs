@@ -15,6 +15,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Extension offline licensing (Lemon Squeezy → on-device verify) (2026-07-21)
+- `apps/extension/src/license.js`: the JS counterpart of the Rust `core-license` crate — verifies
+  a signed `PPDF1.…` token **on-device** with Web Crypto Ed25519 against the embedded vendor
+  PUBLIC key (matches the desktop `VENDOR_PUBLIC`). Checks expiry + per-install device binding
+  (ADR-0015, ADR-0011). No activation server, no phone-home — privacy invariant intact.
+  `getEntitlement()`/`hasFeature()` expose the tier + feature flags; `license.test.mjs` locks it
+  (genuine token accepted, wrong-device/tamper/garbage rejected). 58 extension tests green.
+- Popup **License** section: shows this device's ID (for checkout), paste-to-activate, status
+  badge, and remove — all offline. Storefront pipeline (`scripts/license/*`, Lemon Squeezy
+  `webhook.mjs`) already existed; this connects the extension to it.
+
 ### Added — "✕ Close" in the viewer returns to the original form (2026-07-21)
 - The generated filled/view page now has an explicit **✕ Close** button in the bar that leaves
   the view and goes **back to the original form** (its source URL; falls back to browser-back,
