@@ -50,7 +50,11 @@
       <button id="lpClose" title="Close this panel" aria-label="Close">✕</button>
       <h3 id="lpTitle">Read this form in your language</h3>
       <div class="note" id="lpNote"></div>
-      <label id="lpLangRow">Language:&nbsp;<select id="lpLang"></select></label>
+      <label id="lpLangRow">Read in:&nbsp;<select id="lpLang"></select></label>
+      <label id="lpOcrRow" style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12.5px;color:#55666f">
+        <input type="checkbox" id="lpOcr" style="width:auto;margin:0"> This form is scanned or uses a non-standard font (read it with OCR)
+      </label>
+      <label id="lpFromRow" hidden style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;color:#55666f">Form's language:&nbsp;<select id="lpFrom" style="flex:1;padding:6px;border:1px solid #cdd8d6;border-radius:6px;font:inherit"></select></label>
       <button id="lpGo">Translate the form's labels &amp; values</button>
       <div class="st" id="lpStatus"></div>
       <table id="lpTable"></table>

@@ -164,7 +164,9 @@ function setupLangPanel(res) {
     : ((res && res.labels) ? res.labels.map((l) => ({ label: l, value: "" })) : []);
   const panel = document.getElementById("langpanel");
   const panelToggle = document.getElementById("panelToggle");
-  if (!items.length) { if (panelToggle) panelToggle.hidden = true; return; }
+  // Show the panel if there are text-layer items OR we have the PDF bytes to OCR (scanned /
+  // legacy-font forms have no usable text layer but can still be read via OCR).
+  if (!items.length && !res.bytes) { if (panelToggle) panelToggle.hidden = true; return; }
   const from = res.formLang || "en";
   const native = res.nativeLang || "en";
 
@@ -188,6 +190,21 @@ function setupLangPanel(res) {
     .join("");
   sel.value = native;
 
+  // Source-language picker + OCR toggle — for scanned / legacy-font forms whose text layer is
+  // unusable (e.g. Karnataka govt Kannada forms). The user names the form's language; we render
+  // the pages, OCR in that script's pack, then translate. Only shown when we have the bytes.
+  const ocr = document.getElementById("lpOcr");
+  const fromRow = document.getElementById("lpFromRow");
+  const fromSel = document.getElementById("lpFrom");
+  const ocrRow = document.getElementById("lpOcrRow");
+  if (ocrRow) ocrRow.hidden = !res.bytes;
+  if (fromSel) {
+    const srcOrder = [from, ...Object.keys(LANG_NAMES).filter((l) => l !== from).sort((a, b) => (LANG_NAMES[a] || a).localeCompare(LANG_NAMES[b] || b))];
+    fromSel.innerHTML = srcOrder.map((l) => `<option value="${l}">${LANG_NAMES[l] || l}</option>`).join("");
+    fromSel.value = from;
+  }
+  if (ocr) ocr.onchange = () => { if (fromRow) fromRow.hidden = !ocr.checked; go.textContent = ocr.checked ? "Read with OCR & translate" : "Translate the form's labels & values"; };
+
   const status = document.getElementById("lpStatus");
   const table = document.getElementById("lpTable");
   const go = document.getElementById("lpGo");
@@ -206,6 +223,34 @@ function setupLangPanel(res) {
         return;
       }
     } catch (_) { /* if the check fails, fall through (fail-open is fine for a read-only view) */ }
+
+    // OCR PATH — scanned / legacy non-Unicode font form: render pages, OCR in the chosen source
+    // script's pack, then translate each line. This is how a Kannada (or any) form whose text
+    // layer is garbage becomes readable in your language. Fully on-device.
+    if (ocr && ocr.checked && res.bytes) {
+      const src = fromSel.value;
+      document.getElementById("lpNote").textContent = `Reading this ${LANG_NAMES[src] || src} form with on-device OCR, then translating to ${LANG_NAMES[to] || to}.`;
+      table.innerHTML = "";
+      try {
+        const { translateScannedPdf } = await import("./pdftranslate.js");
+        const doc = await translateScannedPdf(res.bytes, { to, from: src, onStatus: (m) => (status.textContent = m) });
+        table.innerHTML = `<tr><th>${LANG_SHORT[src] || src}</th><th>${LANG_SHORT[to] || to}</th></tr>`;
+        let n = 0;
+        for (const pg of doc.pages) for (const ln of pg.lines) {
+          if (!(ln.src || "").trim()) continue;
+          const row = document.createElement("tr");
+          const a = document.createElement("td"); a.className = "orig"; a.textContent = ln.src;
+          const b = document.createElement("td"); b.className = "tr"; b.textContent = ln.tr;
+          row.append(a, b); table.appendChild(row); n++;
+        }
+        status.textContent = n ? `✓ ${n} line(s) read & translated to ${LANG_NAMES[to] || to} — on-device.` : "OCR found no text on this form.";
+      } catch (e) {
+        status.textContent = "OCR translation failed: " + ((e && e.message) || e);
+      }
+      go.disabled = false; sel.disabled = false;
+      return;
+    }
+
     document.getElementById("lpNote").textContent =
       `This form is in ${LANG_NAMES[from] || from}. Reading it in ${LANG_NAMES[to] || to}: each label AND the value that fills it.`;
     if (to === from) {
@@ -342,7 +387,7 @@ function setupLangPanel(res) {
     setupOrigToggle(filled, s.ppf_orig ? b64ToBytes(s.ppf_orig) : null, name, s.ppf_url);
     // Offer the translated label+value panel for a standard (AcroForm) PDF too. In VIEW
     // mode (left = original form), auto-translate so the right shows it in your language.
-    setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang, autoTranslate: !!s.ppf_view });
+    setupLangPanel({ pairs: s.ppf_pairs, formLang: s.ppf_formLang, nativeLang: s.ppf_nativeLang, autoTranslate: !!s.ppf_view, bytes: s.ppf_orig ? b64ToBytes(s.ppf_orig) : filled });
   } catch (e) {
     stage.innerHTML = `<p style="color:#fff;padding:24px">Couldn't render the PDF: ${(e && e.message) || e}</p>`;
   }

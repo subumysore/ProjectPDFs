@@ -15,6 +15,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Viewer OCR-translate path for scanned / legacy-font forms (2026-07-21) — RFC-0008
+- The language panel now has a **"scanned / non-standard font (read with OCR)"** toggle and a
+  **source-language picker**. When on, the viewer renders each page, OCRs it in the chosen
+  script's Tesseract pack, translates every line via NLLB, and shows **source ↔ translation** —
+  the path for forms whose text layer is garbage (e.g. Karnataka govt Kannada forms). Engine
+  (`translateScannedPdf`, source-pack-aware) is fully wired to the UI.
+- Panel now opens even when a form has no usable text layer (so OCR is reachable).
+- NOTE: in-browser end-to-end needs the hosted NLLB + Tesseract packs (see
+  `docs/launch/universal-language-hosting.md`); validation on the Kannada form is the last gate.
+
 ### Added — Universal language support: foundation + honest UX (2026-07-21) — RFC-0008 / ADR-0018
 - **The product must be language-AGNOSTIC** (polyglot), not a fixed 8-language list. First step:
   `src/langcodes.js` — a registry mapping ISO → FLORES-200 (NLLB) → Tesseract pack, with
