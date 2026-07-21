@@ -242,6 +242,13 @@ function setupLangPanel(res) {
   ]);
   const name = s.ppf_name || "filled.pdf";
   setupPanelResize();
+  // ✕ Close — leave this generated view and return to the original form. Prefer the real
+  // source URL (back to where the form lives); else step back in history; else close the tab.
+  document.getElementById("closeViewer").onclick = () => {
+    if (s.ppf_url && /^(https?|file):/i.test(s.ppf_url)) window.location.href = s.ppf_url;
+    else if (history.length > 1) history.back();
+    else window.close();
+  };
   if (s.ppf_view) document.getElementById("barLabel").textContent = "🌐 Viewing this form in your language — the form is NOT filled";
   // Manual edits made on screen live in Chrome's PDF plugin, which "Download PDF" (a blob
   // of the pre-edit bytes) can't see. Tell the user to use the PDF's own Save for those.

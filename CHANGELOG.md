@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — "✕ Close" in the viewer returns to the original form (2026-07-21)
+- The generated filled/view page now has an explicit **✕ Close** button in the bar that leaves
+  the view and goes **back to the original form** (its source URL; falls back to browser-back,
+  then closing the tab).
+
 ### Fixed — Fill no longer pops open the translation panel (2026-07-21)
 - On "Fill this page" the bilingual panel opened automatically, showing the translated view
   the user didn't ask for. The panel now opens **only** in View mode ("View this page in my
