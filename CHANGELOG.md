@@ -15,6 +15,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Fixed — proximity result reached the viewer + passport issue date (2026-07-21)
+- **popup.js:** proximity-filled PDFs were flagged `xfa:true`, so the viewer fast-path rejected them
+  and the OCR fallback re-filled from scratch — DISCARDING the proximity fill. Marital status, dates,
+  and dropdowns silently vanished. Proximity results now route to the viewer.
+- **resolver.js:** the bare vault key `passport_issue` matched no alias (only `passport_expiry` did),
+  so "Date of issue" stayed blank while "Date of expiry" filled. Added `passport issue` aliases.
+
 ### Added — Proximity form-filling for opaque XFA / OCR'd PDFs (2026-07-21)
 - New reusable `src/pdfproximity.js`: fills PDFs whose AcroForm field names are meaningless
   (LiveCycle/XFA exports like `T2`, `RB3`, `emp_adr`) by matching each box to its nearest PRINTED

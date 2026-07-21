@@ -66,6 +66,13 @@ test("document-qualified dates: DL vs passport don't conflate", () => {
   assert.equal(one(v, "License Issue Date"), "03/16/2023");
 });
 
+test("bare vault keys passport_issue / passport_expiry map to a 'Date of issue/expiry' box", () => {
+  // Regression: the vault key `passport_issue` had no matching alias, so 'Date of issue' stayed blank.
+  const v = { passport_issue: "08/16/2021", passport_expiry: "08/15/2031" };
+  assert.equal(one(v, "Date of issue"), "08/16/2021");
+  assert.equal(one(v, "Date of expiry"), "08/15/2031");
+});
+
 test("marital status resolves (fills the field / ticks the right option checkbox)", () => {
   assert.equal(one({ marital_status: "Married" }, "Marital Status"), "Married");
   assert.equal(one({ marital_status: "Single" }, "Civil Status"), "Single");

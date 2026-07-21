@@ -76,7 +76,7 @@ export function resolveFields(vault, fields) {
     passport_type: ["passport type", "type of passport", "category of passport"],
     // Document-qualified dates (a DL, passport, and other IDs each have their OWN expiry).
     passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration"],
-    passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
+    passport_issue:  ["passport issue date", "passport issue", "passport issued", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
     dl_expiry:       ["dl expiry date", "driver license expiry date", "drivers license expiry date", "driving licence expiry date", "license expiry date", "licence expiry date", "license expiry", "licence expiry", "dl expiry", "dl exp", "license expiration date", "driver license expiration", "licence expiration"],
     dl_issue:        ["dl issue date", "driver license issue date", "drivers license issue date", "driving licence issue date", "license issue date", "licence issue date", "license issue", "licence issue", "dl issue", "licence valid from", "license valid from"],
     photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "profile picture", "profile pic", "profile image", "user photo", "user picture", "applicant photo", "applicant picture", "your photo", "your picture", "headshot", "photo id", "avatar", "portrait"],

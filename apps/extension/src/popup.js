@@ -403,7 +403,9 @@ async function runPdfFlow(r, tab, url, view = false) {
     // Trust the AcroForm layer only when it's a real, non-XFA form that actually
     // filled. XFA/LiveCycle hybrids (W-2/W-4/W-9) expose an unreliable AcroForm
     // shadow — OCR reads their true printed labels instead.
-    if (acro.filled && acro.bytes && !acro.xfa) {
+    // Proximity fills produce a real, viewable AcroForm result even though the form is XFA —
+    // route them to the viewer too (NOT the OCR fallback, which would discard them).
+    if (acro.filled && acro.bytes && (!acro.xfa || acro.proximity)) {
       // Fast path: matched by AcroForm field names. Show the result in the viewer,
       // passing the field labels + languages so the viewer can offer a translated
       // label+value side panel (view a foreign PDF in your language).
