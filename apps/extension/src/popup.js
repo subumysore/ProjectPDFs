@@ -771,6 +771,15 @@ async function fillPage(vault, tLabels) {
         pick = CONCEPTS.find((c) => c.key === "phone");
       } else if (el.type === "email" || /\bemail\b/.test(ac)) {
         pick = CONCEPTS.find((c) => c.key === "email");
+      } else {
+        // A NUMERIC EXAMPLE placeholder (e.g. "012345648382") on a short input is a phone
+        // number — unless the label indicates some OTHER number (reference/passport/PIN/…).
+        const ph = (el.placeholder || "").trim();
+        const ml = +el.getAttribute("maxlength") || 0;
+        const otherNumber = /reference|passport|\bpin\b|zip|postal|account|licen|national|aadhaar|\bssn\b|\btax\b|\bcard\b|\bid\b|otp|cvv/.test(norm(label));
+        if (/^[+(]?\d[\d\s()\-]{5,18}$/.test(ph) && (ml === 0 || (ml >= 7 && ml <= 20)) && !otherNumber) {
+          pick = CONCEPTS.find((c) => c.key === "phone");
+        }
       }
       if (!pick) continue; // still nothing — require a real match to avoid false fills
     }
