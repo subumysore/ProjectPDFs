@@ -121,6 +121,7 @@ function showEmpty(msg) {
 
 import { isTranslatableValue } from "./valuefmt.js";
 import { toScript } from "./translit.js";
+import { textLayerLooksBad } from "./langcodes.js";
 
 // Every language the engine supports (the registry), with native display names — so a reader
 // can view a form in ANY language, and pick ANY source language for a scanned/legacy-font form.
