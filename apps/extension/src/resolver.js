@@ -74,7 +74,7 @@ export function resolveFields(vault, fields) {
     passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
     dl_expiry:       ["dl expiry date", "driver license expiry date", "drivers license expiry date", "driving licence expiry date", "license expiry date", "licence expiry date", "license expiry", "licence expiry", "dl expiry", "dl exp", "license expiration date", "driver license expiration", "licence expiration"],
     dl_issue:        ["dl issue date", "driver license issue date", "drivers license issue date", "driving licence issue date", "license issue date", "licence issue date", "license issue", "licence issue", "dl issue", "licence valid from", "license valid from"],
-    photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "headshot", "photo id"],
+    photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "profile picture", "profile pic", "profile image", "user photo", "user picture", "applicant photo", "applicant picture", "your photo", "your picture", "headshot", "photo id", "avatar", "portrait"],
     signature: ["signature", "sign", "sign here", "signed", "autograph", "applicant signature"],
     // Document IMAGES to attach into a form (values are data:image URIs). Vault keys
     // drivers_license_image / passport_image map here; form labels asking to ATTACH a
