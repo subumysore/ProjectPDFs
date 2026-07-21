@@ -6,12 +6,7 @@
 //
 // The orchestration (dedupe + translate + reassemble) is a PURE function, `buildTranslationDoc`,
 // so it's unit-tested with a mock translator; the OCR/render glue wraps it.
-import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
-import { getTessWorker } from "./tess.js";
-import { translateText } from "./translate.js";
-import { detectLang } from "./lang.js";
-
-try { pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs"); } catch (_) { /* non-extension env (tests) */ }
+import { detectLang } from "./lang.js"; // node-safe; the browser-only deps are imported lazily below
 
 // Render a pdf.js page to a canvas at a given scale (higher = better OCR, slower).
 async function renderPage(page, scale) {
@@ -64,6 +59,11 @@ export async function buildTranslationDoc(pages, translateFn, to, from = "", onS
 
 // Full pipeline: OCR the PDF on-device, then translate. Uses buildTranslationDoc internally.
 export async function translateScannedPdf(bytes, { to = "en", from = "", onStatus = () => {} } = {}) {
+  // Browser-only deps loaded on demand (keeps the module node-importable for tests).
+  const pdfjsLib = await import("../vendor/pdfjs/pdf.min.mjs");
+  const { getTessWorker } = await import("./tess.js");
+  const { translateText } = await import("./translate.js");
+  try { pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs"); } catch (_) { /* ignore */ }
   const doc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
   const worker = await getTessWorker((s) => onStatus(s));
   const pages = [];
