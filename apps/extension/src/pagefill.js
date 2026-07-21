@@ -29,6 +29,7 @@ export async function fillPage(vault, tLabels) {
     marital:  ["marital status", "marital", "civil status", "relationship status", "marital state", "marital condition"],
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
+    appdate:  ["date of application", "application date", "today's date", "todays date", "current date", "date of submission", "submission date", "date signed", "signature date", "date of signature", "date of filling", "date filled", "dated", "date of declaration"],
     passport: ["passport", "passport no", "passport number"],
     passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration", "expiry date of passport"],
     passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
@@ -68,6 +69,7 @@ export async function fillPage(vault, tLabels) {
     if (key === "cellphone") return withCC(atoms.cellphone ?? anyPhone());
     if (key === "homephone") return withCC(atoms.homephone ?? anyPhone());
     if (key === "phone")     return withCC(anyPhone());
+    if (key === "appdate")   return atoms.appdate ?? (() => { const d = new Date(); return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`; })();
     return atoms[key];
   };
 

@@ -69,6 +69,7 @@ export function resolveFields(vault, fields) {
     marital:  ["marital status", "marital", "civil status", "relationship status", "marital state", "marital condition"],
     salutation: ["salutation", "title", "prefix", "honorific"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
+    appdate:  ["date of application", "application date", "today's date", "todays date", "current date", "date of submission", "submission date", "date signed", "signature date", "date of signature", "date of filling", "date filled", "dated", "date of declaration"],
     passport: ["passport", "passport no", "passport number"],
     // Document-qualified dates (a DL, passport, and other IDs each have their OWN expiry).
     passport_expiry: ["passport expiry date", "passport expiry", "passport expiration date", "passport expiration", "date of expiry", "expiry date", "expiration date", "expires", "valid until", "date of expiration"],
@@ -129,6 +130,8 @@ export function resolveFields(vault, fields) {
     if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
     return age >= 0 && age < 150 ? String(age) : null;
   };
+  // Today's date (MM/DD/YYYY) — for "Date of application / Today's date / Dated" fields.
+  const today = () => { const d = new Date(); return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`; };
   const atomVal = (key) => {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
@@ -138,6 +141,7 @@ export function resolveFields(vault, fields) {
     if (key === "phone")     return withCC(atoms.cellphone ?? atoms.phone ?? atoms.homephone);
     if (key === "age")           return atoms.age ?? ageFrom(atoms.dob);
     if (key === "dependent_age") return atoms.dependent_age ?? ageFrom(atoms.dependent_dob);
+    if (key === "appdate")       return atoms.appdate ?? today(); // default to today
     return atoms[key];
   };
 

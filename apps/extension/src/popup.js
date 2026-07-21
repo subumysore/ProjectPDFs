@@ -592,6 +592,10 @@ if ($("licActivate")) {
   $("licCopyDev").onclick = async () => {
     try { await navigator.clipboard.writeText($("licDevice").textContent); const m = $("licMsg"); m.className = "sub ok"; m.textContent = "Device ID copied."; } catch (_) {}
   };
+  // Auto-activate the moment a complete token is pasted — no need to hunt for the button.
+  $("licToken").addEventListener("input", () => {
+    if (/^PPDF1\.[\w-]+\.[\w-]+$/.test(($("licToken").value || "").replace(/\s+/g, ""))) $("licActivate").click();
+  });
   refreshLicenseUI();
 }
 

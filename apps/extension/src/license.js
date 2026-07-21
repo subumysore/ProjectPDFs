@@ -46,7 +46,9 @@ async function vendorKey() {
  * @returns {Promise<{licensed:boolean,tier:string,features:string[],subject:string,expires_at:number,reason:string}>}
  */
 export async function verifyLicense(token, { now = Math.floor(Date.now() / 1000), deviceId = "" } = {}) {
-  const t = (token || "").trim();
+  // A PPDF1 token contains NO whitespace, so strip any (line-wrapping when copied from chat/
+  // email inserts spaces/newlines INSIDE the token — the #1 cause of "invalid" on paste).
+  const t = (token || "").replace(/\s+/g, "");
   if (!t) return { ...FREE };
   const parts = t.split(".");
   if (parts.length !== 3 || parts[0] !== "PPDF1") return { ...FREE, reason: "Not a valid license token." };
@@ -92,7 +94,7 @@ export async function getDeviceId() {
 }
 
 export async function saveLicenseToken(token) {
-  await chrome.storage.local.set({ ppf_license: (token || "").trim() });
+  await chrome.storage.local.set({ ppf_license: (token || "").replace(/\s+/g, "") });
 }
 export async function clearLicense() {
   await chrome.storage.local.remove("ppf_license");

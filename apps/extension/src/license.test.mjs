@@ -36,6 +36,13 @@ test("a tampered payload does not verify", async () => {
   assert.equal(e.licensed, false);
 });
 
+test("a token with internal whitespace (line-wrapped on paste) still verifies", async () => {
+  const wrapped = TOKEN.slice(0, 40) + "\n  " + TOKEN.slice(40, 120) + " \n" + TOKEN.slice(120);
+  const e = await verifyLicense(wrapped, { deviceId: "demo-device" });
+  assert.equal(e.licensed, true);
+  assert.equal(e.tier, "pro");
+});
+
 test("garbage and empty are FREE, not crashes", async () => {
   assert.equal((await verifyLicense("")).licensed, false);
   assert.equal((await verifyLicense("not-a-token")).licensed, false);

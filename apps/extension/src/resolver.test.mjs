@@ -84,6 +84,16 @@ test("every option-checkbox concept pdffill relies on actually resolves (guards 
   }
 });
 
+test("application/today's-date fields default to today's date", () => {
+  const d = new Date();
+  const todayMDY = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+  assert.equal(one({}, "Date of Application"), todayMDY);
+  assert.equal(one({}, "Today's Date"), todayMDY);
+  assert.equal(one({}, "Dated"), todayMDY);
+  // must NOT hijack date of birth
+  assert.equal(one({ date_of_birth: "11/30/1968" }, "Date of Birth"), "11/30/1968");
+});
+
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {
   assert.equal(one({ first_name: "Asha" }, "Favourite Colour"), null);
 });
