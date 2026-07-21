@@ -98,7 +98,8 @@
     font-size:11px;font-family:var(--mono);letter-spacing:.06em;padding:3px 10px;border-radius:999px}
   .tier h3{margin:0;font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--teal-ink)}
   .price{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
-  .price span{font-size:14px;color:var(--muted);font-weight:500}
+  .price span:not(.ppp){font-size:14px;color:var(--muted);font-weight:500}
+  .price .ppp{font-size:inherit;font-weight:inherit;color:inherit;letter-spacing:inherit}
   .tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;font-size:14px;color:var(--muted)}
   .tier li::before{content:"✓ ";color:var(--teal-ink);font-weight:700}
 
@@ -214,23 +215,45 @@
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
-      <div class="price">$39 <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time / device</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 device · or $19/year</div>
+      <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time / device</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 device · or <span class="ppp" data-usd="9">$9</span>/year</div>
       <ul><li>Everything in Free</li><li><b>1 device</b></li><li><b>Up to 3 profiles</b></li><li>Make any PDF fillable (OCR)</li><li>Word &amp; Excel forms</li><li>Translated fill (language packs)</li><li>Signature &amp; photo placement</li><li>Encrypted backup &amp; transfer</li></ul>
     </div>
     <div class="tier">
       <h3>Family</h3>
-      <div class="price">$79 <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">up to 5 devices (~$16 each) · or $39/year</div>
+      <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">up to 5 devices (~<span class="ppp" data-usd="6">$6</span> each) · or <span class="ppp" data-usd="15">$15</span>/year</div>
       <ul><li>Everything in Pro, on <b>up to 5 devices</b></li><li><b>Up to 5 profiles</b></li><li>Manage the household's profiles from any device</li><li>Priority support</li></ul>
     </div>
   </div>
+  <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
+  <script>
+  (function(){
+    // Purchasing-power multipliers vs the US (~GDP-per-capita PPP), floored at 0.35.
+    var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+    var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+    function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+    fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+      var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+      if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+      if(f==null){ note("Prices shown in USD."); return; }
+      if(f<0.35)f=0.35;
+      if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+      document.querySelectorAll(".ppp").forEach(function(el){
+        var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+      });
+      note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    }).catch(function(){ note("Prices shown in USD."); });
+  })();
+  </script>
 
   <div style="margin-top:40px">
     <span class="eyebrow">For teams &amp; business</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Commercial — seat licenses, unlimited profiles</h2>
     <p class="sub">Per-seat annual licensing with volume pricing. Every seat gets all Pro features and
-      <b>unlimited profiles</b>; still fully on-device, still no phone-home. Central license issuance.</p>
+      <b>unlimited profiles</b> — and, like every tier, runs <b>entirely on each device with zero data
+      sent back to us</b>. Licenses are issued centrally to your admin and verified offline on each
+      device.</p>
     <div class="tiers">
       <div class="tier">
         <h3>Team</h3>

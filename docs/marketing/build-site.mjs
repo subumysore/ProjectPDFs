@@ -39,6 +39,21 @@ const privacy = readFileSync(join(dir, "privacy.html"), "utf8");
 writeFileSync(join(site, "index.html"), toDoc(landing));
 writeFileSync(join(site, "privacy", "index.html"), toDoc(privacy));
 
+// Keep the install page's version badges in sync with the ACTUAL builds — read the versions
+// from the extension manifest + the Tauri config and inject them (no manual drift per release).
+try {
+  const root = join(dir, "..", "..");
+  const extVer = JSON.parse(readFileSync(join(root, "apps", "extension", "manifest.json"), "utf8")).version;
+  const tauri = JSON.parse(readFileSync(join(root, "apps", "app", "src-tauri", "tauri.conf.json"), "utf8"));
+  const appVer = tauri.version || (tauri.package && tauri.package.version) || "0.0.0";
+  const installPath = join(site, "install", "index.html");
+  let html = readFileSync(installPath, "utf8");
+  html = html.replace(/(<span class="ver" data-ver="ext">)[^<]*(<\/span>)/, `$1v${extVer}$2`);
+  html = html.replace(/(<span class="ver" data-ver="app">)[^<]*(<\/span>)/, `$1v${appVer}$2`);
+  writeFileSync(installPath, html);
+  console.log(`install page versions injected — extension v${extVer}, desktop v${appVer}`);
+} catch (e) { console.warn("install-page version injection skipped:", e.message); }
+
 // A tiny 404 that sends visitors home.
 writeFileSync(
   join(site, "404.html"),
