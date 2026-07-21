@@ -901,8 +901,21 @@ async function fillPage(vault, tLabels) {
       ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
       : atomVal(pick.key);
     if (!value) continue;
-    const cands = [value]; const g = norm(value);
-    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
+    // Candidate strings to type/match: the value plus expansions (gender M->Male; common
+    // country abbreviations/demonyms -> the full country name a dropdown lists).
+    const cands = [String(value)]; const g = norm(value);
+    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("Male"); if (g === "f" || g === "female") cands.push("Female"); }
+    const COUNTRY = {
+      usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"],
+      uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], england: ["United Kingdom"],
+      uae: ["United Arab Emirates"], rok: ["South Korea"], prc: ["China"], drc: ["Democratic Republic of the Congo"],
+    };
+    if (COUNTRY[g]) cands.push(...COUNTRY[g]);
+    const n2 = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const optMatches = (o) => {
+      const ot = n2((o.textContent || "").trim());
+      return cands.some((cv) => { const c = n2(cv); return c && ot && (ot === c || (c.length >= 4 && ot.startsWith(c)) || (c.length >= 4 && ot.includes(c)) || (ot.length >= 4 && c.includes(ot))); });
+    };
     try {
       const opener = h.querySelector('input, [role="combobox"], [class*="control"], [class*="selection"], [class*="toggle"], [class*="trigger"]') || h;
       opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
@@ -910,11 +923,22 @@ async function fillPage(vault, tLabels) {
       if (opener.click) opener.click();
       opener.focus && opener.focus();
       await wait(200); // let the option list render (overlays may attach to <body>)
+      // If the widget has a search box, TYPE the best candidate to filter a long list.
+      const box = h.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio])')
+        || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
+      if (box) {
+        const typed = cands.slice().sort((a, b) => b.length - a.length)[0];
+        box.focus();
+        const setV = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+        setV.call(box, typed);
+        box.dispatchEvent(new Event("input", { bubbles: true }));
+        box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+        await wait(260);
+      }
       const opts = [...document.querySelectorAll(
         '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
       )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
-      const opt = opts.find((o) => cands.some((cv) => optEq(o.textContent.trim(), cv)))
-        || opts.find((o) => cands.some((cv) => optEq((o.textContent || "").trim().split(/\n|\s{2,}/)[0], cv)));
+      const opt = opts.find(optMatches) || (box && opts.length === 1 ? opts[0] : null);
       if (opt) {
         opt.scrollIntoView && opt.scrollIntoView({ block: "nearest" });
         opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
