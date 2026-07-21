@@ -37,7 +37,15 @@ export function resolveBundle(vault) {
 }
 
 export function resolveFields(vault, fields) {
-  const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // Normalise a label/field-name to space-separated lowercase WORDS. Split camelCase
+  // ("dateOfBirth" -> "date of birth") and letter/digit boundaries BEFORE lowercasing, so
+  // programmatic field names and abbreviations ("D.O.B." -> "d o b") match their aliases.
+  const norm = (s) => (s || "").toString()
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Za-z])([0-9])/g, "$1 $2")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
 
   const ALIASES = {
@@ -59,7 +67,7 @@ export function resolveFields(vault, fields) {
     phone:    ["phone", "telephone", "tel", "contact number", "phone number", "phone no", "contact no"],
     gender:   ["gender", "sex"],
     salutation: ["salutation", "title", "prefix", "honorific"],
-    dob:      ["date of birth", "dob", "birth date", "birthday", "born"],
+    dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     passport: ["passport", "passport no", "passport number"],
     photo:    ["photo", "photograph", "picture", "image", "passport photo", "profile photo", "headshot", "photo id"],
     signature: ["signature", "sign", "sign here", "signed", "autograph", "applicant signature"],

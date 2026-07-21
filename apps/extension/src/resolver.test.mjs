@@ -48,6 +48,15 @@ test("bundle: SSN splits into area/group/serial for boxed forms", () => {
   assert.equal(b.cityStateZip, "Springfield, IL 62704");
 });
 
+test("camelCase field names and dotted abbreviations resolve", () => {
+  const v = { date_of_birth: "11/30/68", first_name: "Asha" };
+  assert.equal(one(v, "dateOfBirth"), "11/30/68");
+  assert.equal(one(v, "DateOfBirth"), "11/30/68");
+  assert.equal(one(v, "D.O.B."), "11/30/68");
+  assert.equal(one(v, "DOB"), "11/30/68");
+  assert.equal(one(v, "firstName"), "Asha");
+});
+
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {
   assert.equal(one({ first_name: "Asha" }, "Favourite Colour"), null);
 });
