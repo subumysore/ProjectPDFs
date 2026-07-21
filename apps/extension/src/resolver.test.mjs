@@ -71,6 +71,19 @@ test("marital status resolves (fills the field / ticks the right option checkbox
   assert.equal(one({ marital_status: "Single" }, "Civil Status"), "Single");
 });
 
+test("every option-checkbox concept pdffill relies on actually resolves (guards against referenced-but-undefined)", () => {
+  // pdffill.userOptionValues resolves these to tick option checkboxes (gender/nationality/…).
+  // If a concept is missing (as 'marital status' was), the box silently never ticks.
+  const cases = {
+    salutation: "Mr", nationality: "Indian", country: "USA", state: "NC",
+    "marital status": "Married", gender: "M",
+  };
+  const vault = { salutation: "Mr", nationality: "Indian", country: "USA", state: "NC", marital_status: "Married", gender: "M" };
+  for (const label of Object.keys(cases)) {
+    assert.ok(one(vault, label), `option concept "${label}" must resolve, else its checkbox never ticks`);
+  }
+});
+
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {
   assert.equal(one({ first_name: "Asha" }, "Favourite Colour"), null);
 });
