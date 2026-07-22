@@ -5,6 +5,7 @@ import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFi
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
+import { parseAamva } from "@engine/parse.js";
 import { SignPad, type Stamp } from "./SignPad";
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
@@ -311,12 +312,37 @@ export function App() {
     setEditVal("");
     loadPoints(selected);
   }
+  // Read an ID/licence image. The BACK of a US/Canada licence is a PDF417 barcode carrying exact
+  // AAMVA data — try that first (no OCR guessing); otherwise OCR the printed FRONT. All on-device.
+  async function readIdBarcode(file: File): Promise<ExtractedField[]> {
+    try {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result as string);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      // Vendored zxing PDF417 reader (same engine the extension uses for the back of a licence).
+      const mod: any = await import("../../extension/vendor/zxing.bundle.mjs");
+      const result: any = await new mod.BrowserPDF417Reader().decodeFromImageUrl(dataUrl);
+      const text: string = result?.getText ? result.getText() : (result?.text ?? "");
+      return text ? (parseAamva(text) as ExtractedField[]) : [];
+    } catch {
+      return []; // no barcode in this image → fall back to OCR
+    }
+  }
   async function onDataSource(file: File) {
     setExtracted([]);
     setOcrPct(0);
     try {
-      const { fields } = await extractFromImage(file, setOcrPct);
+      // 1) PDF417 barcode (back of a licence) → exact AAMVA fields.
+      let fields = await readIdBarcode(file);
+      // 2) else OCR the printed side (front).
+      if (!fields.length) fields = (await extractFromImage(file, setOcrPct)).fields;
       setExtracted(fields);
+      if (!fields.length) {
+        setErr("Couldn’t read that image. For a driver’s licence: the BACK (barcode) gives exact data; or take a sharper, well-lit photo of the FRONT.");
+      }
     } catch (e) {
       setErr(String(e));
     }
