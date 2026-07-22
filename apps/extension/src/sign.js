@@ -159,17 +159,35 @@ function setupDrawing() {
 }
 
 async function download() {
-  $("dl").textContent = "Flattening…";
-  const overlays = {};
-  for (const [idx, c] of Object.entries(state.overlays)) {
-    // Non-empty pages only.
-    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
-    let any = false; for (let i = 3; i < d.length; i += 4) { if (d[i]) { any = true; break; } }
-    if (any) overlays[idx] = c.toDataURL("image/png");
+  const btn = $("dl");
+  const ready = "⬇ Download signed PDF";
+  btn.textContent = "Flattening…";
+  try {
+    const overlays = {};
+    for (const [idx, c] of Object.entries(state.overlays)) {
+      // Non-empty pages only.
+      const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+      let any = false; for (let i = 3; i < d.length; i += 4) { if (d[i]) { any = true; break; } }
+      if (any) overlays[idx] = c.toDataURL("image/png");
+    }
+    const out = await flattenOverlays(state.bytes, overlays);
+    const url = URL.createObjectURL(new Blob([out.slice()], { type: "application/pdf" }));
+    // Download via a SEPARATE, throwaway anchor. Reusing the `dl` button would re-fire its own
+    // onclick guard (which preventDefault()s and re-runs flatten) — an infinite "Flattening…"
+    // loop where nothing ever saves. A fresh anchor isn't intercepted.
+    const tmp = document.createElement("a");
+    tmp.href = url;
+    tmp.download = btn.getAttribute("download") || "signed.pdf";
+    document.body.appendChild(tmp);
+    tmp.click();
+    tmp.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    btn.textContent = ready;
+    toast("Saved — check your browser downloads.");
+  } catch (e) {
+    btn.textContent = ready;
+    toast("Save failed: " + ((e && e.message) || e));
   }
-  const out = await flattenOverlays(state.bytes, overlays);
-  const url = URL.createObjectURL(new Blob([out.slice()], { type: "application/pdf" }));
-  const a = $("dl"); a.href = url; a.textContent = "⬇ Download signed PDF"; a.click();
 }
 
 function wireToolbar() {
