@@ -127,6 +127,7 @@ impl Store {
                  profile_id  TEXT NOT NULL,
                  key         TEXT NOT NULL,
                  value_enc    BLOB NOT NULL,
+                 updated_at  INTEGER NOT NULL DEFAULT 0,
                  PRIMARY KEY(profile_id, key),
                  FOREIGN KEY(profile_id) REFERENCES profiles(id)
              );
@@ -164,6 +165,11 @@ impl Store {
                  PRIMARY KEY(instance_id, version_no, signer_public)
              );",
         )?;
+        // Add per-field timestamps to pre-existing data_points tables (for last-write-wins sync).
+        // Ignored if the column already exists.
+        let _ = self
+            .conn
+            .execute("ALTER TABLE data_points ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0", []);
         Ok(())
     }
 
@@ -336,15 +342,39 @@ impl Store {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
-    /// Insert or update a DataPoint for a Profile. The value is **sealed** before storage.
-    pub fn put_data_point(&self, profile_id: &str, dp: &DataPoint) -> Result<()> {
+    /// Insert or update a DataPoint for a Profile, stamping it `updated_at` (epoch secs) for
+    /// last-write-wins sync. The value is **sealed** before storage.
+    pub fn put_data_point_at(&self, profile_id: &str, dp: &DataPoint, updated_at: i64) -> Result<()> {
         let sealed = seal(&self.key, dp.value.as_bytes());
         self.conn.execute(
-            "INSERT INTO data_points(profile_id, key, value_enc) VALUES(?1, ?2, ?3)
-             ON CONFLICT(profile_id, key) DO UPDATE SET value_enc = excluded.value_enc",
-            params![profile_id, dp.key, sealed],
+            "INSERT INTO data_points(profile_id, key, value_enc, updated_at) VALUES(?1, ?2, ?3, ?4)
+             ON CONFLICT(profile_id, key) DO UPDATE SET value_enc = excluded.value_enc, updated_at = excluded.updated_at",
+            params![profile_id, dp.key, sealed, updated_at],
         )?;
         Ok(())
+    }
+
+    /// Back-compat convenience: upsert without an explicit timestamp (stamps 0). Prefer
+    /// [`put_data_point_at`] so the field participates in last-write-wins sync.
+    pub fn put_data_point(&self, profile_id: &str, dp: &DataPoint) -> Result<()> {
+        self.put_data_point_at(profile_id, dp, 0)
+    }
+
+    /// All DataPoints for a Profile with their `updated_at` (decrypted), ordered by key —
+    /// the input to last-write-wins reconciliation.
+    pub fn data_points_meta(&self, profile_id: &str) -> Result<Vec<(String, String, i64)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT key, value_enc, updated_at FROM data_points WHERE profile_id = ?1 ORDER BY key")?;
+        let rows = stmt.query_map(params![profile_id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, Vec<u8>>(1)?, r.get::<_, i64>(2)?))
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            let (key, enc, t) = r?;
+            out.push((key, self.decrypt(&enc)?, t));
+        }
+        Ok(out)
     }
 
     /// All DataPoints for a Profile (decrypted), ordered by key.

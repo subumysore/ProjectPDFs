@@ -135,17 +135,32 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
                 Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
             }
         }
-        // Write-through so the extension can act as a thin client over the ONE
-        // authoritative desktop vault (single source of truth).
+        // Vault WITH per-field timestamps — the input the extension needs for last-write-wins sync.
+        Some("getVaultMeta") => {
+            let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            match store.data_points_meta(pid) {
+                Ok(rows) => {
+                    let meta: serde_json::Map<String, serde_json::Value> = rows
+                        .into_iter()
+                        .map(|(k, v, t)| (k, json!({ "value": v, "updated_at": t })))
+                        .collect();
+                    json!({ "ok": true, "meta": meta })
+                }
+                Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+            }
+        }
+        // Write-through so the extension can act as a thin client over the ONE authoritative desktop
+        // vault. An `updatedAt` may be supplied (last-write-wins sync); otherwise it stamps 0.
         Some("upsertData") => {
             let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
             let key = req.get("key").and_then(|p| p.as_str()).unwrap_or("");
             let value = req.get("value").and_then(|p| p.as_str()).unwrap_or("");
+            let updated_at = req.get("updatedAt").and_then(|p| p.as_i64()).unwrap_or(0);
             if pid.is_empty() || key.is_empty() {
                 json!({ "ok": false, "error": "profileId and key are required" })
             } else {
                 let dp = core_store::DataPoint { key: key.to_string(), value: value.to_string() };
-                match store.put_data_point(pid, &dp) {
+                match store.put_data_point_at(pid, &dp, updated_at) {
                     Ok(()) => json!({ "ok": true }),
                     Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
                 }

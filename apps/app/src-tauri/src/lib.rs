@@ -247,7 +247,7 @@ fn upsert_data_point(
         .store
         .lock()
         .unwrap()
-        .put_data_point(&profile_id, &DataPoint { key, value })
+        .put_data_point_at(&profile_id, &DataPoint { key, value }, now_secs())
         .map_err(|e| e.to_string())
 }
 

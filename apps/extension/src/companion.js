@@ -31,3 +31,42 @@ export function migrationPlan(localVault, desktopVault, state) {
     .filter((k) => desk[k] === undefined || desk[k] === "")
     .map((key) => ({ key, value: local[key] }));
 }
+
+/**
+ * Reconcile two vaults by LAST-WRITE-WINS per field so both converge with nothing lost.
+ * Each side is `{ key: { value, updated_at } }` (updated_at = epoch secs; missing → 0).
+ * Returns the writes each side must apply:
+ *   - `toLocal`  : `{ key: { value, updated_at } }` the extension applies to its own vault
+ *   - `toRemote` : `{ key: { value, updated_at } }` the extension pushes to the desktop vault
+ *
+ * Per key: present on one side → copy to the other; present on both → the greater `updated_at`
+ * wins; on an exact timestamp tie with differing values, the remote (desktop) value wins so the
+ * result is deterministic. A side that already holds the winning value gets no write.
+ */
+export function reconcileVaults(local, remote) {
+  local = local || {};
+  remote = remote || {};
+  const toLocal = {};
+  const toRemote = {};
+  const keys = new Set([...Object.keys(local), ...Object.keys(remote)]);
+  for (const k of keys) {
+    const L = local[k];
+    const R = remote[k];
+    const lt = (L && L.updated_at) || 0;
+    const rt = (R && R.updated_at) || 0;
+    if (L && !R) {
+      toRemote[k] = { value: L.value, updated_at: lt };
+    } else if (R && !L) {
+      toLocal[k] = { value: R.value, updated_at: rt };
+    } else if (L && R) {
+      if (lt > rt) {
+        toRemote[k] = { value: L.value, updated_at: lt };
+      } else if (rt > lt) {
+        if (R.value !== L.value) toLocal[k] = { value: R.value, updated_at: rt };
+      } else if (L.value !== R.value) {
+        toLocal[k] = { value: R.value, updated_at: rt }; // deterministic tie-break: remote wins
+      }
+    }
+  }
+  return { toLocal, toRemote };
+}

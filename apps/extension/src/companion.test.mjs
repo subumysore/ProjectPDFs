@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { shouldUseDesktopVault, migrationPlan } from "./companion.js";
+import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./companion.js";
 
 test("shouldUseDesktopVault: true only when the companion ping succeeds", () => {
   assert.equal(shouldUseDesktopVault({ ok: true }), true);
@@ -41,4 +41,37 @@ test("migrationPlan: does not run when already migrated, locked, or empty", () =
   assert.deepEqual(migrationPlan({}, {}, { migrated: false, unlocked: true }), []);
   assert.deepEqual(migrationPlan(null, {}, { migrated: false, unlocked: true }), []);
   assert.deepEqual(migrationPlan({ a: "1" }, {}, null), []);
+});
+
+test("reconcileVaults: fields on only one side copy to the other (no loss)", () => {
+  const { toLocal, toRemote } = reconcileVaults(
+    { first_name: { value: "SUBRAMANYA", updated_at: 10 } },
+    { email: { value: "a@b.com", updated_at: 5 } },
+  );
+  assert.deepEqual(toRemote, { first_name: { value: "SUBRAMANYA", updated_at: 10 } });
+  assert.deepEqual(toLocal, { email: { value: "a@b.com", updated_at: 5 } });
+});
+
+test("reconcileVaults: newer timestamp wins on conflict", () => {
+  // local newer → push local to remote, nothing back
+  let r = reconcileVaults({ email: { value: "new@b.com", updated_at: 20 } }, { email: { value: "old@b.com", updated_at: 10 } });
+  assert.deepEqual(r.toRemote, { email: { value: "new@b.com", updated_at: 20 } });
+  assert.deepEqual(r.toLocal, {});
+  // remote newer → pull remote to local, nothing pushed
+  r = reconcileVaults({ email: { value: "old@b.com", updated_at: 10 } }, { email: { value: "new@b.com", updated_at: 20 } });
+  assert.deepEqual(r.toLocal, { email: { value: "new@b.com", updated_at: 20 } });
+  assert.deepEqual(r.toRemote, {});
+});
+
+test("reconcileVaults: identical values need no writes; equal-timestamp tie → remote wins", () => {
+  assert.deepEqual(reconcileVaults({ a: { value: "x", updated_at: 5 } }, { a: { value: "x", updated_at: 5 } }), { toLocal: {}, toRemote: {} });
+  const r = reconcileVaults({ a: { value: "L", updated_at: 5 } }, { a: { value: "R", updated_at: 5 } });
+  assert.deepEqual(r.toLocal, { a: { value: "R", updated_at: 5 } });
+  assert.deepEqual(r.toRemote, {});
+});
+
+test("reconcileVaults: missing timestamps treated as 0 (older than any real edit)", () => {
+  const r = reconcileVaults({ a: { value: "L" } }, { a: { value: "R", updated_at: 3 } });
+  assert.deepEqual(r.toLocal, { a: { value: "R", updated_at: 3 } }); // remote (t=3) beats local (t=0)
+  assert.deepEqual(r.toRemote, {});
 });
