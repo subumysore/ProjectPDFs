@@ -928,7 +928,7 @@ fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<Str
 /// The published extension id to auto-register on first run. Empty until the
 /// extension ships to a store; set it (or drop the id in `companion-extension-id.txt`
 /// under the app-data dir) to have the installer/app register the companion for you.
-const COMPANION_EXTENSION_ID: &str = "";
+const COMPANION_EXTENSION_ID: &str = "ikocicibacolgmamehagnpcgfabcamfk";
 
 /// Auto-register the companion on startup (idempotent). Uses the compiled id, else an
 /// `companion-extension-id.txt` file in the app-data dir. Best-effort, never fatal.
