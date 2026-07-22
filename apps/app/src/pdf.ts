@@ -1,6 +1,6 @@
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-import { PDFDocument, PDFTextField, PDFName, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFTextField, PDFRadioGroup, PDFCheckBox, PDFDropdown, PDFName, StandardFonts, rgb } from "pdf-lib";
 import { resolveFields, resolveBundle } from "./fill/resolver";
 import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
@@ -62,6 +62,57 @@ export async function renderPage(
   const ctx = canvas.getContext("2d");
   if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
   return { width: viewport.width, height: viewport.height, numPages: doc.numPages };
+}
+
+// One reviewable/editable form field for the "review before you finalize" step.
+export interface ReviewField {
+  name: string;                 // the PDF field name (stable key)
+  label: string;                // human label (tooltip → name)
+  kind: "text" | "radio" | "check" | "dropdown";
+  value: string;                // current value ("" / "Off" when empty/unchecked)
+  options?: string[];           // for radio / dropdown
+}
+
+// List every AcroForm field with its current value so the user can REVIEW and EDIT what was filled
+// before finalizing (nothing is auto-committed silently). Returns [] for flat/scanned PDFs.
+export async function listReviewFields(bytes: ArrayBuffer): Promise<ReviewField[]> {
+  const pdf = await PDFDocument.load(bytes);
+  const out: ReviewField[] = [];
+  for (const f of pdf.getForm().getFields()) {
+    const name = f.getName();
+    if (f instanceof PDFTextField) {
+      out.push({ name, label: fieldTooltip(f) || name, kind: "text", value: f.getText() ?? "" });
+    } else if (f instanceof PDFRadioGroup) {
+      out.push({ name, label: name, kind: "radio", value: f.getSelected() ?? "", options: f.getOptions() });
+    } else if (f instanceof PDFCheckBox) {
+      out.push({ name, label: name, kind: "check", value: f.isChecked() ? "Yes" : "Off" });
+    } else if (f instanceof PDFDropdown) {
+      out.push({ name, label: name, kind: "dropdown", value: (f.getSelected() ?? [])[0] ?? "", options: f.getOptions() });
+    }
+  }
+  return out;
+}
+
+// Apply the user's edited values back into the PDF's form fields and re-export. Only fields the
+// user actually changed need be passed; the rest keep their filled values.
+export async function applyReviewEdits(
+  bytes: ArrayBuffer,
+  edits: Record<string, string>,
+): Promise<Uint8Array> {
+  const pdf = await PDFDocument.load(bytes);
+  const form = pdf.getForm();
+  for (const [name, value] of Object.entries(edits)) {
+    let f;
+    try { f = form.getField(name); } catch { continue; }
+    try {
+      if (f instanceof PDFTextField) f.setText(value);
+      else if (f instanceof PDFRadioGroup) { if (value) f.select(value); }
+      else if (f instanceof PDFCheckBox) { if (value === "Yes") f.check(); else f.uncheck(); }
+      else if (f instanceof PDFDropdown) { if (value) f.select(value); }
+    } catch { /* skip a value that doesn't fit this field */ }
+  }
+  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
+  return pdf.save();
 }
 
 function normalize(s: string): string {

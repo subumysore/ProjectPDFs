@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
-import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage } from "./pdf";
+import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
@@ -80,6 +80,9 @@ export function App() {
   const [guideUrl, setGuideUrl] = useState<string | null>(null);
   const [guideMsg, setGuideMsg] = useState("");
   const [signing, setSigning] = useState(false);
+  const [reviewFields, setReviewFields] = useState<ReviewField[]>([]);
+  const [reviewEdits, setReviewEdits] = useState<Record<string, string>>({});
+  const [reviewName, setReviewName] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -550,6 +553,36 @@ export function App() {
     }
   }
 
+  // Load the editable review of what was filled, so the user can CHECK and CORRECT values
+  // before finalizing (nothing is silently committed).
+  async function loadReview(bytes: ArrayBuffer, name: string) {
+    try {
+      const fields = await listReviewFields(bytes);
+      setReviewFields(fields);
+      setReviewEdits({});
+      setReviewName(name);
+    } catch {
+      setReviewFields([]);
+    }
+  }
+  // Re-apply the user's edits into the PDF, re-export, re-render, and update the saved version.
+  async function applyReview() {
+    if (!pdfBytes || Object.keys(reviewEdits).length === 0) return;
+    try {
+      const data = await applyReviewEdits(pdfBytes, reviewEdits);
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      setPdfBytes(ab);
+      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
+      downloadBytes(data, "filled.pdf");
+      await loadReview(ab, reviewName);
+      const filled = (await listReviewFields(ab)).filter((f) => f.value && f.value !== "Off").length;
+      await persistFilled(reviewName || "form", filled, reviewFields.length, data);
+      setPdfMsg("Applied your edits — re-exported filled.pdf and updated the saved version (on-device).");
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+
   // The automatic pipeline: fill existing fields, else detect + create + fill.
   async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean, formName: string) {
     const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
@@ -563,7 +596,8 @@ export function App() {
         setPdfBytes(ab);
         if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
         downloadBytes(existing.data, "filled.pdf");
-        setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; exported filled.pdf.`);
+        setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; exported filled.pdf. Review & correct the values below before you finalize.`);
+        await loadReview(ab, formName);
         await persistFilled(formName, existing.filled, existing.total, existing.data);
         return;
       }
@@ -584,7 +618,8 @@ export function App() {
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
       downloadBytes(data, "filled.pdf");
-      setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; exported filled.pdf.`);
+      setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; exported filled.pdf. Review & correct the values below before you finalize.`);
+      await loadReview(ab, formName);
       await persistFilled(formName, filled, created, data);
     } catch (e) {
       setErr(String(e));
@@ -1090,6 +1125,50 @@ export function App() {
               <span style={{ fontSize: 12, color: "#8a8f92", marginLeft: 8 }}>
                 pen colour &amp; size · undo · move/resize placed images
               </span>
+            </div>
+          )}
+          {reviewFields.length > 0 && (
+            <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 12, marginTop: 8 }}>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>Review &amp; edit the filled form</div>
+              <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+                Check every value before you finalize — nothing is committed silently. Fix anything wrong
+                (e.g. a mis-detected option), then <b>Apply changes</b> to re-export and update the saved copy.
+              </p>
+              <div style={{ maxHeight: 300, overflow: "auto" }}>
+                <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+                  <tbody>
+                    {reviewFields.map((f) => {
+                      const cur = reviewEdits[f.name] ?? f.value;
+                      const set = (v: string) => setReviewEdits((e) => ({ ...e, [f.name]: v }));
+                      return (
+                        <tr key={f.name} style={{ borderBottom: "1px solid #eef2f4" }}>
+                          <td style={{ padding: "5px 8px", width: "42%", ...mono }}>{f.label}</td>
+                          <td style={{ padding: "5px 8px" }}>
+                            {f.kind === "radio" || f.kind === "dropdown" ? (
+                              <select value={cur} onChange={(e) => set(e.currentTarget.value)} style={{ padding: 4, minWidth: 160 }}>
+                                <option value="">(none)</option>
+                                {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            ) : f.kind === "check" ? (
+                              <input type="checkbox" checked={cur === "Yes"} onChange={(e) => set(e.currentTarget.checked ? "Yes" : "Off")} />
+                            ) : (
+                              <input value={cur} onChange={(e) => set(e.currentTarget.value)} style={{ padding: "4px 6px", width: "100%", boxSizing: "border-box" }} />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
+                <button onClick={applyReview} disabled={Object.keys(reviewEdits).length === 0} style={{ fontWeight: 600 }}>
+                  Apply changes &amp; re-export
+                </button>
+                <span style={{ fontSize: 12, color: "#8a8f92" }}>
+                  {Object.keys(reviewEdits).length} change(s) pending · {reviewFields.length} field(s)
+                </span>
+              </div>
             </div>
           )}
           {officeFilled && (

@@ -15,6 +15,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Desktop: review & edit the filled form before finalizing (2026-07-22)
+- After a form is filled, the desktop now shows an **editable review** of every AcroForm field
+  (text / radio / checkbox / dropdown) with its current value. The user can **correct anything**
+  (e.g. a mis-detected marital-status option, a wrong passport number) and **Apply changes** to
+  re-export `filled.pdf` and update the saved version — nothing is committed silently, and empty
+  fields are shown as empty, never fabricated. New `pdf.ts` `listReviewFields` / `applyReviewEdits`;
+  acceptance `features/review-before-finalize.feature`. (Closes the desktop gap vs the extension's
+  editable viewer.)
+
+### Added — Shared vault gated on desktop unlock (2026-07-22)
+- The extension can use the shared vault only while the **desktop app is unlocked**. The app writes a
+  heartbeat unlock sentinel (`app-session.flag`, refreshed every 30 s, cleared on lock/startup); the
+  `native-host` refuses all vault ops except `ping` unless the sentinel is fresh (≤120 s) —
+  `dispatch_gated`/`session_fresh`/`is_fresh`, +3 host unit tests (now 6). Resolves the open
+  locked-vault decision (privacy-first).
+
 ### Changed — Single vault is now AUTOMATIC (extension ⇄ desktop, no toggle) (2026-07-22)
 - The extension and desktop app now share **one vault automatically**: whenever the desktop app's
   companion bridge is reachable, the desktop's encrypted vault is the single source of truth and the
