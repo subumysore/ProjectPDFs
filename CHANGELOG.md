@@ -15,6 +15,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Desktop: filled/signed PDFs saved straight to your Desktop (2026-07-22)
+- Filled, signed, OCR-detected, re-downloaded, and Office-exported PDFs now save to the user's actual
+  **Desktop** (unique names, never clobbering), not the browser Downloads folder. New Tauri
+  `save_to_desktop` (`desktop_dir()` → Documents → home → app-data fallback); all `App.tsx` export
+  points route through a `saveOut` helper that shows the exact path and falls back to a browser
+  download if the Desktop write fails.
+
+### Fixed — Extension: sign tool stuck on "Flattening…"; Kannada viewer TDZ crash (2026-07-22)
+- Sign tool never saved: the Download `<a>` re-fired its own onclick (preventDefault + re-flatten) in
+  an infinite loop — now downloads via a separate anchor inside try/catch.
+- "View in my language" crashed on Kannada/scanned forms ("Cannot access 'go' before initialization")
+  — the bad-text-layer branch used `go` before its `const`; hoisted the lookups.
+
+### Known issue — Translation/OCR models are not hosted (2026-07-22)
+- `translateText` (both apps) and OCR language packs fetch models from a host that now returns **404**
+  (old Oracle pre-authenticated URL expired; current host doesn't serve `/models`). Until the ~500 MB
+  NLLB + Tesseract packs are re-hosted at a reachable URL and the model-base constants are updated,
+  translation cannot run. Desktop translation is also not yet wired into the UI. Models exist locally
+  in `apps/app/models-staging/`.
+
 ### Fixed — Desktop release build now produces installers (2026-07-22)
 - Root-caused a reproducible `E0786` "corrupt `app_lib` metadata" that blocked every desktop release
   build. It was **not** path/Defender/leftovers: the on-device **translation models (~1.3 GB) sitting

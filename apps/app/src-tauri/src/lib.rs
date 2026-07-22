@@ -762,6 +762,43 @@ fn open_submit_url(url: String) -> Result<String, String> {
     }
 }
 
+/// Save a filled/signed PDF straight to the user's Desktop (on-device), with a safe, unique
+/// filename. Returns the full path so the UI can tell the user exactly where it landed.
+#[tauri::command]
+fn save_to_desktop(app: tauri::AppHandle, bytes: Vec<u8>, filename: String) -> Result<String, String> {
+    // Prefer the real Desktop; fall back to Documents, then home, then app-data.
+    let dir = app
+        .path()
+        .desktop_dir()
+        .or_else(|_| app.path().document_dir())
+        .or_else(|_| app.path().home_dir())
+        .or_else(|_| app.path().app_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    // Sanitize the base name and force a .pdf extension.
+    let raw = filename.trim();
+    let stem: String = std::path::Path::new(raw)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("filled")
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '-' })
+        .collect();
+    let stem = stem.trim().trim_matches('-');
+    let stem = if stem.is_empty() { "filled" } else { stem };
+
+    // Avoid clobbering an existing file: name, name (1), name (2), …
+    let mut path = dir.join(format!("{stem}.pdf"));
+    let mut n = 1;
+    while path.exists() {
+        path = dir.join(format!("{stem} ({n}).pdf"));
+        n += 1;
+    }
+    std::fs::write(&path, &bytes).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 /// Download a web-hosted form on-device (SSRF-guarded, size-capped) and return its
 /// raw bytes to the UI, which runs the same auto-fill pipeline. Inbound only — the
 /// user directs the download; no user content goes up.
@@ -970,6 +1007,7 @@ pub fn run() {
             form_signatures,
             open_submit_url,
             download_form,
+            save_to_desktop,
             guide_video,
             web_search,
             register_companion,

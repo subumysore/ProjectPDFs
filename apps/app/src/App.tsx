@@ -80,6 +80,7 @@ export function App() {
   const [savedMsg, setSavedMsg] = useState("");
   const [guideUrl, setGuideUrl] = useState<string | null>(null);
   const [guideMsg, setGuideMsg] = useState("");
+  const [savedPath, setSavedPath] = useState("");
   const [signing, setSigning] = useState(false);
   const [reviewFields, setReviewFields] = useState<ReviewField[]>([]);
   const [reviewEdits, setReviewEdits] = useState<Record<string, string>>({});
@@ -250,8 +251,8 @@ export function App() {
     try {
       const buf = (await invoke("saved_form_pdf", { instanceId: f.instance_id, versionNo: f.version_no })) as ArrayBuffer;
       const bytes = new Uint8Array(buf instanceof ArrayBuffer ? buf : (buf as ArrayBufferLike));
-      downloadBytes(bytes, `${f.name.replace(/\.[^.]+$/, "") || "form"}-filled.pdf`);
-      setSavedMsg(`Re-downloaded “${f.name}” (version ${f.version_no}).`);
+      await saveOut(bytes, `${f.name.replace(/\.[^.]+$/, "") || "form"}-filled`);
+      setSavedMsg(`Re-downloaded “${f.name}” (version ${f.version_no}) to your Desktop.`);
     } catch (e) {
       setErr(String(e));
     }
@@ -455,7 +456,7 @@ export function App() {
       const pab = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
       setPdfBytes(pab);
       if (canvasRef.current) await renderFirstPage(pab, canvasRef.current);
-      downloadBytes(pdf, "filled.pdf");
+      await saveOut(pdf, "filled");
       setPdfMsg(
         `Exported a PDF from the filled ${kind} (on-device, content export). It’s previewed below and can be signed/submitted like any PDF.`,
       );
@@ -579,6 +580,20 @@ export function App() {
     }
   }
 
+  // Save a filled/signed PDF to the user's DESKTOP (on-device), falling back to a browser
+  // download if that fails. Records the exact path so the UI can point the user to it.
+  async function saveOut(data: Uint8Array, name: string): Promise<string | null> {
+    try {
+      const path = await invoke<string>("save_to_desktop", { bytes: Array.from(data), filename: name });
+      setSavedPath(path);
+      return path;
+    } catch (e) {
+      downloadBytes(data, name.toLowerCase().endsWith(".pdf") ? name : name + ".pdf");
+      setErr(`Couldn’t save to your Desktop (${String(e)}) — saved to your Downloads folder instead.`);
+      return null;
+    }
+  }
+
   // Load the editable review of what was filled, so the user can CHECK and CORRECT values
   // before finalizing (nothing is silently committed).
   async function loadReview(bytes: ArrayBuffer, name: string) {
@@ -599,7 +614,7 @@ export function App() {
       const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-      downloadBytes(data, "filled.pdf");
+      await saveOut(data, reviewName || "filled");
       await loadReview(ab, reviewName);
       const filled = (await listReviewFields(ab)).filter((f) => f.value && f.value !== "Off").length;
       await persistFilled(reviewName || "form", filled, reviewFields.length, data);
@@ -621,8 +636,8 @@ export function App() {
         ) as ArrayBuffer;
         setPdfBytes(ab);
         if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-        downloadBytes(existing.data, "filled.pdf");
-        setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; exported filled.pdf. Review & correct the values below before you finalize.`);
+        await saveOut(existing.data, formName || "filled");
+        setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; saved to your Desktop. Review & correct the values below before you finalize.`);
         await loadReview(ab, formName);
         await persistFilled(formName, existing.filled, existing.total, existing.data);
         return;
@@ -643,8 +658,8 @@ export function App() {
       const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-      downloadBytes(data, "filled.pdf");
-      setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; exported filled.pdf. Review & correct the values below before you finalize.`);
+      await saveOut(data, formName || "filled");
+      setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; saved to your Desktop. Review & correct the values below before you finalize.`);
       await loadReview(ab, formName);
       await persistFilled(formName, filled, created, data);
     } catch (e) {
@@ -656,7 +671,7 @@ export function App() {
     const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
     try {
       const { filled, total, data } = await fillAndExport(pdfBytes, vault);
-      downloadBytes(data, "filled.pdf");
+      await saveOut(data, "filled");
       setPdfMsg(
         total === 0
           ? "No AcroForm fields in this PDF (flat/scanned) — use “Make fillable” below to create them."
@@ -687,8 +702,8 @@ export function App() {
       const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-      downloadBytes(data, "detected-filled.pdf");
-      setPdfMsg(`${note} Created ${created}, filled ${filled} from the vault; exported detected-filled.pdf.`);
+      await saveOut(data, "detected-filled");
+      setPdfMsg(`${note} Created ${created}, filled ${filled} from the vault; saved to your Desktop.`);
     } catch (e) {
       setErr(String(e));
     }
@@ -752,12 +767,12 @@ export function App() {
           pdfBytes={pdfBytes}
           stamps={stamps}
           onClose={() => setSigning(false)}
-          onExport={(bytes) => {
-            downloadBytes(bytes, "signed.pdf");
+          onExport={async (bytes) => {
+            await saveOut(bytes, `${reviewName || "form"}-signed`);
             const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
             setPdfBytes(ab);
             if (canvasRef.current) renderFirstPage(ab, canvasRef.current).catch(() => {});
-            setPdfMsg("Signed / annotated — flattened into the PDF and saved as signed.pdf (on-device).");
+            setPdfMsg("Signed / annotated — flattened into the PDF and saved to your Desktop.");
             setSigning(false);
           }}
         />
@@ -799,6 +814,15 @@ export function App() {
       {err && (
         <p style={{ color: "#9a2c2c", cursor: "pointer" }} onClick={() => setErr("")}>
           {err} (click to dismiss)
+        </p>
+      )}
+      {savedPath && (
+        <p
+          style={{ background: "#e2f2f0", color: "#0a6a60", borderRadius: 8, padding: "8px 10px", fontSize: 13, cursor: "pointer", margin: "6px 0" }}
+          title="Click to dismiss"
+          onClick={() => setSavedPath("")}
+        >
+          📄 Saved to your Desktop: <b style={mono}>{savedPath}</b>
         </p>
       )}
 
