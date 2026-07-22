@@ -15,6 +15,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Changed — Desktop app: SPA → step-by-step tabs (2026-07-22)
+- The desktop app (`apps/app`) is no longer a single long scroll. It is now a **tabbed, step-by-step
+  workflow** matching how a user actually proceeds: **1 · Profile → 2 · Vault (Key/Values) →
+  3 · Forms to fill → 4 · Past forms**. Non-Profile tabs stay disabled until a profile is selected,
+  with an inline "start here" hint.
+- The **Forms** tab exposes all four form sources in one place, clearly labelled: **on this device**,
+  a **network location** (`\\server\share` / mapped drive, via the OS file dialog), a **web URL**
+  (downloaded on-device, SSRF-guarded), and **search the web** (DuckDuckGo, the one labelled egress).
+- New **Past forms** tab surfaces the encrypted, versioned on-device save of the last filled form
+  (version count, save count, sign state) — the reading end of the existing save/version flow.
+- Privacy wording clarified on every tab: *"on-device" means private, not local-only* — nothing you
+  bring or fill is uploaded; only a web search's typed terms leave the device.
+
 ### Added — Viewer OCR-translate path for scanned / legacy-font forms (2026-07-21) — RFC-0008
 - The language panel now has a **"scanned / non-standard font (read with OCR)"** toggle and a
   **source-language picker**. When on, the viewer renders each page, OCRs it in the chosen

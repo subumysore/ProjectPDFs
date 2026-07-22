@@ -6,6 +6,7 @@ import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
 import { translateText } from "./translate";
+import { resolveFields } from "./fill/resolver"; // shared semantic engine (composes full_name, etc.)
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
@@ -121,6 +122,8 @@ export function App() {
   const [deviceId, setDeviceId] = useState("");
   const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
   const [licKey, setLicKey] = useState("");
+  // Step-based tabs instead of one long scrolling page.
+  const [tab, setTab] = useState<"profile" | "vault" | "forms" | "history">("profile");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -259,7 +262,20 @@ export function App() {
     if (!selected || !form) return;
     setSaved(null);
     guard(
-      invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then(setAutofill),
+      invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then((res) => {
+        // The catalog fill matches ontology keys EXACTLY. Enrich any it left empty using the SHARED
+        // semantic resolver against the vault — so `full_name` composes from first_name+last_name,
+        // `email`/`dob`/etc. resolve by meaning, and the vault actually fills the form.
+        const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+        const filled = res.filled.map((f) => {
+          if (f.value != null && f.value !== "") return f;
+          const v =
+            resolveFields(vault, [{ label: f.name }])[0] ??
+            resolveFields(vault, [{ label: f.ontology_key }])[0];
+          return v ? { ...f, value: String(v) } : f;
+        });
+        setAutofill({ ...res, filled });
+      }),
     );
   }
   // Silent capture: when the user answers a field the vault didn't have, save it to
@@ -760,6 +776,20 @@ export function App() {
         </p>
       )}
 
+      <nav style={{ display: "flex", gap: 4, margin: "10px 0 6px", borderBottom: "2px solid #e6eeec", flexWrap: "wrap" }}>
+        {([["profile", "1 · Profile"], ["vault", "2 · Vault"], ["forms", "3 · Forms to fill"], ["history", "4 · Past forms"]] as const).map(([id, label]) => {
+          const locked = id !== "profile" && !selected;
+          return (
+            <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
+              style={{ padding: "9px 16px", border: "none", borderBottom: tab === id ? "3px solid #0d8f83" : "3px solid transparent", background: "none", fontWeight: tab === id ? 700 : 500, fontSize: 14, color: tab === id ? "#0a6a60" : "#55666f", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>
+              {label}
+            </button>
+          );
+        })}
+      </nav>
+      {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>Start here: create or pick a profile — the other steps unlock once one is selected.</p>}
+
+      {tab === "profile" && (
       <section style={cardStyle}>
         <h2 style={h2Style}>1 · Profiles</h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -791,8 +821,9 @@ export function App() {
           <button onClick={addProfile}>Add profile</button>
         </div>
       </section>
+      )}
 
-      {selected && (
+      {tab === "vault" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -926,7 +957,7 @@ export function App() {
         </section>
       )}
 
-      {selected && !locked && (
+      {tab === "vault" && selected && !locked && (
         <section style={cardStyle}>
           <h2 style={h2Style}>Backup &amp; transfer (encrypted)</h2>
           <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
@@ -978,8 +1009,13 @@ export function App() {
         </section>
       )}
 
+      {tab === "forms" && selected && (<>
       <section style={cardStyle}>
-        <h2 style={h2Style}>3 · Find a form (on-device search)</h2>
+        <h2 style={h2Style}>3 · Pick a known form (from our built-in catalog)</h2>
+        <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+          Forms we've already mapped, so fields land in exactly the right spot. Searched locally — no internet.
+          Don't see yours? Use <b>“Bring any form”</b> below to open a file or fetch one from a link.
+        </p>
         <input
           placeholder="Search forms by name or tag (e.g. passport, kyc, identity)…"
           value={query}
@@ -1095,9 +1131,15 @@ export function App() {
 
       {selected && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>5 · Fill a Form (on-device)</h2>
+          <h2 style={h2Style}>5 · Bring any form — a file, a network location, a link, or a web search</h2>
+          <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
+            Any PDF / image / Word / Excel — from <b>your device</b>, a <b>network location</b> (shared
+            drive / <code>\\server\share</code>), a <b>web link</b>, or by <b>searching the web</b>.
+            Whatever you bring is <b>downloaded and filled right here on your machine</b> — <i>“on-device” means private,
+            not local-only</i>. Nothing you bring or fill is ever uploaded.
+          </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <label style={{ fontSize: 13, opacity: 0.8 }}>Open a form from this device:</label>
+            <label style={{ fontSize: 13, opacity: 0.8 }}>Open a form from this device or a network location:</label>
             <input
               type="file"
               accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
@@ -1249,6 +1291,28 @@ export function App() {
         </div>
         {companionMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{companionMsg}</p>}
       </section>
+      </>)}
+
+      {tab === "history" && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>4 · Past filled forms</h2>
+          <p style={{ color: "#55666f", fontSize: 13, marginTop: 0 }}>
+            Every form you <b>Save</b> (in the Forms tab) is kept here as an encrypted, versioned copy —
+            entirely on your device. Re-open, re-download, or sign any past version.
+          </p>
+          {saved ? (
+            <div style={{ border: "1px solid #eef2f4", borderRadius: 8, padding: 12 }}>
+              <div style={{ fontWeight: 600 }}>{form?.name ?? "Last saved form"}</div>
+              <div style={{ fontSize: 13, color: "#0a6a60", ...mono }}>
+                version {saved.version_no} · {saved.saves} save(s) · encrypted on-device
+                {signInfo ? ` · ✓ signed (doc ${signInfo.doc_hash.slice(0, 10)}…)` : ""}
+              </div>
+            </div>
+          ) : (
+            <p style={{ opacity: 0.6, fontSize: 13 }}>No saved forms yet. Fill a form in the Forms tab and click <b>Save (new version)</b>.</p>
+          )}
+        </section>
+      )}
     </main>
   );
 }

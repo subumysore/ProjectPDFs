@@ -3,7 +3,19 @@
 _What is in flight RIGHT NOW. Update at the start and end of every work session. Convert relative dates
 to absolute._
 
-## Current focus (2026-07-20) — Extension capture + intelligent fill + desktop parity
+## Current focus (2026-07-22) — Desktop UX: SPA → step-by-step tabs
+- **Just shipped (2026-07-22):** the desktop app (`apps/app/src/App.tsx`) was converted from one long
+  scrolling SPA into a **tabbed workflow**: **1 · Profile → 2 · Vault → 3 · Forms to fill →
+  4 · Past forms** (`tab` state + `<nav>`; non-Profile tabs gated on a selected profile). The Forms
+  tab now presents all four sources — **device / network location (`\\server\share`) / web URL /
+  web search** — with privacy wording fixed ("on-device" = private, not local-only). New **Past forms**
+  tab reads the encrypted versioned save. `npm run typecheck` + `npm run build` green.
+- **Still needs a LIVE runtime pass:** after reboot the app/dev server are not running and the vault is
+  re-locked (session state). Keyboard injection into WebView2 fails from scripts, so the passphrase
+  (`omganesha`) must be typed by the user — the end-to-end tabbed walkthrough capture is the last gate,
+  to be done WITH the user (they type; I drive clicks + PrintWindow capture). See [[desktop-parity-shared-engine]].
+
+## Prior focus (2026-07-20) — Extension capture + intelligent fill + desktop parity
 - **Just shipped (2026-07-20 late):** viewer **"Show original form" toggle** (both blank +
   filled bytes retained; `ppf_orig`); bilingual side panel now shows **translated VALUES**
   alongside labels (`fillPdfBytes` returns `pairs`) and is **width-resizable**; **automated

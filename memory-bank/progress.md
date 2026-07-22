@@ -2,6 +2,13 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Working (verified) — 2026-07-22 desktop tabs
+- **Desktop app is now tabbed** (Profile → Vault → Forms → Past forms), not a scrolling SPA. Tab
+  gating (profile required), four labelled form sources (device / network location / URL / web
+  search), and a Past-forms panel. Verified by `npm run typecheck` + `npm run build` (green).
+- **Left:** live end-to-end walkthrough capture of the tabs in the running app (blocked on the user
+  typing the vault passphrase — WebView2 rejects synthetic keystrokes; to be done together).
+
 ## Working (verified) — 2026-07-20 extension/desktop iteration
 - **ID capture (extension):** camera/image → OCR → profile fields; **PDF417 back-of-licence
   barcode → exact AAMVA fields** (validated end-to-end in a loaded extension: 11 exact fields).
