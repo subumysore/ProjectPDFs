@@ -5,6 +5,7 @@ import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFi
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
+import { translateText } from "./translate";
 import { parseAamva } from "@engine/parse.js";
 import { SignPad, type Stamp } from "./SignPad";
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
@@ -85,6 +86,8 @@ export function App() {
   const [reviewFields, setReviewFields] = useState<ReviewField[]>([]);
   const [reviewEdits, setReviewEdits] = useState<Record<string, string>>({});
   const [reviewName, setReviewName] = useState("");
+  const [viewLang, setViewLang] = useState<Record<string, string>>({});
+  const [transStatus, setTransStatus] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -602,8 +605,28 @@ export function App() {
       setReviewFields(fields);
       setReviewEdits({});
       setReviewName(name);
+      setViewLang({});
+      setTransStatus("");
     } catch {
       setReviewFields([]);
+    }
+  }
+  // Translate the filled form's field LABELS into the user's language — a READ-ONLY reading aid,
+  // fully on-device (models served locally via the ppfmodel scheme). The saved form is untouched.
+  async function translateReview() {
+    if (baseLang === "en") { setTransStatus("The form’s labels are already in your language (English)."); return; }
+    setViewLang({});
+    setTransStatus("Loading the on-device translation model (the first run can take a minute)…");
+    try {
+      const map: Record<string, string> = {};
+      for (const f of reviewFields) {
+        if (!f.label) continue;
+        map[f.name] = await translateText(f.label, "en", baseLang, setTransStatus);
+        setViewLang({ ...map });
+      }
+      setTransStatus(`Labels translated to ${LANGS[baseLang] || baseLang} — on-device. Reading aid only; the saved form stays in its original language.`);
+    } catch (e) {
+      setTransStatus("Translation failed: " + String(e));
     }
   }
   // Re-apply the user's edits into the PDF, re-export, re-render, and update the saved version.
@@ -1184,6 +1207,12 @@ export function App() {
                 Check every value before you finalize — nothing is committed silently. Fix anything wrong
                 (e.g. a mis-detected option), then <b>Apply changes</b> to re-export and update the saved copy.
               </p>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", flexWrap: "wrap" }}>
+                <button onClick={translateReview} disabled={baseLang === "en"}>
+                  🌐 {baseLang === "en" ? "Labels are in your language (English)" : `View labels in ${LANGS[baseLang] || baseLang}`}
+                </button>
+                {transStatus && <span style={{ fontSize: 12, color: "#55666f" }}>{transStatus}</span>}
+              </div>
               <div style={{ maxHeight: 300, overflow: "auto" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                   <tbody>
@@ -1192,7 +1221,10 @@ export function App() {
                       const set = (v: string) => setReviewEdits((e) => ({ ...e, [f.name]: v }));
                       return (
                         <tr key={f.name} style={{ borderBottom: "1px solid #eef2f4" }}>
-                          <td style={{ padding: "5px 8px", width: "42%", ...mono }}>{f.label}</td>
+                          <td style={{ padding: "5px 8px", width: "42%" }}>
+                            <span style={mono}>{f.label}</span>
+                            {viewLang[f.name] && <div style={{ color: "#0a6a60", fontSize: 12 }}>{viewLang[f.name]}</div>}
+                          </td>
                           <td style={{ padding: "5px 8px" }}>
                             {f.kind === "radio" || f.kind === "dropdown" ? (
                               <select value={cur} onChange={(e) => set(e.currentTarget.value)} style={{ padding: 4, minWidth: 160 }}>

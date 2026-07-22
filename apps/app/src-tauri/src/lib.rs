@@ -951,9 +951,56 @@ fn auto_register_companion(app: &tauri::AppHandle) {
 }
 
 /// App entry (also the mobile entry point under Tauri v2).
+/// Minimal percent-decode for the model file path (ASCII paths; `%XX` → byte).
+fn percent_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 3 <= b.len() {
+            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                out.push(v);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Serve the on-device translation models to the WebView from the app-data `models/` dir
+        // (NOT embedded in the binary — that bloated the build). transformers.js is pointed at
+        // `ppfmodel://…` (see translate.ts); this reads the requested file and returns it. On
+        // Windows the WebView addresses it as `http://ppfmodel.localhost/<path>`.
+        .register_uri_scheme_protocol("ppfmodel", |ctx, request| {
+            let rel = percent_decode(request.uri().path().trim_start_matches('/'));
+            let base = ctx
+                .app_handle()
+                .path()
+                .app_data_dir()
+                .map(|d| d.join("models"))
+                .unwrap_or_default();
+            let path = base.join(&rel);
+            // Stay inside the models dir (no path traversal).
+            let safe = path.starts_with(&base);
+            match if safe { std::fs::read(&path) } else { Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied)) } {
+                Ok(bytes) => {
+                    let ct = if rel.ends_with(".json") { "application/json" } else { "application/octet-stream" };
+                    tauri::http::Response::builder()
+                        .status(200)
+                        .header("Content-Type", ct)
+                        .header("Access-Control-Allow-Origin", "*")
+                        .body(bytes)
+                        .unwrap()
+                }
+                Err(_) => tauri::http::Response::builder().status(404).body(Vec::new()).unwrap(),
+            }
+        })
         .setup(|app| {
             // Open the on-device vault under the OS app-data dir. Values are AES-256-GCM
             // sealed at rest with a per-install key (OS keystore in production).

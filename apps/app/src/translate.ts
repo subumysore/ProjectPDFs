@@ -38,7 +38,7 @@ async function getTranslator(dir: Direction, onStatus?: (s: string) => void) {
   // never a third-party CDN — connect-src stays 'self', zero egress.
   env.allowRemoteModels = false;
   env.allowLocalModels = true;
-  env.localModelPath = "/models/";
+  env.localModelPath = "http://ppfmodel.localhost/"; // served by the Rust ppfmodel scheme from app-data/models
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (env.backends as any).onnx.wasm.wasmPaths = "/ort/";
   onStatus?.("loading translation model…");
@@ -64,7 +64,7 @@ export async function translate(
 async function getNllb(onStatus?: (s: string) => void): Promise<any> {
   if (cache.__nllb) return cache.__nllb;
   const { pipeline, env } = await import("@huggingface/transformers");
-  env.allowRemoteModels = false; env.allowLocalModels = true; env.localModelPath = "/models/";
+  env.allowRemoteModels = false; env.allowLocalModels = true; env.localModelPath = "http://ppfmodel.localhost/"; // served by the Rust ppfmodel scheme from app-data/models
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (env.backends as any).onnx.wasm.wasmPaths = "/ort/";
   onStatus?.("loading the universal translation model (first run)…");
