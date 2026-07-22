@@ -9,8 +9,10 @@
 // Run after install:  node scripts/fetch-translation-assets.mjs
 // NOTE: NLLB is large (~0.5 GB quantized); the first run downloads it once.
 import { createRequire } from "node:module";
-import { cpSync, mkdirSync, writeFileSync, readdirSync } from "node:fs";
+import { cpSync, mkdirSync, createWriteStream, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 const require = createRequire(import.meta.url);
 const publicDir = join(process.cwd(), "apps/app/public");
@@ -25,24 +27,36 @@ for (const f of readdirSync(ortDist)) {
 }
 console.log("onnxruntime WASM -> apps/app/public/ort/");
 
-// 2) translation models -> public/models/<repo>/ (direct HF download; quantized ONNX only)
+// 2) translation models -> public/models/<repo>/ (direct HF download). STREAM to disk so large
+// ONNX weights (hundreds of MB) don't get loaded into memory (that was silently killing the fetch).
 const HF = "https://huggingface.co";
-for (const repo of ["Xenova/nllb-200-distilled-600M", "Xenova/opus-mt-en-hi", "Xenova/opus-mt-hi-en"]) {
+async function dl(repo, rel) {
+  const res = await fetch(`${HF}/${repo}/resolve/main/${rel}`);
+  if (!res.ok || !res.body) { console.warn("  skip", rel, res.status); return false; }
+  const out = join(publicDir, "models", repo, rel);
+  mkdirSync(dirname(out), { recursive: true });
+  await pipeline(Readable.fromWeb(res.body), createWriteStream(out));
+  console.log("  ", rel);
+  return true;
+}
+
+// NLLB-200 — the universal model. Download ONLY the q8 (quantized) weights the browser uses,
+// plus the tokenizer/config (the fp32 weights are ~3.4 GB; the quantized pair is ~0.5 GB).
+console.log("downloading Xenova/nllb-200-distilled-600M (quantized) …");
+const NLLB = "Xenova/nllb-200-distilled-600M";
+for (const rel of [
+  "config.json", "generation_config.json", "tokenizer.json", "tokenizer_config.json", "special_tokens_map.json",
+  "onnx/encoder_model_quantized.onnx", "onnx/decoder_model_merged_quantized.onnx",
+]) await dl(NLLB, rel);
+
+// opus-mt en<->hi fast-path (small).
+for (const repo of ["Xenova/opus-mt-en-hi", "Xenova/opus-mt-hi-en"]) {
   console.log("downloading", repo, "…");
   const info = await (await fetch(`${HF}/api/models/${repo}`)).json();
   for (const s of info.siblings ?? []) {
     const rel = s.rfilename;
-    // Keep only the quantized ONNX weights (what transformers.js loads by default).
-    if (rel.startsWith("onnx/") && !rel.includes("quantized")) continue;
-    const res = await fetch(`${HF}/${repo}/resolve/main/${rel}`);
-    if (!res.ok) {
-      console.warn("  skip", rel, res.status);
-      continue;
-    }
-    const out = join(publicDir, "models", repo, rel);
-    mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, Buffer.from(await res.arrayBuffer()));
-    console.log("  ", rel);
+    if (rel.startsWith("onnx/") && !rel.includes("quantized")) continue; // quantized ONNX only
+    await dl(repo, rel);
   }
 }
 console.log("translation models -> apps/app/public/models/. On-device translation ready.");
