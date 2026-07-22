@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Provision SELF-HOSTED on-device translation assets (REQ-03), English <-> Hindi.
-// Copies onnxruntime-web's WASM into apps/app/public/ort/ and downloads the opus-mt
-// model files directly from Hugging Face into apps/app/public/models/<repo>/ (the
-// layout transformers.js loads via localModelPath). Direct HTTP — no Node ONNX
-// runtime required (onnxruntime-node is stubbed; the browser uses onnxruntime-web).
+// Provision SELF-HOSTED on-device translation assets. Copies onnxruntime WASM into
+// apps/app/public/ort/ and downloads the model files directly from Hugging Face into
+// apps/app/public/models/<repo>/ (the layout transformers.js loads via localModelPath).
+// UNIVERSAL: NLLB-200 covers ~200 languages (any→any); opus-mt en↔hi is kept as a small
+// fast-path for the most common pair. Direct HTTP — no Node ONNX runtime required.
 // After this, translation runs fully on-device with zero third-party egress.
 //
-// Run after `pnpm install`:  node scripts/fetch-translation-assets.mjs
+// Run after install:  node scripts/fetch-translation-assets.mjs
+// NOTE: NLLB is large (~0.5 GB quantized); the first run downloads it once.
 import { createRequire } from "node:module";
 import { cpSync, mkdirSync, writeFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -26,7 +27,7 @@ console.log("onnxruntime WASM -> apps/app/public/ort/");
 
 // 2) translation models -> public/models/<repo>/ (direct HF download; quantized ONNX only)
 const HF = "https://huggingface.co";
-for (const repo of ["Xenova/opus-mt-en-hi", "Xenova/opus-mt-hi-en"]) {
+for (const repo of ["Xenova/nllb-200-distilled-600M", "Xenova/opus-mt-en-hi", "Xenova/opus-mt-hi-en"]) {
   console.log("downloading", repo, "…");
   const info = await (await fetch(`${HF}/api/models/${repo}`)).json();
   for (const s of info.siblings ?? []) {
