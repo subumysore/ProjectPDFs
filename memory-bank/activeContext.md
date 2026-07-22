@@ -4,8 +4,14 @@ _What is in flight RIGHT NOW. Update at the start and end of every work session.
 to absolute._
 
 ## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
-- **Just shipped (2026-07-22), verified LIVE end-to-end** (drove the running Tauri app myself,
-  captured every tab):
+- **Just shipped (2026-07-22, verified LIVE end-to-end):** REAL on-device **Past forms history**.
+  Every filled brought form is auto-saved as an encrypted, versioned copy (filled-PDF bytes sealed in
+  new `core-store` `form_blobs` table). New Tauri cmds `save_brought_form` / `list_saved_forms` /
+  `saved_form_pdf` / `sign_saved_form`. Past forms tab lists them with Re-download + Sign (device
+  Ed25519). Proven: opened the Japan MOFA visa PDF from a local file → filled 12/60 → saved v1 →
+  signed (doc 13c213f6f270…). Note: URL fetch of mofa.go.jp now 403s (Akamai bot-block) — env, not code.
+
+- **Earlier 2026-07-22, verified LIVE** (drove the running Tauri app myself, captured every tab):
   - Desktop app (`apps/app/src/App.tsx`) is a **3-tab, step-by-step workflow**: **1 · Profile & Vault
     → 2 · Forms to fill → 3 · Past forms**. Profile + Vault MERGED into one tab (profiles + a
     **License & device** card on top, chosen profile's vault below). Sticky tab bar. Non-setup tabs

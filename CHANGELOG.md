@@ -15,6 +15,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Desktop: real on-device history for brought forms (2026-07-22)
+- Every form you fill (from device / network / URL / web search) is now **saved to the Past forms
+  tab automatically** as an encrypted, versioned copy — entirely on-device. Re-filling the same
+  form appends a new version.
+- New `core-store` `form_blobs` table stores the sealed filled-PDF bytes per version, plus
+  `add_version_blob` / `version_blob` / `list_instances` (unit-tested: blob round-trips, sealed at
+  rest, instance listing scoped + newest-first).
+- New Tauri commands: `save_brought_form` (append version + blob + save event), `list_saved_forms`
+  (summaries: name, version, saves, fields filled/total, timestamp, signed), `saved_form_pdf`
+  (re-download the filled PDF), `sign_saved_form` (device Ed25519 provenance over the latest version).
+- Past forms tab lists real saved forms with **Re-download PDF** and **Sign (device key)**. Verified
+  live end-to-end (filled the Japan MOFA visa form from a local file → 12/60 fields → saved v1 →
+  signed on-device Ed25519).
+
 ### Changed — Desktop app: SPA → step-by-step tabs, catalog removed (2026-07-22)
 - The desktop app (`apps/app`) is no longer a single long scroll. It is now a **tabbed, step-by-step
   workflow**: **1 · Profile & Vault → 2 · Forms to fill → 3 · Past forms**. Non-setup tabs stay

@@ -23,6 +23,26 @@ interface DataPoint {
   key: string;
   value: string;
 }
+interface SaveInfo {
+  instance_id: string;
+  version_no: number;
+  saves: number;
+}
+interface SignInfo {
+  version_no: number;
+  signer_public: string;
+  doc_hash: string;
+}
+interface SavedFormSummary {
+  instance_id: string;
+  name: string;
+  version_no: number;
+  saves: number;
+  created_at: number;
+  fields_filled: number;
+  fields_total: number;
+  signed: boolean;
+}
 
 const cardStyle: React.CSSProperties = {
   border: "1px solid #d9e2e6",
@@ -54,6 +74,8 @@ export function App() {
   const [newProfile, setNewProfile] = useState("");
   const [k, setK] = useState("");
   const [v, setV] = useState("");
+  const [savedForms, setSavedForms] = useState<SavedFormSummary[]>([]);
+  const [savedMsg, setSavedMsg] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -206,6 +228,29 @@ export function App() {
   function selectProfile(id: string) {
     setSelected(id);
     loadPoints(id);
+    loadSavedForms(id);
+  }
+
+  // Re-download the filled PDF of a saved form version (decrypted on-device).
+  async function redownloadSaved(f: SavedFormSummary) {
+    try {
+      const buf = (await invoke("saved_form_pdf", { instanceId: f.instance_id, versionNo: f.version_no })) as ArrayBuffer;
+      const bytes = new Uint8Array(buf instanceof ArrayBuffer ? buf : (buf as ArrayBufferLike));
+      downloadBytes(bytes, `${f.name.replace(/\.[^.]+$/, "") || "form"}-filled.pdf`);
+      setSavedMsg(`Re-downloaded “${f.name}” (version ${f.version_no}).`);
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+  // Sign the latest version of a saved form on-device (device Ed25519 key).
+  async function signSaved(f: SavedFormSummary) {
+    try {
+      const info = await invoke<SignInfo>("sign_saved_form", { instanceId: f.instance_id });
+      if (selected) await loadSavedForms(selected);
+      setSavedMsg(`Signed “${f.name}” v${info.version_no} · doc ${info.doc_hash.slice(0, 12)}… (on-device Ed25519).`);
+    } catch (e) {
+      setErr(String(e));
+    }
   }
 
   async function addProfile() {
@@ -318,7 +363,7 @@ export function App() {
     }
     setPdfBytes(bytes);
     if (canvasRef.current) await renderFirstPage(bytes, canvasRef.current).catch((e) => setErr(String(e)));
-    await autoFillForm(bytes, isImage);
+    await autoFillForm(bytes, isImage, file.name);
   }
 
   // Fill a Word/Excel form's NAMED fields (content controls / named ranges) from the
@@ -442,14 +487,44 @@ export function App() {
       }
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-      await autoFillForm(ab, wasImage);
+      const urlName = (() => {
+        try { const p = new URL(url).pathname.split("/").filter(Boolean).pop(); return p || new URL(url).hostname; }
+        catch { return url; }
+      })();
+      await autoFillForm(ab, wasImage, urlName);
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+
+  // Load the on-device history of filled forms for the active profile.
+  async function loadSavedForms(pid: string) {
+    try {
+      setSavedForms(await invoke<SavedFormSummary[]>("list_saved_forms", { profileId: pid }));
+    } catch (e) {
+      setErr(String(e));
+    }
+  }
+  // Persist a just-filled brought form to the encrypted on-device history (versioned).
+  async function persistFilled(name: string, filled: number, total: number, data: Uint8Array) {
+    if (!selected) return;
+    try {
+      const info = await invoke<SaveInfo>("save_brought_form", {
+        profileId: selected,
+        name,
+        fieldsFilled: filled,
+        fieldsTotal: total,
+        pdf: Array.from(data),
+      });
+      await loadSavedForms(selected);
+      setSavedMsg(`Saved “${name}” to Past forms (version ${info.version_no}, on-device).`);
     } catch (e) {
       setErr(String(e));
     }
   }
 
   // The automatic pipeline: fill existing fields, else detect + create + fill.
-  async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean) {
+  async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean, formName: string) {
     const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
     try {
       const existing = await fillAndExport(bytes, vault); // total = # AcroForm fields
@@ -462,6 +537,7 @@ export function App() {
         if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
         downloadBytes(existing.data, "filled.pdf");
         setPdfMsg(`This form already had ${existing.total} field(s) — filled ${existing.filled} from your vault; exported filled.pdf.`);
+        await persistFilled(formName, existing.filled, existing.total, existing.data);
         return;
       }
       setPdfMsg(
@@ -482,6 +558,7 @@ export function App() {
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
       downloadBytes(data, "filled.pdf");
       setPdfMsg(`No form fields found — created ${created} by OCR and filled ${filled} from your vault; exported filled.pdf.`);
+      await persistFilled(formName, filled, created, data);
     } catch (e) {
       setErr(String(e));
     }
@@ -1024,11 +1101,38 @@ export function App() {
         <section style={cardStyle}>
           <h2 style={h2Style}>3 · Past filled forms</h2>
           <p style={{ color: "#55666f", fontSize: 13, marginTop: 0 }}>
-            Forms you fill are exported as <code>filled.pdf</code> to your device. A running,
-            versioned history of every filled form — kept encrypted on this device, so you can
-            re-open, re-download, or sign any past version — is on the way.
+            Every form you fill is kept here as an encrypted, versioned copy — <b>entirely on this
+            device</b>. Re-download or sign any of them; nothing was uploaded to save it.
           </p>
-          <p style={{ opacity: 0.6, fontSize: 13 }}>No saved forms yet.</p>
+          {savedMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{savedMsg}</p>}
+          {savedForms.length === 0 ? (
+            <p style={{ opacity: 0.6, fontSize: 13 }}>
+              No saved forms yet. Fill a form in the <b>Forms to fill</b> tab and it appears here automatically.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {savedForms.map((f) => (
+                <div
+                  key={f.instance_id}
+                  style={{ border: "1px solid #eef2f4", borderRadius: 8, padding: 12, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600 }}>
+                      {f.name} {f.signed && <span style={{ color: "#0a6a60", fontSize: 12 }}>· ✓ signed</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#55666f", ...mono }}>
+                      v{f.version_no} · {f.saves} save(s) · filled {f.fields_filled}/{f.fields_total} field(s)
+                      · {new Date(f.created_at * 1000).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => redownloadSaved(f)}>Re-download PDF</button>
+                    {!f.signed && <button onClick={() => signSaved(f)}>Sign (device key)</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </main>

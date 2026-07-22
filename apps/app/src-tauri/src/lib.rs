@@ -493,6 +493,150 @@ fn save_filled_form(
     })
 }
 
+/// Summary of one saved (filled) form for the "Past forms" tab.
+#[derive(Serialize)]
+struct SavedFormSummary {
+    instance_id: String,
+    name: String,
+    version_no: i64,
+    saves: i64,
+    created_at: i64,
+    fields_filled: i64,
+    fields_total: i64,
+    signed: bool,
+}
+
+/// Sanitize a form name into a stable id fragment (so re-filling the same form appends
+/// a version instead of creating a new instance).
+fn slug(name: &str) -> String {
+    let s: String = name
+        .trim()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+        .collect();
+    let s = s.trim_matches('-').to_string();
+    if s.is_empty() { "form".into() } else { s }
+}
+
+/// Save a *brought* form (opened from the device, a network location, a URL, or a web
+/// search) to the on-device history: append an immutable, encrypted version holding the
+/// filled-PDF bytes plus fill metadata, keyed by the form's name so re-fills accumulate
+/// versions. Entirely on-device — nothing leaves the machine.
+#[tauri::command]
+fn save_brought_form(
+    state: State<AppState>,
+    profile_id: String,
+    name: String,
+    fields_filled: i64,
+    fields_total: i64,
+    pdf: Vec<u8>,
+) -> Result<SaveInfo, String> {
+    require_unlocked(&state)?;
+    let store = state.store.lock().unwrap();
+    let display = if name.trim().is_empty() { "form".to_string() } else { name.trim().to_string() };
+    let instance_id = format!("{profile_id}:brought:{}", slug(&display));
+    let at = now_secs();
+    store
+        .create_instance(
+            &FormInstance {
+                id: instance_id.clone(),
+                profile_id: profile_id.clone(),
+                entry_id: display.clone(),
+            },
+            at,
+        )
+        .map_err(|e| e.to_string())?;
+    let meta: BTreeMap<String, String> = BTreeMap::from([
+        ("name".to_string(), display),
+        ("fields_filled".to_string(), fields_filled.to_string()),
+        ("fields_total".to_string(), fields_total.to_string()),
+    ]);
+    let version_no = store.add_version(&instance_id, &meta, at).map_err(|e| e.to_string())?;
+    store
+        .add_version_blob(&instance_id, version_no, &pdf)
+        .map_err(|e| e.to_string())?;
+    store.record_event(&instance_id, "save", at).map_err(|e| e.to_string())?;
+    let saves = store.event_count(&instance_id, "save").map_err(|e| e.to_string())?;
+    Ok(SaveInfo { instance_id, version_no, saves })
+}
+
+/// List every saved form for a profile (newest first) for the "Past forms" tab.
+#[tauri::command]
+fn list_saved_forms(state: State<AppState>, profile_id: String) -> Result<Vec<SavedFormSummary>, String> {
+    require_unlocked(&state)?;
+    let store = state.store.lock().unwrap();
+    let mut out = Vec::new();
+    for inst in store.list_instances(&profile_id).map_err(|e| e.to_string())? {
+        let versions = store.list_versions(&inst.id).map_err(|e| e.to_string())?;
+        let Some(latest) = versions.last() else { continue };
+        let meta = store.version_values(&inst.id, latest.version_no).map_err(|e| e.to_string())?;
+        let saves = store.event_count(&inst.id, "save").map_err(|e| e.to_string())?;
+        let signed = !store.list_signatures(&inst.id).map_err(|e| e.to_string())?.is_empty();
+        out.push(SavedFormSummary {
+            name: meta.get("name").cloned().unwrap_or_else(|| inst.entry_id.clone()),
+            fields_filled: meta.get("fields_filled").and_then(|s| s.parse().ok()).unwrap_or(0),
+            fields_total: meta.get("fields_total").and_then(|s| s.parse().ok()).unwrap_or(0),
+            instance_id: inst.id,
+            version_no: latest.version_no,
+            saves,
+            created_at: latest.created_at,
+            signed,
+        });
+    }
+    Ok(out)
+}
+
+/// Return the filled-PDF bytes of a saved form version so the UI can re-download it.
+#[tauri::command]
+fn saved_form_pdf(
+    state: State<AppState>,
+    instance_id: String,
+    version_no: i64,
+) -> Result<tauri::ipc::Response, String> {
+    require_unlocked(&state)?;
+    let store = state.store.lock().unwrap();
+    let bytes = store.version_blob(&instance_id, version_no).map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Sign the latest saved version of a brought form on-device (device Ed25519 key),
+/// binding a provenance manifest over the version's metadata. Keyed by instance id.
+#[tauri::command]
+fn sign_saved_form(state: State<AppState>, instance_id: String) -> Result<SignInfo, String> {
+    require_unlocked(&state)?;
+    let store = state.store.lock().unwrap();
+    let versions = store.list_versions(&instance_id).map_err(|e| e.to_string())?;
+    let latest = versions.last().ok_or("no saved version to sign")?;
+    let values = store
+        .version_values(&instance_id, latest.version_no)
+        .map_err(|e| e.to_string())?;
+    let canonical = serde_json::to_vec(&values).map_err(|e| e.to_string())?;
+    let doc_hash = core_crypto::sha256_hex(&canonical);
+    let kp = core_crypto::SignKeypair::from_secret(&state.sign_secret);
+    let manifest = core_crypto::ProvenanceManifest {
+        doc_hash: doc_hash.clone(),
+        signer_public: kp.public_bytes(),
+        created_at: now_secs() as u64,
+        roles: vec!["Individual".to_string()],
+    };
+    let sig = manifest.sign(&kp);
+    let signer_public = key_to_hex(&kp.public_bytes());
+    let signature = sig.iter().map(|b| format!("{b:02x}")).collect::<String>();
+    store
+        .add_signature(
+            &instance_id,
+            &core_store::SignatureRecord {
+                version_no: latest.version_no,
+                signer_public: signer_public.clone(),
+                signature,
+                alg: "ed25519".into(),
+                created_at: now_secs(),
+            },
+        )
+        .map_err(|e| e.to_string())?;
+    Ok(SignInfo { version_no: latest.version_no, signer_public, doc_hash })
+}
+
 /// Load the device Ed25519 signing secret from the OS keystore (file fallback).
 /// This key is non-delegable: only this device+profile can produce its signatures.
 fn load_or_create_sign_key(dir: &std::path::Path) -> [u8; 32] {
@@ -759,6 +903,10 @@ pub fn run() {
             autofill_for,
             save_filled_form,
             sign_form,
+            save_brought_form,
+            list_saved_forms,
+            saved_form_pdf,
+            sign_saved_form,
             form_signatures,
             open_submit_url,
             download_form,

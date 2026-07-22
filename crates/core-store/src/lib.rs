@@ -143,6 +143,12 @@ impl Store {
                  created_at  INTEGER NOT NULL,
                  PRIMARY KEY(instance_id, version_no)
              );
+             CREATE TABLE IF NOT EXISTS form_blobs(
+                 instance_id TEXT NOT NULL,
+                 version_no  INTEGER NOT NULL,
+                 blob_enc    BLOB NOT NULL,
+                 PRIMARY KEY(instance_id, version_no)
+             );
              CREATE TABLE IF NOT EXISTS history_events(
                  instance_id TEXT NOT NULL,
                  kind        TEXT NOT NULL,
@@ -251,6 +257,43 @@ impl Store {
         )?;
         let json = open(&self.key, &enc)?;
         serde_json::from_slice(&json).map_err(|_| StoreError::Utf8)
+    }
+
+    /// Store the sealed filled-PDF bytes for a version (idempotent per version), so a past
+    /// filled form can be re-downloaded on-device without regenerating it.
+    pub fn add_version_blob(&self, instance_id: &str, version_no: i64, bytes: &[u8]) -> Result<()> {
+        let sealed = seal(&self.key, bytes);
+        self.conn.execute(
+            "INSERT INTO form_blobs(instance_id, version_no, blob_enc) VALUES(?1, ?2, ?3)
+             ON CONFLICT(instance_id, version_no) DO UPDATE SET blob_enc = excluded.blob_enc",
+            params![instance_id, version_no, sealed],
+        )?;
+        Ok(())
+    }
+
+    /// The filled-PDF bytes of a specific version (decrypted).
+    pub fn version_blob(&self, instance_id: &str, version_no: i64) -> Result<Vec<u8>> {
+        let enc: Vec<u8> = self.conn.query_row(
+            "SELECT blob_enc FROM form_blobs WHERE instance_id = ?1 AND version_no = ?2",
+            params![instance_id, version_no],
+            |r| r.get(0),
+        )?;
+        Ok(open(&self.key, &enc)?)
+    }
+
+    /// All FormInstances for a Profile, most-recently-created first.
+    pub fn list_instances(&self, profile_id: &str) -> Result<Vec<FormInstance>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, profile_id, entry_id FROM form_instances WHERE profile_id = ?1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![profile_id], |r| {
+            Ok(FormInstance {
+                id: r.get(0)?,
+                profile_id: r.get(1)?,
+                entry_id: r.get(2)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
     /// Record a history event (`save` / `submit` / `print`).
@@ -495,6 +538,35 @@ mod tests {
             )
             .unwrap();
         assert!(!raw.windows(8).any(|w| w == b"Asha Rao"));
+    }
+
+    #[test]
+    fn brought_form_blobs_and_instance_listing() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        s.put_profile(&Profile { id: "p1".into(), name: "Asha".into() }).unwrap();
+        // Two brought forms for the same profile; the first accumulates two versions.
+        s.create_instance(&FormInstance { id: "p1:brought:visa".into(), profile_id: "p1".into(), entry_id: "Visa".into() }, 1_700_000_100).unwrap();
+        s.create_instance(&FormInstance { id: "p1:brought:kyc".into(), profile_id: "p1".into(), entry_id: "KYC".into() }, 1_700_000_200).unwrap();
+
+        let meta = BTreeMap::from([("name".to_string(), "Visa".to_string())]);
+        let v1 = s.add_version("p1:brought:visa", &meta, 1_700_000_101).unwrap();
+        s.add_version_blob("p1:brought:visa", v1, b"%PDF-1.7 filled-bytes").unwrap();
+        let v2 = s.add_version("p1:brought:visa", &meta, 1_700_000_102).unwrap();
+        s.add_version_blob("p1:brought:visa", v2, b"%PDF-1.7 newer").unwrap();
+
+        // Blob round-trips and is sealed at rest (plaintext absent).
+        assert_eq!(s.version_blob("p1:brought:visa", v2).unwrap(), b"%PDF-1.7 newer");
+        let raw: Vec<u8> = s.conn.query_row(
+            "SELECT blob_enc FROM form_blobs WHERE instance_id='p1:brought:visa' AND version_no=2",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert!(!raw.windows(5).any(|w| w == b"newer"));
+
+        // Instances list newest-created first, scoped to the profile.
+        let inst = s.list_instances("p1").unwrap();
+        assert_eq!(inst.len(), 2);
+        assert_eq!(inst[0].id, "p1:brought:kyc"); // created later → first
+        assert!(s.list_instances("p2").unwrap().is_empty());
     }
 
     #[test]
