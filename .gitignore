@@ -71,3 +71,6 @@ scripts/license/vendor-key.json
 apps/extension/vendor/transformers/*.wasm
 docs/marketing/site/pitch/PolyglotFormFill-pitch.mp4
 docs/marketing/site/pitch/shots/
+
+# Large translation models staged out of the embed path (runtime-provisioned, not bundled).
+apps/app/models-staging/

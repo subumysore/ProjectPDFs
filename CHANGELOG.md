@@ -15,6 +15,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Fixed — Desktop release build now produces installers (2026-07-22)
+- Root-caused a reproducible `E0786` "corrupt `app_lib` metadata" that blocked every desktop release
+  build. It was **not** path/Defender/leftovers: the on-device **translation models (~1.3 GB) sitting
+  in `apps/app/public/`** were copied by vite into `dist/` and **embedded into the Tauri binary**,
+  bloating the `app_lib` rlib to ~6.8 GB until it corrupted. Moving the models out of the embed path
+  yields normal-size, clean builds — **`PolyglotFormFill_0.1.0` MSI (31 MB) + NSIS setup (29 MB)**.
+- Also set `[profile.release] lto = false` (the lib+bin Tauri crate + LTO is a separate `E0786`
+  trigger on rustc 1.97).
+- **GA follow-up (design):** the translation models — like the guide video (ADR-0019) — must be
+  **runtime-provisioned, not bundled**. Staged the local models to `apps/app/models-staging/`
+  (gitignored); wiring on-device model fetch/caching is the remaining task for shipped-app translation.
+
 ### Added — Desktop: review & edit the filled form before finalizing (2026-07-22)
 - After a form is filled, the desktop now shows an **editable review** of every AcroForm field
   (text / radio / checkbox / dropdown) with its current value. The user can **correct anything**

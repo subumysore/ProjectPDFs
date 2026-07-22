@@ -52,6 +52,12 @@ Backed by unit tests (`companion.test.mjs`); this verifies the native-messaging 
   uploaded file; rebuild binaries so the token + hash ship.
 
 ## 5. Release
+- ✅ Desktop release build produces installers (`cargo tauri build` → `PolyglotFormFill_0.1.0` MSI +
+  NSIS, ~30 MB). NOTE: build **without** the 1.3 GB translation models in `apps/app/public/` — they
+  must be **runtime-provisioned, not embedded** (they bloat the binary/rlib and break the build). The
+  local copy is staged at `apps/app/models-staging/`.
+- ⬜ Wire on-device model provisioning (fetch/cache like the guide video, ADR-0019) so shipped-app
+  translation works without embedding.
 - ⬜ Bump versions (Tauri app is still 0.1.0; extension per store cadence); rebuild `.exe/.msi` + store zip.
 - ⬜ CI green on the branch (`.github/workflows/ci.yml`): lint · typecheck · unit+integration · acceptance ·
   traceability · migration-safety · secret scan · dependency/license.
