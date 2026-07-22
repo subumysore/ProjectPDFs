@@ -5,6 +5,7 @@ import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFi
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
+import { SignPad, type Stamp } from "./SignPad";
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
@@ -78,6 +79,7 @@ export function App() {
   const [savedMsg, setSavedMsg] = useState("");
   const [guideUrl, setGuideUrl] = useState<string | null>(null);
   const [guideMsg, setGuideMsg] = useState("");
+  const [signing, setSigning] = useState(false);
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -631,6 +633,10 @@ export function App() {
     }
   }
   const selectedName = profiles.find((p) => p.id === selected)?.name;
+  // Every image saved in the vault (signature, photo, …) becomes a stamp you can place by hand.
+  const stamps: Stamp[] = points
+    .filter((p) => /^data:image\//i.test(p.value))
+    .map((p) => ({ key: p.key, src: p.value }));
 
   if (locked) {
     return (
@@ -680,6 +686,21 @@ export function App() {
         color: "#101a20",
       }}
     >
+      {signing && pdfBytes && (
+        <SignPad
+          pdfBytes={pdfBytes}
+          stamps={stamps}
+          onClose={() => setSigning(false)}
+          onExport={(bytes) => {
+            downloadBytes(bytes, "signed.pdf");
+            const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+            setPdfBytes(ab);
+            if (canvasRef.current) renderFirstPage(ab, canvasRef.current).catch(() => {});
+            setPdfMsg("Signed / annotated — flattened into the PDF and saved as signed.pdf (on-device).");
+            setSigning(false);
+          }}
+        />
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
         <button onClick={lockNow} style={{ fontSize: 12 }}>
@@ -722,7 +743,7 @@ export function App() {
 
       <nav style={{ display: "flex", gap: 4, margin: "0 0 6px", padding: "10px 0 0", borderBottom: "2px solid #e6eeec", flexWrap: "wrap", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
         {([["license", "1 · License"], ["setup", "2 · Profile & Vault"], ["forms", "3 · Forms to fill"], ["history", "4 · Past forms"], ["docs", "5 · Docs & Video"]] as const).map(([id, label]) => {
-          const locked = id !== "license" && id !== "docs" && !selected;
+          const locked = (id === "forms" || id === "history") && !selected;
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
               style={{ padding: "9px 16px", border: "none", borderBottom: tab === id ? "3px solid #0d8f83" : "3px solid transparent", background: "none", fontWeight: tab === id ? 700 : 500, fontSize: 14, color: tab === id ? "#0a6a60" : "#55666f", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>
@@ -1061,6 +1082,16 @@ export function App() {
             </span>
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
+          {pdfBytes && (
+            <div style={{ margin: "6px 0" }}>
+              <button onClick={() => setSigning(true)} style={{ fontWeight: 600 }}>
+                Sign / annotate ✍︎ — draw, type, or place your signature &amp; photo
+              </button>
+              <span style={{ fontSize: 12, color: "#8a8f92", marginLeft: 8 }}>
+                pen colour &amp; size · undo · move/resize placed images
+              </span>
+            </div>
+          )}
           {officeFilled && (
             <div style={{ marginTop: 4 }}>
               <button onClick={exportOfficePdf}>Export as PDF (on-device)</button>
@@ -1082,6 +1113,7 @@ export function App() {
               <button onClick={genFlat}>Generate flat sample PDF (demo)</button>
               {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
               {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR)</button>}
+              {pdfBytes && <button onClick={() => setSigning(true)}>Sign / annotate ✍︎</button>}
             </div>
           )}
           <div

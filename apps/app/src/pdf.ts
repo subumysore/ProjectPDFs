@@ -46,6 +46,24 @@ export async function renderFirstPage(bytes: ArrayBuffer, canvas: HTMLCanvasElem
   if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
 }
 
+// Render a specific page (0-based) into `canvas` at `scale`, returning the page count and the
+// rendered pixel size — so the Sign tool can lay an ink overlay exactly over each page.
+export async function renderPage(
+  bytes: ArrayBuffer,
+  pageIndex: number,
+  canvas: HTMLCanvasElement,
+  scale = 1.3,
+): Promise<{ width: number; height: number; numPages: number }> {
+  const doc = await pdfjs.getDocument({ data: bytes.slice(0) }).promise;
+  const page = await doc.getPage(pageIndex + 1);
+  const viewport = page.getViewport({ scale });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
+  return { width: viewport.width, height: viewport.height, numPages: doc.numPages };
+}
+
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "_");
 }
