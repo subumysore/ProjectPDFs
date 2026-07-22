@@ -3,6 +3,20 @@
 _What is in flight RIGHT NOW. Update at the start and end of every work session. Convert relative dates
 to absolute._
 
+## Production-readiness pass (2026-07-22)
+- **Verdict: NOT production-ready yet** — feature-rich beta. Per the traceability matrix, **0/17
+  requirements are Prod-Ready ✅** (all ⚠️: coded + unit-tested, live E2E is the open gate).
+- **Done this pass (committed):** acceptance specs `features/{single-shared-vault,past-forms-history,
+  sign-annotate-desktop}.feature`; `docs/testing/e2e-harness.md` (the live sign-off checklist +
+  WebView2 driving technique + infra/release steps + open locked-vault decision); traceability rows
+  REQ-01/07/08/09 updated honestly. CI gates run locally green (typecheck, secret-scan proxy clean,
+  test-all 125+8). Extension store zip builds clean (v0.2.16, dev key stripped).
+- **Real blockers to GA (need user/infra, can't verify from here):** (1) live E2E — shared-vault
+  native-messaging round-trip, Sign tool, Docs video fetch, in a real Chrome+host+desktop binary;
+  (2) deploy OKE asset gate + upload guide.mp4 + rotate APP_ASSET_TOKEN off placeholder (ADR-0019);
+  (3) release builds — desktop still Tauri **0.1.0**, rebuild .exe/.msi + bump; (4) decide
+  locked-vault access (host reads vault.db without the passphrase gate); (5) full DoD + CI on branch.
+
 ## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
 - **Just shipped (2026-07-22):** **License is its own first tab**; new **Docs & Video tab** with a
   narrated guided-tour video + written docs. Video is **NOT bundled** — hosted on OKE, served
