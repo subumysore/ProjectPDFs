@@ -180,9 +180,42 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
     }
 }
 
+/// Max age of the desktop app's unlock sentinel for the shared vault to be served.
+pub const SESSION_MAX_AGE_SECS: i64 = 120;
+
+/// Pure freshness test: is the sentinel timestamp present and within `max_age` of `now`?
+pub fn is_fresh(ts: Option<i64>, now: i64, max_age: i64) -> bool {
+    match ts {
+        Some(t) => now >= t && now - t <= max_age,
+        None => false,
+    }
+}
+
+/// Read the desktop app's unlock sentinel and decide whether the vault may be served now.
+/// The sentinel is written/kept-fresh by the app ONLY while it is unlocked, so this makes the
+/// passphrase gate also protect companion access.
+pub fn session_fresh(dir: &Path, now: i64) -> bool {
+    let ts = std::fs::read_to_string(dir.join("app-session.flag"))
+        .ok()
+        .and_then(|s| s.trim().parse::<i64>().ok());
+    is_fresh(ts, now, SESSION_MAX_AGE_SECS)
+}
+
+/// Gate every request that touches the vault on the desktop app being unlocked. `ping` is always
+/// allowed (so the extension can detect the bridge and show a helpful "unlock the desktop app"
+/// message); everything else requires a fresh session.
+pub fn dispatch_gated(store: &core_store::Store, req: &serde_json::Value, unlocked: bool) -> serde_json::Value {
+    use serde_json::json;
+    let ty = req.get("type").and_then(|t| t.as_str()).unwrap_or("");
+    if ty != "ping" && !unlocked {
+        return json!({ "ok": false, "locked": true, "error": "the desktop app is locked — unlock it to use the shared vault" });
+    }
+    dispatch(store, req)
+}
+
 #[cfg(test)]
 mod dispatch_tests {
-    use super::dispatch;
+    use super::{dispatch, dispatch_gated, is_fresh};
     use serde_json::json;
 
     fn store() -> core_store::Store {
@@ -209,5 +242,29 @@ mod dispatch_tests {
         let s = store();
         assert_eq!(dispatch(&s, &json!({"type":"upsertData","key":"k","value":"v"}))["ok"], false);
         assert_eq!(dispatch(&s, &json!({"type":"deleteData","profileId":"p1"}))["ok"], false);
+    }
+
+    #[test]
+    fn is_fresh_bounds() {
+        assert!(is_fresh(Some(1000), 1000, 120)); // exactly now
+        assert!(is_fresh(Some(1000), 1120, 120)); // at the edge
+        assert!(!is_fresh(Some(1000), 1121, 120)); // stale
+        assert!(!is_fresh(None, 1000, 120)); // no sentinel → locked
+        assert!(!is_fresh(Some(2000), 1000, 120)); // future timestamp → reject
+    }
+
+    #[test]
+    fn gated_denies_when_locked_allows_when_unlocked() {
+        let s = store();
+        // ping is always allowed
+        assert!(dispatch_gated(&s, &json!({"type":"ping"}), false)["ok"].as_bool().unwrap());
+        // vault ops denied while locked
+        let denied = dispatch_gated(&s, &json!({"type":"listProfiles"}), false);
+        assert_eq!(denied["ok"], false);
+        assert_eq!(denied["locked"], true);
+        assert_eq!(dispatch_gated(&s, &json!({"type":"createProfile","id":"p1","name":"A"}), false)["ok"], false);
+        // allowed while unlocked
+        assert!(dispatch_gated(&s, &json!({"type":"createProfile","id":"p1","name":"A"}), true)["ok"].as_bool().unwrap());
+        assert!(dispatch_gated(&s, &json!({"type":"listProfiles"}), true)["ok"].as_bool().unwrap());
     }
 }

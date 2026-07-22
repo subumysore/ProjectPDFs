@@ -57,9 +57,10 @@ Backed by unit tests (`companion.test.mjs`); this verifies the native-messaging 
   traceability · migration-safety · secret scan · dependency/license.
 - ⬜ Tag an annotated release + changelog entry + reproducible build.
 
-## Open decisions (must resolve before GA)
-- **Locked-vault access:** today the `native-host` decrypts `vault.db` with the OS-keystore key, so the
-  extension can read the shared vault even when the desktop app is *locked* (the passphrase is an
-  app-access gate, separate from the at-rest key). Decide: (a) keep (convenience) or (b) gate companion
-  reads on the desktop being unlocked (respects the passphrase). If (b): the app must hand the host a
-  short-lived unlock token, or write an unlock sentinel the host checks.
+## Resolved decisions
+- **Locked-vault access → RESOLVED (privacy-first):** the shared vault is now served **only while the
+  desktop app is unlocked**. The app writes a heartbeat unlock sentinel (`app-session.flag`) on unlock,
+  keeps it fresh every 30 s, and clears it on lock/startup; the `native-host` refuses every vault op
+  (all but `ping`) unless the sentinel is fresh (`SESSION_MAX_AGE_SECS = 120`). So the passphrase gate
+  protects companion access too. Unit-tested (`is_fresh`, `dispatch_gated`). *Live check:* lock the
+  desktop app → the extension popup should report the vault as locked within ~2 min and refuse reads.

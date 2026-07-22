@@ -86,6 +86,7 @@ fn set_passphrase(state: State<AppState>, passphrase: String) -> Result<(), Stri
     };
     std::fs::write(&path, serde_json::to_vec_pretty(&lf).unwrap()).map_err(|e| e.to_string())?;
     *state.unlocked.lock().unwrap() = true;
+    touch_session(&state.data_dir);
     Ok(())
 }
 
@@ -97,16 +98,34 @@ fn unlock(state: State<AppState>, passphrase: String) -> Result<(), String> {
     let lf: LockFile = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     if kdf(&lf.salt, passphrase.trim(), lf.iters) == lf.hash {
         *state.unlocked.lock().unwrap() = true;
+        touch_session(&state.data_dir);
         Ok(())
     } else {
         Err("Incorrect passphrase.".into())
     }
 }
 
+// --- Unlock session sentinel (shared-vault gate, ADR-0019 follow-up) -------------------
+// The native-messaging host serves the shared vault to the extension ONLY while the desktop
+// app is unlocked. The app writes a heartbeat sentinel (a unix timestamp) on unlock and keeps
+// it fresh; on lock/startup it's cleared. The host requires the sentinel to be recent, so the
+// passphrase gate also protects companion access (not just the in-app UI).
+const SESSION_MAX_AGE_SECS: i64 = 120;
+fn session_path(dir: &std::path::Path) -> std::path::PathBuf {
+    dir.join("app-session.flag")
+}
+fn touch_session(dir: &std::path::Path) {
+    let _ = std::fs::write(session_path(dir), now_secs().to_string());
+}
+fn clear_session(dir: &std::path::Path) {
+    let _ = std::fs::remove_file(session_path(dir));
+}
+
 /// Re-lock the app (e.g. when stepping away).
 #[tauri::command]
 fn lock_app(state: State<AppState>) {
     *state.unlocked.lock().unwrap() = false;
+    clear_session(&state.data_dir);
 }
 
 /// Guard used by every command that exposes user data.
@@ -914,6 +933,18 @@ pub fn run() {
                 sign_secret,
                 unlocked: Mutex::new(false), // locked until the user enters their passphrase
                 data_dir: dir.clone(),
+            });
+            // Start locked: clear any stale unlock sentinel (e.g. left by a prior crash) so the
+            // shared vault is gated until the user actually unlocks this session.
+            clear_session(&dir);
+            // Heartbeat: while unlocked (sentinel present), keep it fresh so the host keeps serving;
+            // once locked/quit it goes stale within SESSION_MAX_AGE_SECS and the host denies access.
+            let hb_dir = dir.clone();
+            std::thread::spawn(move || loop {
+                std::thread::sleep(std::time::Duration::from_secs(30));
+                if session_path(&hb_dir).exists() {
+                    touch_session(&hb_dir);
+                }
             });
             // Auto-register the browser companion on first run (idempotent, best-effort).
             auto_register_companion(&app.handle().clone());
