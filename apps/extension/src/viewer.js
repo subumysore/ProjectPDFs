@@ -198,6 +198,11 @@ function setupLangPanel(res) {
   const fromRow = document.getElementById("lpFromRow");
   const fromSel = document.getElementById("lpFrom");
   const ocrRow = document.getElementById("lpOcrRow");
+  // Declared up here (not below) so the bad-text-layer branch that runs next — e.g. a Kannada
+  // form — can set `go.textContent` without hitting a temporal-dead-zone error.
+  const status = document.getElementById("lpStatus");
+  const table = document.getElementById("lpTable");
+  const go = document.getElementById("lpGo");
   if (ocrRow) ocrRow.hidden = !res.bytes;
   if (fromSel) {
     const srcOrder = [from, ...Object.keys(LANG_NAMES).filter((l) => l !== from).sort((a, b) => (LANG_NAMES[a] || a).localeCompare(LANG_NAMES[b] || b))];
@@ -215,10 +220,6 @@ function setupLangPanel(res) {
     const note = document.getElementById("lpNote");
     if (note) note.textContent = "This form's text can't be read directly (it's scanned or uses a non-standard font). Pick the form's language below and I'll read it with on-device OCR.";
   }
-
-  const status = document.getElementById("lpStatus");
-  const table = document.getElementById("lpTable");
-  const go = document.getElementById("lpGo");
 
   const render = async (to) => {
     go.disabled = true; sel.disabled = true;
