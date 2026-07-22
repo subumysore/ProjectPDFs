@@ -113,6 +113,40 @@ pub async fn fetch_form(raw: &str) -> Result<Vec<u8>, FetchError> {
     Ok(bytes.to_vec())
 }
 
+/// Fetch one of **our own** app assets (e.g. the guide video) served *downward* by the asset host.
+/// This is inbound-only (no user content goes up). We attach an **app-level** capability header
+/// (`X-PPF-App`) so the edge can serve the asset only to genuine app builds — the token is the same
+/// for every install of a release, so it identifies *an app*, never a *user* (no tracking; privacy
+/// invariant preserved). The caller verifies the bytes against a pinned hash before use.
+pub async fn fetch_app_asset(raw: &str, app_token: &str) -> Result<Vec<u8>, FetchError> {
+    let url = validate_url(raw)?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .user_agent(concat!("PolyglotFormFill/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|_| FetchError::Request)?;
+    let resp = client
+        .get(url)
+        .header("X-PPF-App", app_token)
+        .header("Origin", "app://polyglotformfill")
+        .send()
+        .await
+        .map_err(|_| FetchError::Request)?;
+    if !resp.status().is_success() {
+        return Err(FetchError::Request);
+    }
+    if let Some(len) = resp.content_length() {
+        if len as usize > MAX_BYTES {
+            return Err(FetchError::TooLarge);
+        }
+    }
+    let bytes = resp.bytes().await.map_err(|_| FetchError::Request)?;
+    if bytes.len() > MAX_BYTES {
+        return Err(FetchError::TooLarge);
+    }
+    Ok(bytes.to_vec())
+}
+
 /// Decode a small set of HTML entities found in result titles.
 fn decode_entities(s: &str) -> String {
     s.replace("&amp;", "&")

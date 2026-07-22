@@ -76,6 +76,8 @@ export function App() {
   const [v, setV] = useState("");
   const [savedForms, setSavedForms] = useState<SavedFormSummary[]>([]);
   const [savedMsg, setSavedMsg] = useState("");
+  const [guideUrl, setGuideUrl] = useState<string | null>(null);
+  const [guideMsg, setGuideMsg] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -106,7 +108,7 @@ export function App() {
   const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
   const [licKey, setLicKey] = useState("");
   // Step-based tabs instead of one long scrolling page.
-  const [tab, setTab] = useState<"setup" | "forms" | "history">("setup");
+  const [tab, setTab] = useState<"license" | "setup" | "forms" | "history" | "docs">("license");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -126,6 +128,12 @@ export function App() {
       videoRef.current.play().catch(() => {});
     }
   }, [camOn]);
+
+  // Fetch + cache the (unbundled) guide video the first time the Docs tab is opened.
+  useEffect(() => {
+    if (tab === "docs" && !locked && !guideUrl) loadGuideVideo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, locked]);
 
   async function doExport() {
     if (!selected) return;
@@ -497,6 +505,23 @@ export function App() {
     }
   }
 
+  // Load the guide video: fetched once from the asset host (app-gated, downward), verified
+  // against a pinned hash, and cached on-device by the Rust side — then played from a local
+  // object URL. NOT bundled in the app (ADR-0019). The written docs below always work offline.
+  async function loadGuideVideo() {
+    setGuideMsg("Loading the guide video (downloaded once, then cached on your device)…");
+    try {
+      const buf = (await invoke("guide_video")) as ArrayBuffer;
+      const bytes = new Uint8Array(buf instanceof ArrayBuffer ? buf : (buf as ArrayBufferLike));
+      setGuideUrl(URL.createObjectURL(new Blob([bytes as unknown as BlobPart], { type: "video/mp4" })));
+      setGuideMsg("");
+    } catch {
+      setGuideMsg(
+        "The guide video isn’t on this device yet. Connect to the internet and reopen this tab — it downloads once (verified), then plays offline. The written guide below always works.",
+      );
+    }
+  }
+
   // Load the on-device history of filled forms for the active profile.
   async function loadSavedForms(pid: string) {
     try {
@@ -696,8 +721,8 @@ export function App() {
       )}
 
       <nav style={{ display: "flex", gap: 4, margin: "0 0 6px", padding: "10px 0 0", borderBottom: "2px solid #e6eeec", flexWrap: "wrap", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
-        {([["setup", "1 · Profile & Vault"], ["forms", "2 · Forms to fill"], ["history", "3 · Past forms"]] as const).map(([id, label]) => {
-          const locked = id !== "setup" && !selected;
+        {([["license", "1 · License"], ["setup", "2 · Profile & Vault"], ["forms", "3 · Forms to fill"], ["history", "4 · Past forms"], ["docs", "5 · Docs & Video"]] as const).map(([id, label]) => {
+          const locked = id !== "license" && id !== "docs" && !selected;
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
               style={{ padding: "9px 16px", border: "none", borderBottom: tab === id ? "3px solid #0d8f83" : "3px solid transparent", background: "none", fontWeight: tab === id ? 700 : 500, fontSize: 14, color: tab === id ? "#0a6a60" : "#55666f", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>
@@ -706,7 +731,7 @@ export function App() {
           );
         })}
       </nav>
-      {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>Start here: create or pick a profile — the other steps unlock once one is selected.</p>}
+      {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>Review your license, then open <b>Profile &amp; Vault</b> and pick a profile — Forms and Past forms unlock once one is selected.</p>}
 
       {tab === "setup" && (
       <section style={cardStyle}>
@@ -742,14 +767,29 @@ export function App() {
       </section>
       )}
 
-      {tab === "setup" && !locked && (
+      {tab === "license" && !locked && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>License &amp; device</h2>
-          <p style={{ color: "#5a6b6d", fontSize: 13, margin: "0 0 6px" }}>
-            License: <b>{lic?.licensed ? `${lic.tier} (active)` : "Free / beta"}</b>
-            {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" ? ` — ${lic.reason}` : ""}
-            {" · "}This device: <code>{deviceId.slice(0, 12)}…</code>
+          <h2 style={h2Style}>1 · License &amp; device</h2>
+          <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
+            This is where the app starts: your license and this device’s identity. Everything
+            downstream — profiles, the vault, filling forms, signing — runs under the license shown
+            here, and it’s all verified <b>offline on this device</b> (no server ever sees it).
           </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", margin: "4px 0 10px" }}>
+            <span style={{
+              fontSize: 13, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
+              background: lic?.licensed ? "#e2f2f0" : "#fdf0d9",
+              color: lic?.licensed ? "#0a6a60" : "#8a5a0a",
+            }}>
+              {lic?.licensed ? `${lic.tier} — active` : "Free / beta"}
+            </span>
+            {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" && (
+              <span style={{ fontSize: 12, color: "#8a5a0a" }}>{lic.reason}</span>
+            )}
+            <span style={{ fontSize: 12, color: "#5a6b6d" }}>
+              This device: <code>{deviceId.slice(0, 16)}…</code>
+            </span>
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input
               placeholder="paste your license key (PPDF1.…)"
@@ -759,8 +799,10 @@ export function App() {
             />
             <button onClick={activateLicense}>Activate</button>
           </div>
-          <p style={{ color: "#5a6b6d", fontSize: 11, marginTop: 6 }}>
-            Free during the beta. A Pro license is bound to this device and verified offline — no server.
+          <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 8 }}>
+            Free during the beta — all features are available. A Pro license is <b>bound to this device</b>
+            and verified offline with a device-held key; activating it never contacts a server, and your
+            key never leaves the machine. New here? Open <b>5 · Docs &amp; Video</b> for a guided tour.
           </p>
         </section>
       )}
@@ -1133,6 +1175,77 @@ export function App() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {tab === "docs" && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>5 · Docs &amp; Video</h2>
+          <p style={{ color: "#55666f", fontSize: 13, marginTop: 0 }}>
+            A narrated walkthrough of every feature, plus written documentation. The video isn’t
+            packaged in the app — it’s fetched <b>once</b> from our asset host, integrity-checked, and
+            <b> cached on your device</b> so it then plays offline. Only genuine app builds can fetch
+            it, and no identifier about you is ever sent.
+          </p>
+
+          {guideUrl ? (
+            <video
+              controls
+              preload="metadata"
+              src={guideUrl}
+              style={{ width: "100%", borderRadius: 10, border: "1px solid #e6eeec", background: "#000" }}
+            >
+              Your device can’t play this video.
+            </video>
+          ) : (
+            <div style={{
+              border: "1px dashed #cdd9dd", borderRadius: 10, padding: 20, textAlign: "center",
+              color: "#55666f", fontSize: 13, background: "#f7fafa",
+            }}>
+              <div style={{ marginBottom: 8 }}>{guideMsg || "Preparing the guide video…"}</div>
+              <button onClick={loadGuideVideo}>Download &amp; play the guide</button>
+            </div>
+          )}
+          <p style={{ fontSize: 12, color: "#8a8f92", margin: "6px 0 16px" }}>
+            Guided tour — License → Profile &amp; Vault → Forms to fill → Past forms (with narration).
+          </p>
+
+          <h3 style={{ fontSize: 15, margin: "0 0 6px" }}>How it works, tab by tab</h3>
+          <ul style={{ fontSize: 13, color: "#37474a", lineHeight: 1.6, paddingLeft: 18 }}>
+            <li>
+              <b>1 · License</b> — the app’s foundation. Shows your license (Free/beta or Pro) and this
+              device’s identity, verified <b>offline</b>. A Pro key is bound to this device; activating
+              it never contacts a server and your key never leaves the machine.
+            </li>
+            <li>
+              <b>2 · Profile &amp; Vault</b> — create/choose a profile at the top; below it, that
+              profile’s <b>encrypted vault</b> of key/value details (name, DOB, email, photo, signature,
+              licence…). Everything is sealed at rest on-device. Import a passport/licence/business-card
+              and on-device OCR fills the vault for you. Back up or transfer the vault as a
+              passphrase-encrypted file — there is no plaintext export.
+            </li>
+            <li>
+              <b>3 · Forms to fill</b> — bring <b>any</b> form: from this device, a network location
+              (<code>{"\\\\server\\share"}</code>), a web link, or by searching the web. It’s read and
+              filled <b>right here</b> — if it already has form fields they’re filled from your vault;
+              if not, on-device OCR detects the fields, creates them, and fills them, then exports a
+              ready <code>filled.pdf</code>. Word/Excel forms are filled from named fields or labels.
+            </li>
+            <li>
+              <b>4 · Past forms</b> — every form you fill is kept as an <b>encrypted, versioned copy</b>
+              on this device. Re-download any past version, or <b>sign</b> it with this device’s
+              Ed25519 key (a non-delegable provenance signature). Nothing was uploaded to save it.
+            </li>
+          </ul>
+
+          <h3 style={{ fontSize: 15, margin: "14px 0 6px" }}>The privacy promise</h3>
+          <p style={{ fontSize: 13, color: "#37474a", lineHeight: 1.6, margin: 0 }}>
+            Every operation that touches your content — OCR, translation, field-naming, filling,
+            signing — runs <b>on this device</b>. We never see, store, or receive your forms or data.
+            The finished form goes only where <b>you</b> choose to send it (e.g. submitting it to its
+            recipient). The one clearly-labelled exception is an optional web search to <i>locate</i> a
+            blank form, where only your typed search terms go to DuckDuckGo directly.
+          </p>
         </section>
       )}
     </main>

@@ -755,6 +755,36 @@ async fn download_form(url: String) -> Result<tauri::ipc::Response, String> {
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+// ---- App-only hosted guide video (ADR-0019) --------------------------------------
+// The guide video is NOT bundled; it's served DOWNWARD by our asset host and fetched on
+// demand, verified against a pinned hash, and cached on-device for offline playback. The
+// request carries an APP-LEVEL capability (same for every install of a release) so the edge
+// can serve it only to genuine app builds — it identifies an app, never a user (no tracking).
+const GUIDE_URL: &str = "https://polyglotformfill.mooo.com/app-assets/guide.mp4";
+const GUIDE_SHA256: &str = "98fe5e0370b9c333aee659855141ca28b167c8cde4f9e5afc592e612fc65ead7";
+/// Per-release app capability. Rotated each release; NOT a user/device identifier.
+const APP_ASSET_TOKEN: &str = "ppf-app-2026-07-beta";
+
+/// Return the guide video bytes: from the on-device cache if present & intact, else fetched
+/// downward from the asset host (app-gated), integrity-verified, and cached. Inbound only.
+#[tauri::command]
+async fn guide_video(state: State<'_, AppState>) -> Result<tauri::ipc::Response, String> {
+    let cache = state.data_dir.join("guide.mp4");
+    if let Ok(b) = std::fs::read(&cache) {
+        if core_crypto::sha256_hex(&b) == GUIDE_SHA256 {
+            return Ok(tauri::ipc::Response::new(b));
+        }
+    }
+    let bytes = core_fetch::fetch_app_asset(GUIDE_URL, APP_ASSET_TOKEN)
+        .await
+        .map_err(|e| e.to_string())?;
+    if core_crypto::sha256_hex(&bytes) != GUIDE_SHA256 {
+        return Err("guide video failed its integrity check (pinned hash mismatch)".into());
+    }
+    let _ = std::fs::write(&cache, &bytes);
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// A web-search hit (title + URL) returned to the UI.
 #[derive(serde::Serialize)]
 struct SearchHit {
@@ -910,6 +940,7 @@ pub fn run() {
             form_signatures,
             open_submit_url,
             download_form,
+            guide_video,
             web_search,
             register_companion,
             lock_status,

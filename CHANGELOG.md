@@ -15,6 +15,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Desktop: License tab, Docs & Video tab, app-only hosted guide video (2026-07-22)
+- **License is now its own first tab** (`1 · License`) — the app’s foundation: license status +
+  this device’s identity, verified offline. Tabs are now: License → Profile & Vault → Forms to fill
+  → Past forms → Docs & Video.
+- **New `5 · Docs & Video` tab** — a narrated guided-tour video plus written, tab-by-tab
+  documentation and the privacy promise. Written docs are bundled (always offline).
+- **Guide video is NOT bundled (RFC-0009 / ADR-0019).** It’s hosted on the OKE asset host and served
+  **downward**, fetched once by the app, **integrity-checked against a pinned SHA-256**, and cached
+  on-device for offline playback. The fetch carries an **app-level** capability (same for every
+  install of a release) + Origin — it authenticates *a genuine app build*, never a user, so there is
+  **no tracking / no identifier** (privacy invariant preserved). Honest limitation recorded: a
+  downloadable client’s token is extractable, so this is a strong deterrent, not DRM.
+- Video is produced fully on-device: `scripts/build-guide-video.ps1` (Windows SAPI narration + real
+  app screenshots in `docs/guide/slides/` + ffmpeg). New `core-fetch::fetch_app_asset` (app-gated
+  downward fetch) and Tauri `guide_video` command (cache → verify → fetch). Edge gate documented in
+  `docs/deploy/app-asset-gate.md`.
+
 ### Added — Desktop: real on-device history for brought forms (2026-07-22)
 - Every form you fill (from device / network / URL / web search) is now **saved to the Past forms
   tab automatically** as an encrypted, versioned copy — entirely on-device. Re-filling the same

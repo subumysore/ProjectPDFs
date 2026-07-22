@@ -33,6 +33,8 @@ test-results/
 *.zip
 *.tar.gz
 *.mp4
+# The guide video is NOT bundled (ADR-0019): it's hosted + fetched on demand. Built into
+# a gitignored staging dir by scripts/build-guide-video.ps1, then uploaded via publish-site.
 
 # Editor / OS
 .DS_Store

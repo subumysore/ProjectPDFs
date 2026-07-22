@@ -4,6 +4,15 @@ _What is in flight RIGHT NOW. Update at the start and end of every work session.
 to absolute._
 
 ## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
+- **Just shipped (2026-07-22):** **License is its own first tab**; new **Docs & Video tab** with a
+  narrated guided-tour video + written docs. Video is **NOT bundled** — hosted on OKE, served
+  downward, fetched once, **pinned-SHA-256 verified**, cached on-device (RFC-0009 / ADR-0019). App
+  sends an **app-level** capability (no user identifier → no tracking). Video built on-device via
+  `scripts/build-guide-video.ps1` (SAPI narration + `docs/guide/slides/` + ffmpeg). New
+  `core-fetch::fetch_app_asset` + Tauri `guide_video`. Edge gate: `docs/deploy/app-asset-gate.md`.
+  Tabs now: License → Profile & Vault → Forms → Past forms → Docs & Video. cargo + test-all green.
+  Pending infra (can't verify here): deploy the OKE gate + upload guide.mp4 via publish-site.
+
 - **Just shipped (2026-07-22, verified LIVE end-to-end):** REAL on-device **Past forms history**.
   Every filled brought form is auto-saved as an encrypted, versioned copy (filled-PDF bytes sealed in
   new `core-store` `form_blobs` table). New Tauri cmds `save_brought_form` / `list_saved_forms` /
