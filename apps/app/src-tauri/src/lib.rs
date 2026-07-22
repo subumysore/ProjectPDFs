@@ -110,7 +110,6 @@ fn unlock(state: State<AppState>, passphrase: String) -> Result<(), String> {
 // app is unlocked. The app writes a heartbeat sentinel (a unix timestamp) on unlock and keeps
 // it fresh; on lock/startup it's cleared. The host requires the sentinel to be recent, so the
 // passphrase gate also protects companion access (not just the in-app UI).
-const SESSION_MAX_AGE_SECS: i64 = 120;
 fn session_path(dir: &std::path::Path) -> std::path::PathBuf {
     dir.join("app-session.flag")
 }
