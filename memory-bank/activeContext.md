@@ -3,17 +3,27 @@
 _What is in flight RIGHT NOW. Update at the start and end of every work session. Convert relative dates
 to absolute._
 
-## Current focus (2026-07-22) — Desktop UX: SPA → step-by-step tabs
-- **Just shipped (2026-07-22):** the desktop app (`apps/app/src/App.tsx`) was converted from one long
-  scrolling SPA into a **tabbed workflow**: **1 · Profile → 2 · Vault → 3 · Forms to fill →
-  4 · Past forms** (`tab` state + `<nav>`; non-Profile tabs gated on a selected profile). The Forms
-  tab now presents all four sources — **device / network location (`\\server\share`) / web URL /
-  web search** — with privacy wording fixed ("on-device" = private, not local-only). New **Past forms**
-  tab reads the encrypted versioned save. `npm run typecheck` + `npm run build` green.
-- **Still needs a LIVE runtime pass:** after reboot the app/dev server are not running and the vault is
-  re-locked (session state). Keyboard injection into WebView2 fails from scripts, so the passphrase
-  (`omganesha`) must be typed by the user — the end-to-end tabbed walkthrough capture is the last gate,
-  to be done WITH the user (they type; I drive clicks + PrintWindow capture). See [[desktop-parity-shared-engine]].
+## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
+- **Just shipped (2026-07-22), verified LIVE end-to-end** (drove the running Tauri app myself,
+  captured every tab):
+  - Desktop app (`apps/app/src/App.tsx`) is a **3-tab, step-by-step workflow**: **1 · Profile & Vault
+    → 2 · Forms to fill → 3 · Past forms**. Profile + Vault MERGED into one tab (profiles + a
+    **License & device** card on top, chosen profile's vault below). Sticky tab bar. Non-setup tabs
+    gated on a selected profile.
+  - **Built-in catalog REMOVED** (user: "we are not going to keep any catalog"). The app maintains no
+    form mappings; it adapts to any brought form. Forms tab = device / network location
+    (`\\server\share`) / web URL / web search → on-device fill (AcroForm else OCR). Removed the
+    catalog picker, catalog autofill/save/sign table, `makeFillable` (catalog coords), and all
+    orphaned state/functions/interfaces (noUnusedLocals-clean).
+  - **Privacy vocabulary corrected** (user: "what do you mean nothing is uploaded? User may
+    definitely upload the filled form!"): invariant is *we* never receive it; the user sends the
+    finished form where they choose (submit to recipient). Dropped "nothing is ever uploaded".
+- **WebView2 automation SOLVED (reusable):** synthetic keystrokes/`SendKeys ^v` are ignored by
+  WebView2, but **`SendInput` with `KEYEVENTF_UNICODE`** types into it fine (used to enter the vault
+  passphrase). Clicks need **`SetProcessDPIAware()`** in the PS process or `SetCursorPos` lands
+  off-target; first click must ACTIVATE the window (foreground) or WebView2 ignores it. Scripts in
+  scratchpad `proof/` (unlock3, drivetabs2, tabshot). Note the vault passphrase is `omganesha`.
+- `node scripts/test-all.mjs` green (120 + 8 + typecheck + vite build). See [[desktop-parity-shared-engine]].
 
 ## Prior focus (2026-07-20) — Extension capture + intelligent fill + desktop parity
 - **Just shipped (2026-07-20 late):** viewer **"Show original form" toggle** (both blank +

@@ -5,8 +5,6 @@ import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFi
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
-import { translateText } from "./translate";
-import { resolveFields } from "./fill/resolver"; // shared semantic engine (composes full_name, etc.)
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
@@ -16,7 +14,6 @@ const LANGS: Record<string, string> = Object.fromEntries(
   (allLangs() as string[]).map((c) => [c, langName(c) as string]),
 );
 type Lang = string;
-const FORM_LANG: Lang = "en"; // catalogue forms' original language
 
 interface Profile {
   id: string;
@@ -25,32 +22,6 @@ interface Profile {
 interface DataPoint {
   key: string;
   value: string;
-}
-interface CatalogSummary {
-  id: string;
-  name: string;
-  kind: string;
-  tags: string[];
-  lang?: string;
-}
-interface FilledField {
-  name: string;
-  ontology_key: string;
-  value: string | null;
-}
-interface AutofillResult {
-  entry: { id: string; name: string };
-  filled: FilledField[];
-}
-interface SaveInfo {
-  instance_id: string;
-  version_no: number;
-  saves: number;
-}
-interface SignInfo {
-  version_no: number;
-  signer_public: string;
-  doc_hash: string;
 }
 
 const cardStyle: React.CSSProperties = {
@@ -83,21 +54,11 @@ export function App() {
   const [newProfile, setNewProfile] = useState("");
   const [k, setK] = useState("");
   const [v, setV] = useState("");
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<CatalogSummary[]>([]);
-  const [form, setForm] = useState<CatalogSummary | null>(null);
-  const [autofill, setAutofill] = useState<AutofillResult | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [learnedMsg, setLearnedMsg] = useState("");
-  const [saved, setSaved] = useState<SaveInfo | null>(null);
-  const [signInfo, setSignInfo] = useState<SignInfo | null>(null);
-  const [translated, setTranslated] = useState<Record<string, string>>({});
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
   const [pass, setPass] = useState("");
   const [lockMsg, setLockMsg] = useState("");
-  const [transMsg, setTransMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
@@ -123,7 +84,7 @@ export function App() {
   const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
   const [licKey, setLicKey] = useState("");
   // Step-based tabs instead of one long scrolling page.
-  const [tab, setTab] = useState<"profile" | "vault" | "forms" | "history">("profile");
+  const [tab, setTab] = useState<"setup" | "forms" | "history">("setup");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -207,11 +168,6 @@ export function App() {
         if (nl && nl in LANGS) setBaseLang(nl as Lang);
       }),
     );
-  const doSearch = (q: string) => {
-    setQuery(q);
-    guard(invoke<CatalogSummary[]>("catalog_search", { query: q }).then(setResults));
-  };
-
   useEffect(() => {
     checkLock();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -224,7 +180,6 @@ export function App() {
       setLocked(!s.unlocked);
       if (s.unlocked) {
         refreshProfiles();
-        doSearch("");
       }
     } catch {
       /* leave locked */
@@ -238,7 +193,6 @@ export function App() {
       setPass("");
       setLocked(false);
       refreshProfiles();
-      doSearch("");
     } catch (e) {
       setLockMsg(String(e));
     }
@@ -251,96 +205,7 @@ export function App() {
 
   function selectProfile(id: string) {
     setSelected(id);
-    setAutofill(null);
     loadPoints(id);
-  }
-  function selectForm(f: CatalogSummary) {
-    setForm(f);
-    setAutofill(null);
-  }
-  function runAutofill() {
-    if (!selected || !form) return;
-    setSaved(null);
-    guard(
-      invoke<AutofillResult>("autofill_for", { profileId: selected, entryId: form.id }).then((res) => {
-        // The catalog fill matches ontology keys EXACTLY. Enrich any it left empty using the SHARED
-        // semantic resolver against the vault — so `full_name` composes from first_name+last_name,
-        // `email`/`dob`/etc. resolve by meaning, and the vault actually fills the form.
-        const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
-        const filled = res.filled.map((f) => {
-          if (f.value != null && f.value !== "") return f;
-          const v =
-            resolveFields(vault, [{ label: f.name }])[0] ??
-            resolveFields(vault, [{ label: f.ontology_key }])[0];
-          return v ? { ...f, value: String(v) } : f;
-        });
-        setAutofill({ ...res, filled });
-      }),
-    );
-  }
-  // Silent capture: when the user answers a field the vault didn't have, save it to
-  // the active profile's vault automatically (on-device, encrypted) so future forms
-  // fill it. Then re-run autofill so the newly-learned value shows as filled.
-  async function captureAnswer(key: string, raw: string) {
-    let value = raw.trim();
-    if (!value || !selected) return;
-    // You type in YOUR base language; the value is converted to the form's ORIGINAL
-    // language before it's stored/filled, so the submitted form stays in its language.
-    let note = "";
-    const formLang = (form?.lang as Lang) ?? FORM_LANG;
-    if (baseLang !== formLang) {
-      try {
-        const converted = await translateText(value, baseLang, formLang, setTransMsg);
-        if (converted) {
-          note = ` — you typed ${LANGS[baseLang]}, saved as ${LANGS[formLang]}: “${converted}”`;
-          value = converted;
-        }
-      } catch {
-        /* translation unavailable → keep what the user typed */
-      }
-    }
-    await guard(invoke("upsert_data_point", { profileId: selected, key, value }));
-    await loadPoints(selected);
-    setAnswers((a) => {
-      const next = { ...a };
-      delete next[key];
-      return next;
-    });
-    setLearnedMsg(`Remembered ${key}${note} (on-device).`);
-    runAutofill();
-  }
-  function saveForm() {
-    if (!selected || !form) return;
-    setSignInfo(null);
-    guard(
-      invoke<SaveInfo>("save_filled_form", { profileId: selected, entryId: form.id }).then(setSaved),
-    );
-  }
-  function signForm() {
-    if (!selected || !form) return;
-    guard(invoke<SignInfo>("sign_form", { profileId: selected, entryId: form.id }).then(setSignInfo));
-  }
-  // Translate the form's field labels into the user's BASE language — for VIEWING only.
-  // The form is still filled/submitted in its original language.
-  async function translateForViewing() {
-    if (!autofill) return;
-    const formLang = (form?.lang as Lang) ?? FORM_LANG;
-    if (baseLang === formLang) {
-      setTransMsg(`This form is already in your base language (${LANGS[formLang]}).`);
-      return;
-    }
-    setTransMsg("translating on-device…");
-    try {
-      const map: Record<string, string> = {};
-      for (const f of autofill.filled) {
-        map[f.ontology_key] = await translateText(f.name, formLang, baseLang, setTransMsg);
-      }
-      setTranslated(map);
-      setTransMsg(`Translated for viewing (${LANGS[formLang]} → ${LANGS[baseLang]}). You still fill it in ${LANGS[formLang]}.`);
-    } catch (e) {
-      setErr(String(e));
-      setTransMsg("");
-    }
   }
 
   async function addProfile() {
@@ -607,7 +472,7 @@ export function App() {
       const { fields } = await detectFields(bytes, setPdfMsg);
       if (!fields.length) {
         setPdfMsg(
-          "No fields could be detected automatically. If this is a known form, search & select it above, then use “Make fillable (catalog coords)”.",
+          "No fields could be detected automatically on this form.",
         );
         return;
       }
@@ -663,30 +528,6 @@ export function App() {
       setErr(String(e));
     }
   }
-  async function makeFillable() {
-    if (!pdfBytes || !form) {
-      setPdfMsg("Open/generate a PDF and select a form (section 3) first.");
-      return;
-    }
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const entry: any = await invoke("catalog_get", { entryId: form.id });
-      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
-      const { created, filled, data } = await makeFillableAndFill(pdfBytes, entry.field_map.fields, vault);
-      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
-      setPdfBytes(ab);
-      if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
-      downloadBytes(data, "fillable-filled.pdf");
-      setPdfMsg(
-        created === 0
-          ? "This form has no placement coordinates in the catalog yet (needs curation/OCR detection)."
-          : `Created ${created} form fields at their coordinates, filled ${filled} from the vault, and exported fillable-filled.pdf.`,
-      );
-    } catch (e) {
-      setErr(String(e));
-    }
-  }
-
   const selectedName = profiles.find((p) => p.id === selected)?.name;
 
   if (locked) {
@@ -744,7 +585,9 @@ export function App() {
         </button>
       </div>
       <p style={{ color: "#55666f", marginTop: 0 }}>
-        Privacy-first, on-device form autofill — processed on your device; we never see your data.
+        Fill any form privately — every form is read and filled <b>entirely on your device</b>.
+        We never see the form or your data; it goes <b>only where you choose to send it</b> (like
+        submitting the finished form to its recipient).
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", fontSize: 13 }}>
         <label htmlFor="baselang" style={{ color: "#55666f" }}>Your language:</label>
@@ -754,7 +597,6 @@ export function App() {
           onChange={(e) => {
             const lang = e.currentTarget.value as Lang;
             setBaseLang(lang);
-            setTranslated({});
             // Persist as a profile field so it travels with the vault (and the extension).
             if (selected) void invoke("upsert_data_point", { profileId: selected, key: "native_language", value: lang }).catch(() => {});
           }}
@@ -767,7 +609,7 @@ export function App() {
           ))}
         </select>
         <span style={{ color: "#8a8f92", fontSize: 12 }}>
-          view forms in your language; your entries are converted to the form’s language.
+          your preferred language — saved with your profile so entries can be written in the form’s language.
         </span>
       </div>
       {err && (
@@ -776,9 +618,9 @@ export function App() {
         </p>
       )}
 
-      <nav style={{ display: "flex", gap: 4, margin: "10px 0 6px", borderBottom: "2px solid #e6eeec", flexWrap: "wrap" }}>
-        {([["profile", "1 · Profile"], ["vault", "2 · Vault"], ["forms", "3 · Forms to fill"], ["history", "4 · Past forms"]] as const).map(([id, label]) => {
-          const locked = id !== "profile" && !selected;
+      <nav style={{ display: "flex", gap: 4, margin: "0 0 6px", padding: "10px 0 0", borderBottom: "2px solid #e6eeec", flexWrap: "wrap", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
+        {([["setup", "1 · Profile & Vault"], ["forms", "2 · Forms to fill"], ["history", "3 · Past forms"]] as const).map(([id, label]) => {
+          const locked = id !== "setup" && !selected;
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
               style={{ padding: "9px 16px", border: "none", borderBottom: tab === id ? "3px solid #0d8f83" : "3px solid transparent", background: "none", fontWeight: tab === id ? 700 : 500, fontSize: 14, color: tab === id ? "#0a6a60" : "#55666f", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>
@@ -789,9 +631,9 @@ export function App() {
       </nav>
       {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>Start here: create or pick a profile — the other steps unlock once one is selected.</p>}
 
-      {tab === "profile" && (
+      {tab === "setup" && (
       <section style={cardStyle}>
-        <h2 style={h2Style}>1 · Profiles</h2>
+        <h2 style={h2Style}>1 · Profiles — add, choose, edit or remove</h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {profiles.map((p) => (
             <button
@@ -823,7 +665,30 @@ export function App() {
       </section>
       )}
 
-      {tab === "vault" && selected && (
+      {tab === "setup" && !locked && (
+        <section style={cardStyle}>
+          <h2 style={h2Style}>License &amp; device</h2>
+          <p style={{ color: "#5a6b6d", fontSize: 13, margin: "0 0 6px" }}>
+            License: <b>{lic?.licensed ? `${lic.tier} (active)` : "Free / beta"}</b>
+            {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" ? ` — ${lic.reason}` : ""}
+            {" · "}This device: <code>{deviceId.slice(0, 12)}…</code>
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              placeholder="paste your license key (PPDF1.…)"
+              value={licKey}
+              onChange={(e) => setLicKey(e.currentTarget.value)}
+              style={{ flex: 1, minWidth: 240 }}
+            />
+            <button onClick={activateLicense}>Activate</button>
+          </div>
+          <p style={{ color: "#5a6b6d", fontSize: 11, marginTop: 6 }}>
+            Free during the beta. A Pro license is bound to this device and verified offline — no server.
+          </p>
+        </section>
+      )}
+
+      {tab === "setup" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -957,7 +822,7 @@ export function App() {
         </section>
       )}
 
-      {tab === "vault" && selected && !locked && (
+      {tab === "setup" && selected && !locked && (
         <section style={cardStyle}>
           <h2 style={h2Style}>Backup &amp; transfer (encrypted)</h2>
           <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
@@ -987,156 +852,20 @@ export function App() {
             </label>
           </div>
           {bkMsg && <p style={{ fontSize: 13 }}>{bkMsg}</p>}
-          <div style={{ borderTop: "1px solid #eef2f3", marginTop: 12, paddingTop: 10 }}>
-            <p style={{ color: "#5a6b6d", fontSize: 12, margin: "0 0 6px" }}>
-              License: <b>{lic?.licensed ? `${lic.tier} (active)` : "Free / beta"}</b>
-              {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" ? ` — ${lic.reason}` : ""}
-              {" · "}This device: <code>{deviceId.slice(0, 12)}…</code>
-            </p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <input
-                placeholder="paste your license key (PPDF1.…)"
-                value={licKey}
-                onChange={(e) => setLicKey(e.currentTarget.value)}
-                style={{ flex: 1, minWidth: 240 }}
-              />
-              <button onClick={activateLicense}>Activate</button>
-            </div>
-            <p style={{ color: "#5a6b6d", fontSize: 11, marginTop: 6 }}>
-              Free during the beta. A Pro license is bound to this device and verified offline — no server.
-            </p>
-          </div>
         </section>
       )}
 
       {tab === "forms" && selected && (<>
-      <section style={cardStyle}>
-        <h2 style={h2Style}>3 · Pick a known form (from our built-in catalog)</h2>
-        <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
-          Forms we've already mapped, so fields land in exactly the right spot. Searched locally — no internet.
-          Don't see yours? Use <b>“Bring any form”</b> below to open a file or fetch one from a link.
-        </p>
-        <input
-          placeholder="Search forms by name or tag (e.g. passport, kyc, identity)…"
-          value={query}
-          onChange={(e) => doSearch(e.currentTarget.value)}
-          style={{ padding: 8, width: "100%", boxSizing: "border-box" }}
-        />
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-          {results.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => selectForm(r)}
-              style={{
-                textAlign: "left",
-                padding: "8px 10px",
-                borderRadius: 8,
-                border: form?.id === r.id ? "2px solid #0d8f83" : "1px solid #d9e2e6",
-                background: form?.id === r.id ? "#e2f2f0" : "#fff",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>{r.name}</div>
-              <div style={{ fontSize: 12, opacity: 0.6, ...mono }}>
-                {r.kind} · {r.tags.join(", ")}
-              </div>
-            </button>
-          ))}
-          {results.length === 0 && <span style={{ opacity: 0.6 }}>No forms match.</span>}
-        </div>
-      </section>
-
-      {selected && form && (
-        <section style={cardStyle}>
-          <h2 style={h2Style}>4 · Autofill</h2>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={runAutofill}>
-              Autofill “{form.name}” from {selectedName}
-            </button>
-            {autofill && <button onClick={saveForm}>Save (new version)</button>}
-            {saved && (
-              <span style={{ color: "#0a6a60", fontSize: 13 }}>
-                Saved version {saved.version_no} · {saved.saves} save(s), encrypted on-device
-              </span>
-            )}
-            {saved && <button onClick={signForm}>Sign (device key)</button>}
-          </div>
-          {signInfo && (
-            <p style={{ color: "#0a6a60", fontSize: 13, ...mono }}>
-              ✓ Signed v{signInfo.version_no} · signer {signInfo.signer_public.slice(0, 16)}… · doc{" "}
-              {signInfo.doc_hash.slice(0, 12)}… (non-delegable, on-device Ed25519)
-            </p>
-          )}
-          {autofill && (
-            <>
-              <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-                <button
-                  onClick={translateForViewing}
-                  disabled={baseLang === ((form?.lang as Lang) ?? FORM_LANG)}
-                >
-                  {baseLang === ((form?.lang as Lang) ?? FORM_LANG)
-                    ? `Form is in your language (${LANGS[(form?.lang as Lang) ?? FORM_LANG]})`
-                    : `Translate for viewing → ${LANGS[baseLang]} (on-device)`}
-                </button>
-                {transMsg && <span style={{ fontSize: 12, color: "#55666f" }}>{transMsg}</span>}
-              </div>
-              <p style={{ fontSize: 12, color: "#55666f", marginTop: 8, marginBottom: 0 }}>
-                Answers you type for missing fields are <b>saved to your vault automatically</b>
-                (on-device, encrypted) so the next form fills them.
-                {learnedMsg && <span style={{ color: "#0a6a60", marginLeft: 6 }}>{learnedMsg}</span>}
-              </p>
-            <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 12 }}>
-              <thead>
-                <tr style={{ textAlign: "left", borderBottom: "1px solid #d9e2e6" }}>
-                  <th style={{ padding: "6px 8px" }}>Field</th>
-                  <th style={{ padding: "6px 8px" }}>Ontology key</th>
-                  <th style={{ padding: "6px 8px" }}>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {autofill.filled.map((f) => (
-                  <tr key={f.ontology_key} style={{ borderBottom: "1px solid #eef2f4" }}>
-                    <td style={{ padding: "6px 8px" }}>
-                      {f.name}
-                      {translated[f.ontology_key] && (
-                        <span style={{ color: "#0a6a60", marginLeft: 6 }}>({translated[f.ontology_key]})</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "6px 8px", ...mono }}>{f.ontology_key}</td>
-                    <td style={{ padding: "6px 8px" }}>
-                      {f.value ?? (
-                        <input
-                          placeholder="type your answer — it’s remembered"
-                          value={answers[f.ontology_key] ?? ""}
-                          onChange={(e) => {
-                            const val = e.currentTarget.value;
-                            setAnswers((a) => ({ ...a, [f.ontology_key]: val }));
-                          }}
-                          onBlur={(e) => captureAnswer(f.ontology_key, e.currentTarget.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") captureAnswer(f.ontology_key, e.currentTarget.value);
-                          }}
-                          style={{ padding: "4px 6px", minWidth: 200 }}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </>
-          )}
-        </section>
-      )}
 
       {selected && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>5 · Bring any form — a file, a network location, a link, or a web search</h2>
+          <h2 style={h2Style}>3 · Choose a form to fill</h2>
           <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
-            Any PDF / image / Word / Excel — from <b>your device</b>, a <b>network location</b> (shared
-            drive / <code>\\server\share</code>), a <b>web link</b>, or by <b>searching the web</b>.
-            Whatever you bring is <b>downloaded and filled right here on your machine</b> — <i>“on-device” means private,
-            not local-only</i>. Nothing you bring or fill is ever uploaded.
+            Bring a form from <b>your device</b>, a <b>network location</b> (shared drive /
+            <code>\\server\share</code>), a <b>web link</b>, or by <b>searching the web</b> — then it’s
+            read and filled <b>right here on your machine</b>. Whatever the source, the form and your
+            data are processed on your device — we never receive them; you send the finished form only
+            where you choose.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <label style={{ fontSize: 13, opacity: 0.8 }}>Open a form from this device or a network location:</label>
@@ -1203,14 +932,13 @@ export function App() {
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
             Pick a form (PDF or an image/scan). It’s handled <b>automatically</b>: if it already has form
             fields they’re filled from your vault; if it has <b>none</b>, on-device OCR detects the fields,
-            creates them, and fills them — then exports a ready <code>filled.pdf</code>. Nothing is uploaded.
+            creates them, and fills them — then exports a ready <code>filled.pdf</code> on your device.
             <br />
             <span style={{ opacity: 0.75 }}>
-              A <b>web URL</b> is downloaded on-device (direct from the site, SSRF-guarded) then filled the
-              same way. <b>Word/Excel</b> (.docx/.xlsx) forms are filled from your vault — named fields
-              (content controls / named ranges) or flat labels (table cells / “Label:” lines) — and
-              download as a filled file. For a <b>known</b> form, search &amp;
-              select it in step 3 first so exact catalog coordinates are used.
+              A <b>web URL</b> is downloaded on your device (direct from the site, SSRF-guarded) then
+              filled the same way. <b>Word/Excel</b> (.docx/.xlsx) forms are filled from your vault —
+              named fields (content controls / named ranges) or flat labels (table cells / “Label:”
+              lines) — and download as a filled file.
             </span>
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
@@ -1234,7 +962,6 @@ export function App() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
               <button onClick={genFlat}>Generate flat sample PDF (demo)</button>
               {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
-              {pdfBytes && <button onClick={makeFillable}>Make fillable (catalog coords)</button>}
               {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR)</button>}
             </div>
           )}
@@ -1295,22 +1022,13 @@ export function App() {
 
       {tab === "history" && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>4 · Past filled forms</h2>
+          <h2 style={h2Style}>3 · Past filled forms</h2>
           <p style={{ color: "#55666f", fontSize: 13, marginTop: 0 }}>
-            Every form you <b>Save</b> (in the Forms tab) is kept here as an encrypted, versioned copy —
-            entirely on your device. Re-open, re-download, or sign any past version.
+            Forms you fill are exported as <code>filled.pdf</code> to your device. A running,
+            versioned history of every filled form — kept encrypted on this device, so you can
+            re-open, re-download, or sign any past version — is on the way.
           </p>
-          {saved ? (
-            <div style={{ border: "1px solid #eef2f4", borderRadius: 8, padding: 12 }}>
-              <div style={{ fontWeight: 600 }}>{form?.name ?? "Last saved form"}</div>
-              <div style={{ fontSize: 13, color: "#0a6a60", ...mono }}>
-                version {saved.version_no} · {saved.saves} save(s) · encrypted on-device
-                {signInfo ? ` · ✓ signed (doc ${signInfo.doc_hash.slice(0, 10)}…)` : ""}
-              </div>
-            </div>
-          ) : (
-            <p style={{ opacity: 0.6, fontSize: 13 }}>No saved forms yet. Fill a form in the Forms tab and click <b>Save (new version)</b>.</p>
-          )}
+          <p style={{ opacity: 0.6, fontSize: 13 }}>No saved forms yet.</p>
         </section>
       )}
     </main>
