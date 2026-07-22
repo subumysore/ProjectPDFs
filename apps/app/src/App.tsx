@@ -6,12 +6,15 @@ import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
 import { translateText } from "./translate";
+// SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
+// so the universal on-device translation is actually reachable from the UI.
+import { allLangs, langName } from "@engine/langcodes.js";
 
-// Languages the on-device models support today. A form's "original language" is the
-// language it was authored in (catalogue forms are English); the user's BASE language
-// is their comfort language for viewing + entry.
-const LANGS = { en: "English", hi: "हिन्दी", es: "Español", fr: "Français", de: "Deutsch", zh: "中文", ar: "العربية", ru: "Русский" } as const;
-type Lang = keyof typeof LANGS;
+// { iso: displayName } for every supported language.
+const LANGS: Record<string, string> = Object.fromEntries(
+  (allLangs() as string[]).map((c) => [c, langName(c) as string]),
+);
+type Lang = string;
 const FORM_LANG: Lang = "en"; // catalogue forms' original language
 
 interface Profile {
