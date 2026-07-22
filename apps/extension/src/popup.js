@@ -29,6 +29,18 @@ function setMsg(text, ok = true) {
   el.textContent = text;
   el.className = "msg " + (ok ? "ok" : "err");
 }
+// When the vault can't be read, show a CLEAR, actionable message. In single-vault mode the vault
+// lives in the desktop app, so a "locked" answer means "unlock the desktop app", not an error.
+// Returns true if blocked (caller should stop).
+function vaultBlocked(r) {
+  if (r && r.ok) return false;
+  if (r && r.locked) {
+    setMsg("🔒 Your vault is shared with the desktop app, which is locked. Open the PolyglotFormFill desktop app and unlock it, then click again.", false);
+  } else {
+    setMsg((r && r.error) || "Vault unavailable — unlock it (or open the desktop app).", false);
+  }
+  return true;
+}
 
 const COMP = { on: false, profile: "" };
 // AUTOMATIC single vault (no toggle): if the desktop app's companion bridge is reachable, the
@@ -130,7 +142,9 @@ async function renderEntries() {
   const box = $("entries");
   box.textContent = "";
   if (!r.ok) {
-    box.innerHTML = `<div class="empty">${COMP.on ? "Desktop app vault unavailable — is the app installed & the companion registered? " : ""}${(r.error || "")}</div>`;
+    box.innerHTML = r.locked
+      ? `<div class="empty">🔒 Your vault is shared with the desktop app, which is <b>locked</b>. Open the PolyglotFormFill desktop app and unlock it — your fields appear here automatically.</div>`
+      : `<div class="empty">${COMP.on ? "Desktop app vault unavailable — is the app installed &amp; the companion registered? " : ""}${(r.error || "")}</div>`;
     return;
   }
   renderNativeLang(r.vault);
@@ -209,7 +223,7 @@ async function addField() {
   } else {
     r = await send({ type: "set", key, value });
   }
-  if (!r.ok) return setMsg(r.error || "Locked", false);
+  if (vaultBlocked(r)) return;
   $("newKey").value = "";
   $("newVal").value = "";
   setMsg(`Saved “${key}”${COMP.on ? " to the desktop vault" : ""}.`);
@@ -288,7 +302,7 @@ $("export").onclick = async () => {
   const pass = $("bkPass").value;
   if (pass.length < 8) return setMsg("Choose a backup passphrase (8+ characters).", false);
   const r = await readVault();
-  if (!r.ok) return setMsg(r.error || "Locked", false);
+  if (vaultBlocked(r)) return;
   const withVal = Object.entries(r.vault || {}).filter(([, v]) => v && String(v).trim());
   if (!withVal.length) return setMsg("Your fields are empty — type some values first, then export.", false);
   const bytes = await exportVault(pass, r.vault, "");
@@ -502,7 +516,7 @@ async function runPdfFlow(r, tab, url, view = false) {
 
 $("fill").onclick = async () => {
   const r = await readVault();
-  if (!r.ok) return setMsg(r.error || "Locked", false);
+  if (vaultBlocked(r)) return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = (tab && tab.url) || "";
   // A PDF open in the browser? Fill it on-device with pdf-lib and show the result.
