@@ -19,6 +19,7 @@ async function extractPdfTexts(bytes) {
   return texts;
 }
 import { fillPage } from "./pagefill.js";
+import { shouldUseDesktopVault, migrationPlan } from "./companion.js";
 const $ = (id) => document.getElementById(id);
 // Show the loaded version in the header so it's always obvious which code is running.
 try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
@@ -30,29 +31,79 @@ function setMsg(text, ok = true) {
 }
 
 const COMP = { on: false, profile: "" };
-async function loadCompMode() {
-  const s = await chrome.storage.local.get(["companionMode", "companionProfile"]);
-  COMP.on = !!s.companionMode;
+// AUTOMATIC single vault (no toggle): if the desktop app's companion bridge is reachable, the
+// desktop's ONE vault is authoritative and the extension reads/writes it. Otherwise the extension
+// transparently uses its own local vault. Whichever app was started first, both end up on one vault.
+async function resolveVaultMode() {
+  const s = await chrome.storage.local.get(["companionProfile"]);
   COMP.profile = s.companionProfile || "";
+  try {
+    const ping = await send({ type: "companionPing" });
+    if (shouldUseDesktopVault(ping)) {
+      COMP.on = true;
+      await compProfile();       // auto-pick (or create) the desktop profile
+      await migrateLocalOnce();  // seed the shared vault with any existing extension data
+      return;
+    }
+  } catch (_) { /* companion not installed/running → local vault */ }
+  COMP.on = false;
 }
-// Resolve (and remember) which desktop profile the extension writes to.
+// Resolve (and remember) which desktop profile the extension writes to. If the desktop has no
+// profile yet (e.g. the user started with the extension), create one so the single vault has a home.
 async function compProfile() {
   if (COMP.profile) return COMP.profile;
-  const pl = await send({ type: "companionProfiles" });
+  let pl = await send({ type: "companionProfiles" });
+  if (pl.ok && (!pl.profiles || pl.profiles.length === 0)) {
+    const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
+    await send({ type: "companionCreateProfile", id, name: "Me" });
+    pl = await send({ type: "companionProfiles" });
+  }
   if (pl.ok && pl.profiles && pl.profiles.length) {
     COMP.profile = pl.profiles[0].id;
     await chrome.storage.local.set({ companionProfile: COMP.profile });
   }
   return COMP.profile;
 }
+// One-time, order-independent unification: on the first connect, copy any fields already in the
+// extension's local vault into the desktop vault — but only where the desktop has no value yet, so
+// existing desktop data is never overwritten.
+async function migrateLocalOnce() {
+  const { companionMigrated } = await chrome.storage.local.get("companionMigrated");
+  const st = await send({ type: "status" });
+  if (!(st && st.ok && st.unlocked)) return; // local vault locked → defer until it's unlocked
+  const localR = await send({ type: "getVault" });
+  const deskR = await send({ type: "companionVault", profileId: await compProfile() });
+  const plan = migrationPlan(
+    localR && localR.ok ? localR.vault : {},
+    deskR && deskR.ok ? deskR.vault : {},
+    { migrated: !!companionMigrated, unlocked: true },
+  );
+  for (const { key, value } of plan) {
+    await send({ type: "companionUpsert", profileId: await compProfile(), key, value });
+  }
+  if (!companionMigrated) await chrome.storage.local.set({ companionMigrated: true });
+}
+// The active desktop profile's display name (so the popup shows WHICH profile's vault it's on —
+// the same profile the desktop app shows). Falls back to the id.
+async function compProfileName() {
+  const id = await compProfile();
+  const pl = await send({ type: "companionProfiles" });
+  if (pl.ok && pl.profiles) {
+    const p = pl.profiles.find((x) => x.id === id);
+    if (p) return p.name || p.id;
+  }
+  return id || "—";
+}
 
 async function refresh() {
-  await loadCompMode();
+  await resolveVaultMode();
   if (COMP.on) {
     // No local unlock in desktop-vault mode — the desktop app holds the key.
     $("locked").classList.add("hidden");
     $("unlocked").classList.remove("hidden");
-    $("banner").classList.remove("hidden");
+    const banner = $("banner");
+    banner.classList.remove("hidden");
+    banner.textContent = `One vault · shared with the desktop app · profile: ${await compProfileName()}`;
     await renderEntries();
     return;
   }

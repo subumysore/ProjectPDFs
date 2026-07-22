@@ -134,35 +134,35 @@ function setCompMsg(text, ok = true) {
   el.className = "msg " + (ok ? "ok" : "err");
 }
 
+// Single vault is AUTOMATIC — there is nothing to switch on. This panel just reports whether
+// the desktop app is detected and, when it is, lets you choose which shared profile to use.
 async function renderCompanion() {
-  const { companionMode, companionProfile } = await chrome.storage.local.get(["companionMode", "companionProfile"]);
-  $("companionMode").checked = !!companionMode;
   const box = $("companionProfiles");
-  if (!companionMode) { box.textContent = ""; return; }
+  const ping = await chrome.runtime.sendMessage({ type: "companionPing" });
+  const on = !!(ping && ping.ok);
+  const cb = $("companionMode");
+  if (cb) { cb.checked = on; cb.disabled = true; } // informational only — the behavior is automatic
+  if (!on) {
+    setCompMsg(
+      "Desktop app not detected — this browser is using its own vault. Install and run the desktop app and the two will automatically share ONE vault (no setup, no toggle).",
+      true,
+    );
+    box.textContent = "";
+    return;
+  }
+  setCompMsg("✓ One shared vault — this browser and the desktop app use the same vault automatically.");
   const pl = await chrome.runtime.sendMessage({ type: "companionProfiles" });
-  if (!pl || !pl.ok) {
-    box.innerHTML = `<span class="err">Desktop companion unavailable: ${(pl && pl.error) || "not registered"}.</span>`;
-    return;
-  }
-  if (!pl.profiles || !pl.profiles.length) {
-    box.innerHTML = `<span class="err">No profiles in the desktop app yet — create one there first.</span>`;
-    return;
-  }
+  if (!pl || !pl.ok || !pl.profiles || !pl.profiles.length) { box.textContent = ""; return; }
+  const { companionProfile } = await chrome.storage.local.get("companionProfile");
+  const active = companionProfile || pl.profiles[0].id;
+  if (!companionProfile) await chrome.storage.local.set({ companionProfile: active });
   const opts = pl.profiles
-    .map((p) => `<option value="${p.id}" ${p.id === companionProfile ? "selected" : ""}>${p.name || p.id}</option>`)
+    .map((p) => `<option value="${p.id}" ${p.id === active ? "selected" : ""}>${p.name || p.id}</option>`)
     .join("");
-  box.innerHTML = `Write to profile: <select id="companionProfileSel">${opts}</select>`;
+  box.innerHTML = `Profile (shared with the desktop app): <select id="companionProfileSel">${opts}</select>`;
   const sel = $("companionProfileSel");
-  if (!companionProfile) await chrome.storage.local.set({ companionProfile: pl.profiles[0].id });
-  sel.onchange = async () => { await chrome.storage.local.set({ companionProfile: sel.value }); setCompMsg("Profile set."); };
+  sel.onchange = async () => { await chrome.storage.local.set({ companionProfile: sel.value }); setCompMsg("Profile selected — used by both apps."); };
 }
-
-$("companionMode").onchange = async () => {
-  const on = $("companionMode").checked;
-  await chrome.storage.local.set({ companionMode: on });
-  setCompMsg(on ? "Desktop vault mode ON — the popup now reads/writes the desktop app vault." : "Desktop vault mode off — using the extension's own vault.");
-  renderCompanion();
-};
 
 // ---- Translation languages (download at will; nothing bundled) ----
 const LANGS = [

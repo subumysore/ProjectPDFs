@@ -64,15 +64,15 @@
     </div>
 
     <div class="card">
-      <h2 style="font-size: 16px; margin-top: 0">Single vault (desktop app)</h2>
+      <h2 style="font-size: 16px; margin-top: 0">Single vault</h2>
       <p class="muted">
-        If you use the desktop app too, make it your <b>single source of truth</b>: the extension
-        reads and writes your details through the desktop app's vault over a local bridge — keys
-        never live in the extension, and you never retype your data in two places.
-        Requires the desktop app installed and its companion registered.
+        This is <b>automatic</b>. Whenever the desktop app is installed and running, this browser and
+        the desktop app use the <b>same one vault</b> — you enter your details once and both use them,
+        with the same profiles, over a local on-device bridge. No toggle, no setup. Start with either
+        app first; your data unifies into one vault. (Status below.)
       </p>
-      <label style="display: flex; align-items: center; gap: 8px">
-        <input type="checkbox" id="companionMode" /> Use the desktop app as my single vault
+      <label style="display: none; align-items: center; gap: 8px">
+        <input type="checkbox" id="companionMode" disabled />
       </label>
       <div id="companionProfiles" class="muted" style="margin-top: 8px"></div>
       <div class="msg" id="companionMsg"></div>

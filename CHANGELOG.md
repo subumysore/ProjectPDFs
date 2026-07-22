@@ -15,6 +15,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Changed — Single vault is now AUTOMATIC (extension ⇄ desktop, no toggle) (2026-07-22)
+- The extension and desktop app now share **one vault automatically**: whenever the desktop app's
+  companion bridge is reachable, the desktop's encrypted vault is the single source of truth and the
+  extension reads/writes it (same profiles, on-device local bridge, no network). When the desktop
+  isn't present, the extension transparently uses its own local vault. **No "companion mode" toggle,
+  no setup** — the old manual checkbox is gone.
+- **Order-independent unification:** start with either app first. On first connect the extension
+  seeds the shared vault with any data it already had — a **safe union** that never overwrites a
+  value the desktop vault already holds (`migrationPlan`, one-time, deferred until the local vault is
+  unlocked). If the desktop has no profile yet, one is created so the shared vault has a home.
+- The popup now shows the **active profile name** ("One vault · shared with the desktop app ·
+  profile: …") so the profile is readable in either flavor. Options page shows automatic status +
+  a shared-profile picker instead of a toggle.
+- New tested pure helpers `apps/extension/src/companion.js` (`shouldUseDesktopVault`, `migrationPlan`)
+  — +5 unit tests (extension-first seeding, safe-union no-clobber, empty-field fill, deferral guards).
+
 ### Added — Desktop: License tab, Docs & Video tab, app-only hosted guide video (2026-07-22)
 - **License is now its own first tab** (`1 · License`) — the app’s foundation: license status +
   this device’s identity, verified offline. Tabs are now: License → Profile & Vault → Forms to fill
