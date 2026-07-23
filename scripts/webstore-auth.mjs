@@ -120,9 +120,14 @@ server.listen(0, "127.0.0.1", () => {
   console.log("Opening the consent screen. If it does not open, paste this into a browser:\n");
   console.log(consent.toString() + "\n");
 
-  // Open the default browser. Windows: `start` via cmd; harmless if it fails, the URL is printed.
+  // Open the default browser.
+  //
+  // NOT `cmd /c start <url>` on Windows: cmd treats `&` as a command separator, so the URL is cut
+  // at the first one and the browser receives only client_id. Google then rejects it with
+  // "Required parameter is missing: response_type", which points nowhere near the real cause.
+  // rundll32's FileProtocolHandler takes the URL as a single argument with no shell parsing.
   const opener = process.platform === "win32"
-    ? spawn("cmd", ["/c", "start", "", consent.toString()], { stdio: "ignore", detached: true })
+    ? spawn("rundll32.exe", ["url.dll,FileProtocolHandler", consent.toString()], { stdio: "ignore", detached: true })
     : spawn(process.platform === "darwin" ? "open" : "xdg-open", [consent.toString()], { stdio: "ignore", detached: true });
   opener.on("error", () => { /* the URL is printed above */ });
   opener.unref();

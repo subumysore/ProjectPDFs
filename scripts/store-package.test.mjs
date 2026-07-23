@@ -88,6 +88,18 @@ test("the auth helper uses the loopback flow, not the dead out-of-band one", () 
     "a re-authorisation returns no refresh token without prompt=consent");
 });
 
+test("the consent URL is opened without a shell that would truncate it", () => {
+  const auth = readFileSync(join(root, "scripts", "webstore-auth.mjs"), "utf8");
+  const code = auth
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("//"))
+    .join("\n");
+  // cmd.exe treats & as a command separator, so `cmd /c start <url>` delivers only the first
+  // query parameter and Google answers "Required parameter is missing: response_type".
+  assert.ok(!/spawn\(\s*"cmd"/.test(code), "opening the consent URL via cmd truncates it at the first &");
+  assert.ok(code.includes("FileProtocolHandler"), "Windows must open the URL without shell parsing");
+});
+
 test("-Check verifies credentials without changing anything", () => {
   assert.ok(store.includes("[switch] $Check"), "publish-webstore.ps1 has no -Check mode");
   const checkBlock = store.slice(store.indexOf("if ($Check)"), store.indexOf("# --- 1."));
