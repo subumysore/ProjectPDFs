@@ -49,6 +49,25 @@ synced down; queries never leave.
 **Solution Implemented.** Tauri v2 + Rust core + React/TS (`apps/app`); desktop build produces
 `app.exe`; UI↔core bridge working. (Mobile spike + iOS pending.)
 
+### REQ-05.2 — Installable and trustworthy without a paid code-signing certificate
+**Statement.** As someone installing PolyglotFormFill, I want to know in advance exactly what my
+computer will show me and to be able to verify that what I downloaded is what was published, so that
+an expected operating-system warning does not read as a threat.
+**Acceptance criteria.**
+- Public release artifacts are distributed unsigned; a self-signed certificate is never used to sign
+  public artifacts.
+- Every published artifact has a published SHA-256 that a user can verify with one command, and a
+  verifier that reports **every** discrepancy (mismatched or missing) in a single run.
+- The install page discloses the unsigned status, the exact Windows message, and the click path
+  **above** the download button, and offers lower-friction channels (browser extension, winget) first.
+- The page never claims the download is certified/verified-by-Windows/safe, never uses alarm
+  vocabulary, and the disclosure is not removed until a CA-issued certificate is genuinely in use.
+- Adopting a purchased certificate later requires only setting `WINDOWS_CERT_THUMBPRINT`.
+**Solution Implemented.** ADR-0020 + `docs/specs/release-integrity.md`; `scripts/release-manifest.mjs`
+(generate/verify, deterministic, refuses to write an empty manifest) with 12 unit tests in the
+`test-all` gate; install page reordered (extension → winget → direct download) with pre-download
+expectation-setting and runtime hash display from `release-manifest.json`.
+
 ## REQ-06 — AI search bar
 ### REQ-06.1 — Filtered results with name, tags, thumbnail. **Privacy.** On-device.
 

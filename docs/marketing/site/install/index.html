@@ -21,26 +21,27 @@
   code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:13px}
   .muted{color:var(--muted);font-size:13px}
   .ver{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:8px;font-family:var(--mono)}
+  .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 10px;margin-bottom:10px}
+  .heads{background:var(--amber-soft);border-radius:10px;padding:14px 16px;font-size:14px;margin:14px 0}
+  .heads b{color:var(--amber)}
+  .heads ol{margin:10px 0 0;padding-left:20px;gap:4px}
+  .screen{font-family:var(--sans);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;color:var(--muted)}
+  .screen .t{display:block;font-weight:600;color:var(--ink);font-size:14px;margin-bottom:2px}
+  pre{font-family:var(--mono);background:var(--teal-soft);padding:12px 14px;border-radius:9px;font-size:12.5px;overflow-x:auto;margin:10px 0}
+  .hash{font-family:var(--mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:14px;color:var(--teal-ink);font-weight:600}
 </style>
 </head>
 <body>
 <div class="wrap">
   <p><a href="/">← PolyglotFormFill</a></p>
-  <h1>Install (beta)</h1>
-  <p class="muted">Early builds. The Chrome Web Store / Edge / Firefox one-click installs are coming; until
-    then, use the direct downloads below.</p>
+  <h1>Install</h1>
+  <p class="muted">Start with the browser extension — it’s the fastest way in and does the core job.
+    The desktop app adds signing, history and offline work.</p>
 
   <div class="card">
-    <h2 style="margin-top:0">🖥️ Windows desktop app <span class="ver" data-ver="app">v0.1.0</span></h2>
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">Download installer (.exe)</a>
-    &nbsp; <a href="/download/PolyglotFormFill.msi">or MSI</a>
-    <div class="warn" style="margin-top:10px"><b>Heads-up:</b> this build is <b>unsigned</b>, so Windows
-      SmartScreen will say “Windows protected your PC / unknown publisher.” Click <b>More info → Run anyway</b>.
-      (A signed release removes this warning.)</div>
-    <p class="muted">On first launch you’ll set a passphrase — the app is locked until you enter it.</p>
-  </div>
-
-  <div class="card">
+    <span class="tag">Start here · easiest</span>
     <h2 style="margin-top:0">🧩 Browser extension <span class="ver" data-ver="ext">v0.2.16</span></h2>
     <a class="btn" href="/download/polyglotformfill-extension.zip">Download extension (.zip)</a>
     <p>Until it’s on the stores, load it in developer mode:</p>
@@ -63,8 +64,89 @@
       <code>about:debugging</code> → “Load Temporary Add-on”, then pin from the toolbar overflow.</p>
   </div>
 
+  <div class="card">
+    <span class="tag">Recommended for the desktop app</span>
+    <h2 style="margin-top:0">⌨️ Windows: install with winget</h2>
+    <p>Windows has a built-in package manager. One command, no download prompts:</p>
+    <pre>winget install PolyglotFormFill</pre>
+    <p class="muted">Open <b>Terminal</b> or <b>PowerShell</b> from the Start menu and paste that line.
+      winget fetches the installer and checks it against a published checksum for you.</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">🖥️ Windows desktop app — direct download
+      <span class="ver" data-ver="app">v1.0.0</span></h2>
+
+    <div class="heads">
+      <b>What Windows will show you, and why.</b> We haven’t bought a code-signing certificate yet —
+      they’re sold to registered companies and cost a few hundred dollars a year, and we’d rather put
+      that off than charge you for it. Windows therefore doesn’t recognise the publisher name yet, and
+      shows this blue box the first time you run the installer:
+      <div class="screen">
+        <span class="t">Windows protected your PC</span>
+        Microsoft Defender SmartScreen prevented an unrecognised app from starting.
+      </div>
+      That message means <em>“I haven’t seen this publisher before”</em> — not that anything is wrong
+      with the file. To continue:
+      <ol>
+        <li>Click <b>More info</b> (small link inside the blue box).</li>
+        <li>Click <b>Run anyway</b>.</li>
+      </ol>
+      It appears once, on first install. Prefer to avoid it entirely? Use <b>winget</b> above, or the
+      browser extension, which is unaffected.
+    </div>
+
+    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">Download installer (.exe)</a>
+    &nbsp; <a href="/download/PolyglotFormFill.msi">or MSI</a>
+    <p class="muted">On first launch you’ll set a passphrase — the app is locked until you enter it.</p>
+
+    <details>
+      <summary>Check the download is exactly what we published</summary>
+      <p class="muted" style="margin-top:10px">Every release lists the SHA-256 of each file. Run this in
+        PowerShell on the file you downloaded and compare — if the two strings match, the file arrived
+        intact and unaltered.</p>
+      <pre>Get-FileHash .\PolyglotFormFill-Setup.exe -Algorithm SHA256</pre>
+      <p class="muted" style="margin-bottom:4px">Published hashes for
+        <span data-manifest="version">this release</span>:</p>
+      <div data-manifest="artifacts" class="hash">
+        <a href="/download/release-manifest.json">release-manifest.json</a>
+      </div>
+    </details>
+  </div>
+
   <p class="muted">Your data stays on your device; we never see it. See the
     <a href="/privacy/">privacy policy</a>.</p>
 </div>
+<script>
+// Fill the published SHA-256 list (and the desktop version badge) from the release manifest that
+// ships beside the artifacts, so the page can never drift from what was actually published.
+// Same-origin fetch of our own asset: nothing about the visitor is sent or recorded.
+(async () => {
+  const list = document.querySelector('[data-manifest="artifacts"]');
+  if (!list) return;
+  try {
+    const m = await fetch('/download/release-manifest.json', { cache: 'no-cache' }).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+    const ver = document.querySelector('[data-manifest="version"]');
+    if (ver && m.version) ver.textContent = 'v' + m.version;
+    const badge = document.querySelector('[data-ver="app"]');
+    if (badge && m.version) badge.textContent = 'v' + m.version;
+    if (!Array.isArray(m.artifacts) || !m.artifacts.length) return;
+    list.textContent = '';
+    for (const a of m.artifacts) {
+      const row = document.createElement('div');
+      row.style.margin = '6px 0';
+      const name = document.createElement('b');
+      name.textContent = a.name;
+      row.append(name, document.createElement('br'), document.createTextNode(a.sha256));
+      list.append(row);
+    }
+  } catch {
+    // Manifest not reachable — leave the static link to release-manifest.json in place.
+  }
+})();
+</script>
 </body>
 </html>

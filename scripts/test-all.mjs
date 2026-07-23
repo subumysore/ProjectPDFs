@@ -11,11 +11,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ext = join(root, "apps", "extension");
 const app = join(root, "apps", "app");
 const run = (cmd, args, cwd) => spawnSync(cmd, args, { cwd, encoding: "utf8", shell: process.platform === "win32" });
-const testFiles = (cwd) => readdirSync(join(cwd, "src")).filter((f) => f.endsWith(".test.mjs")).map((f) => "src/" + f);
+const testFiles = (cwd, sub = "src") =>
+  readdirSync(join(cwd, sub)).filter((f) => f.endsWith(".test.mjs")).map((f) => sub + "/" + f);
 
 const results = [];
-function testSuite(name, cwd) {
-  const files = testFiles(cwd);
+function testSuite(name, cwd, sub) {
+  const files = testFiles(cwd, sub);
   const r = run("node", ["--test", ...files], cwd); // explicit files — no shell glob needed
   const out = (r.stdout || "") + (r.stderr || "");
   const pass = (out.match(/# pass (\d+)/) || out.match(/pass (\d+)/) || [])[1] || "?";
@@ -31,6 +32,7 @@ function step(name, cmd, args, cwd) {
 console.log("Running the full automated suite…\n");
 testSuite("Shared engine + extension unit/integration tests (covers BOTH apps)", ext);
 testSuite("Desktop-specific unit tests", app);
+testSuite("Release/build tooling unit tests", root, "scripts");
 step("Desktop typecheck (tsc)", "npm", ["run", "typecheck"], app);
 step("Desktop production build (vite)", "npx", ["vite", "build"], app);
 

@@ -3,6 +3,42 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+### Changed — GA is no longer blocked on buying a code-signing certificate (ADR-0020, REQ-05.2)
+- **Public releases now ship deliberately unsigned**, and self-signing is confirmed **dev-only**.
+  A self-signed certificate's chain does not validate on anyone else's machine, so SmartScreen
+  behaves exactly as it does for an unsigned binary — and *"signature present, chain invalid"* is
+  treated more harshly than *"no signature"* under some enterprise/AV policy. It bought nothing.
+- **Install channels reordered by friction:** browser extension first, then **winget**
+  (`winget install PolyglotFormFill` — the community repo accepts unsigned `.exe`/`.msi`, and the
+  install is not a browser download so it skips the Mark-of-the-Web reputation prompt), and direct
+  download last. **MSIX deliberately not adopted** — it *would* require a purchased certificate.
+- **The install page now predicts the SmartScreen warning before the user clicks download**, shows
+  what the box says, explains the cause in one sentence, and gives the exact click path
+  (**More info → Run anyway**). An anticipated warning reads as competence; the same warning
+  unannounced reads as danger. Binding copy rules (no "certified"/"safe" claims, no alarm words,
+  no apologising, disclosure stays until a real certificate is in use) are in the spec.
+
+### Added — Release integrity manifest (`scripts/release-manifest.mjs`)
+- `generate` / `verify` SHA-256 for every published artifact. Deterministic (sorted, byte-stable),
+  **refuses to write an empty manifest** rather than silently advertising "nothing to verify", and
+  the verifier reports **every** MISMATCH/MISSING in one pass instead of stopping at the first.
+- `signed: false` is structural — it must never be flipped true for a self-signed build.
+- The install page reads `release-manifest.json` at runtime, so the published hashes and version
+  badge cannot drift from what was actually shipped. Degrades to a static link if unreachable.
+- 12 unit tests, wired into `scripts/test-all.mjs` (which now also discovers `scripts/*.test.mjs`).
+  Full suite green: 129 + 8 + 12, typecheck, vite build.
+
+### Fixed — the published installer was mislabelled in planning as 1.0.0
+- The artifacts on the download page report **ProductVersion 0.1.0**: the 1.0.0 version bump was
+  never followed by a rebuild of the published binaries. The manifest records the true `0.1.0`.
+  Publishing genuine 1.0.0 artifacts requires a `tauri build` + re-upload.
+
+### Docs
+- ADR-0020 (distribution trust without a paid certificate), `docs/specs/release-integrity.md`,
+  `features/release-integrity.feature`, BRD REQ-05.2, and a release-step section in
+  `docs/reference/code-signing.md` (build → generate manifest → verify → publish).
+
 ## [0.2.0] — 2026-07-21
 ### Packaging — Chrome Web Store update build
 - Bumped extension to **0.2.0** for a Web Store package update (0.1.0 was published Jul 18).

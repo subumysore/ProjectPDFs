@@ -2,6 +2,25 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Working (verified) — 2026-07-23 distribution trust without a certificate (REQ-05.2, ADR-0020)
+- **The certificate is off the GA critical path.** Budget rules out an OV/EV cert until there is
+  revenue, so releases now ship deliberately unsigned, with trust carried by channel choice and
+  published hashes rather than by Authenticode. Self-signing is dev-only (invalid chain ⇒ no
+  SmartScreen benefit, and worse under some AV/enterprise policy).
+- **`scripts/release-manifest.mjs`** generates/verifies per-artifact SHA-256. Deterministic; refuses
+  to emit an empty manifest; reports every MISMATCH/MISSING in one pass. **12 unit tests green**,
+  now part of `scripts/test-all.mjs` (which discovers `scripts/*.test.mjs`). CLI exercised
+  end-to-end: exit 0 on a clean set, exit 1 with `MISMATCH` on a tampered byte.
+- **Install page reworked:** extension → winget → direct download, with the SmartScreen warning
+  described *before* the download button, plus a hash-verification command. Hashes and the version
+  badge are read from `release-manifest.json` at runtime, so the copy cannot drift from reality.
+- **Caught while doing it:** the installers currently published report **ProductVersion 0.1.0** —
+  the 1.0.0 bump never reached the binaries. The manifest records the truth (`0.1.0`); rebuilding
+  and re-uploading genuine 1.0.0 artifacts is the top remaining GA task.
+- Full suite green: 129 + 8 + 12, typecheck, vite build, traceability (18 requirements).
+- **Left (live gate):** the rendered install page in a browser, and one real first-run install to
+  confirm the warning matches what the page predicts.
+
 ## Working (verified) — 2026-07-22 desktop tabs
 - **Desktop app is now tabbed** (Profile → Vault → Forms → Past forms), not a scrolling SPA. Tab
   gating (profile required), four labelled form sources (device / network location / URL / web

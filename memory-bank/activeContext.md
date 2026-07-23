@@ -272,13 +272,25 @@ to absolute._
    all along and the other 14 packs had simply never been uploaded. All 15 are now uploaded and
    verified over the existing PAR, and desktop fetches a pack on first use of a language.
 2. **Version — RESOLVED.** 1.0.0 across all six version sites.
-3. **Code signing — STILL NEEDS PURCHASE.** The pipeline is built and verified (signCommand hook +
-   `sign-windows.ps1` + timestamp + verify, exercised with the self-signed dev cert). What cannot be
-   automated is buying an **OV or EV certificate**, which requires organisation identity validation.
-   OV is cheaper but earns SmartScreen reputation only over time; EV gives instant SmartScreen trust
-   but the key must live on an HSM/USB token or cloud HSM (Azure Key Vault, DigiCert KeyLocker).
-   Swapping in a real cert is a one-line change: set `WINDOWS_CERT_THUMBPRINT`. See
-   `docs/reference/code-signing.md`.
+3. **Code signing — DESCOPED as a blocker (2026-07-23, ADR-0020).** Budget rules out an OV/EV
+   certificate for now (revenue first), so GA no longer waits on it. Decisions:
+   - **Public releases ship deliberately UNSIGNED.** Self-signing is dev-only — an invalid chain
+     gives zero SmartScreen benefit and is *worse* under some enterprise/AV policy. Distributing
+     unsigned software is entirely legal; Authenticode is reputation, not permission.
+   - Trust is carried instead by: **extension-first** ordering, **winget** (accepts unsigned
+     `.exe`/`.msi`; **avoid MSIX** — it requires a paid cert), a **published SHA-256** per artifact
+     (`scripts/release-manifest.mjs`, 12 tests in `test-all`), and an install page that **predicts
+     the SmartScreen warning before the download button** with the exact click path.
+   - **Upgrade path unchanged and one-line:** set `WINDOWS_CERT_THUMBPRINT` and rebuild. Prefer
+     **OV** first. `docs/reference/code-signing.md` now carries the shipping policy + release steps.
+   - Open, not assumed: **SignPath.io's free OSS tier** would give real certificate-backed signing at
+     zero cost, but only if the project goes open source — a licensing call, not a technical one.
+
+4. **Published artifacts are stale — NEW finding (2026-07-23).** The installers on the download page
+   report **ProductVersion 0.1.0**; the 1.0.0 bump touched the six version sites but the binaries
+   were never rebuilt or re-uploaded. `release-manifest.json` honestly records `0.1.0`. Publishing
+   real 1.0.0 needs `tauri build` → copy into `docs/marketing/site/download/` → regenerate the
+   manifest → `publish-site.ps1`. **This is now the top GA task.**
 
 ### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
 Driven directly over native messaging (4-byte LE length + JSON), against the real

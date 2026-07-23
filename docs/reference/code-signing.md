@@ -1,5 +1,16 @@
 # Windows code signing (Authenticode)
 
+> **Current shipping policy ([ADR-0020](../adr/0020-distribution-trust-without-paid-certificate.md)):
+> public releases go out UNSIGNED, deliberately.** No certificate has been purchased yet. A
+> self-signed certificate must **not** be used for public artifacts: its chain does not validate on
+> anyone else's machine, so SmartScreen behaves exactly as it does for an unsigned binary, and some
+> enterprise/AV policies treat *"signature present but chain invalid"* more harshly than no signature
+> at all. Self-signing below is a **dev-only** tool for exercising this pipeline.
+>
+> Trust is instead carried by: extension-first distribution, `winget` (no certificate required), and
+> a published SHA-256 per artifact (`scripts/release-manifest.mjs`). When a certificate is bought,
+> set `WINDOWS_CERT_THUMBPRINT` and rebuild — nothing else changes.
+
 The Windows desktop app (`tauri build`) can Authenticode-sign every produced binary —
 the app `.exe`, the MSI, and the NSIS `-setup.exe` — plus RFC-3161 timestamp them so
 signatures stay valid after the certificate expires.
@@ -52,6 +63,21 @@ expected and the sign script downgrades it to a warning. A CA-issued cert (below
 cleanly and verifies.
 
 Remove the dev cert when done: `Remove-Item Cert:\CurrentUser\My\<thumbprint>`.
+
+## Release step: publish hashes (required while unsigned)
+
+After `tauri build`, copy the artifacts into `docs/marketing/site/download/`, then:
+
+```powershell
+node scripts/release-manifest.mjs generate --dir docs/marketing/site/download --version <ver>
+node scripts/release-manifest.mjs verify   --dir docs/marketing/site/download
+.\deploy\k8s\publish-site.ps1
+```
+
+`--version` must be the version the binaries actually report (check with
+`(Get-Item <file>).VersionInfo.ProductVersion`) — not the version in `package.json`. The install page
+reads `release-manifest.json` at runtime to display the hashes, so it can never drift from what was
+published. The same SHA-256 values are what a winget manifest PR needs.
 
 ## Production (real certificate)
 
