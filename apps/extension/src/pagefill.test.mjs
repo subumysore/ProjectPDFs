@@ -88,3 +88,35 @@ test("unrelated fields are left untouched (no false fills)", async () => {
   await fillPage({ first_name: "Asha" });
   assert.equal($(dom, "#fav").value, "");
 });
+
+// --- readOnly handling (bug found 2026-07-23 by end-to-end testing against real forms) ---
+// A readOnly TEXT field is one the site does not want changed (server-issued reference number,
+// computed total); writing there can corrupt a submission or fail server-side validation.
+// But date pickers are routinely readOnly and MUST still fill, so this cannot be a blanket skip.
+
+test("readOnly text field is NOT filled (site-locked value)", async () => {
+  const dom = mount(`
+    <label>Street address <input id="addr"></label>
+    <label>Reference number <input id="ref" readonly></label>`);
+  await fillPage({ street_address: "12 Nathan Road", city: "Kowloon" });
+  assert.equal($(dom, "#ref").value, "", "a readOnly reference field must stay empty");
+  assert.equal($(dom, "#addr").value, "12 Nathan Road");
+});
+
+test("readOnly NATIVE date input is still filled (picker, not locked)", async () => {
+  const dom = mount(`<label>Date of birth <input id="dob" type="date" readonly></label>`);
+  await fillPage({ date_of_birth: "1990-04-15" });
+  assert.notEqual($(dom, "#dob").value, "", "a readOnly native date input must still fill");
+});
+
+test("readOnly datepicker-widget field is still filled", async () => {
+  const dom = mount(`<label>Date of birth <input id="dob" class="mat-datepicker-input" readonly></label>`);
+  await fillPage({ date_of_birth: "1990-04-15" });
+  assert.notEqual($(dom, "#dob").value, "", "a readOnly datepicker widget must still fill");
+});
+
+test("disabled field is never filled", async () => {
+  const dom = mount(`<label>System ID <input id="sys" disabled></label>`);
+  await fillPage({ first_name: "Asha", street_address: "12 Nathan Road" });
+  assert.equal($(dom, "#sys").value, "");
+});

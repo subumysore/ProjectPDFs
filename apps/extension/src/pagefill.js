@@ -121,11 +121,34 @@ export async function fillPage(vault, tLabels) {
   };
   const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
 
+  // Does this readOnly field look like a DATE PICKER (fill it) rather than a locked field
+  // (leave it alone)? Native date types, or the usual picker signatures on the element or an
+  // ancestor: a datepicker class/role, a calendar icon sibling, or a date-ish label/placeholder.
+  const isDatePickerLike = (el) => {
+    if (["date", "datetime-local", "month", "week", "time"].includes(el.type)) return true;
+    const hay = [
+      el.className, el.id, el.name,
+      el.getAttribute("placeholder"), el.getAttribute("autocomplete"),
+      el.getAttribute("aria-label"), el.getAttribute("role"),
+      el.parentElement && el.parentElement.className,
+    ].join(" ").toLowerCase();
+    if (/datepicker|date-picker|calendar|dtpicker|flatpickr|mat-datepicker|ant-picker/.test(hay)) return true;
+    // dd/mm/yyyy-style placeholders are a strong picker signal.
+    if (/\b[dmy]{1,4}\s*[\/.-]\s*[dmy]{1,4}\s*[\/.-]\s*[dmy]{2,4}\b/.test(hay)) return true;
+    return /\bdate\b|\bdob\b|birth|expiry|expiration|issued?\b/.test(hay);
+  };
+
   const fields = [];
   let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
-    if (el.disabled) continue; // readOnly fields ARE included (date pickers) — see setFieldValue
+    if (el.disabled) continue;
+    // readOnly is NOT a blanket skip: date pickers are routinely readOnly and must still be
+    // filled (see setFieldValue, which briefly clears the flag). But a readOnly *text* field is
+    // one the site does not want changed — a server-issued reference number, a computed total.
+    // Writing there can corrupt a submission or fail server-side validation. So: allow readOnly
+    // only where it plausibly means "picker", not "locked".
+    if (el.readOnly && !isDatePickerLike(el)) continue;
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
     let pick = null, top = 0;

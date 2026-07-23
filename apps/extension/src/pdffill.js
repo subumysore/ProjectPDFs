@@ -59,6 +59,37 @@ async function drawImageAtField(pdf, field, dataUrl) {
   return drew;
 }
 
+/**
+ * Indexes of fields that are REPEATED TABLE ROWS beyond the first.
+ *
+ * Real forms carry tables as sibling fields differing only by a trailing number —
+ * `NameOfFirm1[0]`…`NameOfFirm9[0]` (employment history), `FullNameIA1[0]`…`IA8[0]` (referees).
+ * They all resolve to the same concept, so filling every one produces a form claiming nine
+ * identical employers. Only the LOWEST-numbered row is a sensible auto-fill; the rest are for
+ * the user to complete. A lone numbered field (no numbered siblings) is NOT a table and is kept.
+ *
+ * Exported for testing.
+ */
+export function repeatedRowIndexes(names) {
+  const groups = new Map(); // stem -> [{ i, n }]
+  names.forEach((name, i) => {
+    const leaf = String(name).split(".").pop() || "";
+    const base = leaf.replace(/\[\d+\]\s*$/, ""); // drop the XFA occurrence suffix "[0]"
+    const m = base.match(/^(.*?)(\d+)$/);
+    if (!m) return; // no trailing index -> not a row
+    const stem = (name.slice(0, name.length - leaf.length) + m[1]).toLowerCase();
+    if (!groups.has(stem)) groups.set(stem, []);
+    groups.get(stem).push({ i, n: parseInt(m[2], 10) });
+  });
+  const skip = new Set();
+  for (const members of groups.values()) {
+    if (members.length < 2) continue; // a single numbered field is not a table
+    const keep = members.reduce((a, b) => (b.n < a.n ? b : a));
+    for (const mem of members) if (mem.i !== keep.i) skip.add(mem.i);
+  }
+  return skip;
+}
+
 export async function fillPdfBytes(bytes, vault) {
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
@@ -99,11 +130,16 @@ export async function fillPdfBytes(bytes, vault) {
 
   const values = resolveFields(vault, descriptors);
   const optionValues = userOptionValues(vault); // for ticking option-style checkboxes
+  const repeatRow = repeatedRowIndexes(all.map((f) => f.getName()));
   let filled = 0;
   for (let i = 0; i < all.length; i++) {
     const f = all[i];
     const v = values[i];
     const label = descriptors[i].label;
+    // A TABLE ROW beyond the first: skip. Sibling fields that differ only by a trailing number
+    // (NameOfFirm1..NameOfFirm9, employment history) are separate ROWS, not repeats of one
+    // field — filling them all makes the form claim nine identical employers.
+    if (repeatRow.has(i)) continue;
     try {
       // An IMAGE value (profile photo / signature stored as a data-URI) is DRAWN at the
       // field's location rather than typed — photo boxes and signature fields.
