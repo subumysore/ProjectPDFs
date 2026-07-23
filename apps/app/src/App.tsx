@@ -833,7 +833,10 @@ export function App() {
       setPdfBytes(ab);
       if (canvasRef.current) await renderFirstPage(ab, canvasRef.current);
       await saveOut(data, "detected-filled");
-      setPdfMsg(`${note} Created ${created}, filled ${filled} from the vault; saved to your Desktop.`);
+      setPdfMsg(`${note} Created ${created}, filled ${filled} from the vault; saved to your Desktop. Review & correct the values below — anything new you type is remembered for next time.`);
+      // Show the editable review so the user can check what filled and type anything the vault
+      // didn't have (e.g. Nationality) — which then auto-registers as a new vault key.
+      await loadReview(ab, "detected-filled");
     } catch (e) {
       setErr(String(e));
     }
