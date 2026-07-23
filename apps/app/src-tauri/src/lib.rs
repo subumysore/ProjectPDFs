@@ -816,7 +816,7 @@ async fn download_form(url: String) -> Result<tauri::ipc::Response, String> {
 // request carries an APP-LEVEL capability (same for every install of a release) so the edge
 // can serve it only to genuine app builds — it identifies an app, never a user (no tracking).
 const GUIDE_URL: &str = "https://polyglotformfill.mooo.com/app-assets/guide.mp4";
-const GUIDE_SHA256: &str = "98fe5e0370b9c333aee659855141ca28b167c8cde4f9e5afc592e612fc65ead7";
+const GUIDE_SHA256: &str = "560411054e3d89316594d24c0e6be7ba1d83cc480b53eac1c4a68b236dbc6643";
 /// Per-release app capability. Rotated each release; NOT a user/device identifier.
 const APP_ASSET_TOKEN: &str = "ppf-app-2026-07-beta";
 

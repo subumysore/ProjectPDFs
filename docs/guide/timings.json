@@ -1,0 +1,45 @@
+{
+    "builtUtc":  "2026-07-23T15:41:13.1028009Z",
+    "segments":  [
+                     {
+                         "img":  "a-greeting.png",
+                         "seconds":  28
+                     },
+                     {
+                         "img":  "lang-unlock-ja.png",
+                         "seconds":  18.133333
+                     },
+                     {
+                         "img":  "lang-tamil.png",
+                         "seconds":  16.466667
+                     },
+                     {
+                         "img":  "slide-license.png",
+                         "seconds":  23.866667
+                     },
+                     {
+                         "img":  "f-forms.png",
+                         "seconds":  19.6
+                     },
+                     {
+                         "img":  "h-forms.png",
+                         "seconds":  29.866667
+                     },
+                     {
+                         "img":  "tab-vault.png",
+                         "seconds":  26.666667
+                     },
+                     {
+                         "img":  "k-history.png",
+                         "seconds":  21.066667
+                     },
+                     {
+                         "img":  "l-signed.png",
+                         "seconds":  13.4
+                     },
+                     {
+                         "img":  "slide-docs.png",
+                         "seconds":  15.066667
+                     }
+                 ]
+}

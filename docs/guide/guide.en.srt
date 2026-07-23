@@ -1,0 +1,212 @@
+1
+00:00:00,000 --> 00:00:00,571
+Hello.
+
+2
+00:00:00,571 --> 00:00:01,333
+Namaste.
+
+3
+00:00:01,333 --> 00:00:02,190
+Vanakkam.
+
+4
+00:00:02,190 --> 00:00:03,238
+Konnichiwa.
+
+5
+00:00:03,238 --> 00:00:04,095
+Marhaban.
+
+6
+00:00:04,095 --> 00:00:04,857
+Privyet.
+
+7
+00:00:04,857 --> 00:00:12,095
+PolyglotFormFill speaks your language, and that means the whole application,
+
+8
+00:00:12,095 --> 00:00:13,905
+not only the forms.
+
+9
+00:00:13,905 --> 00:00:20,857
+Buttons, tabs, prompts and messages are shown in the language you choose,
+
+10
+00:00:20,857 --> 00:00:28,000
+in twenty-six languages, picked on first run and changed whenever you like.
+
+11
+00:00:28,000 --> 00:00:32,495
+The very first screen already asks which language you want,
+
+12
+00:00:32,495 --> 00:00:39,200
+before you sign in to anything, because a first screen you cannot read is no use at all.
+
+13
+00:00:39,200 --> 00:00:44,229
+Right-to-left languages, such as Arabic, Hebrew, Urdu and Persian,
+
+14
+00:00:44,229 --> 00:00:46,133
+flip the whole interface.
+
+15
+00:00:46,133 --> 00:00:50,929
+Here is the same application in Tamil, and here in Japanese.
+
+16
+00:00:50,929 --> 00:00:55,566
+Your saved details keep whatever script you typed them in.
+
+17
+00:00:55,566 --> 00:01:02,600
+A name written in Japanese stays Japanese, and is never transliterated behind your back.
+
+18
+00:01:02,600 --> 00:01:05,583
+Everything happens on your own device.
+
+19
+00:01:05,583 --> 00:01:09,823
+Forms are read, filled, translated and signed locally.
+
+20
+00:01:09,823 --> 00:01:12,649
+We never see your form or your data.
+
+21
+00:01:12,649 --> 00:01:18,773
+It goes only where you choose to send it, such as the office you submit it to.
+
+22
+00:01:18,773 --> 00:01:23,483
+The app opens on the Licence tab, which is verified offline.
+
+23
+00:01:23,483 --> 00:01:26,467
+During the beta every feature is free.
+
+24
+00:01:26,467 --> 00:01:28,626
+Next is Profile and Vault.
+
+25
+00:01:28,626 --> 00:01:33,941
+Your details, name, date of birth, address, photo and signature,
+
+26
+00:01:33,941 --> 00:01:36,765
+are sealed at rest on this device.
+
+27
+00:01:36,765 --> 00:01:38,509
+You can type them in,
+
+28
+00:01:38,509 --> 00:01:46,067
+or scan a passport or driving licence and let on-device text recognition read them for you.
+
+29
+00:01:46,067 --> 00:01:47,806
+Now the filling itself.
+
+30
+00:01:47,806 --> 00:01:54,611
+A P D F with real form fields is completed straight from your vault, including drop-downs,
+
+31
+00:01:54,611 --> 00:01:58,694
+radio buttons and tick boxes, not only the text boxes.
+
+32
+00:01:58,694 --> 00:02:02,248
+If the form is a scan, or has no fields at all,
+
+33
+00:02:02,248 --> 00:02:07,767
+on-device text recognition finds the boxes, creates them, and fills them.
+
+34
+00:02:07,767 --> 00:02:12,455
+Word documents and Excel spreadsheets are filled the same way,
+
+35
+00:02:12,455 --> 00:02:15,933
+through their named fields and labelled cells.
+
+36
+00:02:15,933 --> 00:02:19,919
+The browser extension does the same work for web forms.
+
+37
+00:02:19,919 --> 00:02:25,499
+Open a form in Chrome or Edge and it fills the page from the very same vault.
+
+38
+00:02:25,499 --> 00:02:30,209
+Extension and desktop application share one vault, automatically.
+
+39
+00:02:30,209 --> 00:02:36,658
+Save a detail in the browser and the desktop app already has it, and the other way round.
+
+40
+00:02:36,658 --> 00:02:39,194
+Nothing is copied through a server.
+
+41
+00:02:39,194 --> 00:02:42,600
+The two talk to each other on your own machine.
+
+42
+00:02:42,600 --> 00:02:49,554
+Anything you type onto a form that your vault does not already hold is offered back to you afterwards.
+
+43
+00:02:49,554 --> 00:02:53,372
+You see the label, the value, and what it would replace,
+
+44
+00:02:53,372 --> 00:02:55,894
+and only the ones you tick are saved.
+
+45
+00:02:55,894 --> 00:03:00,940
+Every form you fill is kept in Past forms as an encrypted, versioned copy,
+
+46
+00:03:00,940 --> 00:03:03,667
+and can be downloaded again at any time.
+
+47
+00:03:03,667 --> 00:03:09,421
+You can sign a finished form with this device's own key, created offline.
+
+48
+00:03:09,421 --> 00:03:13,520
+Signatures can be drawn on screen in any ink colour,
+
+49
+00:03:13,520 --> 00:03:17,067
+because plenty of authorities insist on blue.
+
+50
+00:03:17,067 --> 00:03:21,385
+So: any form, any language, on your own device.
+
+51
+00:03:21,385 --> 00:03:28,367
+The Docs and Video tab holds this walkthrough and the written documentation.
+
+52
+00:03:28,367 --> 00:03:30,020
+Private by design.
+
+53
+00:03:30,020 --> 00:03:32,133
+Thank you for watching.
+

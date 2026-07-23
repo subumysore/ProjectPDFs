@@ -1,0 +1,46 @@
+{
+  "note": "Single source of truth for the guide video: slide order, narration, and therefore subtitles. build-guide-video.ps1 renders it; build-guide-subtitles.ps1 times it from the same text, so the two cannot drift. Rewritten 2026-07-23 for the shipped feature set - the previous version predated the 26-language UI, on-demand script fonts, dropdown and checkbox filling, capture-with-consent, and signature ink colour.",
+  "voice": "Microsoft Zira Desktop",
+  "segments": [
+    {
+      "img": "a-greeting.png",
+      "text": "Hello. Namaste. Vanakkam. Konnichiwa. Marhaban. Privyet. PolyglotFormFill speaks your language, and that means the whole application, not only the forms. Buttons, tabs, prompts and messages are shown in the language you choose, in twenty-six languages, picked on first run and changed whenever you like."
+    },
+    {
+      "img": "lang-unlock-ja.png",
+      "text": "The very first screen already asks which language you want, before you sign in to anything, because a first screen you cannot read is no use at all. Right-to-left languages, such as Arabic, Hebrew, Urdu and Persian, flip the whole interface."
+    },
+    {
+      "img": "lang-tamil.png",
+      "text": "Here is the same application in Tamil, and here in Japanese. Your saved details keep whatever script you typed them in. A name written in Japanese stays Japanese, and is never transliterated behind your back."
+    },
+    {
+      "img": "slide-license.png",
+      "text": "Everything happens on your own device. Forms are read, filled, translated and signed locally. We never see your form or your data. It goes only where you choose to send it, such as the office you submit it to. The app opens on the Licence tab, which is verified offline. During the beta every feature is free."
+    },
+    {
+      "img": "f-forms.png",
+      "text": "Next is Profile and Vault. Your details, name, date of birth, address, photo and signature, are sealed at rest on this device. You can type them in, or scan a passport or driving licence and let on-device text recognition read them for you."
+    },
+    {
+      "img": "h-forms.png",
+      "text": "Now the filling itself. A P D F with real form fields is completed straight from your vault, including drop-downs, radio buttons and tick boxes, not only the text boxes. If the form is a scan, or has no fields at all, on-device text recognition finds the boxes, creates them, and fills them. Word documents and Excel spreadsheets are filled the same way, through their named fields and labelled cells."
+    },
+    {
+      "img": "tab-vault.png",
+      "text": "The browser extension does the same work for web forms. Open a form in Chrome or Edge and it fills the page from the very same vault. Extension and desktop application share one vault, automatically. Save a detail in the browser and the desktop app already has it, and the other way round. Nothing is copied through a server. The two talk to each other on your own machine."
+    },
+    {
+      "img": "k-history.png",
+      "text": "Anything you type onto a form that your vault does not already hold is offered back to you afterwards. You see the label, the value, and what it would replace, and only the ones you tick are saved. Every form you fill is kept in Past forms as an encrypted, versioned copy, and can be downloaded again at any time."
+    },
+    {
+      "img": "l-signed.png",
+      "text": "You can sign a finished form with this device's own key, created offline. Signatures can be drawn on screen in any ink colour, because plenty of authorities insist on blue."
+    },
+    {
+      "img": "slide-docs.png",
+      "text": "So: any form, any language, on your own device. The Docs and Video tab holds this walkthrough and the written documentation. Private by design. Thank you for watching."
+    }
+  ]
+}

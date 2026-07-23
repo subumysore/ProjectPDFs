@@ -30,24 +30,23 @@ if (-not $ff) {
 }
 if (-not $ff) { throw "ffmpeg not found. Install it (winget install Gyan.FFmpeg) or set `$env:FFMPEG." }
 
-# (slide file, narration) — one segment per feature tab.
-$segments = @(
-  @{ img = "slide-license.png"; text = "Welcome to PolyglotFormFill, a private, on-device form filler. Every form you handle is read and filled entirely on your device. Nothing is ever uploaded, and we never see your data. It goes only where you choose to send it. The app opens on the License tab, which shows your license and this device's identity, all verified offline. During the beta, every feature is free." },
-  @{ img = "f-forms.png"; text = "Next is Profile and Vault. At the top you create or choose a profile. Below it is that profile's encrypted vault. Your details, like name, date of birth, e-mail, photo, and signature, are sealed at rest on your device." },
-  @{ img = "tab-vault.png"; text = "You can add details by hand, or import a passport, licence, or business card. On-device text recognition reads it and fills your vault automatically. You can also back up or transfer the whole vault as a passphrase-encrypted file. There is no plain-text export." },
-  @{ img = "h-forms.png"; text = "The Forms tab is where you bring any form. From your device, a network location, a web link, or by searching the web. It is read and filled right here. If the form already has fields, they are filled from your vault. If not, on-device text recognition detects the fields, creates them, and fills them, then exports a ready, filled P D F." },
-  @{ img = "k-history.png"; text = "Every form you fill is kept in Past forms, as an encrypted, versioned copy, entirely on this device. You can re-download any past version at any time." },
-  @{ img = "l-signed.png"; text = "You can also sign a filled form with this device's own key. A non-delegable provenance signature that proves it came from you, created offline." },
-  @{ img = "slide-docs.png"; text = "Finally, the Docs and Video tab holds this walkthrough and full written documentation. Everything you have seen happens on your device. Private by design. Thanks for watching." }
-)
+# Slides and narration come from docs\guide\narration.json - the SAME file
+# build-guide-subtitles.ps1 reads. They used to be a literal array in this script, which is how
+# the published video ended up describing a version of the app that no longer existed while the
+# subtitles described another (a 10 second drift gave it away).
+$narrationPath = Join-Path $root "docs\guide\narration.json"
+if (-not (Test-Path $narrationPath)) { throw "Missing $narrationPath" }
+$narration = Get-Content $narrationPath -Raw | ConvertFrom-Json
+$segments = $narration.segments
 
 Add-Type -AssemblyName System.Speech
 $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
-try { $synth.SelectVoice("Microsoft Zira Desktop") } catch {}
+try { $synth.SelectVoice($narration.voice) } catch {}
 $synth.Rate = 0; $synth.Volume = 100
 
 $concat = Join-Path $work "concat.txt"
 Set-Content -Path $concat -Value "" -Encoding ascii
+$clipDurations = @()
 $scale = "scale=1280:960:force_original_aspect_ratio=decrease,pad=1280:960:(ow-iw)/2:(oh-ih)/2:white,fps=30,format=yuv420p"
 
 for ($i = 0; $i -lt $segments.Count; $i++) {
@@ -59,12 +58,31 @@ for ($i = 0; $i -lt $segments.Count; $i++) {
     -c:a aac -b:a 160k -shortest $clip 2>$null
   if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed encoding clip $i ($($segments[$i].img))" }
   Add-Content -Path $concat -Value ("file 'clip{0}.mp4'" -f $i) -Encoding ascii
+
+  # Record the ENCODED length of this clip, not the length of the wav it came from. They differ by
+  # about nine percent (AAC priming plus whole-frame padding on a still image), which quietly put
+  # the subtitles seventeen seconds out of step across the video. Subtitles read these numbers.
+  $probe = $ff -replace 'ffmpeg\.exe$', 'ffprobe.exe'
+  $clipDur = [double](& $probe -v error -show_entries format=duration -of default=nk=1:nw=1 $clip)
+  $clipDurations += $clipDur
   Write-Host ("segment {0}: {1}" -f ($i + 1), $segments[$i].img)
 }
 $synth.SetOutputToNull(); $synth.Dispose()
 
 & $ff -y -f concat -safe 0 -i $concat -c copy $out 2>$null
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed concatenating clips into $out" }
+# Sidecar of real per-segment durations so build-guide-subtitles.ps1 can time cues against what
+# was actually encoded rather than against the raw narration wavs.
+$timings = @{ builtUtc = (Get-Date).ToUniversalTime().ToString("o"); segments = @() }
+for ($j = 0; $j -lt $segments.Count; $j++) {
+  $timings.segments += @{ img = $segments[$j].img; seconds = $clipDurations[$j] }
+}
+$timingsPath = Join-Path $root "docs" | Join-Path -ChildPath "guide" | Join-Path -ChildPath "timings.json"
+# PowerShell 5.1 writes a BOM for -Encoding utf8, which breaks JSON.parse and confuses some
+# subtitle readers. WriteAllText with a no-BOM encoding avoids it.
+[IO.File]::WriteAllText($timingsPath, ($timings | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding $false))
+Write-Host ("Wrote {0}" -f $timingsPath)
+
 $hash = (Get-FileHash -Algorithm SHA256 $out).Hash.ToLower()
 Write-Host ("Built {0}" -f $out)
 Write-Host ("SHA-256: {0}" -f $hash)
