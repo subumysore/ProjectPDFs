@@ -17,7 +17,12 @@ import { tessPack } from "@engine/langcodes.js";
 const TESS_ENGINE = "/tesseract";
 // The `ppfmodel` custom scheme maps to the app-data `models/` dir. On Windows the WebView
 // addresses it as http://ppfmodel.localhost/… (see lib.rs).
-const TESS_LANG = "http://ppfmodel.localhost/tesseract";
+const TESS_LANG_LOCAL = "http://ppfmodel.localhost/tesseract";
+// A FRESH INSTALL has no packs in app-data, so fall back to our own asset host. Assets flow
+// DOWN only — a public OCR model is fetched onto the device. No user content, form data, or
+// identifier is ever sent, and the image and recognised text never leave the machine.
+const TESS_LANG_HOSTED =
+  "https://objectstorage.us-ashburn-1.oraclecloud.com/p/Ut3vAQ-YK6VmAdptBynqsp7mnc1T5XBvjyAbMs76c0zsK8u6-A0cZBpQOkCBjdLC/n/idlqdkwlstnb/b/polyglotformfill-dl/o/tesseract";
 
 const workers: Record<string, Promise<Worker>> = {};
 
@@ -29,14 +34,25 @@ export function getTessWorker(iso = "en", onStatus?: (s: string) => void): Promi
   const pack: string = tessPack(iso) || "eng";
   if (!workers[pack]) {
     onStatus?.(`Preparing on-device OCR for '${pack}'…`);
-    workers[pack] = createWorker(pack, 1, {
-      workerPath: `${TESS_ENGINE}/worker.min.js`,
-      corePath: `${TESS_ENGINE}/`,
-      // English ships with the app; every other pack is read from app-data.
-      langPath: pack === "eng" ? `${TESS_ENGINE}/` : TESS_LANG,
-      workerBlobURL: false,
-      gzip: true,
-    }).catch((e) => {
+    const build = (langPath: string) =>
+      createWorker(pack, 1, {
+        workerPath: `${TESS_ENGINE}/worker.min.js`,
+        corePath: `${TESS_ENGINE}/`,
+        langPath,
+        workerBlobURL: false,
+        gzip: true,
+      });
+    // English ships with the app. Any other pack: prefer the copy already on this device,
+    // and only reach out to our asset host when it isn't there (first use of a language).
+    workers[pack] = (async () => {
+      if (pack === "eng") return build(`${TESS_ENGINE}/`);
+      try {
+        return await build(TESS_LANG_LOCAL);
+      } catch {
+        onStatus?.(`Downloading the '${pack}' OCR model once — it is then kept on your device…`);
+        return build(TESS_LANG_HOSTED);
+      }
+    })().catch((e) => {
       delete workers[pack]; // don't cache a failure — let the next attempt retry
       throw e;
     });
