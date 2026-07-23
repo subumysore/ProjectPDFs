@@ -39,10 +39,14 @@ if (-not (Test-Path $narrationPath)) { throw "Missing $narrationPath" }
 $narration = Get-Content $narrationPath -Raw | ConvertFrom-Json
 $segments = $narration.segments
 
-Add-Type -AssemblyName System.Speech
-$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
-try { $synth.SelectVoice($narration.voice) } catch {}
-$synth.Rate = 0; $synth.Volume = 100
+# Narration voice: PIPER (free, on-device neural TTS), not the robotic Windows SAPI voice. Runs
+# entirely on this machine - the same on-device principle the product is built on - and sounds
+# natural. Get it with: node scripts/fetch-piper.mjs
+$piper = Join-Path $root "tools\piper\bin\piper.exe"
+$piperModel = Join-Path $root "tools\piper\en_US-amy-medium.onnx"
+if (-not (Test-Path $piper) -or -not (Test-Path $piperModel)) {
+  throw "Piper not found. Run: node scripts/fetch-piper.mjs"
+}
 
 $concat = Join-Path $work "concat.txt"
 Set-Content -Path $concat -Value "" -Encoding ascii
@@ -51,7 +55,10 @@ $scale = "scale=1280:960:force_original_aspect_ratio=decrease,pad=1280:960:(ow-i
 
 for ($i = 0; $i -lt $segments.Count; $i++) {
   $wav = Join-Path $work ("seg{0}.wav" -f $i)
-  $synth.SetOutputToWaveFile($wav); $synth.Speak($segments[$i].text)
+  # Piper reads the text on stdin and writes a wav. sentence_silence adds a natural pause between
+  # sentences so the narration does not run together.
+  $segments[$i].text | & $piper --model $piperModel --sentence_silence 0.35 --output_file $wav 2>$null
+  if ($LASTEXITCODE -ne 0 -or -not (Test-Path $wav)) { throw "piper failed on segment $i" }
   $img = Join-Path $slides $segments[$i].img
   $clip = Join-Path $work ("clip{0}.mp4" -f $i)
   & $ff -y -loop 1 -i $img -i $wav -vf $scale -c:v libx264 -preset medium -tune stillimage `
@@ -67,7 +74,6 @@ for ($i = 0; $i -lt $segments.Count; $i++) {
   $clipDurations += $clipDur
   Write-Host ("segment {0}: {1}" -f ($i + 1), $segments[$i].img)
 }
-$synth.SetOutputToNull(); $synth.Dispose()
 
 & $ff -y -f concat -safe 0 -i $concat -c copy $out 2>$null
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed concatenating clips into $out" }
