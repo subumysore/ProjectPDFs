@@ -161,6 +161,8 @@ const en = {
   "translate.input": "Text to translate",
   "backup.passphrase": "Backup passphrase",
   "vault.imageField": "Field, e.g. signature",
+  "license.thisDevice": "This device",
+  "lang.fillHint": "Saved with your profile, so entries can be written in the form's language.",
 };
 
 // Translations. Short, literal, and reviewed as data. `{n}` placeholders are preserved verbatim.
@@ -232,6 +234,8 @@ const STRINGS = {
     "translate.input": "अनुवाद करने का पाठ",
     "backup.passphrase": "बैकअप पासफ़्रेज़",
     "vault.imageField": "फ़ील्ड, जैसे हस्ताक्षर",
+    "license.thisDevice": "यह डिवाइस",
+    "lang.fillHint": "आपकी प्रोफ़ाइल के साथ सहेजा जाता है, ताकि प्रविष्टियाँ फ़ॉर्म की भाषा में लिखी जा सकें।",
   },
   bn: {
     "app.name": "PolyglotFormFill", "app.tagline": "যেকোনো ফর্ম, যেকোনো ভাষায়, আপনার ডিভাইসে গোপনে পূরণ করুন।",
@@ -299,6 +303,8 @@ const STRINGS = {
     "translate.input": "অনুবাদের লেখা",
     "backup.passphrase": "ব্যাকআপ পাসফ্রেজ",
     "vault.imageField": "ঘর, যেমন সই",
+    "license.thisDevice": "এই ডিভাইস",
+    "lang.fillHint": "আপনার প্রোফাইলের সঙ্গে সংরক্ষিত, যাতে তথ্য ফর্মের ভাষায় লেখা যায়।",
   },
   ta: {
     "app.name": "PolyglotFormFill", "app.tagline": "எந்தப் படிவத்தையும், எந்த மொழியிலும், உங்கள் சாதனத்தில் தனிப்பட்ட முறையில் நிரப்புங்கள்.",
@@ -366,6 +372,8 @@ const STRINGS = {
     "translate.input": "மொழிபெயர்க்க வேண்டிய உரை",
     "backup.passphrase": "காப்புப்பிரதி கடவுச்சொற்றொடர்",
     "vault.imageField": "புலம், எ.கா. கையொப்பம்",
+    "license.thisDevice": "இந்தச் சாதனம்",
+    "lang.fillHint": "உங்கள் சுயவிவரத்துடன் சேமிக்கப்படுகிறது, அதனால் பதிவுகள் படிவத்தின் மொழியில் எழுதப்படும்.",
   },
   te: {
     "app.name": "PolyglotFormFill", "app.tagline": "ఏ ఫారమ్‌నైనా, ఏ భాషలోనైనా, మీ పరికరంలోనే గోప్యంగా నింపండి.",
@@ -433,6 +441,8 @@ const STRINGS = {
     "translate.input": "అనువదించవలసిన పాఠ్యం",
     "backup.passphrase": "బ్యాకప్ పాస్‌ఫ్రేజ్",
     "vault.imageField": "ఖాళీ, ఉదా. సంతకం",
+    "license.thisDevice": "ఈ పరికరం",
+    "lang.fillHint": "మీ ప్రొఫైల్‌తో భద్రపరచబడుతుంది, తద్వారా వివరాలు ఫారమ్ భాషలో రాయబడతాయి.",
   },
   kn: {
     "app.name": "PolyglotFormFill", "app.tagline": "ಯಾವುದೇ ನಮೂನೆಯನ್ನು, ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ, ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿಯೇ ಖಾಸಗಿಯಾಗಿ ಭರ್ತಿ ಮಾಡಿ.",
@@ -500,6 +510,8 @@ const STRINGS = {
     "translate.input": "ಅನುವಾದಿಸಬೇಕಾದ ಪಠ್ಯ",
     "backup.passphrase": "ಬ್ಯಾಕಪ್ ಪಾಸ್‌ಫ್ರೇಸ್",
     "vault.imageField": "ಕ್ಷೇತ್ರ, ಉದಾ. ಸಹಿ",
+    "license.thisDevice": "ಈ ಸಾಧನ",
+    "lang.fillHint": "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್‌ನೊಂದಿಗೆ ಉಳಿಸಲಾಗುತ್ತದೆ, ಇದರಿಂದ ವಿವರಗಳು ನಮೂನೆಯ ಭಾಷೆಯಲ್ಲಿ ಬರೆಯಲ್ಪಡುತ್ತವೆ.",
   },
   ml: {
     "app.name": "PolyglotFormFill", "app.tagline": "ഏത് ഫോമും, ഏത് ഭാഷയിലും, നിങ്ങളുടെ ഉപകരണത്തിൽ സ്വകാര്യമായി പൂരിപ്പിക്കുക.",
@@ -567,6 +579,8 @@ const STRINGS = {
     "translate.input": "വിവർത്തനം ചെയ്യേണ്ട വാചകം",
     "backup.passphrase": "ബാക്കപ്പ് പാസ്‌ഫ്രെയ്സ്",
     "vault.imageField": "കളം, ഉദാ. ഒപ്പ്",
+    "license.thisDevice": "ഈ ഉപകരണം",
+    "lang.fillHint": "നിങ്ങളുടെ പ്രൊഫൈലിനൊപ്പം സൂക്ഷിക്കുന്നു, അതിനാൽ വിവരങ്ങൾ ഫോമിന്റെ ഭാഷയിൽ എഴുതാനാകും.",
   },
   gu: {
     "app.name": "PolyglotFormFill", "app.tagline": "કોઈપણ ફોર્મ, કોઈપણ ભાષામાં, તમારા ઉપકરણ પર ખાનગી રીતે ભરો.",
@@ -634,6 +648,8 @@ const STRINGS = {
     "translate.input": "અનુવાદ કરવાનું લખાણ",
     "backup.passphrase": "બૅકઅપ પાસફ્રેઝ",
     "vault.imageField": "ખાનું, દા.ત. સહી",
+    "license.thisDevice": "આ ઉપકરણ",
+    "lang.fillHint": "તમારી પ્રોફાઇલ સાથે સચવાય છે, જેથી વિગતો ફોર્મની ભાષામાં લખાય.",
   },
   pa: {
     "app.name": "PolyglotFormFill", "app.tagline": "ਕੋਈ ਵੀ ਫ਼ਾਰਮ, ਕਿਸੇ ਵੀ ਭਾਸ਼ਾ ਵਿੱਚ, ਆਪਣੇ ਡਿਵਾਈਸ ਉੱਤੇ ਨਿੱਜੀ ਤੌਰ ਤੇ ਭਰੋ।",
@@ -701,6 +717,8 @@ const STRINGS = {
     "translate.input": "ਅਨੁਵਾਦ ਕਰਨ ਵਾਲੀ ਲਿਖਤ",
     "backup.passphrase": "ਬੈਕਅੱਪ ਪਾਸਫ੍ਰੇਜ਼",
     "vault.imageField": "ਖਾਨਾ, ਜਿਵੇਂ ਦਸਤਖ਼ਤ",
+    "license.thisDevice": "ਇਹ ਡਿਵਾਈਸ",
+    "lang.fillHint": "ਤੁਹਾਡੀ ਪ੍ਰੋਫ਼ਾਈਲ ਨਾਲ ਸੰਭਾਲਿਆ ਜਾਂਦਾ ਹੈ, ਤਾਂ ਜੋ ਵੇਰਵੇ ਫ਼ਾਰਮ ਦੀ ਭਾਸ਼ਾ ਵਿੱਚ ਲਿਖੇ ਜਾਣ।",
   },
   mr: {
     "app.name": "PolyglotFormFill", "app.tagline": "कोणताही फॉर्म, कोणत्याही भाषेत, तुमच्या उपकरणावर खासगीरीत्या भरा.",
@@ -768,6 +786,8 @@ const STRINGS = {
     "translate.input": "भाषांतर करायचा मजकूर",
     "backup.passphrase": "बॅकअप पासफ्रेज",
     "vault.imageField": "रकाना, उदा. सही",
+    "license.thisDevice": "हे उपकरण",
+    "lang.fillHint": "तुमच्या प्रोफाइलसोबत जतन होते, जेणेकरून नोंदी फॉर्मच्या भाषेत लिहिल्या जातील.",
   },
   ur: {
     "app.name": "PolyglotFormFill", "app.tagline": "کوئی بھی فارم، کسی بھی زبان میں، اپنے آلے پر نجی طور پر بھریں۔",
@@ -835,6 +855,8 @@ const STRINGS = {
     "translate.input": "ترجمے کے لیے متن",
     "backup.passphrase": "بیک اپ پاس فریز",
     "vault.imageField": "خانہ، مثلاً دستخط",
+    "license.thisDevice": "یہ آلہ",
+    "lang.fillHint": "آپ کی پروفائل کے ساتھ محفوظ ہوتا ہے، تاکہ اندراجات فارم کی زبان میں لکھے جا سکیں۔",
   },
   ar: {
     "app.name": "PolyglotFormFill", "app.tagline": "املأ أي نموذج، بأي لغة، بخصوصية على جهازك.",
@@ -902,6 +924,8 @@ const STRINGS = {
     "translate.input": "النص المراد ترجمته",
     "backup.passphrase": "عبارة مرور النسخة الاحتياطية",
     "vault.imageField": "الحقل، مثل التوقيع",
+    "license.thisDevice": "هذا الجهاز",
+    "lang.fillHint": "يُحفظ مع ملفك، لتُكتب المدخلات بلغة النموذج.",
   },
   he: {
     "app.name": "PolyglotFormFill", "app.tagline": "מלאו כל טופס, בכל שפה, בפרטיות על המכשיר שלכם.",
@@ -969,6 +993,8 @@ const STRINGS = {
     "translate.input": "טקסט לתרגום",
     "backup.passphrase": "משפט סיסמה לגיבוי",
     "vault.imageField": "שדה, למשל חתימה",
+    "license.thisDevice": "המכשיר הזה",
+    "lang.fillHint": "נשמר עם הפרופיל שלכם, כך שהערכים ייכתבו בשפת הטופס.",
   },
   fa: {
     "app.name": "PolyglotFormFill", "app.tagline": "هر فرمی را، به هر زبانی، به‌صورت خصوصی روی دستگاه خودتان پر کنید.",
@@ -1036,6 +1062,8 @@ const STRINGS = {
     "translate.input": "متن برای ترجمه",
     "backup.passphrase": "عبارت عبور پشتیبان",
     "vault.imageField": "فیلد، مثلاً امضا",
+    "license.thisDevice": "این دستگاه",
+    "lang.fillHint": "همراه نمایهٔ شما ذخیره می‌شود تا ورودی‌ها به زبان فرم نوشته شوند.",
   },
   zh: {
     "app.name": "PolyglotFormFill", "app.tagline": "在您的设备上私密地填写任何语言的任何表单。",
@@ -1103,6 +1131,8 @@ const STRINGS = {
     "translate.input": "要翻译的文本",
     "backup.passphrase": "备份密码短语",
     "vault.imageField": "字段，例如签名",
+    "license.thisDevice": "本设备",
+    "lang.fillHint": "与您的档案一同保存，以便按表单的语言填写内容。",
   },
   ja: {
     "app.name": "PolyglotFormFill", "app.tagline": "どんな言語のどんな書類も、お使いの端末の中だけで入力できます。",
@@ -1170,6 +1200,8 @@ const STRINGS = {
     "translate.input": "翻訳する文章",
     "backup.passphrase": "バックアップのパスフレーズ",
     "vault.imageField": "項目（例：署名）",
+    "license.thisDevice": "この端末",
+    "lang.fillHint": "プロフィールと一緒に保存され、書類の言語で記入できるようになります。",
   },
   ko: {
     "app.name": "PolyglotFormFill", "app.tagline": "어떤 언어의 어떤 서식이든, 내 기기 안에서 비공개로 작성하세요.",
@@ -1237,6 +1269,8 @@ const STRINGS = {
     "translate.input": "번역할 문장",
     "backup.passphrase": "백업 암호구",
     "vault.imageField": "항목, 예: 서명",
+    "license.thisDevice": "이 기기",
+    "lang.fillHint": "프로필과 함께 저장되어, 서식의 언어로 입력할 수 있습니다.",
   },
   th: {
     "app.name": "PolyglotFormFill", "app.tagline": "กรอกแบบฟอร์มใดก็ได้ ภาษาใดก็ได้ อย่างเป็นส่วนตัวบนเครื่องของคุณ",
@@ -1304,6 +1338,8 @@ const STRINGS = {
     "translate.input": "ข้อความที่จะแปล",
     "backup.passphrase": "วลีรหัสผ่านสำรอง",
     "vault.imageField": "ช่อง เช่น ลายเซ็น",
+    "license.thisDevice": "เครื่องนี้",
+    "lang.fillHint": "บันทึกไว้กับโปรไฟล์ของคุณ เพื่อให้กรอกข้อมูลเป็นภาษาของแบบฟอร์มได้",
   },
   vi: {
     "app.name": "PolyglotFormFill", "app.tagline": "Điền mọi biểu mẫu, bằng mọi ngôn ngữ, riêng tư ngay trên thiết bị của bạn.",
@@ -1371,6 +1407,8 @@ const STRINGS = {
     "translate.input": "Văn bản cần dịch",
     "backup.passphrase": "Cụm mật khẩu sao lưu",
     "vault.imageField": "Trường, ví dụ chữ ký",
+    "license.thisDevice": "Thiết bị này",
+    "lang.fillHint": "Được lưu cùng hồ sơ của bạn, để các mục được viết bằng ngôn ngữ của biểu mẫu.",
   },
   id: {
     "app.name": "PolyglotFormFill", "app.tagline": "Isi formulir apa pun, dalam bahasa apa pun, secara pribadi di perangkat Anda.",
@@ -1438,6 +1476,8 @@ const STRINGS = {
     "translate.input": "Teks untuk diterjemahkan",
     "backup.passphrase": "Frasa sandi cadangan",
     "vault.imageField": "Kolom, mis. tanda tangan",
+    "license.thisDevice": "Perangkat ini",
+    "lang.fillHint": "Disimpan bersama profil Anda, agar isian ditulis dalam bahasa formulir.",
   },
   ru: {
     "app.name": "PolyglotFormFill", "app.tagline": "Заполняйте любые формы на любом языке — прямо на своём устройстве.",
@@ -1505,6 +1545,8 @@ const STRINGS = {
     "translate.input": "Текст для перевода",
     "backup.passphrase": "Парольная фраза резервной копии",
     "vault.imageField": "Поле, например подпись",
+    "license.thisDevice": "Это устройство",
+    "lang.fillHint": "Сохраняется вместе с профилем, чтобы записи вносились на языке формы.",
   },
   es: {
     "app.name": "PolyglotFormFill", "app.tagline": "Rellena cualquier formulario, en cualquier idioma, de forma privada en tu dispositivo.",
@@ -1572,6 +1614,8 @@ const STRINGS = {
     "translate.input": "Texto para traducir",
     "backup.passphrase": "Frase de contraseña de la copia",
     "vault.imageField": "Campo, p. ej. firma",
+    "license.thisDevice": "Este dispositivo",
+    "lang.fillHint": "Se guarda con tu perfil, para que las entradas se escriban en el idioma del formulario.",
   },
   fr: {
     "app.name": "PolyglotFormFill", "app.tagline": "Remplissez n'importe quel formulaire, dans n'importe quelle langue, en privé sur votre appareil.",
@@ -1639,6 +1683,8 @@ const STRINGS = {
     "translate.input": "Texte à traduire",
     "backup.passphrase": "Phrase secrète de la sauvegarde",
     "vault.imageField": "Champ, par ex. signature",
+    "license.thisDevice": "Cet appareil",
+    "lang.fillHint": "Enregistré avec votre profil, pour que les saisies soient écrites dans la langue du formulaire.",
   },
   de: {
     "app.name": "PolyglotFormFill", "app.tagline": "Füllen Sie jedes Formular in jeder Sprache privat auf Ihrem Gerät aus.",
@@ -1706,6 +1752,8 @@ const STRINGS = {
     "translate.input": "Zu übersetzender Text",
     "backup.passphrase": "Passphrase der Sicherung",
     "vault.imageField": "Feld, z. B. Unterschrift",
+    "license.thisDevice": "Dieses Gerät",
+    "lang.fillHint": "Wird mit Ihrem Profil gespeichert, damit Einträge in der Sprache des Formulars geschrieben werden.",
   },
   pt: {
     "app.name": "PolyglotFormFill", "app.tagline": "Preencha qualquer formulário, em qualquer idioma, com privacidade no seu dispositivo.",
@@ -1773,6 +1821,8 @@ const STRINGS = {
     "translate.input": "Texto para traduzir",
     "backup.passphrase": "Frase-passe da cópia",
     "vault.imageField": "Campo, p. ex. assinatura",
+    "license.thisDevice": "Este dispositivo",
+    "lang.fillHint": "Guardado com o seu perfil, para que as entradas sejam escritas no idioma do formulário.",
   },
   tr: {
     "app.name": "PolyglotFormFill", "app.tagline": "Herhangi bir formu, herhangi bir dilde, cihazınızda gizlilikle doldurun.",
@@ -1840,6 +1890,8 @@ const STRINGS = {
     "translate.input": "Çevrilecek metin",
     "backup.passphrase": "Yedek parolası",
     "vault.imageField": "Alan, ör. imza",
+    "license.thisDevice": "Bu cihaz",
+    "lang.fillHint": "Profilinizle birlikte kaydedilir, böylece girdiler formun dilinde yazılır.",
   },
 };
 

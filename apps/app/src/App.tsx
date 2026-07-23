@@ -930,7 +930,7 @@ export function App() {
           ))}
         </select>
         <span style={{ color: "#8a8f92", fontSize: 12 }}>
-          your preferred language — saved with your profile so entries can be written in the form’s language.
+          {tr("lang.fillHint")}
         </span>
       </div>
       {err && (
@@ -1013,7 +1013,7 @@ export function App() {
               <span style={{ fontSize: 12, color: "#8a5a0a" }}>{lic.reason}</span>
             )}
             <span style={{ fontSize: 12, color: "#5a6b6d" }}>
-              This device: <code>{deviceId.slice(0, 16)}…</code>
+              {tr("license.thisDevice")}: <code>{deviceId.slice(0, 16)}…</code>
             </span>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
