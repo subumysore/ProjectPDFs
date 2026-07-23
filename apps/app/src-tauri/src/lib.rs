@@ -90,19 +90,26 @@ fn set_passphrase(state: State<AppState>, passphrase: String) -> Result<(), Stri
     Ok(())
 }
 
-/// Unlock the app by verifying the passphrase against the stored verifier.
-#[tauri::command]
-fn unlock(state: State<AppState>, passphrase: String) -> Result<(), String> {
-    let path = lock_path(&state.data_dir);
+/// Verify a passphrase against the stored verifier. Used both to unlock and to gate destructive
+/// actions (e.g. deleting a profile) so a mis-click alone can never erase data.
+fn verify_passphrase(dir: &std::path::Path, passphrase: &str) -> Result<(), String> {
+    let path = lock_path(dir);
     let bytes = std::fs::read(&path).map_err(|_| "No passphrase set.".to_string())?;
     let lf: LockFile = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     if kdf(&lf.salt, passphrase.trim(), lf.iters) == lf.hash {
-        *state.unlocked.lock().unwrap() = true;
-        touch_session(&state.data_dir);
         Ok(())
     } else {
         Err("Incorrect passphrase.".into())
     }
+}
+
+/// Unlock the app by verifying the passphrase against the stored verifier.
+#[tauri::command]
+fn unlock(state: State<AppState>, passphrase: String) -> Result<(), String> {
+    verify_passphrase(&state.data_dir, &passphrase)?;
+    *state.unlocked.lock().unwrap() = true;
+    touch_session(&state.data_dir);
+    Ok(())
 }
 
 // --- Unlock session sentinel (shared-vault gate, ADR-0019 follow-up) -------------------
@@ -227,8 +234,10 @@ fn list_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
 /// Delete a profile and everything it owns (data points + saved forms). Returns how many data
 /// points were removed, so the UI can confirm what was erased.
 #[tauri::command]
-fn delete_profile(state: State<AppState>, id: String) -> Result<usize, String> {
+fn delete_profile(state: State<AppState>, id: String, passphrase: String) -> Result<usize, String> {
     require_unlocked(&state)?;
+    // Destructive and irreversible: require the vault passphrase, not just an in-UI confirm.
+    verify_passphrase(&state.data_dir, &passphrase)?;
     state.store.lock().unwrap().delete_profile(&id).map_err(|e| e.to_string())
 }
 

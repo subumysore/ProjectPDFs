@@ -80,6 +80,8 @@ export function App() {
   const [newProfile, setNewProfile] = useState("");
   // Two-step delete: null = idle, or the id of the profile whose removal is being confirmed inline.
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletePass, setDeletePass] = useState("");
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [k, setK] = useState("");
   const [v, setV] = useState("");
   const [savedForms, setSavedForms] = useState<SavedFormSummary[]>([]);
@@ -351,11 +353,25 @@ export function App() {
     selectProfile(id);
   }
   async function removeProfile(id: string) {
-    // Called only after the inline two-step confirmation below, so no extra prompt here.
-    await guard(invoke("delete_profile", { id }));
+    // Destructive and irreversible, so beyond the two-step confirm the backend also requires the
+    // vault passphrase. A wrong passphrase deletes nothing and shows an inline, localized error.
+    if (!deletePass.trim()) { setDeleteErr(tr("profile.removePassWrong")); return; }
+    try {
+      await invoke("delete_profile", { id, passphrase: deletePass });
+    } catch {
+      setDeleteErr(tr("profile.removePassWrong"));
+      return;
+    }
     setConfirmDeleteId(null);
+    setDeletePass("");
+    setDeleteErr(null);
     if (selected === id) { setSelected(null); setPoints([]); }
     await refreshProfiles();
+  }
+  function cancelDelete() {
+    setConfirmDeleteId(null);
+    setDeletePass("");
+    setDeleteErr(null);
   }
   async function addPoint() {
     if (!selected || !k.trim()) return;
@@ -1025,15 +1041,28 @@ export function App() {
                   <div style={{ color: "#7a2222", fontSize: 13, marginBottom: 10 }}>
                     {tr("profile.removeConfirm", { name: sel.name })}
                   </div>
+                  <input
+                    type="password"
+                    value={deletePass}
+                    autoFocus
+                    placeholder={tr("unlock.placeholder")}
+                    onChange={(e) => { setDeletePass(e.currentTarget.value); if (deleteErr) setDeleteErr(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") removeProfile(selected); if (e.key === "Escape") cancelDelete(); }}
+                    style={{ width: 260, maxWidth: "100%", padding: "7px 10px", border: `1px solid ${deleteErr ? "#c0392b" : "#d9e2e6"}`, borderRadius: 8, marginBottom: 10 }}
+                  />
+                  {deleteErr && (
+                    <div style={{ color: "#c0392b", fontSize: 12.5, marginBottom: 10 }}>{deleteErr}</div>
+                  )}
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
                       onClick={() => removeProfile(selected)}
-                      style={{ background: "#9a2c2c", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}
+                      disabled={!deletePass.trim()}
+                      style={{ background: deletePass.trim() ? "#9a2c2c" : "#d8b6b6", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: deletePass.trim() ? "pointer" : "not-allowed" }}
                     >
                       {tr("profile.removeYes")}
                     </button>
                     <button
-                      onClick={() => setConfirmDeleteId(null)}
+                      onClick={cancelDelete}
                       style={{ background: "#fff", border: "1px solid #d9e2e6", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}
                     >
                       {tr("action.cancel")}
