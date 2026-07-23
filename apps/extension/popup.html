@@ -67,8 +67,8 @@
       <!-- New information typed onto a form is NEVER saved silently: it is listed here, with the
            value it would replace, and only ticked rows are saved (parity with the desktop app). -->
       <div id="learnCard" class="hidden" style="border:1px solid #e5e5e5;border-radius:8px;padding:8px;margin-top:6px">
-        <div class="sub" style="margin-bottom:6px"><b>New details found on this page.</b> Nothing is saved
-          until you tick it. These stay on this device, in your vault.</div>
+        <div class="sub" style="margin-bottom:6px"><b data-i18n="learn.title">New details found on this page.</b>
+          <span data-i18n="learn.note">Nothing is saved until you tick it. These stay on this device.</span></div>
         <div id="learnList"></div>
         <div class="row" style="margin-top:6px">
           <button id="learnSave" data-i18n="learn.saveTicked">Save ticked</button>
@@ -94,12 +94,12 @@
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
-        <div class="sub" style="margin-bottom: 6px"><b>Your details</b> — saved encrypted on this device.</div>
+        <div class="sub" style="margin-bottom: 6px"><b data-i18n="vault.title">Your details</b> <span data-i18n="vault.subtitle">Saved encrypted on this device.</span></div>
         <div id="entries"></div>
         <input id="newKey" data-i18n-placeholder="vault.addField" placeholder="Field" />
         <input id="newVal" data-i18n-placeholder="vault.addValue" placeholder="Value" />
         <button id="add" data-i18n="vault.add">Add</button>
-        <div class="sub" style="margin: 8px 0 4px">Or add an <b>image</b> (photo / signature) — drawn into matching PDF boxes:</div>
+        <div class="sub" style="margin: 8px 0 4px" data-i18n="vault.imageHint">You can also add an image.</div>
         <div class="row" style="align-items: center; gap: 6px">
           <input id="imgKey" placeholder="field (e.g. signature, photo)" style="flex: 1" />
           <input id="imgFile" type="file" accept="image/*" style="flex: 1" />
@@ -113,7 +113,7 @@
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
-        <div class="sub" style="margin-bottom: 6px"><b>Translate (on-device)</b> — English ↔ Hindi/Spanish/French/German/Chinese/Arabic/Russian. First use of a language downloads its model, then it's cached. <b>Forms in another language are auto-translated when you Fill.</b></div>
+        <div class="sub" style="margin-bottom: 6px"><b data-i18n="translate.title">Translate, on your device</b> — English ↔ Hindi/Spanish/French/German/Chinese/Arabic/Russian. First use of a language downloads its model, then it's cached. <b>Forms in another language are auto-translated when you Fill.</b></div>
         <select id="trDir" style="width: 100%; margin-bottom: 6px">
           <option value="en-hi">English → हिन्दी (Hindi)</option>
           <option value="hi-en">हिन्दी → English</option>

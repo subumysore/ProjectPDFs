@@ -959,7 +959,7 @@ export function App() {
           );
         })}
       </nav>
-      {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>Review your license, then open <b>Profile &amp; Vault</b> and pick a profile — Forms and Past forms unlock once one is selected.</p>}
+      {!selected && <p style={{ fontSize: 12, color: "#8a8f92", margin: "2px 0 10px" }}>{tr("tabs.hint")}</p>}
 
       {tab === "setup" && (
       <section style={cardStyle}>
@@ -997,11 +997,9 @@ export function App() {
 
       {tab === "license" && !locked && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>1 · License &amp; device</h2>
+          <h2 style={h2Style}>1 · {tr("license.title")}</h2>
           <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
-            This is where the app starts: your license and this device’s identity. Everything
-            downstream — profiles, the vault, filling forms, signing — runs under the license shown
-            here, and it’s all verified <b>offline on this device</b> (no server ever sees it).
+            {tr("license.body")}
           </p>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", margin: "4px 0 10px" }}>
             <span style={{
@@ -1028,9 +1026,7 @@ export function App() {
             <button onClick={activateLicense}>Activate</button>
           </div>
           <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 8 }}>
-            Free during the beta — all features are available. A Pro license is <b>bound to this device</b>
-            and verified offline with a device-held key; activating it never contacts a server, and your
-            key never leaves the machine. New here? Open <b>5 · Docs &amp; Video</b> for a guided tour.
+            {tr("license.beta")}
           </p>
         </section>
       )}

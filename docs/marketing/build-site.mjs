@@ -119,6 +119,7 @@ ${switcher(lang)}
   <footer>
     <p class="note">${tr("site.langNote")}</p>
     <p><a href="/privacy/">${tr("site.privacyPolicy")}</a> · <a href="/">English</a></p>
+    <p class="note">${tr("privacy.legalNote")}</p>
   </footer>
 </div>
 </body>

@@ -5,13 +5,13 @@
   "artifacts": [
     {
       "name": "PolyglotFormFill-Setup.exe",
-      "bytes": 24875637,
-      "sha256": "5039d79e5bb3a413ef1eeb3d5e9aa8616b04a6315aa16ec14ada8b83766eae41"
+      "bytes": 24887685,
+      "sha256": "896cf9937e9712ed3fd9676225e9ebdd62e921e4cf8c35494dc49f71ad004915"
     },
     {
       "name": "polyglotformfill-extension.zip",
-      "bytes": 9476212,
-      "sha256": "fd54ff92b54968c9ab3a5d7399b39a252021b0cf5b443969538a4fcfbb6398fd"
+      "bytes": 9486712,
+      "sha256": "cbdf751d9339a879d021e9dbd264c9a6cef52e1d2a71c26a28ea7f2c77b2ca78"
     }
   ]
 }

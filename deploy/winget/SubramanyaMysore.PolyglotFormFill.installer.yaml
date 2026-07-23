@@ -26,6 +26,6 @@ Installers:
 - Architecture: x64
   InstallerType: nullsoft
   InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe
-  InstallerSha256: 5039D79E5BB3A413EF1EEB3D5E9AA8616B04A6315AA16EC14ADA8B83766EAE41
+  InstallerSha256: 896CF9937E9712ED3FD9676225E9EBDD62E921E4CF8C35494DC49F71AD004915
 ManifestType: installer
 ManifestVersion: 1.6.0

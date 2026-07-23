@@ -1,5 +1,25 @@
 # Active Context
 
+## UI LANGUAGE EVERYWHERE — DONE AND LIVE (2026-07-23)
+One catalogue, `apps/extension/src/i18n.js`, 26 languages, shared by the site, the extension and
+the executable. Checked in, not translated at runtime (deterministic, reviewable, works offline).
+- Desktop: picker on the UNLOCK screen (the first screen, before any settings are reachable) plus
+  header, tabs, tab hint, License card title/body/beta note. Remembered per device; first run
+  pre-selected from the OS/WebView languages. Verified live in Tamil AND Japanese on a build
+  downloaded from the site.
+- Extension: picker in the popup, every action + the vault/learn/translate panels localised,
+  remembered per browser, first run from chrome.i18n.getAcceptLanguages.
+- Site: /<lang>/ for all 25 non-English languages (verified 25/25 live, RTL correct); English page
+  gained the switcher plus a hint (never a redirect) to the visitor own language.
+- Guards: a missing key is a BUILD FAILURE (i18n.test.mjs), a translation still equal to English
+  fails, popup-i18n.test.mjs ties popup.html to the catalogue, site-i18n.test.mjs proves each
+  localised page is really in that language and leaks no English.
+- STILL ENGLISH (named honestly): the long-form English landing copy, the privacy POLICY page
+  (localised pages carry a translated summary + a note that the full legal text is English), and
+  a few extension helper lines (passkey unlock, reset vault, signature pad, backup panel).
+- Adding a language is one entry in UI_LANGS + STRINGS. No code change on any surface.
+
+
 ## DEPLOYED AND VERIFIED LIVE (2026-07-23, later session)
 Fill now works in every script the engine lists (16), on both apps, and it is live.
 - **Published** via `publish-site.ps1 -WithBinaries`; downloaded back from
