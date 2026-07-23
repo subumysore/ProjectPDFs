@@ -7,6 +7,10 @@ import { starterVault } from "./seed.js";
 
 let key = null; // CryptoKey, memory-only (+ mirrored to storage.session, see below)
 let vault = null; // decrypted { ontology_key: value }, memory-only
+// Per-field edit times { ontology_key: epoch-secs } powering LAST-WRITE-WINS sync with the
+// desktop vault. Timestamps reveal nothing sensitive, so they live beside the sealed blob.
+let times = {};
+const nowSecs = () => Math.floor(Date.now() / 1000);
 
 async function store() {
   return chrome.storage.local.get(["salt", "blob", "kdf"]);
@@ -18,17 +22,23 @@ async function store() {
 // when the worker respawns. Nothing here touches disk.
 async function cacheSession() {
   if (!key) return;
-  await chrome.storage.session.set({ skey: await exportKeyB64(key), svault: vault });
+  await chrome.storage.session.set({ skey: await exportKeyB64(key), svault: vault, stimes: times });
 }
 async function ensureUnlocked() {
   if (key && vault) return;
-  const { skey, svault } = await chrome.storage.session.get(["skey", "svault"]);
+  const { skey, svault, stimes } = await chrome.storage.session.get(["skey", "svault", "stimes"]);
   if (!skey) return; // genuinely locked
   key = await importKeyB64(skey);
   vault = svault || {};
+  times = stimes || {};
+}
+/** Load the per-field edit times that sit beside the sealed blob (after a real unlock). */
+async function loadTimes() {
+  const { vtimes } = await chrome.storage.local.get("vtimes");
+  times = vtimes || {};
 }
 async function clearSession() {
-  try { await chrome.storage.session.remove(["skey", "svault"]); } catch (_) { /* ignore */ }
+  try { await chrome.storage.session.remove(["skey", "svault", "stimes"]); } catch (_) { /* ignore */ }
 }
 
 async function unlockPassphrase(passphrase) {
@@ -46,6 +56,7 @@ async function unlockPassphrase(passphrase) {
     await chrome.storage.local.set({ salt, kdf: "pbkdf2", blob: await seal(k, vault) });
   }
   key = k;
+  await loadTimes();
   await cacheSession();
   return Object.keys(vault);
 }
@@ -62,19 +73,21 @@ async function unlockWebAuthn(prfSecretB64) {
     await chrome.storage.local.set({ salt, kdf: "webauthn-prf", blob: await seal(k, vault) });
   }
   key = k;
+  await loadTimes();
   await cacheSession();
   return Object.keys(vault);
 }
 
 async function persist() {
   if (!key) throw new Error("locked");
-  await chrome.storage.local.set({ blob: await seal(key, vault) });
+  await chrome.storage.local.set({ blob: await seal(key, vault), vtimes: times });
   await cacheSession(); // keep the session mirror in step with the latest vault
 }
 
 function lock() {
   key = null;
   vault = null;
+  times = {};
   clearSession();
 }
 
@@ -129,22 +142,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           // passphrase — that's the point of the encryption).
           key = null; vault = null;
           await chrome.storage.local.remove(["salt", "blob", "kdf"]);
-          try { await chrome.storage.session.remove(["skey", "svault"]); } catch (_) { /* ignore */ }
+          try { await chrome.storage.session.remove(["skey", "svault", "stimes"]); } catch (_) { /* ignore */ }
           sendResponse({ ok: true });
           break;
-        case "status":
+        case "status": {
           await ensureUnlocked();
-          sendResponse({ ok: true, unlocked: !!key, keys: vault ? Object.keys(vault) : [] });
+          // `hasLocal` = this browser has its own encrypted vault on disk. Lets the popup ask for
+          // the one-time unlock ONLY when there is actually local data to sync into the shared vault.
+          const { blob } = await store();
+          sendResponse({ ok: true, unlocked: !!key, hasLocal: !!blob, keys: vault ? Object.keys(vault) : [] });
           break;
+        }
         case "getVault":
           await ensureUnlocked();
           if (!key) throw new Error("locked");
           sendResponse({ ok: true, vault });
           break;
+        // This vault WITH per-field timestamps — the local input to last-write-wins sync.
+        case "getVaultMeta": {
+          await ensureUnlocked();
+          if (!key) throw new Error("locked");
+          const meta = {};
+          for (const k of Object.keys(vault || {})) meta[k] = { value: vault[k], updated_at: times[k] || 0 };
+          sendResponse({ ok: true, meta });
+          break;
+        }
         case "set":
           await ensureUnlocked();
           if (!key) throw new Error("locked");
           vault[msg.key] = msg.value; // silent capture back into the vault
+          // Stamp the edit. A sync write carries the winning timestamp so it doesn't look newer
+          // than it is and bounce back on the next reconcile.
+          times[msg.key] = typeof msg.updatedAt === "number" ? msg.updatedAt : nowSecs();
           await persist();
           sendResponse({ ok: true });
           break;
@@ -152,6 +181,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await ensureUnlocked();
           if (!key) throw new Error("locked");
           delete vault[msg.key];
+          delete times[msg.key];
           await persist();
           sendResponse({ ok: true });
           break;
@@ -200,9 +230,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         case "companionProfiles":
           sendResponse(await hostRequest({ type: "listProfiles" }));
           break;
+        // Desktop vault WITH per-field timestamps — the remote input to last-write-wins sync.
+        case "companionVaultMeta":
+          sendResponse(await hostRequest({ type: "getVaultMeta", profileId: msg.profileId }));
+          break;
         case "companionUpsert":
           // Write-through to the ONE authoritative desktop vault (single source of truth).
-          sendResponse(await hostRequest({ type: "upsertData", profileId: msg.profileId, key: msg.key, value: msg.value }));
+          // `updatedAt` carries the winning timestamp so both sides agree on recency.
+          sendResponse(await hostRequest({
+            type: "upsertData",
+            profileId: msg.profileId,
+            key: msg.key,
+            value: msg.value,
+            updatedAt: typeof msg.updatedAt === "number" ? msg.updatedAt : nowSecs(),
+          }));
           break;
         case "companionDelete":
           sendResponse(await hostRequest({ type: "deleteData", profileId: msg.profileId, key: msg.key }));

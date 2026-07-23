@@ -19,7 +19,7 @@ async function extractPdfTexts(bytes) {
   return texts;
 }
 import { fillPage } from "./pagefill.js";
-import { shouldUseDesktopVault, migrationPlan } from "./companion.js";
+import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./companion.js";
 const $ = (id) => document.getElementById(id);
 // Show the loaded version in the header so it's always obvious which code is running.
 try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
@@ -53,8 +53,8 @@ async function resolveVaultMode() {
     const ping = await send({ type: "companionPing" });
     if (shouldUseDesktopVault(ping)) {
       COMP.on = true;
-      await compProfile();       // auto-pick (or create) the desktop profile
-      await migrateLocalOnce();  // seed the shared vault with any existing extension data
+      await compProfile();            // auto-pick (or create) the desktop profile
+      COMP.synced = await autoSync(); // bidirectional last-write-wins, every open, no clicks
       return;
     }
   } catch (_) { /* companion not installed/running → local vault */ }
@@ -76,24 +76,29 @@ async function compProfile() {
   }
   return COMP.profile;
 }
-// One-time, order-independent unification: on the first connect, copy any fields already in the
-// extension's local vault into the desktop vault — but only where the desktop has no value yet, so
-// existing desktop data is never overwritten.
-async function migrateLocalOnce() {
-  const { companionMigrated } = await chrome.storage.local.get("companionMigrated");
+// AUTO-SYNC (runs on every popup open): reconcile this browser's vault with the desktop vault by
+// LAST-WRITE-WINS per field, in BOTH directions. Fields on only one side are copied over; when both
+// hold a field, the newer `updated_at` wins. Nothing is ever deleted, so no data can be lost.
+// Requires this browser's vault to be readable — it's encrypted, so it must have been unlocked
+// (the session cache keeps it readable afterwards). Silent: no clicks, no prompts.
+// Returns a short summary for the UI, or null when it couldn't run.
+async function autoSync() {
   const st = await send({ type: "status" });
-  if (!(st && st.ok && st.unlocked)) return; // local vault locked → defer until it's unlocked
-  const localR = await send({ type: "getVault" });
-  const deskR = await send({ type: "companionVault", profileId: await compProfile() });
-  const plan = migrationPlan(
-    localR && localR.ok ? localR.vault : {},
-    deskR && deskR.ok ? deskR.vault : {},
-    { migrated: !!companionMigrated, unlocked: true },
-  );
-  for (const { key, value } of plan) {
-    await send({ type: "companionUpsert", profileId: await compProfile(), key, value });
+  if (!(st && st.ok && st.unlocked)) return null; // local vault not readable yet → nothing to do
+  const profileId = await compProfile();
+  if (!profileId) return null;
+  const localR = await send({ type: "getVaultMeta" });
+  const deskR = await send({ type: "companionVaultMeta", profileId });
+  if (!localR || !localR.ok || !deskR || !deskR.ok) return null; // desktop locked/unavailable → later
+  const { toLocal, toRemote } = reconcileVaults(localR.meta, deskR.meta);
+  for (const [key, o] of Object.entries(toRemote)) {
+    await send({ type: "companionUpsert", profileId, key, value: o.value, updatedAt: o.updated_at });
   }
-  if (!companionMigrated) await chrome.storage.local.set({ companionMigrated: true });
+  for (const [key, o] of Object.entries(toLocal)) {
+    await send({ type: "set", key, value: o.value, updatedAt: o.updated_at });
+  }
+  const n = Object.keys(toRemote).length + Object.keys(toLocal).length;
+  return n ? `Synced ${n} field(s) with the desktop app.` : "";
 }
 // The active desktop profile's display name (so the popup shows WHICH profile's vault it's on —
 // the same profile the desktop app shows). Falls back to the id.
@@ -110,12 +115,26 @@ async function compProfileName() {
 async function refresh() {
   await resolveVaultMode();
   if (COMP.on) {
-    // No local unlock in desktop-vault mode — the desktop app holds the key.
+    const s = await send({ type: "status" });
+    // This browser has its own older encrypted vault that hasn't been read yet. It can only be
+    // synced once it's unlocked (encryption — nothing can read it without the passphrase), so show
+    // the normal unlock. After this single unlock it stays readable and syncs automatically.
+    if (s && s.ok && s.hasLocal && !s.unlocked) {
+      $("locked").classList.remove("hidden");
+      $("unlocked").classList.add("hidden");
+      const banner = $("banner");
+      banner.classList.remove("hidden");
+      banner.textContent =
+        "Unlock this browser's vault once so its data syncs with the desktop app — after this it syncs automatically.";
+      return;
+    }
     $("locked").classList.add("hidden");
     $("unlocked").classList.remove("hidden");
     const banner = $("banner");
     banner.classList.remove("hidden");
-    banner.textContent = `One vault · shared with the desktop app · profile: ${await compProfileName()}`;
+    banner.textContent =
+      `One vault · in sync with the desktop app · profile: ${await compProfileName()}` +
+      (COMP.synced ? ` · ${COMP.synced}` : "");
     await renderEntries();
     return;
   }

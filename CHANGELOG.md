@@ -15,6 +15,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Automatic two-way vault sync (extension ⇄ desktop, last-write-wins) (2026-07-23)
+- The extension and desktop vaults now **auto-reconcile on every popup open**, in both directions,
+  with **per-field last-write-wins**: a field on only one side is copied over; when both hold it, the
+  newer `updated_at` wins. Nothing is ever deleted, so no field can be lost. No buttons, no prompts.
+- Both vaults gained per-field timestamps: `core-store.data_points.updated_at` (+ migration for
+  existing installs, `put_data_point_at`, `data_points_meta`); the extension worker keeps `vtimes`
+  beside its sealed blob and stamps every write. New messages: host `getVaultMeta`, worker
+  `getVaultMeta` / `companionVaultMeta`; `upsertData`/`set` accept the winning `updatedAt`.
+- `reconcileVaults()` is pure + unit-tested (9 companion tests: no-loss, newer-wins both ways,
+  tie-break, missing timestamps).
+- The single unavoidable touch: this browser's pre-existing vault is encrypted, so it must be
+  unlocked once (normal passphrase) before it can be read and synced; the popup asks only when local
+  data actually exists. After that it is fully automatic.
+
+### Fixed — Stale native-host binary broke the bridge (2026-07-23)
+- "Error when communicating with the native messaging host": the registered manifest pointed at a
+  3-day-old `target/release/projectpdfs-host.exe` predating the unlock gate and sync messages.
+  Rebuilt; verified ping / listProfiles / getVaultMeta over the real stdio protocol.
+
 ### Added — Desktop: filled/signed PDFs saved straight to your Desktop (2026-07-22)
 - Filled, signed, OCR-detected, re-downloaded, and Office-exported PDFs now save to the user's actual
   **Desktop** (unique names, never clobbering), not the browser Downloads folder. New Tauri
