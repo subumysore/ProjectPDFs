@@ -1,46 +1,46 @@
 {
-  "note": "Single source of truth for the guide video: slide order, narration, and therefore subtitles. build-guide-video.ps1 renders it; build-guide-subtitles.ps1 times it from the same text, so the two cannot drift. Rewritten 2026-07-23 for the shipped feature set - the previous version predated the 26-language UI, on-demand script fonts, dropdown and checkbox filling, capture-with-consent, and signature ink colour.",
+  "note": "Sales-pitch narration for the guide video: hook -> pain -> features as time-saved benefits -> close. Single source of truth - build-guide-video.ps1 renders it, build-guide-subtitles.ps1 times it. Every slide/segment must be recorded with a SYNTHETIC demo profile: no real vault data in any frame (see the 2026-07-23 PII incident). `img` names are the intended shots.",
   "voice": "Microsoft Zira Desktop",
   "segments": [
     {
       "img": "a-greeting.png",
-      "text": "Hello. Namaste. Vanakkam. Konnichiwa. Marhaban. Privyet. PolyglotFormFill speaks your language, and that means the whole application, not only the forms. Buttons, tabs, prompts and messages are shown in the language you choose, in twenty-six languages, picked on first run and changed whenever you like."
+      "text": "How much of your life is spent filling in forms? The same name, the same address, the same date of birth, over and over. PolyglotFormFill does it for you, in seconds, in twenty-six languages, and entirely on your own device. Let me show you."
     },
     {
-      "img": "lang-unlock-ja.png",
-      "text": "The very first screen already asks which language you want, before you sign in to anything, because a first screen you cannot read is no use at all. Right-to-left languages, such as Arabic, Hebrew, Urdu and Persian, flip the whole interface."
+      "img": "s-flat-before.png",
+      "text": "Start with the worst kind. A flat P D F. A scan with no boxes to type in. Normally that means printing it, filling it by hand, and scanning it back. Minutes of tedious work, every time."
     },
     {
-      "img": "lang-tamil.png",
-      "text": "Here is the same application in Tamil, and here in Japanese. Your saved details keep whatever script you typed them in. A name written in Japanese stays Japanese, and is never transliterated behind your back."
+      "img": "s-flat-detected.png",
+      "text": "Watch what happens instead. PolyglotFormFill reads the page on your device, finds every place that needs an answer, and builds real, fillable fields where there were none. A dead scan becomes a live form, in seconds, with no printing and no scanner."
     },
     {
-      "img": "slide-license.png",
-      "text": "Everything happens on your own device. Forms are read, filled, translated and signed locally. We never see your form or your data. It goes only where you choose to send it, such as the office you submit it to. The app opens on the Licence tab, which is verified offline. During the beta every feature is free."
+      "img": "s-oneclick-filled.png",
+      "text": "Now the part that saves your day. One click. Every field filled from your secure vault. Name, address, date of birth, ID numbers, all in the right place, instantly. What used to take ten minutes now takes one second."
     },
     {
-      "img": "f-forms.png",
-      "text": "Next is Profile and Vault. Your details, name, date of birth, address, photo and signature, are sealed at rest on this device. You can type them in, or scan a passport or driving licence and let on-device text recognition read them for you."
+      "img": "s-photo-signature.png",
+      "text": "It even places your photo and your signature onto the form, exactly where they belong. No more printing a picture, cutting it out, and gluing it into a box. Your passport photo and signature drop straight in."
     },
     {
-      "img": "h-forms.png",
-      "text": "Now the filling itself. A P D F with real form fields is completed straight from your vault, including drop-downs, radio buttons and tick boxes, not only the text boxes. If the form is a scan, or has no fields at all, on-device text recognition finds the boxes, creates them, and fills them. Word documents and Excel spreadsheets are filled the same way, through their named fields and labelled cells."
+      "img": "s-manual-fields.png",
+      "text": "Anything the form asks that is new, you simply type once, and PolyglotFormFill remembers it for next time. Every form you fill makes the next one faster."
     },
     {
-      "img": "tab-vault.png",
-      "text": "The browser extension does the same work for web forms. Open a form in Chrome or Edge and it fills the page from the very same vault. Extension and desktop application share one vault, automatically. Save a detail in the browser and the desktop app already has it, and the other way round. Nothing is copied through a server. The two talk to each other on your own machine."
+      "img": "s-sign-draw.png",
+      "text": "When you are done, sign it right on the page. Draw your signature by hand, in any ink colour, because plenty of offices insist on blue. Or drop in a signature you saved earlier. Either way it is backed by your device's own key, proving the document is genuinely from you."
     },
     {
-      "img": "k-history.png",
-      "text": "Anything you type onto a form that your vault does not already hold is offered back to you afterwards. You see the label, the value, and what it would replace, and only the ones you tick are saved. Every form you fill is kept in Past forms as an encrypted, versioned copy, and can be downloaded again at any time."
+      "img": "s-extension-webform.png",
+      "text": "And it is not just P D Fs. Add the browser extension for Chrome or Edge, and any online form fills in a single click too, from the very same vault. Web forms, Word documents, Excel spreadsheets. If it asks for your details, PolyglotFormFill fills it."
     },
     {
-      "img": "l-signed.png",
-      "text": "You can sign a finished form with this device's own key, created offline. Signatures can be drawn on screen in any ink colour, because plenty of authorities insist on blue."
+      "img": "s-languages.png",
+      "text": "Faced with a form in a language you do not read? It is translated for you on the spot, and you can write your answers in the language of your choice. The entire app speaks your language too. Twenty-six of them."
     },
     {
-      "img": "slide-docs.png",
-      "text": "So: any form, any language, on your own device. The Docs and Video tab holds this walkthrough and the written documentation. Private by design. Thank you for watching."
+      "img": "s-history.png",
+      "text": "Every finished form is saved, encrypted and versioned, ready to download again whenever you need it. And all of this, the reading, the filling, the signing, happens on your device. We never see your forms or your data. Stop filling forms by hand. Get PolyglotFormFill, and get your time back."
     }
   ]
 }
