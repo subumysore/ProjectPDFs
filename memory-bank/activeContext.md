@@ -1,5 +1,23 @@
 # Active Context
 
+## WAITING ON: Chrome Web Store credentials (2026-07-23)
+Everything for automated store submission is built, tested and committed. It is deliberately
+PARKED until the four secrets exist - the user asked to wait rather than bump the version now.
+
+- `deploy/publish-webstore.ps1` uploads + submits; `publish-extension.ps1` calls it as step 3/4.
+  With no credentials it names the missing variables and exits 0, so publishing still works.
+- NEEDED (set with setx, never committed, never pasted into chat):
+  `WEBSTORE_ITEM_ID` (from the devconsole URL - it CANNOT be derived from our manifest: the pinned
+  `key` is the local DEV key; the published item has its own Google-assigned one), plus
+  `WEBSTORE_CLIENT_ID`, `WEBSTORE_CLIENT_SECRET`, `WEBSTORE_REFRESH_TOKEN`.
+  Setup steps: `docs/reference/chrome-web-store.md`.
+- WHEN THEY ARRIVE: `.deploypublish-webstore.ps1 -DryRun` to confirm they are picked up, then
+  `node scripts/set-version.mjs patch` (1.0.0 -> 1.0.1; the store refuses a republished version),
+  rebuild both artifacts, and follow `docs/reference/releasing.md`.
+- Version stays 1.0.0 everywhere until then. `node scripts/set-version.mjs --check` confirms.
+
+
+
 ## UI LANGUAGE EVERYWHERE — DONE AND LIVE (2026-07-23)
 One catalogue, `apps/extension/src/i18n.js`, 26 languages, shared by the site, the extension and
 the executable. Checked in, not translated at runtime (deterministic, reviewable, works offline).
