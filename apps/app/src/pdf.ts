@@ -64,6 +64,62 @@ export async function renderPage(
   return { width: viewport.width, height: viewport.height, numPages: doc.numPages };
 }
 
+// A form field positioned ON the rendered page, so the UI can lay an editable box exactly over
+// the real field — the user edits the FORM itself rather than a separate key/value list.
+export interface FormFieldBox {
+  name: string;
+  kind: "text" | "radio" | "check" | "dropdown";
+  value: string;
+  options?: string[];
+  left: number;   // canvas px
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Render one page AND return its form fields already mapped to canvas pixel boxes, so the caller
+ * can overlay real inputs on the page. Uses pdf.js annotations (authoritative widget rectangles).
+ */
+export async function renderPageWithFields(
+  bytes: ArrayBuffer,
+  pageIndex: number,
+  canvas: HTMLCanvasElement,
+  scale = 1.3,
+): Promise<{ width: number; height: number; numPages: number; fields: FormFieldBox[] }> {
+  const doc = await pdfjs.getDocument({ data: bytes.slice(0) }).promise;
+  const page = await doc.getPage(pageIndex + 1);
+  const viewport = page.getViewport({ scale });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
+
+  const fields: FormFieldBox[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const annots: any[] = await page.getAnnotations().catch(() => []);
+  for (const a of annots) {
+    if (a.subtype !== "Widget" || !a.fieldName || a.hidden) continue;
+    const r = viewport.convertToViewportRectangle(a.rect);
+    const left = Math.min(r[0], r[2]);
+    const top = Math.min(r[1], r[3]);
+    const width = Math.abs(r[2] - r[0]);
+    const height = Math.abs(r[3] - r[1]);
+    if (width < 2 || height < 2) continue;
+    let kind: FormFieldBox["kind"] = "text";
+    if (a.fieldType === "Btn") kind = a.checkBox === false || a.radioButton ? "radio" : "check";
+    else if (a.fieldType === "Ch") kind = "dropdown";
+    fields.push({
+      name: a.fieldName,
+      kind,
+      value: typeof a.fieldValue === "string" ? a.fieldValue : a.fieldValue ? String(a.fieldValue) : "",
+      options: Array.isArray(a.options) ? a.options.map((o: { displayValue?: string; exportValue?: string }) => o.displayValue || o.exportValue || "") : undefined,
+      left, top, width, height,
+    });
+  }
+  return { width: viewport.width, height: viewport.height, numPages: doc.numPages, fields };
+}
+
 // One reviewable/editable form field for the "review before you finalize" step.
 export interface ReviewField {
   name: string;                 // the PDF field name (stable key)

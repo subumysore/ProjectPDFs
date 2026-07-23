@@ -8,6 +8,7 @@ import { detectFields } from "./detect";
 import { translateText } from "./translate";
 import { parseAamva } from "@engine/parse.js";
 import { SignPad, type Stamp } from "./SignPad";
+import { FormView } from "./FormView";
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
@@ -87,6 +88,7 @@ export function App() {
   const [reviewEdits, setReviewEdits] = useState<Record<string, string>>({});
   const [reviewName, setReviewName] = useState("");
   const [viewLang, setViewLang] = useState<Record<string, string>>({});
+  const [viewVals, setViewVals] = useState<Record<string, string>>({});
   const [transStatus, setTransStatus] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
@@ -606,25 +608,39 @@ export function App() {
       setReviewEdits({});
       setReviewName(name);
       setViewLang({});
+      setViewVals({});
       setTransStatus("");
     } catch {
       setReviewFields([]);
     }
   }
-  // Translate the filled form's field LABELS into the user's language — a READ-ONLY reading aid,
-  // fully on-device (models served locally via the ppfmodel scheme). The saved form is untouched.
+  // Show the WHOLE form in the user's language — labels AND the filled values — as a READ-ONLY
+  // reading aid, fully on-device. THE SAVED FILE IS NEVER TRANSLATED: export/save always writes the
+  // form's ORIGINAL language. This is the etched rule (see docs/specs/language-aware-filling.md).
   async function translateReview() {
-    if (baseLang === "en") { setTransStatus("The form’s labels are already in your language (English)."); return; }
+    if (baseLang === "en") { setTransStatus("This form is already in your language (English)."); return; }
     setViewLang({});
+    setViewVals({});
     setTransStatus("Loading the on-device translation model (the first run can take a minute)…");
     try {
-      const map: Record<string, string> = {};
+      const labels: Record<string, string> = {};
+      const vals: Record<string, string> = {};
       for (const f of reviewFields) {
-        if (!f.label) continue;
-        map[f.name] = await translateText(f.label, "en", baseLang, setTransStatus);
-        setViewLang({ ...map });
+        if (f.label) {
+          labels[f.name] = await translateText(f.label, "en", baseLang, setTransStatus);
+          setViewLang({ ...labels });
+        }
+        // Translate the VALUE too, so the user reads the entire form in their language. Names,
+        // numbers, dates and codes are left as-is — translating them would be wrong.
+        const v = (reviewEdits[f.name] ?? f.value ?? "").trim();
+        if (v && v !== "Off" && !/^[\d\s./:@+-]+$/.test(v) && !v.startsWith("data:")) {
+          vals[f.name] = await translateText(v, "en", baseLang, setTransStatus);
+          setViewVals({ ...vals });
+        }
       }
-      setTransStatus(`Labels translated to ${LANGS[baseLang] || baseLang} — on-device. Reading aid only; the saved form stays in its original language.`);
+      setTransStatus(
+        `Whole form shown in ${LANGS[baseLang] || baseLang} — on-device. Reading aid only: the file you save stays in the form's original language.`,
+      );
     } catch (e) {
       setTransStatus("Translation failed: " + String(e));
     }
@@ -1213,6 +1229,20 @@ export function App() {
                 </button>
                 {transStatus && <span style={{ fontSize: 12, color: "#55666f" }}>{transStatus}</span>}
               </div>
+              {pdfBytes && (
+                <FormView
+                  bytes={pdfBytes}
+                  edits={reviewEdits}
+                  onEdit={(name, value) => setReviewEdits((e) => ({ ...e, [name]: value }))}
+                  labels={viewLang}
+                  values={viewVals}
+                  showTranslated={Object.keys(viewVals).length > 0 || Object.keys(viewLang).length > 0}
+                />
+              )}
+              <details style={{ marginTop: 8 }}>
+                <summary style={{ cursor: "pointer", fontSize: 13, color: "#0a6a60" }}>
+                  Prefer a list? Show every field as a key/value table
+                </summary>
               <div style={{ maxHeight: 300, overflow: "auto" }}>
                 <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
                   <tbody>
@@ -1236,6 +1266,7 @@ export function App() {
                             ) : (
                               <input value={cur} onChange={(e) => set(e.currentTarget.value)} style={{ padding: "4px 6px", width: "100%", boxSizing: "border-box" }} />
                             )}
+                            {viewVals[f.name] && <div style={{ color: "#0a6a60", fontSize: 12 }}>{viewVals[f.name]}</div>}
                           </td>
                         </tr>
                       );
@@ -1243,6 +1274,7 @@ export function App() {
                   </tbody>
                 </table>
               </div>
+              </details>
               <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
                 <button onClick={applyReview} disabled={Object.keys(reviewEdits).length === 0} style={{ fontWeight: 600 }}>
                   Apply changes &amp; re-export
