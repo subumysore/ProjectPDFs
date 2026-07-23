@@ -1086,12 +1086,12 @@ export function App() {
       {tab === "setup" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
-          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 760 }}>
             <tbody>
-              {points.map((dp) => (
-                <tr key={dp.key} style={{ borderBottom: "1px solid #eef2f4" }}>
-                  <td style={{ padding: "6px 8px", ...mono, width: "35%" }}>{dp.key}</td>
-                  <td style={{ padding: "6px 8px" }}>
+              {points.map((dp, i) => (
+                <tr key={dp.key} style={{ background: i % 2 ? "#f4f8fa" : "#ffffff" }}>
+                  <td style={{ padding: "7px 10px", ...mono, width: "34%", verticalAlign: "middle" }}>{dp.key}</td>
+                  <td style={{ padding: "7px 10px", width: "46%", verticalAlign: "middle" }}>
                     {editKey === dp.key ? (
                       <input
                         value={editVal}
@@ -1113,7 +1113,7 @@ export function App() {
                       dp.value
                     )}
                   </td>
-                  <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>
+                  <td style={{ padding: "7px 10px", textAlign: "left", whiteSpace: "nowrap", verticalAlign: "middle" }}>
                     {editKey === dp.key ? (
                       <>
                         <button onClick={saveEdit}>{tr("action.save")}</button>{" "}
