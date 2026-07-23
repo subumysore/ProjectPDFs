@@ -1,5 +1,3 @@
-import { getTessWorker } from "./tessworker";
-
 // On-device OCR data-source extraction (REQ-10), fully SELF-HOSTED: the worker,
 // WASM core, and language model are served from the app origin (public/tesseract),
 // so connect-src stays 'self' — zero third-party egress. The image and text never
@@ -34,9 +32,22 @@ const LABELS: ReadonlyArray<readonly [readonly string[], string]> = [
   [["country"], "country"],
   [["nationality", "citizenship"], "nationality"],
   [["passport", "passport no", "passport number"], "passport_no"],
+  // Field labels only — NOT document titles. "driver license"/"driving licence" are the card's
+  // banner, not a field, and OCR often merges the banner with nearby text ("DRIVER LICENSE
+  // SPECIMEN"), which would then be captured as the licence number and crowd out the real one.
+  [["license no", "licence no", "license number", "licence number", "dl no", "dl number", "license", "licence"], "license_no"],
+  [["id no", "id number", "identification no", "identity no"], "id_no"],
+  [["expires", "expiry", "expiration", "expiry date", "valid until", "valid thru", "exp"], "expiry_date"],
+  [["issued", "issue date", "date of issue"], "issue_date"],
 ];
 
 const normLabel = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+
+// Known labels, longest first, for cards that print "Label value" with a SINGLE space and no colon
+// (driver licences, ID cards). Longest-first so "license no" wins over "license".
+const PREFIX_ALIASES: ReadonlyArray<readonly [string, string]> = LABELS
+  .flatMap(([aliases, key]) => aliases.map((a) => [a, key] as const))
+  .sort((a, b) => b[0].length - a[0].length);
 
 /** Pure text → vault fields. Exported for unit testing (no OCR needed). */
 export function parseFields(text: string): ExtractedField[] {
@@ -56,29 +67,55 @@ export function parseFields(text: string): ExtractedField[] {
     }
   };
 
+  const assign = (key: string, value: string) => {
+    if (key === "__full") putName(value);
+    else put(key, value);
+  };
+
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
-    // "Label: value", "Label - value", or "Label   value" (2+ spaces).
+    // 1) "Label: value", "Label - value", or "Label   value" (2+ spaces).
     const m = line.match(/^(.{2,30}?)\s*[:\-–—]\s*(.+)$/) || line.match(/^([A-Za-z][A-Za-z .]{1,28}?)\s{2,}(.+)$/);
-    if (!m) continue;
-    const label = normLabel(m[1] ?? "");
-    const value = (m[2] ?? "").trim();
-    if (!value) continue;
-    for (const [aliases, key] of LABELS) {
-      if (aliases.some((a) => label === a || label.endsWith(" " + a) || label === a.replace(/ /g, ""))) {
-        if (key === "__full") putName(value);
-        else put(key, value);
+    if (m) {
+      const label = normLabel(m[1] ?? "");
+      const value = (m[2] ?? "").trim();
+      if (value) {
+        let matched = false;
+        for (const [aliases, key] of LABELS) {
+          if (aliases.some((a) => label === a || label.endsWith(" " + a) || label === a.replace(/ /g, ""))) {
+            assign(key, value);
+            matched = true;
+            break;
+          }
+        }
+        // Only stop here if a label really matched; otherwise the "separator" was just a hyphen
+        // inside the value (e.g. a licence number), so fall through to the single-space matcher.
+        if (matched) continue;
+      }
+    }
+    // 2) "Label value" with a SINGLE space and no separator — the common ID-card layout.
+    //    Match the longest known label at the start of the line; the rest is the value.
+    const norm = normLabel(line);
+    for (const [alias, key] of PREFIX_ALIASES) {
+      if (norm === alias) break; // label with no value on the line
+      if (norm.startsWith(alias + " ")) {
+        // Slice the value off the ORIGINAL line (preserve case/punctuation), not the normalised one.
+        const value = line.slice(line.toLowerCase().indexOf(alias) + alias.length).replace(/^[\s:.\-–—]+/, "").trim();
+        if (value) assign(key, value);
         break;
       }
     }
   }
 
-  // Label-free formats anywhere in the document.
+  // Label-free formats anywhere in the document — but never overwrite a labelled value, and
+  // don't mistake a licence/ID number for a phone number (that was the classic misread).
   const email = text.match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
-  const phone = text.match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
-  if (phone) put("cell_phone", (phone[0] ?? "").replace(/\s+/g, " ").trim());
+  if (!out["cell_phone"] && !out["license_no"] && !out["id_no"] && !out["passport_no"]) {
+    const phone = text.match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
+    if (phone) put("cell_phone", (phone[0] ?? "").replace(/\s+/g, " ").trim());
+  }
 
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
@@ -90,7 +127,9 @@ export async function extractFromImage(
   lang = "en",
 ): Promise<{ text: string; fields: ExtractedField[] }> {
   // Language-aware, and the worker is CACHED (shared factory) — re-scanning no longer
-  // re-downloads and re-initialises the model every time.
+  // re-downloads and re-initialises the model every time. Imported lazily so the pure
+  // parser (parseFields) stays testable without the Tesseract worker in scope.
+  const { getTessWorker } = await import("./tessworker");
   const worker = await getTessWorker(lang);
   try {
     onProgress?.(0);
