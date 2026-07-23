@@ -19,40 +19,16 @@ $ext   = Join-Path $root "apps\extension"
 $dl    = Join-Path $root "docs\marketing\site\download"
 $stage = Join-Path $env:TEMP "ppf-ext-stage"
 
-Write-Host "1/3  Assembling the extension zip..." -ForegroundColor Cyan
+Write-Host "1/4  Assembling the extension zip..." -ForegroundColor Cyan
 
-# The EXACT runtime file set (skips node_modules, dist-lite, host/, build scripts, *.map).
-if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
-New-Item -ItemType Directory -Force -Path `
-  (Join-Path $stage "src"),
-  (Join-Path $stage "vendor\pdfjs"),
-  (Join-Path $stage "vendor\transformers"),
-  (Join-Path $stage "vendor\tesseract") | Out-Null
-
-# root: manifest, pages, icons
-foreach ($f in "manifest.json","popup.html","options.html","viewer.html","capture.html","sign.html","icon16.png","icon48.png","icon128.png") {
-  Copy-Item (Join-Path $ext $f) $stage
-}
-# all app source
-Copy-Item (Join-Path $ext "src\*.js") (Join-Path $stage "src")
-
-# vendored runtime deps (explicit — the model + language packs are hosted, not bundled)
-$v = Join-Path $ext "vendor"; $vd = Join-Path $stage "vendor"
-Copy-Item (Join-Path $v "pdf-lib.esm.min.js"),(Join-Path $v "fontkit.bundle.mjs"),(Join-Path $v "zxing.bundle.mjs") $vd
-Copy-Item (Join-Path $v "pdfjs\pdf.min.mjs"),(Join-Path $v "pdfjs\pdf.worker.min.mjs") (Join-Path $vd "pdfjs")
-Copy-Item (Join-Path $v "transformers\transformers.bundle.mjs"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.mjs"),(Join-Path $v "transformers\ort-wasm-simd-threaded.jsep.wasm") (Join-Path $vd "transformers")
-Copy-Item (Join-Path $v "tesseract\worker.min.js"),(Join-Path $v "tesseract\tesseract.esm.min.js"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm"),(Join-Path $v "tesseract\tesseract-core-simd-lstm.wasm.js") (Join-Path $vd "tesseract")
-
-# sanity: fail loudly if a required file is missing
-foreach ($must in "manifest.json","src\background.js","src\viewer.js","vendor\tesseract\tesseract.esm.min.js","vendor\fontkit.bundle.mjs") {
-  if (-not (Test-Path (Join-Path $stage $must))) { throw "missing from build: $must" }
-}
-
+# ONE assembler, not two. build-extension-zip.ps1 is the single source of truth for what goes
+# into the package: it strips the dev key (the store rejects a package whose key differs from the
+# item's own) and excludes tests. This script used to keep its own copy of the file list, and it
+# had drifted - the published zip still carried the dev key, so an upload would have been
+# rejected the moment store publishing was switched on.
 if (-not (Test-Path $dl)) { New-Item -ItemType Directory -Force -Path $dl | Out-Null }
 $zip = Join-Path $dl "polyglotformfill-extension.zip"
-if (Test-Path $zip) { Remove-Item -Force $zip }
-Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
-Write-Host ("     Built {0}  ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB)) -ForegroundColor Green
+& (Join-Path $PSScriptRoot "build-extension-zip.ps1") -OutFile $zip
 
 if ($NoPublish) {
   Write-Host "2/3  -NoPublish: skipping the site publish. Zip rebuilt locally only." -ForegroundColor Yellow
@@ -61,10 +37,16 @@ if ($NoPublish) {
   return
 }
 
-Write-Host "2/3  Publishing the site (tar -> Object Storage -> restart pods)..." -ForegroundColor Cyan
+Write-Host "2/4  Publishing the site (tar -> Object Storage -> restart pods)..." -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot "k8s\publish-site.ps1")
 
-Write-Host "3/3  Done. Public download: https://polyglotformfill.mooo.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
+# Every deploy that rebuilds the extension also SUBMITS it to the Chrome Web Store - but only
+# when the store credentials are configured. Without them the step prints what is missing and
+# returns 0, so a publish never fails on a machine that has no credentials.
+Write-Host "3/4  Chrome Web Store..." -ForegroundColor Cyan
+& (Join-Path $PSScriptRoot "publish-webstore.ps1")
+
+Write-Host "4/4  Done. Public download: https://polyglotformfill.mooo.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
 Write-Host ""
 Write-Host "NOTE: this publishes the DOWNLOADABLE zip to the website. It does NOT load the" -ForegroundColor Yellow
 Write-Host "      extension into your Chrome (Chrome has no CLI for that)." -ForegroundColor Yellow

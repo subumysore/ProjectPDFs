@@ -7,6 +7,13 @@
 # Includes the EXACT runtime file set the extension imports/loads (skips node_modules,
 # tests, *.map, build scripts). Verified against `grep ../vendor` in src.
 
+param(
+    # Where to write the package. Default: dist\polyglotformfill-extension-v<version>.zip.
+    # deploy\publish-extension.ps1 passes the download-page path so there is ONE assembler and the
+    # published zip is byte-identical to the one uploaded to the store (dev key stripped, no tests).
+    [string] $OutFile
+)
+
 $ErrorActionPreference = "Stop"
 $root  = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ext   = Join-Path $root "apps\extension"
@@ -59,7 +66,8 @@ foreach ($must in "manifest.json","popup.html","viewer.html","capture.html","sig
 if (Get-ChildItem $stage -Recurse -Filter *.test.* ) { throw "test files leaked into the package" }
 
 if (-not (Test-Path $dist)) { New-Item -ItemType Directory -Force -Path $dist | Out-Null }
-$zip = Join-Path $dist "polyglotformfill-extension-v$version.zip"
+$zip = if ($OutFile) { $OutFile } else { Join-Path $dist "polyglotformfill-extension-v$version.zip" }
+if ($OutFile) { $parent = Split-Path -Parent $OutFile; if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null } }
 if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
 
