@@ -1,0 +1,17 @@
+{
+  "full_name": "Alex Kumar",
+  "first_name": "Alex",
+  "last_name": "Kumar",
+  "date_of_birth": "01/15/1990",
+  "address": "42 Maple Street",
+  "city": "Springfield",
+  "postcode": "11375",
+  "email": "alex.kumar@example.com",
+  "phone": "+1 555 0100",
+  "nationality": "Canadian",
+  "occupation": "Designer",
+  "sex": "Male",
+  "native_language": "en",
+  "photo": "demo-assets/demo-photo.png (import via the photo field)",
+  "signature": "demo-assets/demo-signature.png (import via the signature pad / image)"
+}
