@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Community Centre — Membership (demo web form)</title>
+<style>
+  body{font:16px system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 20px;color:#111}
+  h1{font-size:22px} .sub{color:#666;margin-bottom:20px}
+  label{display:block;margin:14px 0 4px;font-weight:600}
+  input,select{width:100%;padding:9px 10px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px;font:inherit}
+  .row{display:flex;gap:14px}.row>div{flex:1}
+  button{margin-top:22px;padding:11px 20px;background:#0d8f83;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer}
+</style>
+<h1>Community Centre — Membership</h1>
+<div class="sub">A sample web form for the extension demo. No data is sent anywhere.</div>
+<form onsubmit="return false">
+  <label for="full_name">Full name</label><input id="full_name" name="full_name" autocomplete="name">
+  <div class="row">
+    <div><label for="date_of_birth">Date of birth</label><input id="date_of_birth" name="date_of_birth" placeholder="mm/dd/yyyy"></div>
+    <div><label for="nationality">Nationality</label><input id="nationality" name="nationality"></div>
+  </div>
+  <label for="address">Address</label><input id="address" name="address" autocomplete="street-address">
+  <div class="row">
+    <div><label for="city">City</label><input id="city" name="city"></div>
+    <div><label for="postcode">Postcode</label><input id="postcode" name="postcode"></div>
+  </div>
+  <div class="row">
+    <div><label for="email">Email</label><input id="email" name="email" type="email"></div>
+    <div><label for="phone">Phone</label><input id="phone" name="phone" type="tel"></div>
+  </div>
+  <label for="occupation">Occupation</label><input id="occupation" name="occupation">
+  <button>Submit</button>
+</form>

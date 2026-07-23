@@ -39,21 +39,21 @@ second form and show it now auto-fills — "remembered".) 6–8 s.
 ### 7 — Profiles (the office time-saver)
 Show the **profile switcher**: multiple profiles (e.g. *Alex Kumar*, *Priya Kumar (spouse)*, *Acme Corp — Finance*). Switch from one to another and show the **vault contents change** with it. Fill a form with one profile, then switch profile and fill a different form — the point is *right data on the right form, no re-typing, no mix-ups*. Great B2B / office angle. 12–14 s.
 
-### 7 — Signing
+### 8 — Signing
 Sign tool → **draw a signature by hand** on the pad; change the **ink colour to blue**. Then show
 placing a **pre-saved signature image** instead. 10–12 s.
 
-### 8 — Extension on a web form  *(SWITCH TO THE BROWSER — maximised)*
+### 9 — Extension on a web form  *(SWITCH TO THE BROWSER — maximised)*
 In Chrome/Edge, open the **sample web form** (`demo-assets/sample-webform.html`, or any public
 form). Click the extension → **Fill this page** → the page fills in one click. Briefly show the
 popup noting the **shared vault**. 10–12 s.
 
-### 9 — Languages
+### 10 — Languages
 Back in the app: translate a foreign-language form for reading; open the **language picker** and
 switch the UI (show **Tamil AND Japanese** on screen, since the narration names both); mention
 writing answers in a chosen language. 10–12 s.
 
-### 10 — History + privacy close
+### 11 — History + privacy close
 Past forms tab → show saved, **versioned** forms and a re-download. End on the app title / logo for
 the call to action. 8–10 s.
 
