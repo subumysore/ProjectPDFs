@@ -58,6 +58,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Requires one-time infra:** a bucket-level read PAR, and `DOWNLOAD_BASE` set in `site.yaml`
   (currently the placeholder `REPLACE_WITH_BUCKET_PAR_URL`). The exact `oci` command is in the file.
 
+### Fixed — `publish-site.ps1` failed to parse (non-ASCII in a string literal)
+- An em dash inside a `throw` string broke the whole script. **Cause:** PowerShell 5.1 reads `.ps1`
+  as ANSI unless the file has a BOM, so UTF-8 `—` (E2 80 94) decodes to three CP1252 characters
+  ending in `0x94` — a curly closing double-quote, which terminates the string early. The reported
+  errors pointed at lines nowhere near the real fault. In *comments* the same bytes are harmless,
+  which is why several other scripts carry em dashes and work fine.
+- Fixed the file and added `scripts/ps1-ascii.test.mjs` (3 tests): non-ASCII is rejected on
+  executable lines (tolerated in comments), and **every tracked `.ps1` is parsed by PowerShell's
+  own parser**, which catches any syntax error rather than just encoding damage. Both guards were
+  proven to fail on the reintroduced bug. All 8 scripts parse cleanly.
+
+### Fixed — `site.yaml` carried an applyable placeholder
+- `kubectl apply` with `DOWNLOAD_BASE` still set to `REPLACE_WITH_BUCKET_PAR_URL` put new pods into
+  `Init:Error`. **The site stayed up** — Kubernetes keeps old pods until a new one is Ready, and the
+  `curl -f` guard made the failure loud instead of serving a site with 404ing download links.
+  Recovered with `kubectl rollout undo`. The file now leads with an explicit do-not-apply warning
+  and the correct order of operations.
+
 ### Verified — 1.0.0 downloaded from the live site, scanned, installed and run
 - Downloaded from `polyglotformfill.mooo.com` as a user would; SHA-256 matched the published
   manifest. One attempt arrived truncated (17.7 MB of 29.9 MB, connection reset) and **the hash

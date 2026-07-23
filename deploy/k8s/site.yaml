@@ -1,3 +1,13 @@
+# ⚠️ DO NOT `kubectl apply` THIS FILE WHILE `DOWNLOAD_BASE` IS STILL THE PLACEHOLDER.
+# The init container fetches the installers from that URL with `curl -f`, so a placeholder value
+# makes every new pod fail with Init:Error. (Applied prematurely on 2026-07-23: the rollout stalled
+# but the site STAYED UP, because Kubernetes keeps the old pods until a new one is Ready. Recovery
+# was `kubectl -n polyglotformfill rollout undo deploy/ppf-site`.)
+# Order of operations:
+#   1. create the bucket PAR (command below) and paste it into DOWNLOAD_BASE
+#   2. .\deploy\k8s\publish-site.ps1 -WithBinaries     # uploads the installer objects
+#   3. kubectl apply -f deploy/k8s/site.yaml
+#
 # PolyglotFormFill marketing site — co-hosted on the existing hospital-nexus OKE cluster.
 # Fully isolated in its own namespace; shares the nginx ingress + cert-manager only.
 # Stock nginx image + an init container that pulls the site tarball from Oracle Object

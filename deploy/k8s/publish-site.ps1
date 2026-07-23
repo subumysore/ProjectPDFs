@@ -8,7 +8,11 @@
 # INSTALLERS ARE NOT IN THE TARBALL. They are uploaded as their own Object Storage objects
 # and pulled into /web/download/ by the init container (see site.yaml). Reason: the tarball
 # had grown to 86 MB because it carried ~62 MB of installers, so every HTML-only publish
-# re-uploaded them — ~5.5 min on a 2 Mbps upstream. Content-only publishes are now ~14 MB.
+# re-uploaded them - ~5.5 min on a 2 Mbps upstream. Content-only publishes are now ~14 MB.
+#
+# NOTE: keep this file pure ASCII. PowerShell 5.1 reads .ps1 as ANSI unless it has a BOM, so a
+# UTF-8 em dash becomes 3 CP1252 chars ending in 0x94 (a curly closing quote) - inside a string
+# literal that terminates the string and breaks the parse. Guarded by scripts/ps1-ascii.test.mjs.
 # Pass -WithBinaries only when the installers themselves changed.
 #
 # Prereqs (already set up on this machine): oci CLI (~/bin), kubectl (Docker Desktop),
@@ -68,7 +72,7 @@ if ($WithBinaries) {
   Write-Host "3b/4 Uploading installers as their own objects..." -ForegroundColor Cyan
   foreach ($b in $BINARIES) {
     $path = Join-Path $siteDir "download\$b"
-    if (-not (Test-Path $path)) { throw "missing installer '$path' — build it before -WithBinaries." }
+    if (-not (Test-Path $path)) { throw "missing installer '$path' - build it before -WithBinaries." }
     Write-Host ("     {0} ({1:N1} MB)..." -f $b, ((Get-Item $path).Length / 1MB))
     $ErrorActionPreference = "Continue"
     oci os object put -ns $NS_OBJ -bn $BUCKET --name $b --file $path --force 2>$null | Out-Null

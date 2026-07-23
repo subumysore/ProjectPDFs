@@ -328,6 +328,19 @@ to absolute._
    - **MSI is no longer hosted** (duplicated the .exe for ~32 MB). Still built by `tauri build`.
      Because winget validation downloads `InstallerUrl`, winget now offers **only** the NSIS .exe;
      `scripts/winget-manifest.test.mjs` enforces hosting/manifest agreement in both directions.
+   - **Two self-inflicted bugs, both fixed and now guarded (2026-07-23):**
+     1. **Never put non-ASCII on an executable line of a `.ps1`.** PowerShell 5.1 reads `.ps1` as
+        ANSI without a BOM, so a UTF-8 em dash decodes to CP1252 bytes ending in `0x94` — a curly
+        closing quote — which terminates a string literal and breaks the parse, with errors far
+        from the real line. Harmless in comments (other scripts have them). Guard:
+        `scripts/ps1-ascii.test.mjs`, which also runs **PowerShell's own parser** over every
+        tracked `.ps1`. Both guards proven to fail on the reintroduced bug.
+     2. **`kubectl apply` of `site.yaml` with the placeholder `DOWNLOAD_BASE`** put new pods into
+        `Init:Error`. **No outage** — K8s keeps old pods until a new one is Ready, and `curl -f`
+        made it fail loudly rather than serve 404ing links. Recovery: `rollout undo`. The file now
+        opens with a do-not-apply banner and the correct order of operations.
+     Note: the IDE's YAML schema errors on `site.yaml` are the editor validating a multi-document
+     file against a single-resource schema — `kubectl apply --dry-run=client` exits 0.
    - **BLOCKS the next publish — one-time infra needed:** create a bucket-level read PAR and set
      `DOWNLOAD_BASE` in `deploy/k8s/site.yaml` (currently `REPLACE_WITH_BUCKET_PAR_URL`); the exact
      `oci os preauth-request create` command is in that file. Then
