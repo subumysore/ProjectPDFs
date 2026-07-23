@@ -632,6 +632,39 @@ if ($("sigPad")) {
   const pad = $("sigPad");
   const ctx = pad.getContext("2d");
   ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#101a20";
+  // INK COLOUR. Black is not always right: plenty of authorities require blue ink, some require
+  // a particular colour, and a signature drawn in the wrong colour can get a form rejected. The
+  // swatches are the common cases in one click; the colour well beside them is a real colour
+  // input, so the whole spectrum is available. The choice is remembered per browser.
+  // Changing colour NEVER clears what is already drawn — strokes keep the colour they were made
+  // with, so a two-colour signature (e.g. initials in red) is possible.
+  const INKS = [
+    ["#101a20", "Black"], ["#123a8f", "Blue"], ["#0a5c2e", "Green"],
+    ["#8f1414", "Red"], ["#4b2e83", "Purple"], ["#6b4a10", "Brown"],
+  ];
+  const swatches = $("sigSwatches");
+  const colorInput = $("sigColor");
+  const widthInput = $("sigWidth");
+  const applyInk = (hex) => { ctx.strokeStyle = hex; if (colorInput) colorInput.value = hex; };
+  if (swatches) {
+    for (const [hex, name] of INKS) {
+      const b = document.createElement("button");
+      b.type = "button"; b.title = name;
+      b.style.cssText = `width:18px;height:18px;padding:0;margin:0;border-radius:50%;border:1px solid #cfd8d8;cursor:pointer;background:${hex}`;
+      b.onclick = () => { applyInk(hex); chrome.storage.local.set({ sigInk: hex }); };
+      swatches.appendChild(b);
+    }
+  }
+  if (colorInput) {
+    colorInput.oninput = () => { applyInk(colorInput.value); chrome.storage.local.set({ sigInk: colorInput.value }); };
+  }
+  if (widthInput) {
+    widthInput.oninput = () => { ctx.lineWidth = +widthInput.value; chrome.storage.local.set({ sigWidth: +widthInput.value }); };
+  }
+  chrome.storage.local.get(["sigInk", "sigWidth"]).then((s) => {
+    if (s.sigInk) applyInk(s.sigInk);
+    if (s.sigWidth) { ctx.lineWidth = s.sigWidth; if (widthInput) widthInput.value = String(s.sigWidth); }
+  }).catch(() => { /* first run: defaults are already set */ });
   let drawing = false, dirty = false, last = null;
   const pos = (e) => { const r = pad.getBoundingClientRect(); return { x: (e.clientX - r.left) * (pad.width / r.width), y: (e.clientY - r.top) * (pad.height / r.height) }; };
   const start = (e) => { drawing = true; dirty = true; last = pos(e); e.preventDefault(); };

@@ -37,13 +37,13 @@
       <input id="pass" type="password" data-i18n-placeholder="unlock.placeholder" placeholder="Passphrase" />
       <div class="row">
         <button id="unlock" data-i18n="unlock.button">Unlock</button>
-        <button id="unlockPasskey">Unlock with passkey</button>
+        <button id="unlockPasskey" data-i18n="unlock.passkey">Unlock with a passkey</button>
       </div>
-      <div class="sub" style="margin-top:6px"><a id="resetVault" href="#" style="color:#9a2c2c">Forgot passphrase? Reset vault (erases saved data)</a></div>
+      <div class="sub" style="margin-top:6px"><a id="resetVault" href="#" style="color:#9a2c2c" data-i18n="vault.reset">Reset the vault</a></div>
     </div>
 
     <div id="banner" class="hidden" style="background:#e3f2ef;border:1px solid #b9ded6;color:#0a6a60;border-radius:8px;padding:7px 10px;margin-bottom:10px;font-size:12px">
-      🔗 <b>Desktop vault mode</b> — reading &amp; writing your one desktop app vault. Nothing is stored in the extension.
+      🔗 <span data-i18n="banner.sharedVault">One vault, shared with the desktop app.</span>
     </div>
 
 
@@ -78,8 +78,8 @@
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
-        <div class="sub" style="margin-bottom: 6px"><b>Your language</b> — the language you think in. Forms in another
-          language are translated to this for viewing; the finished form stays in the form's own language.</div>
+        <div class="sub" style="margin-bottom: 6px"><b data-i18n="lang.fill">Language for filling</b> —
+          <span data-i18n="lang.hint">Forms keep their own language.</span></div>
         <select id="nativeLang" style="width: 100%">
           <option value="en">English</option>
           <option value="hi">हिन्दी (Hindi)</option>
@@ -101,14 +101,27 @@
         <button id="add" data-i18n="vault.add">Add</button>
         <div class="sub" style="margin: 8px 0 4px" data-i18n="vault.imageHint">You can also add an image.</div>
         <div class="row" style="align-items: center; gap: 6px">
-          <input id="imgKey" placeholder="field (e.g. signature, photo)" style="flex: 1" />
+          <input id="imgKey" data-i18n-placeholder="vault.imageField" placeholder="Field, e.g. signature" style="flex: 1" />
           <input id="imgFile" type="file" accept="image/*" style="flex: 1" />
         </div>
-        <div class="sub" style="margin: 10px 0 4px">Or <b>✍️ handwrite your signature</b> — drawn into signature boxes on any form:</div>
+        <div class="sub" style="margin: 10px 0 4px" data-i18n="sig.draw">Or draw your signature.</div>
         <canvas id="sigPad" width="290" height="110" style="width:100%;border:1px dashed #b7c2c2;border-radius:8px;background:#fff;touch-action:none;cursor:crosshair"></canvas>
+        <!-- Ink colour. Real signatures are not always black: many authorities require blue ink,
+             and some require a specific colour. Swatches cover the common cases in one click; the
+             colour well next to them opens the OS picker for any colour at all. -->
+        <div class="row" style="margin-top:4px;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="sub" style="margin:0" data-i18n="sig.ink">Ink</span>
+          <span id="sigSwatches" style="display:flex;gap:4px"></span>
+          <input id="sigColor" type="color" value="#101a20" title="Any colour"
+                 style="width:30px;height:24px;padding:0;border:1px solid #d8e0e0;border-radius:5px;background:#fff;cursor:pointer" />
+          <label class="sub" style="margin:0;display:flex;align-items:center;gap:4px">
+            <span data-i18n="sig.thickness">Thickness</span>
+            <input id="sigWidth" type="range" min="1" max="6" step="0.5" value="2.2" style="width:70px" />
+          </label>
+        </div>
         <div class="row" style="margin-top:4px">
-          <button id="sigSave">Save signature</button>
-          <button id="sigClear">Clear</button>
+          <button id="sigSave" data-i18n="sig.save">Save signature</button>
+          <button id="sigClear" data-i18n="sig.clear">Clear</button>
         </div>
       </div>
 
@@ -130,8 +143,8 @@
           <option value="en-ru">English → Русский</option>
           <option value="ru-en">Русский → English</option>
         </select>
-        <input id="trIn" placeholder="text to translate" />
-        <button id="trBtn">Translate</button>
+        <input id="trIn" data-i18n-placeholder="translate.input" placeholder="Text to translate" />
+        <button id="trBtn" data-i18n="action.translate">Translate</button>
         <div class="sub" id="trOut" style="margin-top: 6px; min-height: 16px; color: #101a20; white-space: pre-wrap"></div>
       </div>
 
@@ -140,32 +153,32 @@
           <b>License</b> — <span id="licStatus">Free plan</span>. Unlock Pro by pasting the license
           token from your purchase. Verified on-device — no account, no phone-home.
         </div>
-        <div class="sub" style="margin-bottom: 4px">This device's ID (needed at checkout):
+        <div class="sub" style="margin-bottom: 4px"><span data-i18n="license.deviceId">Device ID</span>:
           <code id="licDevice" style="font-size:11px;color:#0a6a60">…</code>
-          <button id="licCopyDev" style="padding:1px 6px;font-size:11px">copy</button>
+          <button id="licCopyDev" style="padding:1px 6px;font-size:11px" data-i18n="action.copy">Copy</button>
         </div>
         <textarea id="licToken" placeholder="Paste your license token (PPDF1.…)" style="width:100%;height:52px;font:11px ui-monospace,monospace;box-sizing:border-box"></textarea>
         <div class="row" style="margin-top:4px">
-          <button id="licActivate">Activate license</button>
-          <button id="licRemove" class="hidden">Remove license</button>
+          <button id="licActivate" data-i18n="license.activate">Activate</button>
+          <button id="licRemove" class="hidden" data-i18n="license.remove">Remove license</button>
           <a id="licBuy" href="https://polyglotformfill.mooo.com/#pricing" target="_blank" style="align-self:center;font-size:12px">Get Pro →</a>
         </div>
         <div class="sub" id="licMsg" style="margin-top:4px;min-height:14px"></div>
       </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
-        <div class="sub" style="margin-bottom: 6px"><b>Backup / transfer</b> — encrypted with a passphrase you choose. Move the file to another device and import it.</div>
-        <input id="bkPass" type="password" placeholder="backup passphrase (remember it!)" />
+        <div class="sub" style="margin-bottom: 6px"><b data-i18n="backup.transfer">Backup / transfer</b> — encrypted with a passphrase you choose. Move the file to another device and import it.</div>
+        <input id="bkPass" type="password" data-i18n-placeholder="backup.passphrase" placeholder="Backup passphrase" />
         <div class="row">
-          <button id="export">Export encrypted</button>
-          <button id="importBtn">Import file…</button>
+          <button id="export" data-i18n="backup.exportEncrypted">Export encrypted</button>
+          <button id="importBtn" data-i18n="backup.import">Import file…</button>
           <input id="bkFile" type="file" accept=".ppfvault,application/octet-stream" class="hidden" />
         </div>
       </div>
     </div>
 
     <div style="border-top: 1px solid #e5e5e5; margin: 10px 0 8px; padding-top: 8px">
-      <button id="companionFill">Fill from native app (companion)</button>
+      <button id="companionFill" data-i18n="companion.fill">Fill from native app (companion)</button>
       <div class="sub" style="margin-top: 6px">
         Uses the native app's vault over a local bridge — keys never enter the extension.
       </div>

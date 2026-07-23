@@ -118,7 +118,7 @@ ${switcher(lang)}
   <p class="note">${tr("lang.hint")}</p>
   <footer>
     <p class="note">${tr("site.langNote")}</p>
-    <p><a href="/privacy/">${tr("site.privacyPolicy")}</a> · <a href="/">English</a></p>
+    <p><a href="/${lang}/privacy/">${tr("site.privacyPolicy")}</a> · <a href="/">English</a></p>
     <p class="note">${tr("privacy.legalNote")}</p>
   </footer>
 </div>
@@ -127,6 +127,37 @@ ${switcher(lang)}
 `;
   mkdirSync(join(site, lang), { recursive: true });
   writeFileSync(join(site, lang, "index.html"), page);
+
+  // A privacy page in the visitor's own language. The English page is the full legal text; this
+  // states the same four commitments in plain language, and says plainly that the legal wording
+  // is English — so nobody is asked to accept something they cannot read without being told.
+  const priv = `<!doctype html>
+<html lang="${lang}" dir="${dirOf(lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${tr("site.privacyPolicy")} — ${tr("app.name")}</title>
+<style>${CSS}</style>
+</head>
+<body>
+${switcher(lang)}
+<div class="wrap">
+  <h1>${tr("site.privacyPolicy")}</h1>
+  <p class="lede">${tr("privacy.headline")}</p>
+  <p>${tr("privacy.noCollect")}</p>
+  <p>${tr("privacy.onDevice")}</p>
+  <p>${tr("privacy.egress")}</p>
+  <p>${tr("privacy.assets")}</p>
+  <footer>
+    <p class="note">${tr("privacy.legalNote")} <a href="/privacy/">English</a></p>
+    <p><a href="/${lang}/">${tr("action.back")}</a></p>
+  </footer>
+</div>
+</body>
+</html>
+`;
+  mkdirSync(join(site, lang, "privacy"), { recursive: true });
+  writeFileSync(join(site, lang, "privacy", "index.html"), priv);
 }
 console.log(`wrote ${AVAILABLE.length - 1} localised landing pages (/<lang>/)`);
 

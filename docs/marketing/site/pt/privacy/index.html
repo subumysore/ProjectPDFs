@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de privacidade — PolyglotFormFill</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
+.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
+.langbar select{font:inherit;padding:4px 8px}
+h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
+h2{font-size:20px;margin:32px 0 6px}
+p{margin:8px 0}
+.lede{font-size:18px;color:#33474f}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
+.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
+.btn.alt{background:#eef6f5;color:#0a6a60}
+.note{color:#55666f;font-size:14px}
+footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
+[dir=rtl] .langbar{justify-content:flex-start}
+@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+</style>
+</head>
+<body>
+<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt" selected>Português</option><option value="tr">Türkçe</option></select></nav>
+<div class="wrap">
+  <h1>Política de privacidade</h1>
+  <p class="lede">Os seus documentos nunca saem do seu dispositivo.</p>
+  <p>Não recolhemos nada. Sem conta, sem telemetria e sem análises.</p>
+  <p>A leitura, o OCR, a tradução, o preenchimento e a assinatura acontecem no seu dispositivo.</p>
+  <p>O seu formulário só sai do dispositivo quando o envia, e apenas para o destinatário que escolher.</p>
+  <p>A aplicação transfere tipos de letra, modelos de idioma e atualizações do nosso servidor. Nada sobre si é enviado de volta.</p>
+  <footer>
+    <p class="note">O texto legal completo está disponível em inglês. <a href="/privacy/">English</a></p>
+    <p><a href="/pt/">Voltar</a></p>
+  </footer>
+</div>
+</body>
+</html>

@@ -33,6 +33,28 @@ test("each localised page is actually in that language, and declares it", () => 
   }
 });
 
+test("every language also gets a privacy page it can actually read", () => {
+  for (const lang of AVAILABLE) {
+    if (lang === "en") continue;
+    const p = join(site, lang, "privacy", "index.html");
+    assert.ok(existsSync(p), `/${lang}/privacy/ was not generated`);
+    const html = readFileSync(p, "utf8");
+    const tr = translator(lang);
+    // The four commitments, in their language.
+    for (const k of ["privacy.noCollect", "privacy.onDevice", "privacy.egress", "privacy.assets"]) {
+      assert.ok(html.includes(tr(k)), `/${lang}/privacy/ is missing ${k}`);
+    }
+    // And it must SAY that the binding legal text is English rather than implying otherwise.
+    assert.ok(html.includes(tr("privacy.legalNote")), `/${lang}/privacy/ does not say the legal text is English`);
+    assert.ok(html.includes('href="/privacy/"'), `/${lang}/privacy/ does not link to the English text`);
+  }
+});
+
+test("a localised landing page links to the privacy page in the SAME language", () => {
+  const html = readFileSync(join(site, "ja", "index.html"), "utf8");
+  assert.ok(html.includes('href="/ja/privacy/"'), "the Japanese page sends readers to the English privacy page");
+});
+
 test("right-to-left languages render right-to-left", () => {
   for (const lang of RTL) {
     if (!AVAILABLE.includes(lang)) continue;

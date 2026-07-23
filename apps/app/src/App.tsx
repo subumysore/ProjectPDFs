@@ -897,7 +897,7 @@ export function App() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
         <button onClick={lockNow} style={{ fontSize: 12 }}>
-          🔒 Lock
+          🔒 {tr("lock.button")}
         </button>
       </div>
       <p style={{ color: "#55666f", marginTop: 0 }}>
@@ -911,7 +911,7 @@ export function App() {
           ))}
         </select>
         <span style={{ color: "#8a8f92" }}>{tr("lang.hint")}</span>
-        <label htmlFor="baselang" style={{ color: "#55666f", marginLeft: 12 }}>Your language:</label>
+        <label htmlFor="baselang" style={{ color: "#55666f", marginLeft: 12 }}>{tr("lang.fill")}:</label>
         <select
           id="baselang"
           value={baseLang}
@@ -990,7 +990,7 @@ export function App() {
             onKeyDown={(e) => e.key === "Enter" && addProfile()}
             style={{ padding: 8, flex: 1 }}
           />
-          <button onClick={addProfile}>Add profile</button>
+          <button onClick={addProfile}>{tr("profile.add")}</button>
         </div>
       </section>
       )}
@@ -1018,12 +1018,12 @@ export function App() {
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input
-              placeholder="paste your license key (PPDF1.…)"
+              placeholder={tr("license.keyPlaceholder")}
               value={licKey}
               onChange={(e) => setLicKey(e.currentTarget.value)}
               style={{ flex: 1, minWidth: 240 }}
             />
-            <button onClick={activateLicense}>Activate</button>
+            <button onClick={activateLicense}>{tr("license.activate")}</button>
           </div>
           <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 8 }}>
             {tr("license.beta")}
@@ -1064,13 +1064,13 @@ export function App() {
                   <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>
                     {editKey === dp.key ? (
                       <>
-                        <button onClick={saveEdit}>save</button>{" "}
-                        <button onClick={() => setEditKey(null)}>cancel</button>
+                        <button onClick={saveEdit}>{tr("action.save")}</button>{" "}
+                        <button onClick={() => setEditKey(null)}>{tr("action.cancel")}</button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => startEdit(dp)}>edit</button>{" "}
-                        <button onClick={() => removePoint(dp.key)}>remove</button>
+                        <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>{" "}
+                        <button onClick={() => removePoint(dp.key)}>{tr("action.remove")}</button>
                       </>
                     )}
                   </td>
@@ -1099,7 +1099,7 @@ export function App() {
               onKeyDown={(e) => e.key === "Enter" && addPoint()}
               style={{ padding: 8, flex: 1 }}
             />
-            <button onClick={addPoint}>Save</button>
+            <button onClick={addPoint}>{tr("action.save")}</button>
           </div>
           <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
             <label style={{ color: "#55666f" }}>Add image (photo / signature):</label>
@@ -1144,7 +1144,7 @@ export function App() {
                 <video ref={videoRef} playsInline muted style={{ width: "100%", maxWidth: 420, borderRadius: 8, background: "#000" }} />
                 <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                   <button onClick={captureFrame}>Capture &amp; read</button>
-                  <button onClick={stopCamera}>Cancel</button>
+                  <button onClick={stopCamera}>{tr("action.cancel")}</button>
                 </div>
               </div>
             )}
@@ -1179,7 +1179,7 @@ export function App() {
             onChange={(e) => setBkPass(e.currentTarget.value)}
           />
           <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={doExport}>Export encrypted</button>
+            <button onClick={doExport}>{tr("backup.exportEncrypted")}</button>
             <label style={{ cursor: "pointer", padding: "6px 10px", border: "1px solid #dde6e4", borderRadius: 6 }}>
               Import file…
               <input
@@ -1312,7 +1312,7 @@ export function App() {
                 }}
               >
                 <button onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
-                <button onClick={() => setSigning(true)} title="Type text anywhere on the form">T Text</button>
+                <button onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>
                 <button onClick={() => setSigning(true)} title="Place your signature — move &amp; resize it">✍︎ Signature</button>
                 <button onClick={() => setSigning(true)} title="Place a photo or image — move &amp; resize it">🖼 Image</button>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
@@ -1448,7 +1448,7 @@ export function App() {
           {showAdvanced && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
               <button onClick={genFlat}>Generate flat sample PDF (demo)</button>
-              {pdfBytes && <button onClick={fillPdf}>Fill existing fields</button>}
+              {pdfBytes && <button onClick={fillPdf}>{tr("forms.fillExisting")}</button>}
               {pdfBytes && <button onClick={detectAndFill}>Detect fields (OCR)</button>}
               {pdfBytes && <button onClick={() => setSigning(true)}>Sign / annotate ✍︎</button>}
             </div>
@@ -1505,7 +1505,7 @@ export function App() {
             onChange={(e) => setCompanionId(e.currentTarget.value)}
             style={{ flex: 1, minWidth: 280, padding: "6px 8px" }}
           />
-          <button onClick={registerCompanion}>Register companion</button>
+          <button onClick={registerCompanion}>{tr("companion.register")}</button>
         </div>
         {companionMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{companionMsg}</p>}
       </section>
@@ -1540,7 +1540,7 @@ export function App() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => redownloadSaved(f)}>Re-download PDF</button>
+                    <button onClick={() => redownloadSaved(f)}>{tr("forms.redownload")}</button>
                     {!f.signed && <button onClick={() => signSaved(f)}>Sign (device key)</button>}
                   </div>
                 </div>
