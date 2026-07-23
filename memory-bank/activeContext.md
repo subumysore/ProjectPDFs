@@ -286,11 +286,22 @@ to absolute._
    - Open, not assumed: **SignPath.io's free OSS tier** would give real certificate-backed signing at
      zero cost, but only if the project goes open source — a licensing call, not a technical one.
 
-4. **Published artifacts are stale — NEW finding (2026-07-23).** The installers on the download page
-   report **ProductVersion 0.1.0**; the 1.0.0 bump touched the six version sites but the binaries
-   were never rebuilt or re-uploaded. `release-manifest.json` honestly records `0.1.0`. Publishing
-   real 1.0.0 needs `tauri build` → copy into `docs/marketing/site/download/` → regenerate the
-   manifest → `publish-site.ps1`. **This is now the top GA task.**
+4. **Stale published artifacts — FOUND AND FIXED (2026-07-23).** The installers on the download page
+   reported **ProductVersion 0.1.0**: the 1.0.0 bump touched the six version sites but the binaries
+   were never rebuilt. Now rebuilt and staged:
+   - `cargo tauri build` → `PolyglotFormFill_1.0.0_x64-setup.exe` (29.9 MB) +
+     `PolyglotFormFill_1.0.0_x64_en-US.msi` (31.9 MB), copied to
+     `docs/marketing/site/download/` under the published names. Extension zip rebuilt at 1.0.0 (9 MB).
+   - **Versions verified, not assumed:** `.exe` PE ProductVersion = `1.0.0`; the MSI has no PE
+     VersionInfo, so its `ProductVersion` property was read from the MSI Property table = `1.0.0`.
+   - **Unsigned status verified:** `Get-AuthenticodeSignature` → `NotSigned` for both, consistent
+     with `signed: false` in the manifest (ADR-0020). The signCommand hook correctly no-op'd.
+   - `release-manifest.json` regenerated at 1.0.0 and verified (3/3 OK).
+   - `deploy/publish-extension.ps1` gained **`-NoPublish`** so artifacts can be staged locally
+     without touching the live site.
+   - **NOT YET PUBLISHED — awaiting the user.** `deploy/k8s/publish-site.ps1` (or
+     `publish-extension.ps1` without `-NoPublish`) pushes to the live public site; that is an
+     outward-facing action and has deliberately not been run.
 
 ### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
 Driven directly over native messaging (4-byte LE length + JSON), against the real

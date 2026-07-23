@@ -14,9 +14,12 @@ _What works, what's left, known issues. The narrative complement to the traceabi
 - **Install page reworked:** extension → winget → direct download, with the SmartScreen warning
   described *before* the download button, plus a hash-verification command. Hashes and the version
   badge are read from `release-manifest.json` at runtime, so the copy cannot drift from reality.
-- **Caught while doing it:** the installers currently published report **ProductVersion 0.1.0** —
-  the 1.0.0 bump never reached the binaries. The manifest records the truth (`0.1.0`); rebuilding
-  and re-uploading genuine 1.0.0 artifacts is the top remaining GA task.
+- **Caught and fixed while doing it:** the published installers reported **ProductVersion 0.1.0** —
+  the 1.0.0 bump never reached the binaries. Rebuilt: setup `.exe` 29.9 MB + MSI 31.9 MB + extension
+  zip 9.0 MB, all at 1.0.0, staged in `site/download/` with the manifest regenerated (3/3 verified).
+  Versions confirmed from the artifacts themselves (PE VersionInfo for the exe; the MSI Property
+  table for the MSI, which has no PE version), and both confirmed `NotSigned`, matching
+  `signed: false`. **Staged, not published** — pushing to the live site is left to the user.
 - Full suite green: 129 + 8 + 12, typecheck, vite build, traceability (18 requirements).
 - **Left (live gate):** the rendered install page in a browser, and one real first-run install to
   confirm the warning matches what the page predicts.

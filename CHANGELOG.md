@@ -29,10 +29,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - 12 unit tests, wired into `scripts/test-all.mjs` (which now also discovers `scripts/*.test.mjs`).
   Full suite green: 129 + 8 + 12, typecheck, vite build.
 
-### Fixed — the published installer was mislabelled in planning as 1.0.0
-- The artifacts on the download page report **ProductVersion 0.1.0**: the 1.0.0 version bump was
-  never followed by a rebuild of the published binaries. The manifest records the true `0.1.0`.
-  Publishing genuine 1.0.0 artifacts requires a `tauri build` + re-upload.
+### Fixed — the download page was serving 0.1.0 binaries under a 1.0.0 banner
+- The 1.0.0 version bump touched the six version sites but never reached the published binaries,
+  which still reported **ProductVersion 0.1.0**.
+- **Rebuilt at 1.0.0:** `PolyglotFormFill_1.0.0_x64-setup.exe` (29.9 MB) and
+  `PolyglotFormFill_1.0.0_x64_en-US.msi` (31.9 MB), plus the extension zip (9.0 MB), all staged in
+  `docs/marketing/site/download/` with `release-manifest.json` regenerated and verified (3/3 OK).
+- Versions were **verified rather than assumed**: the `.exe` PE ProductVersion reads `1.0.0`, and
+  because an MSI carries no PE VersionInfo, its `ProductVersion` was read from the MSI Property
+  table (`1.0.0`).
+- `Get-AuthenticodeSignature` reports **NotSigned** for both, matching `signed: false` in the
+  manifest — the signCommand hook correctly no-op'd with no certificate configured (ADR-0020).
+- Not yet published to the live site; that step is left as an explicit action.
+
+### Added — `-NoPublish` for `deploy/publish-extension.ps1`
+- Rebuilds the downloadable extension zip locally and stops, so a release can be staged without
+  touching the public site. Publishing stays a deliberate, separate step.
 
 ### Docs
 - ADR-0020 (distribution trust without a paid certificate), `docs/specs/release-integrity.md`,

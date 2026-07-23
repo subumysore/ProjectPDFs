@@ -3,8 +3,15 @@
 # Object Storage, restarts the OKE pods).
 #
 # Usage (PowerShell):  .\deploy\publish-extension.ps1
+#                      .\deploy\publish-extension.ps1 -NoPublish   # rebuild the zip ONLY
+#
+# -NoPublish rebuilds docs\marketing\site\download\polyglotformfill-extension.zip and stops,
+# touching nothing outward-facing. Use it when staging a release locally (e.g. regenerating
+# release-manifest.json) so the live site is only ever updated by an explicit publish.
 #
 # No manual zipping. Edit files under apps\extension, run this, done.
+[CmdletBinding()]
+param([switch] $NoPublish)
 
 $ErrorActionPreference = "Stop"
 $root  = Resolve-Path (Join-Path $PSScriptRoot "..")
@@ -46,6 +53,13 @@ $zip = Join-Path $dl "polyglotformfill-extension.zip"
 if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
 Write-Host ("     Built {0}  ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB)) -ForegroundColor Green
+
+if ($NoPublish) {
+  Write-Host "2/3  -NoPublish: skipping the site publish. Zip rebuilt locally only." -ForegroundColor Yellow
+  Write-Host "     Remember to regenerate the release manifest before publishing:" -ForegroundColor Cyan
+  Write-Host "       node scripts/release-manifest.mjs generate --dir docs/marketing/site/download --version <ver>" -ForegroundColor Cyan
+  return
+}
 
 Write-Host "2/3  Publishing the site (tar -> Object Storage -> restart pods)..." -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot "k8s\publish-site.ps1")
