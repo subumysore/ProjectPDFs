@@ -58,8 +58,9 @@ spec:
             # then set the value below to  https://objectstorage.us-ashburn-1.oraclecloud.com<accessUri>
             # NOTE: `curl -f` makes a missing/expired PAR fail the init container LOUDLY rather
             # than letting nginx come up serving 404s on every download link.
+            # Created 2026-07-23, expires 2027-12-31. NO trailing slash: the loop appends "/$f".
             - name: DOWNLOAD_BASE
-              value: "REPLACE_WITH_BUCKET_PAR_URL"
+              value: "https://objectstorage.us-ashburn-1.oraclecloud.com/p/tvwYlKUsKQtM7icuTK356ao0i2sdF1YkSZXypym8CZ-GMwG4WkCM-SN6DcZO9ZXL/n/idlqdkwlstnb/b/polyglotformfill-dl/o"
             # Keep in step with $BINARIES in publish-site.ps1.
             - name: BINARIES
               value: "PolyglotFormFill-Setup.exe polyglotformfill-extension.zip"
