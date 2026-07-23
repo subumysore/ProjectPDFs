@@ -1,5 +1,27 @@
 # Active Context
 
+## Fill/OCR/delete fixes + guide video recorded (2026-07-23, later) — LOCAL ONLY, NOT PUSHED
+End-to-end testing of the desktop app (driven live via a PII-safe app-window recorder) surfaced and
+fixed real bugs; all committed locally, **nothing pushed to the server or store**.
+- **Name-fill bug (found on camera):** a form's "Full name" stayed blank because `makeFillableAndFill`
+  looked up the exact `vault["full_name"]` and bypassed the resolver — the vault only had
+  `first_name`/`last_name` (as ID capture produces). Fixed to fall back to the semantic resolver,
+  which composes the name; resolver also now falls back to the field NAME when the label is unhelpful
+  (guarded so `Company name` ≠ person). Shared engine → extension fixed too. Unit-tested.
+- **ID capture** now extracts all labelled fields from a licence (single-space `Label value`), not
+  one mislabelled phone number. `ocr.test.mjs` added.
+- **Profile delete now requires the vault passphrase** (verified server-side), with an inline
+  localized error in all 26 languages (`profile.removePassWrong`).
+- **Detect-fields opens the review editor** → typing a new value (Nationality) auto-registers it as
+  a vault key. **Vault rows** zebra-striped + tightened for readability.
+- **Guide/sales video recorded** (`docs/guide/output/`): 13 of 14 segments, driven as live
+  interactions, Amy (Piper) narration, English `.srt`, all synthetic John-Doe data, app-window-only
+  capture. **Gap:** segment 11 (extension *in the browser*) still needs a clean-browser capture.
+- Recording harness committed: `scripts/record-app-region.ps1` (captures only the app's client
+  rect — the fix for a capture that twice caught the owner's Chrome/YouTube).
+- **Housekeeping:** a throwaway demo vault was swapped in for recording and the owner's real
+  `vault.db`/`app-lock.json` restored byte-for-byte afterward.
+
 ## Chrome Web Store: LIVE AND AUTOMATED (2026-07-23)
 Credentials are in place and the first automated submission is done.
 - Item `goaoopdpnofpamcpmmpbfkahfhfegfke` went from crxVersion **0.2.0 -> 1.0.0**; submitted for

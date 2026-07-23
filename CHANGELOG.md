@@ -4,6 +4,36 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — form fill, ID capture, safer delete, and clearer vault (2026-07-23, later)
+- **The name now fills.** Filling a form left the name BLANK whenever the vault stored
+  `first_name` + `last_name` rather than a single `full_name` (exactly what ID capture produces).
+  `makeFillableAndFill` (flat-PDF → fillable path) filled each detected field by an EXACT
+  `vault[ontology_key]` lookup, bypassing the semantic resolver — so `date_of_birth` matched but
+  `full_name` had no key and stayed empty. It now falls back to the resolver, which composes
+  given + family. The resolver also gained a **field-NAME fallback** (a machine-named `full_name`
+  box with no tooltip now meaning-matches) — fallback only, so a `Company name` box is never
+  hijacked by a field literally named `name`. Desktop + extension share the resolver (`@engine`),
+  so both are fixed. (`apps/app/src/pdf.ts`, `apps/extension/src/resolver.js`; +resolver test.)
+- **ID capture reads EVERY labelled field, not one.** The on-device data-source import produced a
+  single field from a driving-licence image, and it was wrong — the licence number was swept up as
+  a phone number. ID cards print `Label value` with a single space and no colon; the parser only
+  handled colon/2-space forms. Now single-space `Label value` matching (longest label wins), new
+  `license_no`/`id_no`/`expiry_date`/`issue_date` labels, the colon regex no longer swallows a
+  hyphen inside a value, and the label-free phone fallback is suppressed when a licence/ID/passport
+  number is present. A licence now yields name, DOB, licence no, address, city and expiry in one
+  shot. (`apps/app/src/ocr.ts`; +`ocr.test.mjs`, 4 cases.)
+- **Deleting a profile requires the vault passphrase.** Erasing a profile removes every detail and
+  saved form under it and cannot be undone, so beyond the two-step confirm the confirm panel now
+  asks for the passphrase and `delete_profile` verifies it server-side (shared `verify_passphrase`,
+  also used by unlock). A wrong/empty passphrase deletes nothing and shows an inline localized
+  error. Added `profile.removePassWrong` across all 26 UI languages. (`apps/app/src-tauri/src/lib.rs`,
+  `apps/app/src/App.tsx`, `apps/extension/src/i18n.js`.)
+- **Review editor opens after Detect-fields**, so a value the vault didn't have (e.g. Nationality)
+  can be typed and then auto-registers as a new vault key/value for next time — the detect button
+  now calls `loadReview` like the automatic pipeline. (`apps/app/src/App.tsx`.)
+- **Vault rows correlate at a glance:** the table was full-width with Edit/Remove floated far from
+  their value; now zebra-striped, capped width, actions beside the value. (`apps/app/src/App.tsx`.)
+
 ### Added — every script the engine claims is now actually writable (2026-07-23)
 - **13 more Noto fonts hosted.** Only Devanagari and Simplified Chinese were on the asset host, so
   Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, Gurmukhi, Arabic, Hebrew, Thai, Japanese,

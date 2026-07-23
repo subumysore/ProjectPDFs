@@ -2,6 +2,24 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Working (verified) — 2026-07-23 (later): fill/OCR/delete fixes + guide video (LOCAL ONLY)
+- **Name composition on fill (REQ-02.1):** flat-PDF fill now composes a "Full name" from
+  `first_name`+`last_name` via the resolver instead of an exact-key lookup; resolver falls back to a
+  field's programmatic NAME when the label is unhelpful (company-name guard preserved). Verified
+  live: detect → "Full name: JOHN DOE" fills. Unit-tested (`resolver.test.mjs`), shared with the
+  extension.
+- **ID-card capture (REQ-10.1):** a driving licence now yields name, DOB, licence no, address, city,
+  expiry in one import (was 1 mislabelled field). `apps/app/src/ocr.test.mjs` (4 cases) green.
+- **Passphrase-gated profile delete (REQ-01.1):** `delete_profile` verifies the vault passphrase
+  server-side (shared `verify_passphrase`); wrong/empty passphrase deletes nothing; localized error
+  in all 26 languages. Verified live (wrong blocks, correct deletes).
+- **Learn-on-fill reachable after Detect (REQ-02.1/REQ-10.1):** Detect-fields opens the review
+  editor; typing Nationality auto-registered it as a vault key (verified live).
+- **Guide video (`docs/guide/output/`):** 13/14 segments, Amy narration, English captions, all
+  synthetic data, app-window-only capture. **Left:** segment 11 (extension in a real browser).
+- **Known gap:** none of this is pushed — local commits only, per the standing "do not push" hold.
+
+
 ## Working (verified) — 2026-07-23 distribution trust without a certificate (REQ-05.2, ADR-0020)
 - **The certificate is off the GA critical path.** Budget rules out an OV/EV cert until there is
   revenue, so releases now ship deliberately unsigned, with trust carried by channel choice and
