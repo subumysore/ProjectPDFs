@@ -52,6 +52,49 @@ export async function fillPage(vault, tLabels) {
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
+
+  // The user's OWN keys, keyed the Unicode-aware way capture keys them (`vaultkey.js`
+  // keyFromLabel — inlined because this function is injected into the page and cannot import;
+  // `engine-parity.test.mjs` guards the pair). `norm()` above is ASCII-only, so every non-Latin
+  // key collapsed to "" and they all overwrote each other; and matching only went through the
+  // English concept table, so a key the user captured never filled anything — not even a field
+  // whose label IS that key. Their own key for exactly this label is the strongest signal there
+  // is, so it wins; concepts stay the fallback.
+  const ownKeyOf = (label) => String(label ?? "")
+    .replace(/\([^)]*\)/g, " ")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60)
+    .replace(/_+$/g, "");
+  const ownKeys = {};
+  for (const [k, v] of Object.entries(vault)) {
+    const uk = ownKeyOf(k);
+    if (uk && ownKeys[uk] === undefined) ownKeys[uk] = v;
+  }
+  const ownValue = (label) => {
+    const v = ownKeys[ownKeyOf(label)];
+    return v == null || v === "" ? null : v;
+  };
+  // Try each identity a field has SEPARATELY. Joining them first ("f0 f0 氏名") produces a key
+  // that matches nothing — the caption has to be looked up on its own. Most specific first.
+  const ownValueOf = (el) => {
+    const parts = [
+      (el.labels && el.labels[0] && el.labels[0].textContent) || "",
+      el.getAttribute("aria-label") || "",
+      el.placeholder || "",
+      el.name || "",
+      el.id || "",
+    ];
+    // `p && ownValue(p)` would yield "" (not null) for an absent part and read as a hit, which
+    // silently blanked every field whose name/placeholder was empty. Skip empties explicitly.
+    for (const p of parts) {
+      if (!p) continue;
+      const v = ownValue(p);
+      if (v != null) return v;
+    }
+    return null;
+  };
   const atoms = {};
   for (const [canon, al] of Object.entries(ALIASES)) {
     for (const key of Object.keys(rawVault)) {
@@ -257,6 +300,12 @@ export async function fillPage(vault, tLabels) {
       if (!special.skip) fields.push({ el, label, pick: null, forced: special.value });
       continue;
     }
+    // The user's OWN key for exactly this label wins outright — they wrote that key against that
+    // label, which is stronger evidence than any concept we could infer. Matched on the field's
+    // own label (not the ancestor-text fallback), and BEFORE concept scoring, so a captured value
+    // fills next time instead of being stored and never used.
+    const ownHit = ownValueOf(el);
+    if (ownHit != null) { fields.push({ el, label, pick: null, forced: ownHit }); continue; }
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) {
@@ -394,7 +443,7 @@ export async function fillPage(vault, tLabels) {
   for (const { el, label, pick, forced } of fields) {
     let value;
     if (forced != null) {
-      value = forced; // script-qualified name / qualified address, straight from its vault key
+      value = forced; // own key / script-qualified name / qualified address, from its vault key
     } else if (pick.kind === "composite") {
       value = compositeValue(pick.cmp);
     } else {

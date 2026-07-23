@@ -12,13 +12,18 @@
 // The caller must save with `{ updateFieldAppearances: false }`, otherwise pdf-lib redoes the
 // whole form with the standard font at save time and the abort comes straight back.
 import { StandardFonts, PDFTextField, PDFDropdown } from "pdf-lib";
-import { makeFontPicker } from "./fonts.ts";
 
 export function needsUnicodeFont(value) {
   return typeof value === "string" && /[^ -ÿ]/.test(value);
 }
 
-export async function appearances(pdf) {
+/**
+ * `makePicker` is injectable and the real one is imported LAZILY, for two reasons: nothing is
+ * loaded (and no font is fetched) unless a non-Latin value actually turns up, and the appearance
+ * logic can be tested under plain `node --test`, which cannot resolve the `@engine` alias or the
+ * Tauri API that the real font picker pulls in.
+ */
+export async function appearances(pdf, makePicker = null) {
   const noted = [];
   let picker = null;
   return {
@@ -32,7 +37,10 @@ export async function appearances(pdf) {
         const textual = field instanceof PDFTextField || field instanceof PDFDropdown;
         let font = latin;
         if (textual && needsUnicodeFont(value)) {
-          picker = picker || (await makeFontPicker(pdf));
+          if (!picker) {
+            const make = makePicker || (await import("./fonts.ts")).makeFontPicker;
+            picker = await make(pdf);
+          }
           font = await picker(value);
         }
         try {

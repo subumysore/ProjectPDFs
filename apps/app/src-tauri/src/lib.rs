@@ -840,6 +840,58 @@ async fn guide_video(state: State<'_, AppState>) -> Result<tauri::ipc::Response,
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+// ---- Script fonts, fetched on demand (same pattern as the OCR packs, ADR-0019) ----------
+// Writing a value in Tamil, Japanese, Arabic … into a PDF needs that script's font EMBEDDED in
+// the file. Bundling them all would add tens of MB to the installer and would mean a new release
+// for every script we add, so — exactly like the Tesseract language packs — a font is fetched
+// from our asset host the first time a script is met and then kept in app-data. Flow is DOWNWARD
+// only: a public font file comes onto the device. The form, its values, and any identifier never
+// leave. The name is validated against a strict pattern, so this cannot be pointed anywhere else.
+const FONT_BASE: &str = "https://objectstorage.us-ashburn-1.oraclecloud.com/p/MeK_72_tOM4xQH7J-bSokMlJ14erObpr5QYjeVFi-Oh7PsQt-jtjyzA4YGyJRSyP/n/idlqdkwlstnb/b/polyglotformfill-dl/o/fonts/";
+
+/// Is this a plain `NotoSans…-Regular.ttf|otf` file name? No path separators, no traversal,
+/// no query — the name is concatenated onto our own asset base, so it must not be able to
+/// steer the request. Deliberately strict: an unknown-but-safe name simply 404s at the host.
+fn is_font_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 64
+        && name.starts_with("NotoSans")
+        && (name.ends_with(".ttf") || name.ends_with(".otf"))
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+        && !name.contains("..")
+}
+
+/// Return a script font's bytes: from the on-device cache when present, else fetched downward
+/// from the asset host once and cached. The UI (fill/fonts.ts) embeds it into the PDF.
+#[tauri::command]
+async fn script_font(name: String, state: State<'_, AppState>) -> Result<tauri::ipc::Response, String> {
+    if !is_font_name(&name) {
+        return Err("not a valid font name".into());
+    }
+    let dir = state.data_dir.join("fonts");
+    let cache = dir.join(&name);
+    if let Ok(b) = std::fs::read(&cache) {
+        if !b.is_empty() {
+            return Ok(tauri::ipc::Response::new(b));
+        }
+    }
+    let bytes = core_fetch::fetch_app_asset(&format!("{FONT_BASE}{name}"), APP_ASSET_TOKEN)
+        .await
+        .map_err(|e| e.to_string())?;
+    // A font file begins with one of a few known signatures. Refuse anything else rather than
+    // caching an error page that would then fail to embed on every future fill.
+    let sig = bytes.get(0..4).unwrap_or(&[]);
+    let known = matches!(sig, [0x00, 0x01, 0x00, 0x00] | b"OTTO" | b"true" | b"ttcf" | b"wOFF");
+    if !known {
+        return Err("the downloaded font file is not a font".into());
+    }
+    let _ = std::fs::create_dir_all(&dir);
+    let _ = std::fs::write(&cache, &bytes);
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// A web-search hit (title + URL) returned to the UI.
 #[derive(serde::Serialize)]
 struct SearchHit {
@@ -1056,6 +1108,7 @@ pub fn run() {
             download_form,
             save_to_desktop,
             guide_video,
+            script_font,
             web_search,
             register_companion,
             lock_status,

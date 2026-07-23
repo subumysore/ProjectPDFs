@@ -9,10 +9,18 @@ overrides:
   sharp: file:./stubs/sharp
   '@napi-rs/canvas': file:./stubs/napi-canvas
 
+patchedDependencies:
+  '@pdf-lib/fontkit':
+    hash: mysz3jcn64vbezynen3b6lvkmu
+    path: patches/@pdf-lib__fontkit.patch
+
 importers:
 
   .:
     devDependencies:
+      '@pdf-lib/fontkit':
+        specifier: ^1.1.1
+        version: 1.1.1(patch_hash=mysz3jcn64vbezynen3b6lvkmu)
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -24,7 +32,7 @@ importers:
         version: 3.8.1
       '@pdf-lib/fontkit':
         specifier: ^1.1.1
-        version: 1.1.1
+        version: 1.1.1(patch_hash=mysz3jcn64vbezynen3b6lvkmu)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.11.1
@@ -1343,7 +1351,7 @@ snapshots:
 
   '@nodable/entities@3.0.0': {}
 
-  '@pdf-lib/fontkit@1.1.1':
+  '@pdf-lib/fontkit@1.1.1(patch_hash=mysz3jcn64vbezynen3b6lvkmu)':
     dependencies:
       pako: 1.0.11
 

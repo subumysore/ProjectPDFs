@@ -36,6 +36,8 @@ export function resolveBundle(vault) {
   };
 }
 
+import { keyFromLabel } from "./vaultkey.js";
+
 export function resolveFields(vault, fields) {
   // Normalise a label/field-name to space-separated lowercase WORDS. Split camelCase
   // ("dateOfBirth" -> "date of birth") and letter/digit boundaries BEFORE lowercasing, so
@@ -108,6 +110,31 @@ export function resolveFields(vault, fields) {
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
+
+  /**
+   * The user's OWN keys, indexed the way their labels are keyed (`keyFromLabel`, Unicode-aware).
+   *
+   * Two bugs lived here. `norm()` above is ASCII-only by design — it exists to match English
+   * concept aliases — so EVERY non-Latin vault key collapsed to "" and they all overwrote one
+   * another: a Japanese user's 氏名, 生年月日 and 電話番号 were one indistinguishable entry.
+   * And matching only ever went through the English concept table, so a key the user captured
+   * themselves never filled anything — not even a form whose label is character-for-character
+   * that key. Captured data was write-only, in every language including English
+   * (`employee_id` + a field labelled "Employee ID" resolved to nothing).
+   *
+   * An exact match on the user's own key is the STRONGEST possible signal — they wrote that key
+   * against that label — so it is tried first, and it needs the same Unicode-aware keying that
+   * capture uses. Concept matching remains the fallback for labels they've never seen.
+   */
+  const ownKeys = {};
+  for (const [k, v] of Object.entries(vault)) {
+    const uk = keyFromLabel(k);
+    if (uk && ownKeys[uk] === undefined) ownKeys[uk] = v;
+  }
+  const ownValue = (label) => {
+    const v = ownKeys[keyFromLabel(label)];
+    return v == null || v === "" ? null : v;
+  };
   const atoms = {};
   for (const [canon, al] of Object.entries(ALIASES)) {
     for (const key of Object.keys(rawVault)) {
@@ -284,6 +311,10 @@ export function resolveFields(vault, fields) {
     if (scriptOnly[i]) return scriptOnly[i]; // script-qualified name resolved from the vault
     if (addressOnly[i]) return addressOnly[i]; // qualified address resolved from its own vault key
     if (blocked[i]) return null; // office-use / derived box, or a qualified address we don't hold
+    // The user's OWN key for exactly this label beats any inferred concept: they wrote it.
+    const own = ownValue(f.label) ?? (f.name ? ownValue(f.name) : null);
+    // Still honour a one-character "initial" box when the concept pass saw a name there.
+    if (own != null) return picks[i]?.name && wantsInitial(f.label, f.maxLength) ? initial(own) : own;
     const pick = picks[i];
     if (!pick) return null;
     let value;
