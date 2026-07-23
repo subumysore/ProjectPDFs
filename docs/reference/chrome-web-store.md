@@ -51,23 +51,29 @@ The store keeps the item ID stable across uploads, so an installed copy keeps it
 
 ### 3. OAuth client + refresh token
 
-The API authenticates as *you*, with a refresh token, not with an API key.
+The API authenticates **as you**, with a refresh token — there is no API key for this.
 
-1. In a Google Cloud project, enable the **Chrome Web Store API**.
-2. Create an OAuth client of type **Desktop app**. Note the client ID and secret.
-3. Get a refresh token: open the consent URL below in a browser, approve, copy the `code`, then
-   exchange it.
+1. In a Google Cloud project, enable the **Chrome Web Store API**
+   (APIs & Services → Library → search "Chrome Web Store API" → Enable).
+2. APIs & Services → **Credentials** → Create credentials → **OAuth client ID** →
+   application type **Desktop app**. Copy the **client ID** and **client secret**.
+   - If it asks for a consent screen first: user type **External**, fill in the app name and your
+     email, and add **yourself** as a test user. It never needs to be published or verified —
+     you are the only person who will ever authorise it.
+3. Run the helper. It starts a one-shot local server, opens the consent screen, catches the
+   redirect, and exchanges the code for you:
 
-```
-https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=<CLIENT_ID>&redirect_uri=urn:ietf:wg:oauth:2.0:oob&access_type=offline
-```
+   ```powershell
+   node scripts/webstore-auth.mjs <CLIENT_ID> <CLIENT_SECRET>
+   ```
 
-```powershell
-$body = @{ client_id="<CLIENT_ID>"; client_secret="<CLIENT_SECRET>"; code="<CODE>";
-           grant_type="authorization_code"; redirect_uri="urn:ietf:wg:oauth:2.0:oob" }
-(Invoke-RestMethod -Method Post -Uri "https://oauth2.googleapis.com/token" -Body $body).refresh_token
-```
+   Approve in the browser (Google warns that the app is unverified — it is yours; continue).
+   The terminal then prints the exact `setx` commands to run.
 
+> **Why a local server instead of copying a code.** The old out-of-band flow
+> (`redirect_uri=urn:ietf:wg:oauth:2.0:oob`) was deprecated in 2022 and is now **rejected** for
+> new OAuth clients, so any instructions that tell you to copy a code off the screen cannot work.
+> A Desktop-app client has to redirect to a loopback address; that is what the helper does.
 ### 4. Set the environment variables
 
 These are **secrets**. Set them for your user account; never commit them, and never paste them into
@@ -81,6 +87,15 @@ setx WEBSTORE_REFRESH_TOKEN  "<refresh token>"
 ```
 
 Open a new terminal afterwards — `setx` only affects new processes.
+
+### 5. Prove they work
+
+```powershell
+.\deploy\publish-webstore.ps1 -Check
+```
+
+This gets a token and **reads** the item. It uploads nothing and publishes nothing. If it prints
+the item id and an upload state, the pipeline is live and every future deploy will submit.
 
 ## Everyday use
 

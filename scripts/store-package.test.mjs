@@ -71,6 +71,32 @@ test("all five version sites agree - a drifted version ships a wrong-version art
   assert.match(out, /All five agree/, out);
 });
 
+test("the auth helper uses the loopback flow, not the dead out-of-band one", () => {
+  const auth = readFileSync(join(root, "scripts", "webstore-auth.mjs"), "utf8");
+  // Strip comments: the file explains the dead OOB flow, and the explanation must not be
+  // mistaken for the flow itself.
+  const code = auth
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("//"))
+    .join("\n");
+  assert.ok(!code.includes("oauth:2.0:oob"),
+    "the out-of-band redirect is rejected by Google for new OAuth clients");
+  assert.ok(code.includes("127.0.0.1"), "a Desktop-app client must redirect to loopback");
+  assert.ok(code.includes("access_type") && code.includes("offline"),
+    "without access_type=offline Google returns no refresh token");
+  assert.ok(code.includes("prompt") && code.includes("consent"),
+    "a re-authorisation returns no refresh token without prompt=consent");
+});
+
+test("-Check verifies credentials without changing anything", () => {
+  assert.ok(store.includes("[switch] $Check"), "publish-webstore.ps1 has no -Check mode");
+  const checkBlock = store.slice(store.indexOf("if ($Check)"), store.indexOf("# --- 1."));
+  assert.ok(checkBlock.length > 100, "the -Check block was not found");
+  // It may GET. It must never PUT or POST to an items endpoint — that would upload or publish.
+  assert.ok(!/Invoke-RestMethod\s+-Method\s+(Put|Post)[^\n]*items/i.test(checkBlock),
+    "-Check must not upload or publish anything");
+});
+
 test("uploads go to the right Chrome Web Store endpoints", () => {
   assert.match(store, /upload\/chromewebstore\/v1\.1\/items\//, "wrong upload endpoint");
   assert.match(store, /chromewebstore\/v1\.1\/items\/\$itemId\/publish/, "wrong publish endpoint");

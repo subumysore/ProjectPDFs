@@ -37,7 +37,10 @@ param(
     # that reuses a published version, so a resubmission needs this (or a manual bump).
     [switch] $BumpPatch,
     # Print what would happen and exit, without contacting Google.
-    [switch] $DryRun
+    [switch] $DryRun,
+    # Verify the credentials really work: get a token and READ the item. Uploads nothing, publishes
+    # nothing, changes nothing. Run this once after setting the four variables.
+    [switch] $Check
 )
 
 $ErrorActionPreference = "Stop"
@@ -67,8 +70,32 @@ if ($missing.Count -gt 0) {
     exit 0
 }
 
-if (-not (Test-Path $zip)) {
+if (-not $Check -and -not (Test-Path $zip)) {
     throw "Extension zip not found at $zip. Run deploy\publish-extension.ps1 first."
+}
+
+# --- -Check: prove the four values actually work, before trusting them in a real release ---------
+# Reads the item and stops. Uploads nothing, publishes nothing, changes nothing.
+if ($Check) {
+    Write-Host "     Credentials found. Verifying them against the store..." -ForegroundColor Cyan
+    $tb = @{ client_id = $clientId; client_secret = $clientSecret; refresh_token = $refreshToken; grant_type = "refresh_token" }
+    try {
+        $tok = (Invoke-RestMethod -Method Post -Uri "https://oauth2.googleapis.com/token" -Body $tb).access_token
+    } catch {
+        throw "The refresh token was rejected. It may have been revoked, or the client id/secret do not match it. Re-run: node scripts/webstore-auth.mjs <CLIENT_ID> <CLIENT_SECRET>"
+    }
+    if (-not $tok) { throw "No access token came back - check the OAuth client." }
+    Write-Host "     Access token: OK" -ForegroundColor Green
+
+    $h = @{ Authorization = "Bearer $tok"; "x-goog-api-version" = "2" }
+    try {
+        $item = Invoke-RestMethod -Method Get -Headers $h -Uri "https://www.googleapis.com/chromewebstore/v1.1/items/$itemId`?projection=DRAFT"
+    } catch {
+        throw "Could not read item $itemId. Either the id is wrong, or this Google account does not own that item."
+    }
+    Write-Host "     Item $($item.id): reachable, upload state $($item.uploadState)" -ForegroundColor Green
+    Write-Host "     Credentials are good - releases will submit automatically from now on." -ForegroundColor Green
+    exit 0
 }
 
 # --- version ------------------------------------------------------------------------------------
