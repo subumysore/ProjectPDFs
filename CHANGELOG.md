@@ -14,6 +14,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - `docs/launch/chrome-web-store-listing.md`: copy-paste store listing, per-permission
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
+## [1.0.0] — 2026-07-23
+### Changed — GA version
+- Bumped to **1.0.0** across all six version sites: workspace `Cargo.toml`, root and app
+  `package.json`, `tauri.conf.json`, app `Cargo.toml`, and the extension manifest (from 0.2.16).
+
+### Fixed — OCR language packs were never uploaded (not a dead host)
+- Earlier diagnosis was **wrong** and is corrected here: the Object Storage PAR was never dead —
+  `eng.traineddata.gz` served `200` throughout. The other **14 packs had simply never been uploaded**,
+  so every non-English OCR request 404'd and OCR silently degraded to English.
+- Uploaded `kan, kor, chi_sim, chi_tra, spa, hin, jpn, ara, fra, deu, rus, tam, tel, por`; all 15 are
+  verified reachable over the existing PAR. The extension uses **our own host** again, so the public
+  mirror added earlier is now a genuine fallback rather than the primary path.
+
+### Added — First-use model provisioning (desktop)
+- A fresh install has no packs in app-data, so the worker prefers the on-device copy and reaches the
+  asset host **only the first time a language is used**, after which it stays local. Closes the
+  outstanding "models fetched/cached, not bundled" item.
+
 ## [Unreleased]
 ### Added — Language-aware OCR on both platforms (2026-07-23)
 - Desktop OCR was hardcoded to `eng`, so **any non-English scan was unreadable** — a parity gap with

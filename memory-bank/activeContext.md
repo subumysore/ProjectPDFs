@@ -267,6 +267,19 @@ to absolute._
 - **New-data capture**: values typed onto a form that the vault lacks are surfaced for explicit
   review (label, key, value, prior value) and saved only on confirmation, to the local vault only.
 
+### GA blockers — status (2026-07-23)
+1. **Asset host — RESOLVED.** The PAR was never dead (that diagnosis was wrong); `eng` served 200
+   all along and the other 14 packs had simply never been uploaded. All 15 are now uploaded and
+   verified over the existing PAR, and desktop fetches a pack on first use of a language.
+2. **Version — RESOLVED.** 1.0.0 across all six version sites.
+3. **Code signing — STILL NEEDS PURCHASE.** The pipeline is built and verified (signCommand hook +
+   `sign-windows.ps1` + timestamp + verify, exercised with the self-signed dev cert). What cannot be
+   automated is buying an **OV or EV certificate**, which requires organisation identity validation.
+   OV is cheaper but earns SmartScreen reputation only over time; EV gives instant SmartScreen trust
+   but the key must live on an HSM/USB token or cloud HSM (Azure Key Vault, DigiCert KeyLocker).
+   Swapping in a real cert is a one-line change: set `WINDOWS_CERT_THUMBPRINT`. See
+   `docs/reference/code-signing.md`.
+
 ### Known gap worth naming
 Most real-world non-English government forms are **flat scans or XFA/LiveCycle**, not AcroForms
 (verified: Korean visa form = 0 fields; USCIS I-9 Spanish and HK ID91 = XFA). They therefore depend
