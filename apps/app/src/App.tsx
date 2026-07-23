@@ -78,6 +78,8 @@ export function App() {
   const [editVal, setEditVal] = useState("");
   const [imgKey, setImgKey] = useState("");
   const [newProfile, setNewProfile] = useState("");
+  // Two-step delete: null = idle, or the id of the profile whose removal is being confirmed inline.
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [k, setK] = useState("");
   const [v, setV] = useState("");
   const [savedForms, setSavedForms] = useState<SavedFormSummary[]>([]);
@@ -348,11 +350,10 @@ export function App() {
     await refreshProfiles();
     selectProfile(id);
   }
-  async function removeProfile(id: string, name: string) {
-    // A profile holds real identity data and saved forms, so deletion is confirmed and it says
-    // plainly that everything under it goes with it. There is no undo - it is a real erase.
-    if (!window.confirm(`Remove the profile "${name}"? This permanently deletes its details and every saved form under it. This cannot be undone.`)) return;
+  async function removeProfile(id: string) {
+    // Called only after the inline two-step confirmation below, so no extra prompt here.
     await guard(invoke("delete_profile", { id }));
+    setConfirmDeleteId(null);
     if (selected === id) { setSelected(null); setPoints([]); }
     await refreshProfiles();
   }
@@ -973,33 +974,22 @@ export function App() {
       <section style={cardStyle}>
         <h2 style={h2Style}>1 · Profiles — add, choose, edit or remove</h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {/* Chips ONLY select a profile - no destructive control here, so a chip can never be a
+              mis-click away from deleting data. Removal lives in its own confirmed action below. */}
           {profiles.map((p) => (
-            <span
+            <button
               key={p.id}
+              onClick={() => selectProfile(p.id)}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
+                padding: "6px 12px",
                 borderRadius: 999,
                 border: p.id === selected ? "2px solid #0d8f83" : "1px solid #d9e2e6",
                 background: p.id === selected ? "#e2f2f0" : "#fff",
-                overflow: "hidden",
+                cursor: "pointer",
               }}
             >
-              <button
-                onClick={() => selectProfile(p.id)}
-                style={{ padding: "6px 8px 6px 12px", border: "none", background: "transparent", cursor: "pointer" }}
-              >
-                {p.name}
-              </button>
-              <button
-                title={tr("action.remove")}
-                aria-label={`${tr("action.remove")} ${p.name}`}
-                onClick={() => removeProfile(p.id, p.name)}
-                style={{ padding: "6px 10px 6px 4px", border: "none", background: "transparent", color: "#9a2c2c", cursor: "pointer", fontSize: 15, lineHeight: 1 }}
-              >
-                ✕
-              </button>
-            </span>
+              {p.name}
+            </button>
           ))}
           {profiles.length === 0 && <span style={{ opacity: 0.6 }}>No profiles yet.</span>}
         </div>
@@ -1013,6 +1003,47 @@ export function App() {
           />
           <button onClick={addProfile}>{tr("profile.add")}</button>
         </div>
+
+        {/* Removal is a DELIBERATE, two-step action, in its own area away from the selection chips.
+            Step 1 reveals the intent; step 2 confirms and states plainly that it cannot be undone.
+            This replaced an inline "x" on each chip, which sat one mis-click from destroying data. */}
+        {selected && (() => {
+          const sel = profiles.find((p) => p.id === selected);
+          if (!sel) return null;
+          const confirming = confirmDeleteId === selected;
+          return (
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
+              {!confirming ? (
+                <button
+                  onClick={() => setConfirmDeleteId(selected)}
+                  style={{ background: "transparent", border: "1px solid #e3c9c9", color: "#9a2c2c", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13 }}
+                >
+                  {tr("profile.remove")} — {sel.name}
+                </button>
+              ) : (
+                <div style={{ background: "#fbf1f1", border: "1px solid #e3c9c9", borderRadius: 8, padding: "12px 14px" }}>
+                  <div style={{ color: "#7a2222", fontSize: 13, marginBottom: 10 }}>
+                    {tr("profile.removeConfirm", { name: sel.name })}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => removeProfile(selected)}
+                      style={{ background: "#9a2c2c", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}
+                    >
+                      {tr("profile.removeYes")}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      style={{ background: "#fff", border: "1px solid #d9e2e6", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}
+                    >
+                      {tr("action.cancel")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
       )}
 
