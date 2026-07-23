@@ -6,6 +6,7 @@ import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
 import { planProximityFill } from "./fill/pdfproximity";
 import { appearances } from "./fill/appearances";
+import { userOptionValues, decideChoice } from "./fill/optmatch";
 // Sign/annotate ENGINE — shared with the extension (flatten drawn overlays into the PDF). The
 // drawing canvas is a per-platform UI layer; this flattening core is identical on both.
 export { flattenOverlays } from "@engine/signflatten.js";
@@ -315,6 +316,40 @@ export async function fillAndExport(
       }
       if (v != null && v !== "") { try { f.setText(String(v)); app.note(f, String(v)); filled++; } catch { /* skip */ } }
     });
+  }
+
+  // NON-TEXT fields: dropdowns, radio groups and checkboxes. Real government forms are largely
+  // made of these — sex, marital status, nationality, "tick if applicable" — and the desktop used
+  // to skip every one of them because it only ever looked at PDFTextField. The decision itself is
+  // the shared engine's (`decideChoice`), so a radio group behaves the same here as in the browser.
+  {
+    const optionValues = userOptionValues(vault, resolveFields);
+    for (const f of fields) {
+      if (f instanceof PDFTextField) continue;
+      const isChoice = f instanceof PDFDropdown || f instanceof PDFRadioGroup;
+      const isCheck = f instanceof PDFCheckBox;
+      if (!isChoice && !isCheck) continue;
+      const label = (f instanceof PDFTextField ? fieldTooltip(f) : "") || f.getName();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let options: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (isChoice) { try { options = (f as any).getOptions() || []; } catch { options = []; } }
+      const value = resolveFields(vault, [{ label, name: f.getName() }])[0];
+      const decision = decideChoice({
+        kind: isChoice ? "choice" : "check",
+        label,
+        value,
+        options,
+        optionValues,
+      });
+      if (!decision) continue;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (decision.select != null) { (f as any).select(decision.select); app.note(f, String(decision.select)); filled++; }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        else if (decision.check) { (f as any).check(); app.note(f, ""); filled++; }
+      } catch { /* a field that refuses the value is left alone */ }
+    }
   }
 
   const formLang = detectLang(names.join(" ")).lang as string;
