@@ -330,6 +330,34 @@ impl Store {
         Ok(())
     }
 
+    /// Delete a Profile and EVERYTHING that belongs to it: its data points, and every saved form
+    /// instance with its versions, blobs, history and signatures. Runs in a single transaction so
+    /// a profile is never left half-deleted. Returns the number of data points that were removed.
+    ///
+    /// This is a real erase, not a hide - the encrypted rows are gone from vault.db. There is no
+    /// separate "trash": deleting a profile is how a user removes data they no longer want on the
+    /// device, so it must actually remove it.
+    pub fn delete_profile(&self, profile_id: &str) -> Result<usize> {
+        let tx = self.conn.unchecked_transaction()?;
+        // Collect the profile's form instances first, so their child rows can be cleared by id.
+        let instance_ids: Vec<String> = {
+            let mut stmt = tx.prepare("SELECT id FROM form_instances WHERE profile_id = ?1")?;
+            let rows = stmt.query_map(params![profile_id], |r| r.get::<_, String>(0))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        for iid in &instance_ids {
+            tx.execute("DELETE FROM form_blobs WHERE instance_id = ?1", params![iid])?;
+            tx.execute("DELETE FROM form_versions WHERE instance_id = ?1", params![iid])?;
+            tx.execute("DELETE FROM history_events WHERE instance_id = ?1", params![iid])?;
+            tx.execute("DELETE FROM signatures WHERE instance_id = ?1", params![iid])?;
+        }
+        tx.execute("DELETE FROM form_instances WHERE profile_id = ?1", params![profile_id])?;
+        let removed = tx.execute("DELETE FROM data_points WHERE profile_id = ?1", params![profile_id])?;
+        tx.execute("DELETE FROM profiles WHERE id = ?1", params![profile_id])?;
+        tx.commit()?;
+        Ok(removed)
+    }
+
     /// All Profiles, ordered by name.
     pub fn list_profiles(&self) -> Result<Vec<Profile>> {
         let mut stmt = self.conn.prepare("SELECT id, name FROM profiles ORDER BY name")?;
@@ -429,6 +457,34 @@ pub fn module_name() -> &'static str {
 mod tests {
     use super::*;
     use core_crypto::generate_key;
+
+    #[test]
+    fn delete_profile_erases_everything_it_owns_and_nothing_else() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        for (id, name) in [("keep", "Keeper"), ("gone", "Goner")] {
+            s.put_profile(&Profile { id: id.into(), name: name.into() }).unwrap();
+            s.put_data_point(id, &DataPoint { key: "full_name".into(), value: name.into() }).unwrap();
+            s.put_data_point(id, &DataPoint { key: "email".into(), value: format!("{id}@x.test") }).unwrap();
+        }
+        // Give the doomed profile a saved form with a version + blob, so the cascade is exercised.
+        s.create_instance(&FormInstance { id: "inst1".into(), profile_id: "gone".into(), entry_id: "e".into() }, 100).unwrap();
+        s.add_version_blob("inst1", 1, b"pdf-bytes").unwrap();
+
+        let removed = s.delete_profile("gone").unwrap();
+        assert_eq!(removed, 2, "both of the deleted profile's data points should be gone");
+
+        // The deleted profile and all its rows are gone.
+        assert!(!s.list_profiles().unwrap().iter().any(|p| p.id == "gone"));
+        assert!(s.vault("gone").unwrap().is_empty());
+        assert!(s.list_instances("gone").unwrap().is_empty());
+        assert!(s.version_blob("inst1", 1).is_err(), "the form blob must be erased too");
+
+        // The OTHER profile is completely untouched.
+        assert!(s.list_profiles().unwrap().iter().any(|p| p.id == "keep"));
+        let kept = s.vault("keep").unwrap();
+        assert_eq!(kept.len(), 2);
+        assert_eq!(kept.get("full_name").unwrap(), "Keeper");
+    }
 
     #[test]
     fn vault_roundtrip_and_upsert() {

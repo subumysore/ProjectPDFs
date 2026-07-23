@@ -7,8 +7,20 @@
       "text": "How much of your life is spent filling in forms? The same name, the same address, the same date of birth, over and over. PolyglotFormFill does it for you, in seconds, in twenty-six languages, and entirely on your own device. Let me show you."
     },
     {
+      "img": "s-license.png",
+      "text": "Getting started takes a moment. Activate your licence with a single key, verified right here on your device, never on a server. During the beta, every feature is unlocked and free."
+    },
+    {
+      "img": "s-create-profile.png",
+      "text": "Create a profile for whoever you are filling forms as. Here is John Doe. Now, instead of typing every detail, just capture an ID. Take a photo of a driving licence or passport, or upload one you already have."
+    },
+    {
+      "img": "s-id-capture.png",
+      "text": "On-device text recognition reads it and turns it into your vault automatically. Name, date of birth, licence number, address, all captured in one shot, and all kept encrypted on your device. Your profile is built in seconds, not minutes of typing."
+    },
+    {
       "img": "s-flat-before.png",
-      "text": "Start with the worst kind. A flat P D F. A scan with no boxes to type in. Normally that means printing it, filling it by hand, and scanning it back. Minutes of tedious work, every time."
+      "text": "Now the forms. Start with the worst kind. A flat P D F. A scan with no boxes to type in. Normally that means printing it, filling it by hand, and scanning it back. Tedious work, every single time."
     },
     {
       "img": "s-flat-detected.png",

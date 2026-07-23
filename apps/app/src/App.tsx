@@ -348,6 +348,14 @@ export function App() {
     await refreshProfiles();
     selectProfile(id);
   }
+  async function removeProfile(id: string, name: string) {
+    // A profile holds real identity data and saved forms, so deletion is confirmed and it says
+    // plainly that everything under it goes with it. There is no undo - it is a real erase.
+    if (!window.confirm(`Remove the profile "${name}"? This permanently deletes its details and every saved form under it. This cannot be undone.`)) return;
+    await guard(invoke("delete_profile", { id }));
+    if (selected === id) { setSelected(null); setPoints([]); }
+    await refreshProfiles();
+  }
   async function addPoint() {
     if (!selected || !k.trim()) return;
     await guard(invoke("upsert_data_point", { profileId: selected, key: k.trim(), value: v }));
@@ -966,19 +974,32 @@ export function App() {
         <h2 style={h2Style}>1 · Profiles — add, choose, edit or remove</h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {profiles.map((p) => (
-            <button
+            <span
               key={p.id}
-              onClick={() => selectProfile(p.id)}
               style={{
-                padding: "6px 12px",
+                display: "inline-flex",
+                alignItems: "center",
                 borderRadius: 999,
                 border: p.id === selected ? "2px solid #0d8f83" : "1px solid #d9e2e6",
                 background: p.id === selected ? "#e2f2f0" : "#fff",
-                cursor: "pointer",
+                overflow: "hidden",
               }}
             >
-              {p.name}
-            </button>
+              <button
+                onClick={() => selectProfile(p.id)}
+                style={{ padding: "6px 8px 6px 12px", border: "none", background: "transparent", cursor: "pointer" }}
+              >
+                {p.name}
+              </button>
+              <button
+                title={tr("action.remove")}
+                aria-label={`${tr("action.remove")} ${p.name}`}
+                onClick={() => removeProfile(p.id, p.name)}
+                style={{ padding: "6px 10px 6px 4px", border: "none", background: "transparent", color: "#9a2c2c", cursor: "pointer", fontSize: 15, lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </span>
           ))}
           {profiles.length === 0 && <span style={{ opacity: 0.6 }}>No profiles yet.</span>}
         </div>

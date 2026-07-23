@@ -224,6 +224,14 @@ fn list_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
     state.store.lock().unwrap().list_profiles().map_err(|e| e.to_string())
 }
 
+/// Delete a profile and everything it owns (data points + saved forms). Returns how many data
+/// points were removed, so the UI can confirm what was erased.
+#[tauri::command]
+fn delete_profile(state: State<AppState>, id: String) -> Result<usize, String> {
+    require_unlocked(&state)?;
+    state.store.lock().unwrap().delete_profile(&id).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn list_data_points(state: State<AppState>, profile_id: String) -> Result<Vec<DataPoint>, String> {
     require_unlocked(&state)?;
@@ -1091,6 +1099,7 @@ pub fn run() {
             demo_autofill,
             create_profile,
             list_profiles,
+            delete_profile,
             list_data_points,
             upsert_data_point,
             delete_data_point,
