@@ -1,5 +1,34 @@
 # Active Context
 
+## DEPLOYED AND VERIFIED LIVE (2026-07-23, later session)
+Fill now works in every script the engine lists (16), on both apps, and it is live.
+- **Published** via `publish-site.ps1 -WithBinaries`; downloaded back from
+  polyglotformfill.mooo.com as a user would: both artifacts **hash-match the manifest**,
+  installer runs silent (exit 0), registers **1.0.0**, app launches, unlocks the real vault,
+  all five tabs render. Screenshots in `%TMP%\ppf-live\`.
+- **Installer 29.9 MB → 23.7 MB** — desktop fonts are no longer bundled; `script_font` (Rust)
+  fetches ONE font on first use of a script and caches it in app-data. Verified on the installed
+  build: no `fonts/` dir ships, app-data font cache starts empty.
+- **Version stays 1.0.0 everywhere** — user's instruction: consolidate, no version tracking yet.
+- **Vendored fontkit + npm `@pdf-lib/fontkit` both patched** for the NULL-GPOS-anchor crash
+  (`patches/@pdf-lib__fontkit.patch`). If a dependency bump drops that patch,
+  `appearances.test.mjs` (Punjabi + Malayalam) fails and names the scripts that broke.
+
+### NEXT, requested by the user (2026-07-23): UI LANGUAGE, not just fill language
+"The website as well as the application should give the user the option to choose his language to
+begin with, which should render the web page, the extension as well as the executable in their
+native language." Today the app's "Your language" selector only sets the FILL language — every
+label, button and instruction is English on all three surfaces. This is a real requirement
+(REQ + spec + ADR needed): one shared string catalogue for extension + desktop (they already share
+an engine), a language chooser on first run, and a language switch on the marketing/install pages.
+
+### Process note (user feedback, 2026-07-23)
+"Your planning is weak — you are struggling on the same issues for the past 3 days." Correct. Every
+language bug so far was found one at a time, by hand, on a real form, because each piece was
+unit-tested in isolation and nothing exercised the LOOP. `roundtrip.test.mjs` is the answer to that:
+capture → store → refill, per language, web and PDF. It found the write-only-vault bug on its first
+run. New languages/scripts go in its table, not in a bug report.
+
 _What is in flight RIGHT NOW. Update at the start and end of every work session. Convert relative dates
 to absolute._
 

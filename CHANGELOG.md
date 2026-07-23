@@ -4,6 +4,35 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — every script the engine claims is now actually writable (2026-07-23)
+- **13 more Noto fonts hosted.** Only Devanagari and Simplified Chinese were on the asset host, so
+  Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, Gurmukhi, Arabic, Hebrew, Thai, Japanese,
+  Korean, Cyrillic and Greek values could not be written into a PDF at all. The script table is now
+  data driven by Unicode Script properties, with kana and Hangul tested BEFORE Han so Japanese and
+  Korean are never silently drawn with the Chinese font (which would drop every kana/Hangul).
+- **Desktop fonts are fetched on demand, not bundled.** New Rust `script_font` command: fetch once
+  from the asset host, validate the name and the file signature, cache in app-data — the same
+  pattern as the OCR packs (ADR-0019). A user who never fills a Tamil form never downloads the
+  Tamil font, and adding a script needs no new release. **Installer: 29.9 MB → 23.7 MB.**
+- **Upstream fontkit bug fixed** (`patches/@pdf-lib__fontkit.patch` + the vendored bundle): a NULL
+  GPOS anchor is legal and means "no attachment point", but fontkit dereferenced it, so ordinary
+  Punjabi and Malayalam names (the vowel sign in ਰਾਜੇ, the virama in രാജേഷ്) threw and could not be
+  written. The same file already handles a null CURSIVE anchor this way.
+
+### Fixed — captured data was write-only, in every language (2026-07-23)
+Found by the new round-trip test, not by inspection. The resolver matched labels only through its
+English concept table, so a key the user captured themselves never filled anything — not even a
+field whose label was character-for-character that key (`employee_id` + "Employee ID" → nothing).
+And its key normaliser was ASCII-only, so 氏名, 生年月日 and 電話番号 all collapsed to `""` and
+overwrote one another in the lookup. The user's own key for a label now wins outright, keyed the
+same Unicode-aware way capture keys it, on both engines. Also: repeated-row skipping compared field
+NAMES only, so a form naming unrelated boxes `f1`…`f9` lost every field after the first — captions
+are compared too now.
+
+`roundtrip.test.mjs` runs the loop a user actually lives in — type → capture → store → refill, web
+AND PDF — in 8 languages. `fonts.test.mjs` proves all 16 scripts survive a real save/reload and that
+every font in the table is genuinely served by the host.
+
 ### Fixed — the four open bugs left by the end-to-end test session (2026-07-23)
 All four were recorded as open in `activeContext.md` and are now closed, each verified against the
 real forms that exposed them rather than against a fixture alone.
