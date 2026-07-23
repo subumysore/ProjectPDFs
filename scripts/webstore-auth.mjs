@@ -78,20 +78,49 @@ const server = createServer(async (req, res) => {
     }
 
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
-      .end(page("Done", "<p>Refresh token issued. Go back to the terminal — you can close this tab.</p>"));
+      .end(page("Done", "<p>Saved. Go back to the terminal — you can close this tab.</p>"));
 
-    console.log("\nRefresh token issued.\n");
-    console.log("Run these three, then open a NEW terminal (setx only affects new processes):\n");
-    console.log(`  setx WEBSTORE_CLIENT_ID      "${clientId}"`);
-    console.log(`  setx WEBSTORE_CLIENT_SECRET  "${clientSecret}"`);
-    console.log(`  setx WEBSTORE_REFRESH_TOKEN  "${json.refresh_token}"`);
-    console.log("\nAnd the item id from the developer console URL:\n");
-    console.log(`  setx WEBSTORE_ITEM_ID        "<32-char id from .../devconsole/detail/<ITEM_ID>>"`);
-    console.log("\nThen: .\\deploy\\publish-webstore.ps1 -DryRun   (checks them without contacting Google)");
-    console.log("      .\\deploy\\publish-webstore.ps1 -Check    (proves the token really works)\n");
-    console.log("Treat the refresh token like a password - it can publish as you. Do not commit it,");
-    console.log("and do not paste it into a chat or an issue.\n");
-    server.close();
+    // SAVE THE VALUES OURSELVES. Printing `setx` lines for a human to copy looks helpful and is
+    // not: a refresh token is ~100 unbroken characters that wraps in a terminal, and a selection
+    // that misses part of it stores a truncated token. That happened, and the failure surfaces
+    // much later as an opaque "invalid_grant / Bad Request" from Google.
+    const save = (name, value) =>
+      new Promise((resolve) => {
+        // setx, not `set`: this must persist for future processes. Passed as an argv element, so
+        // no shell quoting can mangle the value.
+        const p = spawn("setx", [name, value], { stdio: "ignore" });
+        p.on("close", (code) => resolve(code === 0));
+        p.on("error", () => resolve(false));
+      });
+
+    const ok = [];
+    ok.push(["WEBSTORE_CLIENT_ID", await save("WEBSTORE_CLIENT_ID", clientId)]);
+    ok.push(["WEBSTORE_CLIENT_SECRET", await save("WEBSTORE_CLIENT_SECRET", clientSecret)]);
+    ok.push(["WEBSTORE_REFRESH_TOKEN", await save("WEBSTORE_REFRESH_TOKEN", json.refresh_token)]);
+
+    console.log("\nRefresh token issued and saved.\n");
+    for (const [name, good] of ok) {
+      console.log(`  ${good ? "saved" : "FAILED"}  ${name}`);
+    }
+    // Read them straight back, so a silent truncation cannot go unnoticed a second time.
+    const check = spawn("powershell", [
+      "-NoProfile", "-Command",
+      "[Environment]::GetEnvironmentVariable('WEBSTORE_REFRESH_TOKEN','User').Length",
+    ]);
+    let len = "";
+    check.stdout.on("data", (d) => { len += d; });
+    check.on("close", () => {
+      const n = parseInt(len.trim(), 10);
+      console.log(`\n  stored token length: ${n} (expected roughly ${json.refresh_token.length})`);
+      if (n !== json.refresh_token.length) {
+        console.log("  MISMATCH - the value did not store correctly. Run this script again.");
+      } else {
+        console.log("\nStill needed: the item id from the developer console URL");
+        console.log("  setx WEBSTORE_ITEM_ID \"<32-char id>\"");
+        console.log("\nThen verify:  .\\deploy\\publish-webstore.ps1 -Check\n");
+      }
+      server.close();
+    });
   } catch (e) {
     console.error("\nToken exchange failed:", e.message);
     res.writeHead(500).end("token exchange failed");

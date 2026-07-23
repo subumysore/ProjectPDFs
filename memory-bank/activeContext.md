@@ -1,20 +1,20 @@
 # Active Context
 
-## WAITING ON: Chrome Web Store credentials (2026-07-23)
-Everything for automated store submission is built, tested and committed. It is deliberately
-PARKED until the four secrets exist - the user asked to wait rather than bump the version now.
-
-- `deploy/publish-webstore.ps1` uploads + submits; `publish-extension.ps1` calls it as step 3/4.
-  With no credentials it names the missing variables and exits 0, so publishing still works.
-- NEEDED (set with setx, never committed, never pasted into chat):
-  `WEBSTORE_ITEM_ID` (from the devconsole URL - it CANNOT be derived from our manifest: the pinned
-  `key` is the local DEV key; the published item has its own Google-assigned one), plus
-  `WEBSTORE_CLIENT_ID`, `WEBSTORE_CLIENT_SECRET`, `WEBSTORE_REFRESH_TOKEN`.
-  Setup steps: `docs/reference/chrome-web-store.md`.
-- WHEN THEY ARRIVE: `.deploypublish-webstore.ps1 -DryRun` to confirm they are picked up, then
-  `node scripts/set-version.mjs patch` (1.0.0 -> 1.0.1; the store refuses a republished version),
-  rebuild both artifacts, and follow `docs/reference/releasing.md`.
-- Version stays 1.0.0 everywhere until then. `node scripts/set-version.mjs --check` confirms.
+## Chrome Web Store: LIVE AND AUTOMATED (2026-07-23)
+Credentials are in place and the first automated submission is done.
+- Item `goaoopdpnofpamcpmmpbfkahfhfegfke` went from crxVersion **0.2.0 -> 1.0.0**; submitted for
+  review (Google reviews before it reaches users - hours to days).
+- The four WEBSTORE_* variables are set in the USER environment on this machine. They are NOT in
+  the repo and must never be. `publish-webstore.ps1 -Check` re-verifies them any time.
+- Every future `publish-extension.ps1` run submits automatically. The store refuses a republished
+  version, so the NEXT release must bump: `node scripts/set-version.mjs patch`.
+- Two bugs found while doing this, both fixed and guarded: the consent URL was truncated at the
+  first `&` by `cmd /c start` (Google then blamed a missing response_type), and
+  `Invoke-RestMethod -ContentLength` does not exist in PowerShell 5.1 - it failed AFTER a
+  successful upload, leaving a draft uploaded but nothing submitted.
+- The helper now writes the credentials itself and reads back the stored length: a hand-copied
+  refresh token had truncated to 3 characters, which surfaced only as an opaque
+  `invalid_grant / Bad Request` much later.
 
 
 

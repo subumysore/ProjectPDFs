@@ -163,7 +163,10 @@ if ($DraftOnly) {
 # --- 3. submit for review ------------------------------------------------------------------------
 Write-Host "     Submitting for review..."
 $publishUri = "https://www.googleapis.com/chromewebstore/v1.1/items/$itemId/publish"
-$publish = Invoke-RestMethod -Method Post -Uri $publishUri -Headers $headers -ContentLength 0
+# -ContentLength does not exist on Invoke-RestMethod in PowerShell 5.1 (it was added in 7.x), and
+# passing it fails AFTER the upload has already succeeded - the confusing case where the package is
+# sitting in the store as a draft but nothing was submitted. An empty body sends Content-Length: 0.
+$publish = Invoke-RestMethod -Method Post -Uri $publishUri -Headers $headers -Body ""
 
 $status = ($publish.status -join ", ")
 Write-Host "     Status: $status" -ForegroundColor Green
