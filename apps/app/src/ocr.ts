@@ -1,4 +1,4 @@
-import { createWorker } from "tesseract.js";
+import { getTessWorker } from "./tessworker";
 
 // On-device OCR data-source extraction (REQ-10), fully SELF-HOSTED: the worker,
 // WASM core, and language model are served from the app origin (public/tesseract),
@@ -11,7 +11,6 @@ export interface ExtractedField {
   value: string;
 }
 
-const TESS = "/tesseract";
 
 // Label -> canonical vault key. Keys match the seeded vault ontology so an image can
 // CREATE or UPDATE the user's existing fields (name parts, address, contact, etc.).
@@ -88,22 +87,18 @@ export function parseFields(text: string): ExtractedField[] {
 export async function extractFromImage(
   file: File | Blob,
   onProgress?: (pct: number) => void,
+  lang = "en",
 ): Promise<{ text: string; fields: ExtractedField[] }> {
-  const worker = await createWorker("eng", 1, {
-    workerPath: `${TESS}/worker.min.js`,
-    corePath: `${TESS}/`,
-    langPath: `${TESS}/`,
-    workerBlobURL: false,
-    gzip: true,
-    logger: (m: { status: string; progress: number }) => {
-      if (m.status === "recognizing text" && onProgress) onProgress(Math.round(m.progress * 100));
-    },
-  });
+  // Language-aware, and the worker is CACHED (shared factory) — re-scanning no longer
+  // re-downloads and re-initialises the model every time.
+  const worker = await getTessWorker(lang);
   try {
+    onProgress?.(0);
     const { data } = await worker.recognize(file);
+    onProgress?.(100);
     const text = data.text ?? "";
     return { text, fields: parseFields(text) };
   } finally {
-    await worker.terminate();
+    /* worker is cached and reused — do not terminate */
   }
 }

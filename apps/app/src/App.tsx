@@ -400,7 +400,7 @@ export function App() {
       // 1) PDF417 barcode (back of a licence) → exact AAMVA fields.
       let fields = await readIdBarcode(file);
       // 2) else OCR the printed side (front).
-      if (!fields.length) fields = (await extractFromImage(file, setOcrPct)).fields;
+      if (!fields.length) fields = (await extractFromImage(file, setOcrPct, baseLang)).fields;
       setExtracted(fields);
       if (!fields.length) {
         setErr("Couldn’t read that image. For a driver’s licence: the BACK (barcode) gives exact data; or take a sharper, well-lit photo of the FRONT.");
@@ -742,7 +742,7 @@ export function App() {
           ? "This image has no form fields — reading it with on-device OCR…"
           : "This PDF has no form fields — detecting them with on-device OCR…",
       );
-      const { fields } = await detectFields(bytes, setPdfMsg);
+      const { fields } = await detectFields(bytes, setPdfMsg, baseLang);
       if (!fields.length) {
         setPdfMsg(
           "No fields could be detected automatically on this form.",
@@ -791,7 +791,7 @@ export function App() {
     }
     try {
       setPdfMsg("Detecting fields with on-device OCR…");
-      const { fields, note } = await detectFields(pdfBytes, setPdfMsg);
+      const { fields, note } = await detectFields(pdfBytes, setPdfMsg, baseLang);
       const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
       const { created, filled, data } = await makeFillableAndFill(pdfBytes, fields, vault);
       const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;

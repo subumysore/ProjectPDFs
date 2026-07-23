@@ -1,7 +1,7 @@
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-import { createWorker } from "tesseract.js";
 import type { CatalogFieldSpec } from "./pdf";
+import { getTessWorker } from "./tessworker";
 
 // OCR/CV field detection for UNCATALOGUED flat/scanned PDFs (REQ-02 fallback).
 // Renders the page (pdf.js), OCRs it on-device (self-hosted Tesseract) to get text
@@ -14,7 +14,6 @@ import type { CatalogFieldSpec } from "./pdf";
 // enough to place fields next to recognised labels on a reasonable scan.
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-const TESS = "/tesseract";
 
 const KEY_HINTS: Array<[RegExp, string]> = [
   [/full\s*name|(^|\b)name\b/i, "full_name"],
@@ -42,6 +41,7 @@ interface OcrLine {
 export async function detectFields(
   pdfBytes: ArrayBuffer,
   onStatus?: (s: string) => void,
+  lang = "en",
 ): Promise<{ fields: CatalogFieldSpec[]; note: string }> {
   const scale = 2;
   const doc = await pdfjs.getDocument({ data: pdfBytes.slice(0) }).promise;
@@ -56,16 +56,10 @@ export async function detectFields(
   await page.render({ canvasContext: ctx, viewport }).promise;
 
   onStatus?.("OCR (detecting fields)…");
-  const worker = await createWorker("eng", 1, {
-    workerPath: `${TESS}/worker.min.js`,
-    corePath: `${TESS}/`,
-    langPath: `${TESS}/`,
-    workerBlobURL: false,
-    gzip: true,
-  });
+  // Language-aware: a Kannada/Korean/Chinese scan needs its own pack, not "eng".
+  const worker = await getTessWorker(lang, onStatus);
   // Request block/line geometry.
   const { data } = await worker.recognize(canvas, {}, { blocks: true });
-  await worker.terminate();
 
   const lines: OcrLine[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -16,18 +16,36 @@ const TESS_LANG =
 // One cached worker PER language pack (e.g. eng, kan, tam, hin, ara, chi_sim…). Packs are
 // fetched on demand from our asset host (assets-DOWN only). This is what makes OCR universal:
 // the caller passes the Tesseract pack for the detected/selected script (langcodes.tessPack).
+// Fallback model source. Our own asset host is preferred, but when it is unreachable the
+// multi-language packs simply never arrive and OCR silently stays English-only — which is
+// exactly what happened in production. Falling back keeps the feature working.
+// Privacy: this is an assets-DOWN fetch of a public OCR model. No user content, no form
+// data, and no identifier is ever sent — the image and recognised text stay on-device.
+const TESS_LANG_FALLBACK = "https://tessdata.projectnaptha.com/4.0.0";
+
 const _workers = {};
 export async function getTessWorker(lang = "eng", onStatus) {
   if (typeof lang === "function") { onStatus = lang; lang = "eng"; } // back-compat: (onStatus)
   lang = lang || "eng";
   if (_workers[lang]) return _workers[lang];
   onStatus?.(`preparing OCR for '${lang}' (first run downloads the language model, then cached)…`);
-  _workers[lang] = await createWorker(lang, 1, {
+  const build = (langPath) => createWorker(lang, 1, {
     workerPath: `${TESS_BASE}worker.min.js`,
     corePath: TESS_BASE,
-    langPath: TESS_LANG,
+    langPath,
     workerBlobURL: false,
     gzip: true,
   });
+  try {
+    _workers[lang] = await build(TESS_LANG);
+  } catch (e) {
+    onStatus?.(`our model host is unreachable — fetching the '${lang}' OCR model from the public mirror…`);
+    try {
+      _workers[lang] = await build(TESS_LANG_FALLBACK);
+    } catch (e2) {
+      delete _workers[lang]; // never cache a failure
+      throw e2;
+    }
+  }
   return _workers[lang];
 }
