@@ -42,6 +42,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   manifest — the signCommand hook correctly no-op'd with no certificate configured (ADR-0020).
 - Not yet published to the live site; that step is left as an explicit action.
 
+### Added — winget package manifests (`deploy/winget/`)
+- Version, locale and installer manifests for `SubramanyaMysore.PolyglotFormFill` 1.0.0, offering
+  both the NSIS `.exe` and the `.msi`. **`winget validate --manifest deploy/winget` passes** against
+  the real winget CLI.
+- `scripts/winget-manifest.test.mjs` (5 tests) guards them against drift: `InstallerSha256` must
+  equal the published hash, both installers must be offered, and version/identifier must agree
+  across all three files. A stale hash there would break `winget install` for every user, so the
+  guard was **proven to fail** on a deliberately corrupted hash, not merely assumed to work.
+- The install page now states plainly that winget is **not live yet** (the manifest PR cannot be
+  opened until the installer URLs are reachable, since winget validation downloads them) and points
+  users to the direct download meanwhile — presenting it as working would be the same class of false
+  claim the spec already forbids.
+
 ### Added — `-NoPublish` for `deploy/publish-extension.ps1`
 - Rebuilds the downloadable extension zip locally and stops, so a release can be staged without
   touching the public site. Publishing stays a deliberate, separate step.

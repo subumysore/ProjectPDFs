@@ -1,0 +1,34 @@
+# winget default-locale manifest. See SubramanyaMysore.PolyglotFormFill.yaml for submission steps.
+PackageIdentifier: SubramanyaMysore.PolyglotFormFill
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: Subramanya Mysore
+PublisherUrl: https://polyglotformfill.mooo.com
+PublisherSupportUrl: https://polyglotformfill.mooo.com
+PrivacyUrl: https://polyglotformfill.mooo.com/privacy/
+PackageName: PolyglotFormFill
+PackageUrl: https://polyglotformfill.mooo.com
+License: Proprietary
+Copyright: Copyright (c) 2026 Subramanya Mysore
+ShortDescription: Fill any form in any language, entirely on your own device.
+Description: |-
+  PolyglotFormFill fills PDF and web forms from a vault of your own details, in whatever language
+  the form is written in. It reads scanned and non-English forms with on-device OCR, can show you a
+  translated reading view while always saving the form in its original language, and keeps an
+  encrypted, versioned history of everything you have filled.
+
+  Everything runs on your device. Your details, the documents you open, and the forms you fill are
+  never sent to the publisher or any third party. The only time your data leaves your machine is
+  when you yourself submit a completed form to the recipient you chose.
+Moniker: polyglotformfill
+Tags:
+- forms
+- pdf
+- autofill
+- ocr
+- translation
+- privacy
+- offline
+ReleaseNotesUrl: https://polyglotformfill.mooo.com
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

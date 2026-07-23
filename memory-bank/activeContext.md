@@ -299,9 +299,18 @@ to absolute._
    - `release-manifest.json` regenerated at 1.0.0 and verified (3/3 OK).
    - `deploy/publish-extension.ps1` gained **`-NoPublish`** so artifacts can be staged locally
      without touching the live site.
-   - **NOT YET PUBLISHED — awaiting the user.** `deploy/k8s/publish-site.ps1` (or
-     `publish-extension.ps1` without `-NoPublish`) pushes to the live public site; that is an
-     outward-facing action and has deliberately not been run.
+   - **winget manifests written** (`deploy/winget/`, 3 files for `SubramanyaMysore.PolyglotFormFill`
+     1.0.0, offering both the .exe and the .msi). `winget validate --manifest deploy\winget` passes
+     against the real CLI. `scripts/winget-manifest.test.mjs` (5 tests) guards `InstallerSha256`
+     against drift from `release-manifest.json` — proven to fail on a corrupted hash.
+   - **NOT YET PUBLISHED — BLOCKED, needs the user.** `deploy/k8s/publish-site.ps1` was attempted
+     and **denied by the Claude Code permission classifier**; it was not worked around. Everything
+     downstream is blocked on it:
+     1. the live site still serves the **0.1.0** binaries;
+     2. the install page's runtime hash display is unverified against the live host;
+     3. the **winget PR cannot be opened** — winget validation downloads `InstallerUrl`, so the
+        1.0.0 artifacts must be reachable first.
+     Unblock by running `.\deploy\k8s\publish-site.ps1` (or granting the Bash permission).
 
 ### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
 Driven directly over native messaging (4-byte LE length + JSON), against the real

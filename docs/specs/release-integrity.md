@@ -78,6 +78,12 @@ Field rules:
 **Install-page behaviour (binding copy rules)**
 
 - The page MUST order channels: browser extension first, then winget, then direct download last.
+- A channel that is not yet live MUST be labelled as such. Presenting `winget install` as working
+  before the manifest PR is accepted is a false claim of the same kind as "certified", and is
+  forbidden by the rule below.
+- winget manifests live in `deploy/winget/` and their `InstallerSha256` values MUST equal the ones
+  in `release-manifest.json` — winget verifies downloads against them, so a stale hash breaks every
+  install. Guarded by `scripts/winget-manifest.test.mjs`.
 - The direct-download block MUST disclose, *above* the download button, that the build is unsigned,
   what Windows will show, and the exact click path (**More info → Run anyway**).
 - The page MUST publish each artifact's SHA-256 and a copy-pasteable verification command.
@@ -107,13 +113,18 @@ user who chooses to check.
 - **Unit** (`scripts/release-manifest.test.mjs`, run by `scripts/test-all.mjs`): known-vector SHA-256;
   name sorting; determinism across two runs; empty-directory failure; verify OK / MISMATCH / MISSING;
   multiple problems reported in one pass; `signed` is false.
+- **Unit** (`scripts/winget-manifest.test.mjs`): winget `PackageVersion`/`PackageIdentifier`
+  consistency; `InstallerSha256` equals the published hash; both Windows installers are offered;
+  HTTPS URLs on the public host. The guard was proven to fail on a deliberately corrupted hash.
+- **Tooling:** `winget validate --manifest deploy/winget` (passes against the real winget CLI).
 - **Integration:** generate against a real `tauri build` output directory, then verify it — covered
   by the release checklist in `docs/testing/e2e-harness.md`.
 - **Acceptance:** [`features/release-integrity.feature`](../../features/release-integrity.feature).
 
 ## Open questions
 
-- winget manifest submission is a per-release PR to `microsoft/winget-pkgs`; automating it is
-  deferred until the first manual submission has been accepted.
+- The winget manifests are written and validate cleanly, but the submission PR to
+  `microsoft/winget-pkgs` cannot be opened until the installer URLs are live (winget validation
+  downloads them). Automating the per-release PR is deferred until the first one is accepted.
 - SignPath.io's free OSS tier would give certificate-backed signing at zero cost, but requires the
   project to be open source — a licensing decision, not a technical one. Left open.

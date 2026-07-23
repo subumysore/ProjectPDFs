@@ -1,0 +1,16 @@
+# winget version manifest — submit alongside the locale + installer manifests as one PR to
+# https://github.com/microsoft/winget-pkgs under
+#   manifests/s/SubramanyaMysore/PolyglotFormFill/1.0.0/
+#
+# winget requires NO code-signing certificate (ADR-0020): the community repo accepts unsigned
+# .exe/.msi installers, and signing checks at validation are non-blocking. This is why winget is
+# our recommended desktop channel while no certificate has been purchased.
+#
+# Validate locally before opening the PR:
+#   winget validate --manifest deploy\winget
+#   winget install --manifest deploy\winget          # installs for real — test VM recommended
+PackageIdentifier: SubramanyaMysore.PolyglotFormFill
+PackageVersion: 1.0.0
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

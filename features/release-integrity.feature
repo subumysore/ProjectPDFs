@@ -55,6 +55,18 @@ Feature: Release integrity without a paid code-signing certificate
     And the click path "More info -> Run anyway" is given
     And the artifact's SHA-256 and a verification command are shown
 
+  Scenario: winget offers the exact bytes we published
+    Given the winget manifests in deploy/winget
+    When they are compared against the published release manifest
+    Then each InstallerSha256 equals the published SHA-256 for that file
+    And every published Windows installer is offered through winget
+    And the package version and identifier agree across all three manifests
+
+  Scenario: A channel that is not live yet says so
+    Given the winget listing has not been approved
+    When a user reads the winget section of the install page
+    Then it is labelled as not yet live and points them to the direct download
+
   Scenario: Install channels are ordered by least friction
     Given the install page
     When the install options are listed

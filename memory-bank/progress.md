@@ -19,7 +19,15 @@ _What works, what's left, known issues. The narrative complement to the traceabi
   zip 9.0 MB, all at 1.0.0, staged in `site/download/` with the manifest regenerated (3/3 verified).
   Versions confirmed from the artifacts themselves (PE VersionInfo for the exe; the MSI Property
   table for the MSI, which has no PE version), and both confirmed `NotSigned`, matching
-  `signed: false`. **Staged, not published** — pushing to the live site is left to the user.
+  `signed: false`. **Staged, not published.**
+- **winget channel made real:** `deploy/winget/` holds the three manifests for
+  `SubramanyaMysore.PolyglotFormFill` 1.0.0; `winget validate` passes against the real CLI; a
+  5-test drift guard ties `InstallerSha256` to `release-manifest.json` and was proven to fail on a
+  corrupted hash. The install page states honestly that winget is not live yet.
+- **BLOCKED on one step:** publishing to polyglotformfill.mooo.com. `publish-site.ps1` was attempted
+  and denied by the permission classifier (not worked around). The live site therefore still serves
+  0.1.0, the page's runtime hash display is unverified against the live host, and the winget PR
+  cannot be opened (winget downloads `InstallerUrl` during validation).
 - Full suite green: 129 + 8 + 12, typecheck, vite build, traceability (18 requirements).
 - **Left (live gate):** the rendered install page in a browser, and one real first-run install to
   confirm the warning matches what the page predicts.

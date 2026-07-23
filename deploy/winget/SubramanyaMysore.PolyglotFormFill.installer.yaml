@@ -1,0 +1,32 @@
+# winget installer manifest. See SubramanyaMysore.PolyglotFormFill.yaml for submission steps.
+#
+# InstallerSha256 values come from docs/marketing/site/download/release-manifest.json (the same
+# hashes published on the install page) — regenerate with:
+#   node scripts/release-manifest.mjs generate --dir docs/marketing/site/download --version <ver>
+# winget verifies the download against this hash, which is the integrity guarantee that stands in
+# for a code signature while none has been purchased (ADR-0020).
+#
+# NOTE: the InstallerUrls must be live before submitting — winget validation downloads them.
+PackageIdentifier: SubramanyaMysore.PolyglotFormFill
+PackageVersion: 1.0.0
+InstallerLocale: en-US
+Platform:
+- Windows.Desktop
+MinimumOSVersion: 10.0.17763.0
+Scope: user
+InstallModes:
+- interactive
+- silent
+UpgradeBehavior: install
+ReleaseDate: 2026-07-23
+Installers:
+- Architecture: x64
+  InstallerType: nullsoft
+  InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe
+  InstallerSha256: 9AB0E4CAF1AF3FA5817AC47BB75FD53D0B1ABABBC38D0099B149C15021765240
+- Architecture: x64
+  InstallerType: wix
+  InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill.msi
+  InstallerSha256: B4FC77942892666EA92E9697429EFD0EBB9DE2EC10F6B3A260FF7D4A3EB1D020
+ManifestType: installer
+ManifestVersion: 1.6.0
