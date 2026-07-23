@@ -18,3 +18,6 @@ core-crypto = { path = "../core-crypto" }
 keyring = { version = "3", features = ["windows-native"] }
 serde_json = "1"
 dirs = "5"
+# Read-only access to the browser own autofill store (Chromium keeps it as SQLite). Bundled so
+# the host never depends on a system sqlite being present.
+rusqlite = { version = "0.32", features = ["bundled"] }

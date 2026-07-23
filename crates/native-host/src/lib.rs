@@ -116,11 +116,97 @@ pub fn open_store() -> Result<core_store::Store, String> {
     core_store::Store::open(db.to_string_lossy().as_ref(), key).map_err(|e| format!("{e:?}"))
 }
 
+/// Where each Chromium-family browser keeps its own autofill store. Firefox is absent on purpose:
+/// it keeps form history in `formhistory.sqlite`, a different schema, and can be added later.
+fn browser_autofill_paths() -> Vec<(&'static str, std::path::PathBuf)> {
+    let local = match dirs::data_local_dir() {
+        Some(d) => d,
+        None => return vec![],
+    };
+    [
+        ("Chrome", "Google/Chrome/User Data/Default/Web Data"),
+        ("Edge", "Microsoft/Edge/User Data/Default/Web Data"),
+        ("Brave", "BraveSoftware/Brave-Browser/User Data/Default/Web Data"),
+    ]
+    .iter()
+    .map(|(name, rel)| (*name, local.join(rel)))
+    .filter(|(_, p)| p.exists())
+    .collect()
+}
+
+/// READ the browser's own autofill history so the user can bring it into their vault.
+///
+/// This exists because a fresh extension install starts empty even though the browser has been
+/// remembering what this person types for years. Browsing history cannot give that back - it holds
+/// URLs, not values - and no extension API exposes the autofill store. The native host can read the
+/// file, so this does, and ONLY this: it reads, deduplicates, and hands the pairs back.
+///
+/// It never writes to the vault. Nothing is saved until the user ticks it in the popup, exactly
+/// like capture-from-a-page. That is the whole point: this file contains far more than identity -
+/// search boxes, one-off codes, details typed on someone else's behalf - and importing it blindly
+/// would be the opposite of what this product is for.
+///
+/// The file stays where it is: it is copied first, because the browser holds a lock while running.
+fn read_browser_autofill(limit: usize) -> serde_json::Value {
+    use serde_json::json;
+    let mut entries: Vec<serde_json::Value> = Vec::new();
+    let mut sources: Vec<&str> = Vec::new();
+
+    for (browser, path) in browser_autofill_paths() {
+        // Copy first: Chromium keeps an exclusive lock on Web Data while the browser is open, and
+        // opening it read-only in place fails with "database is locked".
+        let tmp = std::env::temp_dir().join(format!("ppf-autofill-{browser}.db"));
+        if std::fs::copy(&path, &tmp).is_err() {
+            continue;
+        }
+        let conn = match rusqlite::Connection::open(&tmp) {
+            Ok(c) => c,
+            Err(_) => {
+                let _ = std::fs::remove_file(&tmp);
+                continue;
+            }
+        };
+        // date_last_used orders by "how recently was this actually used", which is a far better
+        // signal of what still matters than insertion order.
+        let sql = "SELECT name, value, count, date_last_used FROM autofill \
+                   ORDER BY date_last_used DESC, count DESC LIMIT ?1";
+        if let Ok(mut stmt) = conn.prepare(sql) {
+            if let Ok(rows) = stmt.query_map([limit as i64], |r| {
+                Ok((
+                    r.get::<_, String>(0).unwrap_or_default(),
+                    r.get::<_, String>(1).unwrap_or_default(),
+                    r.get::<_, i64>(2).unwrap_or(0),
+                ))
+            }) {
+                for row in rows.flatten() {
+                    let (name, value, count) = row;
+                    if name.trim().is_empty() || value.trim().is_empty() {
+                        continue;
+                    }
+                    entries.push(json!({
+                        "name": name, "value": value, "count": count, "browser": browser
+                    }));
+                }
+            }
+        }
+        drop(conn);
+        let _ = std::fs::remove_file(&tmp);
+        sources.push(browser);
+    }
+
+    json!({ "ok": true, "entries": entries, "browsers": sources })
+}
+
 /// Dispatch one request object to a response object (pure given a store).
 pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_json::Value {
     use serde_json::json;
     match req.get("type").and_then(|t| t.as_str()) {
         Some("ping") => json!({ "ok": true, "pong": true }),
+        // Read-only, and it writes nothing: the popup shows every pair for the user to tick.
+        Some("readBrowserAutofill") => {
+            let limit = req.get("limit").and_then(|l| l.as_u64()).unwrap_or(500) as usize;
+            read_browser_autofill(limit.min(5000))
+        }
         Some("listProfiles") => match store.list_profiles() {
             Ok(ps) => json!({
                 "ok": true,
