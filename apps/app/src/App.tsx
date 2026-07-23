@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFromImage, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
@@ -90,6 +90,9 @@ export function App() {
   const [viewLang, setViewLang] = useState<Record<string, string>>({});
   const [viewVals, setViewVals] = useState<Record<string, string>>({});
   const [transStatus, setTransStatus] = useState("");
+  // "New information found" review: which proposed pairs the user unticked, and the outcome message.
+  const [skipNew, setSkipNew] = useState<Record<string, boolean>>({});
+  const [learnMsg, setLearnMsg] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
@@ -197,6 +200,59 @@ export function App() {
     } catch (e) {
       setBkMsg("Import failed: " + String(e));
     }
+  }
+
+  // A form label ("Date of expiry") → a stable vault key ("date_of_expiry").
+  function keyFromLabel(label: string): string {
+    return label
+      .toLowerCase()
+      .replace(/\(.*?\)/g, " ")        // drop "(as shown in passport)" style asides
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 60);
+  }
+
+  const known = useMemo(() => new Map(points.map((p) => [p.key, p.value])), [points]);
+
+  /**
+   * Anything typed onto the form that the vault does NOT already hold (or holds differently) is
+   * NEW information. It is never saved silently — we show exactly what we found and ask.
+   * Stays on-device: this only ever writes to the local vault.
+   */
+  const newPairs = useMemo(() => {
+    const out: Array<{ key: string; label: string; value: string; existing?: string }> = [];
+    const seen = new Set<string>();
+    for (const [name, raw] of Object.entries(reviewEdits)) {
+      const value = (raw ?? "").trim();
+      if (!value || value === "Off" || value === "Yes" || value.startsWith("data:")) continue;
+      const f = reviewFields.find((x) => x.name === name);
+      const label = ((f?.label || name) as string).trim();
+      const key = keyFromLabel(label);
+      if (!key || seen.has(key)) continue;
+      const existing = known.get(key);
+      if (existing === value) continue; // already known, unchanged
+      seen.add(key);
+      out.push({ key, label, value, existing });
+    }
+    return out;
+  }, [reviewEdits, reviewFields, known]);
+
+  async function saveNewPairs() {
+    if (!selected) { setLearnMsg("Choose a profile first."); return; }
+    let n = 0;
+    for (const p of newPairs) {
+      if (skipNew[p.key]) continue;
+      try {
+        await invoke("upsert_data_point", { profileId: selected, key: p.key, value: p.value });
+        n++;
+      } catch (e) {
+        setLearnMsg(`Couldn't save “${p.label}”: ${String(e)}`);
+        return;
+      }
+    }
+    await loadPoints(selected);
+    setSkipNew({});
+    setLearnMsg(n ? `Saved ${n} new item(s) to your vault — they'll fill automatically next time.` : "Nothing ticked, so nothing was saved.");
   }
 
   const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then(setProfiles));
@@ -795,9 +851,11 @@ export function App() {
     <main
       style={{
         fontFamily: "system-ui, sans-serif",
-        maxWidth: 820,
+        // Use the screen the user actually has: the form panel is the point of this app, and a
+        // fixed 820px column wasted most of a wide display. Caps at 1600 so text lines stay readable.
+        maxWidth: "min(1600px, 96vw)",
         margin: "0 auto",
-        padding: "36px 24px 64px",
+        padding: "28px 20px 64px",
         color: "#101a20",
       }}
     >
@@ -1223,11 +1281,29 @@ export function App() {
                 Check every value before you finalize — nothing is committed silently. Fix anything wrong
                 (e.g. a mis-detected option), then <b>Apply changes</b> to re-export and update the saved copy.
               </p>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", flexWrap: "wrap" }}>
+              {/* Persistent form toolbar — the SAME tools the extension exposes, in the same place:
+                  on the form, always visible. Parity is the rule, not a nice-to-have. */}
+              <div
+                style={{
+                  display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
+                  margin: "0 0 8px", padding: "6px 8px",
+                  background: "#f4f8f9", border: "1px solid #d9e2e6", borderRadius: 8,
+                }}
+              >
+                <button onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
+                <button onClick={() => setSigning(true)} title="Type text anywhere on the form">T Text</button>
+                <button onClick={() => setSigning(true)} title="Place your signature — move &amp; resize it">✍︎ Signature</button>
+                <button onClick={() => setSigning(true)} title="Place a photo or image — move &amp; resize it">🖼 Image</button>
+                <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
                 <button onClick={translateReview} disabled={baseLang === "en"}>
-                  🌐 {baseLang === "en" ? "Labels are in your language (English)" : `View labels in ${LANGS[baseLang] || baseLang}`}
+                  🌐 {baseLang === "en" ? "Already in your language" : `Show whole form in ${LANGS[baseLang] || baseLang}`}
                 </button>
-                {transStatus && <span style={{ fontSize: 12, color: "#55666f" }}>{transStatus}</span>}
+                {(Object.keys(viewVals).length > 0 || Object.keys(viewLang).length > 0) && (
+                  <button onClick={() => { setViewLang({}); setViewVals({}); setTransStatus(""); }}>
+                    ↩ Back to original
+                  </button>
+                )}
+                {transStatus && <span style={{ fontSize: 12, color: "#55666f", flexBasis: "100%" }}>{transStatus}</span>}
               </div>
               {pdfBytes && (
                 <FormView
@@ -1238,6 +1314,53 @@ export function App() {
                   values={viewVals}
                   showTranslated={Object.keys(viewVals).length > 0 || Object.keys(viewLang).length > 0}
                 />
+              )}
+              {newPairs.length > 0 && (
+                <div style={{ marginTop: 10, border: "1px solid #e0b400", background: "#fffdf3", borderRadius: 8, padding: 10 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                    💡 New information found on this form — save it to your vault?
+                  </div>
+                  <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+                    Here is exactly what we found. Nothing is saved unless you say so, and it is stored
+                    only in your local vault on this device.
+                  </p>
+                  <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+                    <tbody>
+                      {newPairs.map((p) => (
+                        <tr key={p.key}>
+                          <td style={{ width: 24, padding: "3px 4px" }}>
+                            <input
+                              type="checkbox"
+                              checked={!skipNew[p.key]}
+                              onChange={(e) => setSkipNew((s) => ({ ...s, [p.key]: !e.currentTarget.checked }))}
+                            />
+                          </td>
+                          <td style={{ padding: "3px 6px", color: "#55666f" }}>
+                            {p.label}
+                            <div style={{ fontSize: 11, opacity: 0.65 }}>{p.key}</div>
+                          </td>
+                          <td style={{ padding: "3px 6px", fontWeight: 600 }}>
+                            {p.value}
+                            {p.existing !== undefined && (
+                              <div style={{ fontSize: 11, color: "#a06a00", fontWeight: 400 }}>
+                                replaces “{p.existing}”
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                    <button onClick={saveNewPairs} style={{ fontWeight: 600 }}>
+                      Save ticked to my vault
+                    </button>
+                    <button onClick={() => { setSkipNew(Object.fromEntries(newPairs.map((p) => [p.key, true]))); setLearnMsg("Skipped — nothing was saved."); }}>
+                      Not now
+                    </button>
+                    {learnMsg && <span style={{ fontSize: 12, color: "#0a6a60" }}>{learnMsg}</span>}
+                  </div>
+                </div>
               )}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ cursor: "pointer", fontSize: 13, color: "#0a6a60" }}>
@@ -1309,11 +1432,14 @@ export function App() {
               {pdfBytes && <button onClick={() => setSigning(true)}>Sign / annotate ✍︎</button>}
             </div>
           )}
+          {/* Legacy read-only preview. FormView above IS the form now, so showing this too rendered
+              the page twice. Kept only for the case where there are no fields to lay inputs over. */}
           <div
             style={{
               marginTop: 10,
               overflow: "auto",
               maxHeight: 440,
+              display: reviewFields.length > 0 ? "none" : "block",
               border: pdfBytes ? "1px solid #eef2f4" : "none",
             }}
           >

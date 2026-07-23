@@ -22,11 +22,21 @@ export interface FormViewProps {
 
 export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showTranslated = false }: FormViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [fields, setFields] = useState<FormFieldBox[]>([]);
   const [dims, setDims] = useState({ w: 0, h: 0 });
   const [page, setPage] = useState(0);
   const [numPages, setNumPages] = useState(1);
   const [busy, setBusy] = useState(true);
+  const [fit, setFit] = useState(0);
+
+  // Re-fit the page whenever the window (and so the panel) changes size.
+  useEffect(() => {
+    const measure = () => setFit(wrapRef.current?.clientWidth ?? 0);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +44,9 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       if (!canvasRef.current) return;
       setBusy(true);
       try {
-        const r = await renderPageWithFields(bytes, page, canvasRef.current, 1.3);
+        // Fit the page to the panel so the whole form is visible — nothing clipped off the right.
+        const avail = (fit || wrapRef.current?.clientWidth || 0) - 4;
+        const r = await renderPageWithFields(bytes, page, canvasRef.current, 1.3, avail > 100 ? avail : undefined);
         if (cancelled) return;
         setFields(r.fields);
         setDims({ w: r.width, h: r.height });
@@ -45,7 +57,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       if (!cancelled) setBusy(false);
     })();
     return () => { cancelled = true; };
-  }, [bytes, page]);
+  }, [bytes, page, fit]);
 
   const box = (f: FormFieldBox): React.CSSProperties => ({
     position: "absolute",
@@ -82,7 +94,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
           {showTranslated && " · showing your language (reading aid — the saved file keeps the original)"}
         </span>
       </div>
-      <div style={{ overflow: "auto", maxHeight: 620, border: "1px solid #eef2f4", borderRadius: 8 }}>
+      <div ref={wrapRef} style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>
         <div style={{ position: "relative", width: dims.w, height: dims.h, margin: "0 auto" }}>
           <canvas ref={canvasRef} style={{ position: "absolute", left: 0, top: 0, background: "#fff" }} />
           {fields.map((f) => {

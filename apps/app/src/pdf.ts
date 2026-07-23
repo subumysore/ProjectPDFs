@@ -86,14 +86,23 @@ export async function renderPageWithFields(
   pageIndex: number,
   canvas: HTMLCanvasElement,
   scale = 1.3,
+  fitWidth?: number,
 ): Promise<{ width: number; height: number; numPages: number; fields: FormFieldBox[] }> {
   const doc = await pdfjs.getDocument({ data: bytes.slice(0) }).promise;
   const page = await doc.getPage(pageIndex + 1);
+  // Fit the page to the available width so the whole form is visible (no side clipping).
+  if (fitWidth && fitWidth > 0) {
+    const base = page.getViewport({ scale: 1 });
+    scale = Math.max(0.5, Math.min(2.5, fitWidth / base.width));
+  }
   const viewport = page.getViewport({ scale });
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   const ctx = canvas.getContext("2d");
-  if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
+  // annotationMode 0 = DISABLE: do NOT paint widget appearances. The filled values would otherwise
+  // be drawn by the PDF *and* by our overlay inputs — the doubled/offset text. The page renders the
+  // static form (labels, rules, boxes) and our inputs supply every value exactly on the field.
+  if (ctx) await page.render({ canvasContext: ctx, viewport, annotationMode: 0 }).promise;
 
   const fields: FormFieldBox[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
