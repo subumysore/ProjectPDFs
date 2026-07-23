@@ -148,8 +148,21 @@ $upload = Invoke-RestMethod -Method Put -Uri $uploadUri -Headers $headers -InFil
 
 if ($upload.uploadState -eq "FAILURE") {
     $detail = ($upload.itemError | ForEach-Object { $_.error_detail }) -join "; "
+
+    # An item already in review cannot take a new package. This is NOT a broken deploy: the website
+    # has already published successfully by this point, and the only thing outstanding is a store
+    # submission that has to wait for Google. Failing here would make a healthy release look broken
+    # and would stop any later step in the publish chain, so it warns and returns 0.
+    if ($detail -match "pending review|ready to publish|deleted status") {
+        Write-Host "     Store submission deferred - the item is still in review." -ForegroundColor Yellow
+        Write-Host "     Chrome will not accept a new package until the current review finishes." -ForegroundColor Yellow
+        Write-Host "     The website is published; only the store upload is outstanding." -ForegroundColor Yellow
+        Write-Host "     When the review clears, re-run:  .\deploy\publish-webstore.ps1" -ForegroundColor Cyan
+        Write-Host "     (Or cancel the pending review in the developer console to submit now.)" -ForegroundColor Cyan
+        exit 0
+    }
     if ($detail -match "version") {
-        throw "Upload rejected: $detail`nThe store will not accept a version it has already published. Run this script with -BumpPatch, rebuild the zip, then publish again."
+        throw "Upload rejected: $detail`nThe store will not accept a version it has already published. Bump with 'node scripts/set-version.mjs patch', rebuild the zip, then publish again."
     }
     throw "Upload failed: $detail"
 }
