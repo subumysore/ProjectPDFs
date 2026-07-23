@@ -39,6 +39,16 @@ export async function fillPage(vault, tLabels) {
     username: ["username", "user name", "login", "user id", "userid", "handle"],
     dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
     dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth"],
+    // Concepts below were present in resolver.js (PDF fill) but MISSING here, so they filled in
+    // PDFs and silently did nothing on web forms (found 2026-07-23 by end-to-end testing).
+    // resolver.test.mjs asserts the two alias sets stay in step from now on.
+    occupation: ["occupation", "profession", "current profession", "current occupation", "job title", "designation", "position held", "profession or occupation", "occupation and position"],
+    birthplace: ["place of birth", "birth place", "birthplace", "city of birth", "town of birth", "country of birth", "place of birth city"],
+    passport_type: ["passport type", "type of passport", "document type", "type of document"],
+    ssn: ["social security number", "ssn", "social security no", "social security"],
+    taxid: ["tax id", "taxpayer id", "tin", "itin", "ein", "tax identification number", "pan", "pan number"],
+    age: ["age", "your age", "current age", "age in years", "age yrs"],
+    dependent_age: ["age of dependent", "age of dependant", "dependent age", "dependant age", "child age", "age of child"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
@@ -62,6 +72,24 @@ export async function fillPage(vault, tLabels) {
   // Any phone number the user has — so ANY phone-type field fills even if it asks for a
   // "mobile" but the number is stored as "home", etc. General, not per-form.
   const anyPhone = () => atoms.cellphone ?? atoms.phone ?? atoms.homephone;
+  // Full years from a date of birth to today. Mirrors resolver.js so PDF and web agree.
+  const ageFrom = (dob) => {
+    const s = String(dob || "");
+    let birth = null;
+    const iso = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    const dmy = s.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
+    if (iso) birth = new Date(+iso[1], +iso[2] - 1, +iso[3]);
+    else if (dmy) {
+      let y = parseInt(dmy[3], 10);
+      if (y < 100) y += y > 30 ? 1900 : 2000;
+      birth = new Date(y, parseInt(dmy[1], 10) - 1, parseInt(dmy[2], 10)); // assume MM/DD/YYYY
+    }
+    if (!birth || isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+    return age >= 0 && age < 150 ? String(age) : null;
+  };
   const atomVal = (key) => {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
@@ -70,13 +98,16 @@ export async function fillPage(vault, tLabels) {
     if (key === "homephone") return withCC(atoms.homephone ?? anyPhone());
     if (key === "phone")     return withCC(anyPhone());
     if (key === "appdate")   return atoms.appdate ?? (() => { const d = new Date(); return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`; })();
+    // Age is DERIVED from the date of birth, never stored (mirrors resolver.js).
+    if (key === "age")           return atoms.age ?? ageFrom(atoms.dob);
+    if (key === "dependent_age") return atoms.dependent_age ?? ageFrom(atoms.dependent_dob);
     return atoms[key];
   };
 
   // 2) COMPOSITE concepts: a coarse field made of finer member atoms, joined in order.
   //    Its value excludes any member the form claims with a more-specific field.
   const COMPOSITES = {
-    full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, fallback: () => atoms.full },
+    full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, prefer: () => atoms.full, fallback: () => atoms.full },
     address: { syn: ["address", "mailing address", "residential address", "postal address", "full address", "permanent address", "current address"], members: ["street1", "street2", "city", "state", "zip", "country"], sep: ", " },
   };
 
@@ -274,11 +305,21 @@ export async function fillPage(vault, tLabels) {
   };
 
   let filled = 0;
+  // A composite's value. An EXPLICITLY STORED value (prefer) wins over one composed from
+  // leftover atoms: composing produced "Wei" for a Full Name field whenever another field had
+  // already claimed the surname, when the vault holds "Li Wei Chen". (Found 2026-07-23.)
+  // Single definition — this used to be inlined at three call sites and drifted.
+  const compositeValue = (cmp) => {
+    const stored = cmp.prefer ? cmp.prefer() : null;
+    if (stored) return stored;
+    const parts = cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean);
+    return parts.length ? parts.join(cmp.sep) : (cmp.fallback ? cmp.fallback() : "");
+  };
+
   for (const { el, label, pick } of fields) {
     let value;
     if (pick.kind === "composite") {
-      const parts = pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean);
-      value = parts.length ? parts.join(pick.cmp.sep) : (pick.cmp.fallback ? pick.cmp.fallback() : "");
+      value = compositeValue(pick.cmp);
     } else {
       value = atomVal(pick.key);
     }
@@ -309,7 +350,7 @@ export async function fillPage(vault, tLabels) {
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue;
     const value = pick.kind === "composite"
-      ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
+      ? compositeValue(pick.cmp)
       : atomVal(pick.key);
     if (!value) continue;
     // Candidate values to match an option against: the raw value plus expansions (a stored
@@ -351,7 +392,7 @@ export async function fillPage(vault, tLabels) {
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue;
     const value = pick.kind === "composite"
-      ? (pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean).join(pick.cmp.sep) || (pick.cmp.fallback ? pick.cmp.fallback() : ""))
+      ? compositeValue(pick.cmp)
       : atomVal(pick.key);
     if (!value) continue;
     // Candidate strings to type/match: the value plus expansions (gender M->Male; common

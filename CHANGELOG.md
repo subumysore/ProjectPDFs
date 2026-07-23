@@ -4,6 +4,43 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — nine fill-engine bugs found by end-to-end testing against real government forms
+Tested the real shared engine against live-downloaded forms in Chinese, Hindi, Tamil and Telugu
+(HK Civil Service GF340 — 533 AcroForm fields, HK Immigration ID995A, Atal Pension Yojana in three
+Indian languages) plus generated web forms in all four scripts. Full record: `BUGS.md`.
+
+- **The two fill engines had silently DIVERGED** — `resolver.js` (PDF) had 40 concepts,
+  `pagefill.js` (web) only 28. `occupation`, `ssn`, `taxid`, `birthplace`, `passport_type`, `age`
+  and others filled in PDFs and did **nothing** on web forms. Each file's own tests passed, so
+  nothing caught it. Concepts added, plus `engine-parity.test.mjs`, which now **fails the build
+  whenever a concept is added to one engine and not the other**.
+- **New key/value capture could never work in a non-Latin language.** `keyFromLabel` was a
+  private, untested helper in `App.tsx` doing `replace(/[^a-z0-9]+/g, "_")`, so `पूरा नाम` became
+  an empty key and the captured pair was silently discarded. Extracted to shared, Unicode-aware
+  `vaultkey.js`. The tests caught a further trap before it shipped: Devanagari/Tamil/Telugu vowel
+  signs and Arabic diacritics are Unicode **Marks**, not Letters, so `\p{L}` alone mangles
+  the word; the class must include `\p{M}`.
+- **A script-qualified name field got the wrong script** — `ChineseName` was filled with the Latin
+  given name while the vault held the Chinese one. Such fields now resolve only against a matching
+  vault key and fill **nothing** rather than falling back to the Latin name.
+- **One CJK value aborted the entire PDF fill.** Appearance generation happens at save time, so a
+  `WinAnsi cannot encode` error destroyed the whole output — a Chinese form produced no file at
+  all. Unencodable values are now skipped and **reported** in `result.unencodable`; the rest of
+  the form still fills. (Embedding a Noto CJK/Indic font remains the real fix.)
+- **Repeated table rows all received the same value** — nine `NameOfFirm1..9` got the same
+  employer, so a submitted GF340 would claim nine identical jobs. Siblings differing only by a
+  trailing number are now recognised as rows; only the lowest-numbered is auto-filled, scoped per
+  parent so separate tables stay separate.
+- **readOnly web inputs were filled**, e.g. a server-issued reference number receiving the street
+  address. Not a blanket skip — date pickers are routinely readOnly — so readOnly now fills only
+  where the field looks like a picker.
+- **An explicitly stored `full_name` is now preferred** over one composed from leftover atoms
+  (a Full Name field used to get just the given name). The composite logic had been inlined at
+  three call sites in `pagefill.js` and drifted; now a single `compositeValue()`.
+
+Suite: 129 -> **163** engine tests. Two further reported issues were traced to faults in the test
+harness rather than the product, and are recorded as such rather than "fixed".
+
 ### Changed — GA is no longer blocked on buying a code-signing certificate (ADR-0020, REQ-05.2)
 - **Public releases now ship deliberately unsigned**, and self-signing is confirmed **dev-only**.
   A self-signed certificate's chain does not validate on anyone else's machine, so SmartScreen

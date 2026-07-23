@@ -150,7 +150,7 @@ export function resolveFields(vault, fields) {
 
   const COMPOSITES = {
     givenmiddle: { syn: ["given and middle names", "given and middle name", "given middle names", "first and middle name", "first and middle names", "given names and middle names"], members: ["given", "middle"], sep: " ", name: true, fallback: () => atoms.given },
-    full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, fallback: () => atoms.full },
+    full:    { syn: ALIASES.full, members: ["given", "middle", "family"], sep: " ", name: true, prefer: () => atoms.full, fallback: () => atoms.full },
     address: { syn: ["address", "mailing address", "residential address", "postal address", "full address", "permanent address", "current address"], members: ["street1", "street2", "city", "state", "zip", "country"], sep: ", " },
   };
 
@@ -176,8 +176,40 @@ export function resolveFields(vault, fields) {
   };
   const wantsInitial = (label, maxLength) => /\binitial\b|\binit\b/.test(norm(label)) || maxLength === 1;
 
+  // A SCRIPT-QUALIFIED name field — "Chinese name", "Arabic name", "名前(カナ)" — asks for the
+  // name written in THAT script. Filling it with the Latin name is not a near-miss, it is the
+  // wrong answer, and it is exactly the case this product exists to get right. So:
+  //   - if the vault holds a matching script-specific name, use it;
+  //   - otherwise fill NOTHING. Never fall back to the Latin name.
+  // "English name" is not script-qualified for our purposes: it means the ordinary Latin name.
+  // (Found 2026-07-23: HK GF340 `ChineseName` was being filled with the Latin given name.)
+  const SCRIPT_WORDS = ["chinese", "japanese", "korean", "arabic", "hindi", "tamil", "telugu",
+    "kannada", "malayalam", "bengali", "gujarati", "punjabi", "marathi", "urdu", "russian",
+    "thai", "greek", "hebrew", "persian", "farsi", "devanagari", "cyrillic", "kanji", "kana",
+    "katakana", "hiragana", "hanzi", "hangul", "native", "local", "vernacular"];
+  const scriptQualifier = (label) => {
+    const toks = norm(label).split(" ").filter(Boolean);
+    if (!toks.includes("name")) return null;
+    return toks.find((t) => SCRIPT_WORDS.includes(t)) || null;
+  };
+  // Look for a vault key that mentions BOTH the script word and "name" (chinese_name,
+  // name_in_chinese, native name …).
+  const scriptNameValue = (lang) => {
+    for (const key of Object.keys(rawVault)) {
+      const kt = key.split(" ");
+      if (kt.includes(lang) && kt.includes("name")) return rawVault[key];
+    }
+    return null;
+  };
+
   // Pass 1: pick a concept per field.
-  const picks = fields.map((f) => {
+  const scriptOnly = new Array(fields.length).fill(null); // index -> resolved script-name value
+  const picks = fields.map((f, i) => {
+    const lang = scriptQualifier(f.label);
+    if (lang) {
+      scriptOnly[i] = scriptNameValue(lang); // may be null -> field intentionally left empty
+      return null; // never fall through to the Latin-name concepts
+    }
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(f.label, c.syn); if (s > top) { top = s; pick = c; } }
     return top >= 1.5 ? pick : null;
@@ -186,12 +218,20 @@ export function resolveFields(vault, fields) {
 
   // Pass 2: compute the value for each field.
   return fields.map((f, i) => {
+    if (scriptOnly[i]) return scriptOnly[i]; // script-qualified name resolved from the vault
     const pick = picks[i];
     if (!pick) return null;
     let value;
     if (pick.kind === "composite") {
-      const parts = pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean);
-      value = parts.length ? parts.join(pick.cmp.sep) : (pick.cmp.fallback ? pick.cmp.fallback() : "");
+      // An EXPLICITLY STORED value wins over one composed from leftover atoms. Composing gave
+      // "Wei" for a Full Name field whenever another field had already claimed the surname —
+      // the vault's own "Li Wei Chen" is what the user actually wrote down. (Found 2026-07-23.)
+      const stored = pick.cmp.prefer ? pick.cmp.prefer() : null;
+      if (stored) { value = stored; }
+      else {
+        const parts = pick.cmp.members.filter((m) => !claimed.has(m)).map(atomVal).filter(Boolean);
+        value = parts.length ? parts.join(pick.cmp.sep) : (pick.cmp.fallback ? pick.cmp.fallback() : "");
+      }
     } else {
       value = atomVal(pick.key);
     }

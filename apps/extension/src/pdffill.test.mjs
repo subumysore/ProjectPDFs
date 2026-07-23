@@ -54,3 +54,24 @@ test("the GF340 case: nine employers collapse to one", () => {
 test("names without the XFA [0] suffix still group", () => {
   assert.deepEqual(idx(["Employer1", "Employer2", "Employer3"]), [1, 2]);
 });
+
+// --- non-Latin values in standard AcroForm fields (found 2026-07-23) ---
+import { needsUnicodeFont } from "./pdffill.js";
+
+test("CJK / Indic / Arabic values are flagged as needing a Unicode font", () => {
+  for (const v of ["\u9673\u5049", "\u0905\u092E\u093F\u0924", "\u0627\u0644\u0639\u0644\u064A", "\u0B85\u0BB0\u0BC1\u0BA3\u0BCD"]) {
+    assert.equal(needsUnicodeFont(v), true, `expected ${v} to need a Unicode font`);
+  }
+});
+
+test("Latin-1 values are fine for the standard WinAnsi appearance font", () => {
+  for (const v of ["Li Wei Chen", "wei.chen@example.com", "+852 5555 0142", "Zurich", "Ren\u00e9 Fran\u00e7ois"]) {
+    assert.equal(needsUnicodeFont(v), false, `expected ${v} to be encodable`);
+  }
+});
+
+test("non-strings are not flagged", () => {
+  assert.equal(needsUnicodeFont(null), false);
+  assert.equal(needsUnicodeFont(undefined), false);
+  assert.equal(needsUnicodeFont(42), false);
+});

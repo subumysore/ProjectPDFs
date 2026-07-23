@@ -12,6 +12,7 @@ import { FormView } from "./FormView";
 // SHARED registry — the desktop offers EVERY language the engine supports (not a fixed 8),
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
+import { keyFromLabel } from "@engine/vaultkey.js";
 
 // { iso: displayName } for every supported language.
 const LANGS: Record<string, string> = Object.fromEntries(
@@ -202,15 +203,10 @@ export function App() {
     }
   }
 
-  // A form label ("Date of expiry") → a stable vault key ("date_of_expiry").
-  function keyFromLabel(label: string): string {
-    return label
-      .toLowerCase()
-      .replace(/\(.*?\)/g, " ")        // drop "(as shown in passport)" style asides
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 60);
-  }
+  // A form label ("Date of expiry", "पूरा नाम", "全名") → a stable vault key. Now the SHARED,
+  // Unicode-aware implementation: the previous local ASCII-only version collapsed every
+  // non-Latin label to an empty key, so new information typed onto a Hindi/Tamil/Telugu/Chinese
+  // form was silently discarded instead of being offered for capture.
 
   const known = useMemo(() => new Map(points.map((p) => [p.key, p.value])), [points]);
 

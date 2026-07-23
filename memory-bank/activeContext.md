@@ -17,6 +17,40 @@ to absolute._
   (3) release builds — desktop still Tauri **0.1.0**, rebuild .exe/.msi + bump; (4) decide
   locked-vault access (host reads vault.db without the passphrase gate); (5) full DoD + CI on branch.
 
+## End-to-end fill testing against REAL forms (2026-07-23) — 9 bugs found and fixed
+Tested the real shared engine against live-downloaded government forms in Chinese, Hindi, Tamil,
+Telugu (HK GF340 533-field AcroForm, HK ID995A, Atal Pension Yojana x3) + web forms in 4 scripts.
+Artefacts on the user's Desktop: `PPF-Test-2026-07-23/` (before/after PDFs, BUGS.md, FORM-ANALYSIS.md).
+
+- **THE TWO FILL ENGINES HAD DIVERGED — the systemic one.** `resolver.js` (PDF) had 40 concepts,
+  `pagefill.js` (web) 28. `occupation`/`ssn`/`taxid`/`birthplace`/`age`… filled in PDFs and did
+  nothing on web. Each file's own tests passed. **`engine-parity.test.mjs` now fails the build on
+  any future drift** — this guard matters more than the individual fixes.
+- **KV capture could never work in a non-Latin language.** `keyFromLabel` (private + untested in
+  `App.tsx`) did `[^a-z0-9]` so `पूरा नाम` -> `""` and the pair was silently dropped. Now shared
+  `vaultkey.js`, Unicode-aware. **Trap the tests caught: Indic vowel signs / Arabic diacritics are
+  Unicode MARKS not Letters — `\p{L}` alone mangles the word; must include `\p{M}`.**
+- **Script-qualified name fields** ("Chinese name") got the Latin name; now resolve only against a
+  matching vault key and fill NOTHING rather than the wrong script.
+- **One CJK value aborted the WHOLE PDF fill** (`WinAnsi cannot encode`, thrown at save time after
+  all fields are set). Now skipped + reported via `result.unencodable`. **Real fix still open:**
+  `fonts.js` `makeFontPicker()` exists but `pdffill.js` never uses it.
+- **Repeated table rows** (NameOfFirm1..9) all got the same value -> a form claiming nine identical
+  employers. `repeatedRowIndexes()` keeps only the lowest-numbered row, scoped per parent.
+- **readOnly web inputs were filled** (a reference-number field got the street address). Cannot be
+  a blanket skip — date pickers are routinely readOnly — so it is picker-shaped only.
+- Explicit `full_name` now beats a composed one; `pagefill.js` composite logic was inlined at three
+  sites and had drifted, now one `compositeValue()`.
+- Suite 129 -> **163** engine tests.
+- **Two reported issues were MY TEST HARNESS, not the product** (labels that neither wrapped their
+  input nor used `for=`). Lesson: build jsdom fixtures the way `pagefill.test.mjs` does.
+- **Still untested:** Telugu OCR end-to-end (that PDF has no scan AND no text layer — vector glyphs
+  with no Unicode mapping, so it needs render->raster->OCR in the real app), translation, review,
+  save/versioning, Past forms, signing, radio groups, and the installed GUI.
+- **Open bugs:** checksum fields auto-filled (HKIDCheckingDigit), correspondence address silently
+  mirroring residential, and **the extension captures new values SILENTLY while the desktop asks**
+  — two consent postures for the same action; desktop's is right.
+
 ## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
 - **Just shipped (2026-07-22):** **License is its own first tab**; new **Docs & Video tab** with a
   narrated guided-tour video + written docs. Video is **NOT bundled** — hosted on OKE, served
