@@ -4,6 +4,41 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — the four open bugs left by the end-to-end test session (2026-07-23)
+All four were recorded as open in `activeContext.md` and are now closed, each verified against the
+real forms that exposed them rather than against a fixture alone.
+
+- **A non-Latin value now actually FILLS instead of being dropped.** `fonts.js` could already
+  embed a script font but `pdffill.js` never called it, so every CJK/Indic value was skipped and
+  reported as unfillable. Appearances are now generated **per field** with the font that field's
+  own value needs (`appearances()`), and the document is saved with
+  `updateFieldAppearances: false` so pdf-lib does not redo the whole form with the standard font.
+  A value no embeddable font can draw is still left blank and reported — but that is now only the
+  scripts whose font is not hosted, not every non-Latin script.
+  Proven on the real HK GF340 (533 fields): `陳偉明` is written into `ChineseName`; Hindi likewise.
+  **The desktop `.exe` had the identical bug in its own `pdf.ts` fill path** — fixing the shared
+  engine did not fix the app, so `apps/app/src/fill/appearances.ts` carries the same rule and
+  `src/appearances.test.mjs` proves it against the Noto fonts the app actually ships.
+- **Derived and office-use boxes are no longer auto-filled.** HK GF340's `HKIDCheckingDigit` was
+  getting the surname INITIAL — its caption reads "Last Digit", "last" is an alias for the
+  surname, and the box holds one character. Boxes whose caption **or field name** marks them as a
+  check digit, checksum, or office/staff-use field are now left for whoever actually owns them.
+  Both the caption and the raw field name are checked, because on this form each one alone looks
+  innocent.
+- **A correspondence address no longer silently mirrors the residential one.** When a form asks
+  for both, a qualified address (correspondence/mailing/office/permanent/…) is filled only from a
+  vault key carrying that same qualifier; otherwise it is left blank for the user, who usually has
+  a "same as above" tick. A qualified address that is the ONLY address on the form still fills.
+- **The extension now asks before saving new details, like the desktop does.** The desktop learns
+  values typed onto a form and shows them for review; the extension had no equivalent at all, so
+  the same product behaved two ways and extension users simply lost what they typed. New
+  "Save new details from this page" flow (`pagecapture.js` + popup review list): every proposed
+  pair is shown with the value it would replace, and only ticked rows are saved — to the local
+  vault only. Passwords, hidden inputs and untouched fields are never read.
+
+`engine-parity.test.mjs` now guards the *safety rules* too, not just the concept tables: a rule
+about what NOT to fill must exist on both engines or the build fails. Suite 163 → 222.
+
 ### Fixed — nine fill-engine bugs found by end-to-end testing against real government forms
 Tested the real shared engine against live-downloaded forms in Chinese, Hindi, Tamil and Telugu
 (HK Civil Service GF340 — 533 AcroForm fields, HK Immigration ID995A, Atal Pension Yojana in three

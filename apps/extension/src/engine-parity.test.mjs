@@ -45,6 +45,22 @@ test("pagefill.js introduces no concept resolver.js lacks", () => {
   assert.deepEqual(extra, [], "concepts only on the web side: " + extra.join(", "));
 });
 
+// Concept parity is not enough. The rules about what NOT to fill are just as load-bearing —
+// a PDF that leaves the office-use check-digit box alone while the web version fills it is the
+// same class of bug. Each rule below must exist on BOTH sides.
+const SAFETY_RULES = [
+  ["office-use / derived boxes", /NOT_THE_APPLICANTS/],
+  ["script-qualified names", /SCRIPT_WORDS/],
+  ["qualified addresses", /ADDRESS_QUALIFIERS/],
+];
+for (const [name, re] of SAFETY_RULES) {
+  test(`both engines carry the "${name}" rule`, () => {
+    const src = (f) => readFileSync(join(here, f), "utf8");
+    assert.ok(re.test(src("resolver.js")), `resolver.js is missing the ${name} rule`);
+    assert.ok(re.test(src("pagefill.js")), `pagefill.js is missing the ${name} rule`);
+  });
+}
+
 test("the guard is actually reading real tables (not silently matching nothing)", () => {
   assert.ok(conceptKeys("resolver.js").size > 20, "resolver.js concept table not parsed");
   assert.ok(conceptKeys("pagefill.js").size > 20, "pagefill.js concept table not parsed");

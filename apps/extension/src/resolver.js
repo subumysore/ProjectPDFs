@@ -202,9 +202,72 @@ export function resolveFields(vault, fields) {
     return null;
   };
 
+  // NOT THE APPLICANT'S TO FILL. Two kinds of box on a real form must stay empty no matter how
+  // well they score: boxes the ISSUING OFFICE completes, and DERIVED boxes whose contents are a
+  // function of another field (a check digit). Guessing either produces a form that is wrong in
+  // a way the user cannot see. (Found 2026-07-23: HK ID995A `HKIDCheckingDigit` was being filled
+  // from the ID number.)
+  // NOTE the deliberately missing leading \b on the digit patterns: the real field name is
+  // `HKIDCheckingDigit[0]`, which normalises to "hkidchecking digit" — the camelCase splitter
+  // cannot split HKID from Checking, so a word-anchored pattern misses the very field that
+  // exposed this bug. Verified against the real HK GF340 form, not assumed.
+  // "Last Digit" is how HK GF340 CAPTIONS its check digit — and because "last" is an alias for
+  // the surname and the box holds one character, it resolved to the family-name INITIAL and the
+  // form came out claiming a check digit of "C". A box holding a single derived digit is never
+  // an identity field.
+  const NOT_THE_APPLICANTS = [
+    /check(ing)? ?digit/, /checksum/, /(verification|control) digit/, /(last|final) digit/,
+    /\bfor (official|office|department(al)?|staff|internal|bank|agency) use\b/,
+    /\b(official|office|departmental|staff|internal) use only\b/,
+    /\bdo not (write|fill|complete|use)\b/,
+    /\breceived by\b/, /\bapproved by\b/, /\bverified by\b/, /\bprocessed by\b/,
+  ];
+  // Checked against the caption AND the raw field name: a form's human caption can be innocuous
+  // ("Last Digit") while the field name says exactly what it is (`HKIDCheckingDigit`) — and vice
+  // versa. Either naming the box as not-the-applicant's is enough to leave it alone.
+  const officeUse = (f) =>
+    NOT_THE_APPLICANTS.some((re) => re.test(norm(f.label)) || (f.name && re.test(norm(f.name))));
+
+  // A QUALIFIED address — "correspondence address", "office address", "permanent address" — is a
+  // DIFFERENT address from the plain/residential one. When a form asks for both, copying the
+  // residential address into the correspondence box invents a fact: the user may well receive
+  // post somewhere else, and the form usually offers a "same as above" tick for when they don't.
+  // So a qualified address is filled ONLY from a vault key carrying the same qualifier. When the
+  // qualified address is the ONLY one the form asks for, it IS the address wanted, so the plain
+  // address is used. (Found 2026-07-23: correspondence address silently mirrored residential.)
+  const ADDRESS_QUALIFIERS = ["correspondence", "mailing", "postal", "office", "business",
+    "work", "employer", "permanent", "previous", "former", "overseas", "foreign", "abroad"];
+  const addressQualifier = (label) => {
+    const toks = norm(label).split(" ").filter(Boolean);
+    if (!toks.includes("address")) return null;
+    return toks.find((t) => ADDRESS_QUALIFIERS.includes(t)) || null;
+  };
+  // Does this form ALSO ask for the plain/home address? Then the qualified ones are distinct.
+  const hasPlainAddress = fields.some((f) => {
+    const toks = norm(f.label).split(" ").filter(Boolean);
+    return toks.includes("address") && !toks.some((t) => ADDRESS_QUALIFIERS.includes(t));
+  });
+  // A vault key that mentions BOTH the qualifier and "address" (correspondence_address, …).
+  const qualifiedAddressValue = (q) => {
+    for (const key of Object.keys(rawVault)) {
+      const kt = key.split(" ");
+      if (kt.includes(q) && kt.includes("address")) return rawVault[key];
+    }
+    return null;
+  };
+
   // Pass 1: pick a concept per field.
   const scriptOnly = new Array(fields.length).fill(null); // index -> resolved script-name value
+  const addressOnly = new Array(fields.length).fill(null); // index -> resolved qualified address
+  const blocked = new Array(fields.length).fill(false);    // index -> never fill this box
   const picks = fields.map((f, i) => {
+    if (officeUse(f)) { blocked[i] = true; return null; }
+    const addrQ = addressQualifier(f.label);
+    if (addrQ && hasPlainAddress) {
+      addressOnly[i] = qualifiedAddressValue(addrQ); // null -> intentionally left for the user
+      blocked[i] = true;
+      return null;
+    }
     const lang = scriptQualifier(f.label);
     if (lang) {
       scriptOnly[i] = scriptNameValue(lang); // may be null -> field intentionally left empty
@@ -219,6 +282,8 @@ export function resolveFields(vault, fields) {
   // Pass 2: compute the value for each field.
   return fields.map((f, i) => {
     if (scriptOnly[i]) return scriptOnly[i]; // script-qualified name resolved from the vault
+    if (addressOnly[i]) return addressOnly[i]; // qualified address resolved from its own vault key
+    if (blocked[i]) return null; // office-use / derived box, or a qualified address we don't hold
     const pick = picks[i];
     if (!pick) return null;
     let value;

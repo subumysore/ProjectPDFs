@@ -152,6 +152,76 @@ export async function fillPage(vault, tLabels) {
   };
   const wantsInitial = (label, el) => /\binitial\b|\binit\b/.test(norm(label)) || el.maxLength === 1;
 
+  // ---- Fields that are NOT the user's to answer (parity with resolver.js) ----------------
+  // Kept deliberately identical to resolver.js so a web form and a PDF of the same form behave
+  // the same way; `engine-parity.test.mjs` fails the build if one side gains a rule the other
+  // lacks. Three rules, all of them "leave it blank rather than invent a fact":
+  //   1. OFFICE-USE / DERIVED boxes (a check digit, "for official use only").
+  //   2. A SCRIPT-QUALIFIED name ("Chinese name") - only from a matching vault key.
+  //   3. A QUALIFIED address ("correspondence address") when the form ALSO asks for the plain
+  //      one - only from a matching vault key, never a copy of the residential address.
+  // The digit patterns deliberately have no leading \b: the real field name `HKIDCheckingDigit`
+  // normalises to "hkidchecking digit" (camelCase cannot split HKID from Checking), so a
+  // word-anchored pattern misses the exact field that exposed the bug.
+  const NOT_THE_APPLICANTS = [
+    /check(ing)? ?digit/, /checksum/, /(verification|control) digit/, /(last|final) digit/,
+    /\bfor (official|office|department(al)?|staff|internal|bank|agency) use\b/,
+    /\b(official|office|departmental|staff|internal) use only\b/,
+    /\bdo not (write|fill|complete|use)\b/,
+    /\breceived by\b/, /\bapproved by\b/, /\bverified by\b/, /\bprocessed by\b/,
+  ];
+  const officeUse = (label) => NOT_THE_APPLICANTS.some((re) => re.test(norm(label)));
+  const SCRIPT_WORDS = ["chinese", "japanese", "korean", "arabic", "hindi", "tamil", "telugu",
+    "kannada", "malayalam", "bengali", "gujarati", "punjabi", "marathi", "urdu", "russian",
+    "thai", "greek", "hebrew", "persian", "farsi", "devanagari", "cyrillic", "kanji", "kana",
+    "katakana", "hiragana", "hanzi", "hangul", "native", "local", "vernacular"];
+  const ADDRESS_QUALIFIERS = ["correspondence", "mailing", "postal", "office", "business",
+    "work", "employer", "permanent", "previous", "former", "overseas", "foreign", "abroad"];
+  const qualifierIn = (label, words, noun) => {
+    const toks = norm(label).split(" ").filter(Boolean);
+    if (!toks.includes(noun)) return null;
+    return toks.find((t) => words.includes(t)) || null;
+  };
+  // A vault key mentioning BOTH the qualifier and the noun (chinese_name, office_address, …).
+  const qualifiedValue = (q, noun) => {
+    for (const key of Object.keys(rawVault)) {
+      const kt = key.split(" ");
+      if (kt.includes(q) && kt.includes(noun)) return rawVault[key];
+    }
+    return null;
+  };
+  // These rules must read the field's OWN label only. `labelOf` deliberately falls back to the
+  // nearest ancestor's text, which on a compact form is the caption of every OTHER field too —
+  // with that, "Residential Address" looks qualified (it can see the word "correspondence"
+  // further down the page) and the whole rule silently disables itself. Own attributes plus the
+  // properly associated <label> only.
+  const ownLabel = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+    (el.labels && el.labels[0] && el.labels[0].textContent) || ""].join(" ");
+  // Does this page ALSO ask for the plain/home address? Then the qualified ones are distinct.
+  const hasPlainAddress = [...document.querySelectorAll("input, textarea, select")].some((el) => {
+    const toks = norm(ownLabel(el)).split(" ").filter(Boolean);
+    return toks.includes("address") && !toks.some((t) => ADDRESS_QUALIFIERS.includes(t));
+  });
+  /**
+   * null            -> ordinary field, resolve it normally
+   * { skip: true }  -> never fill (office use, or a qualified field we hold no value for)
+   * { value }       -> fill with exactly this, bypassing concept matching
+   */
+  const specialCase = (label) => {
+    if (officeUse(label)) return { skip: true };
+    const script = qualifierIn(label, SCRIPT_WORDS, "name");
+    if (script) {
+      const v = qualifiedValue(script, "name");
+      return v ? { value: v } : { skip: true }; // never the Latin name
+    }
+    const addr = hasPlainAddress ? qualifierIn(label, ADDRESS_QUALIFIERS, "address") : null;
+    if (addr) {
+      const v = qualifiedValue(addr, "address");
+      return v ? { value: v } : { skip: true }; // never a copy of the residential address
+    }
+    return null;
+  };
+
   // Does this readOnly field look like a DATE PICKER (fill it) rather than a locked field
   // (leave it alone)? Native date types, or the usual picker signatures on the element or an
   // ancestor: a datepicker class/role, a calendar icon sibling, or a date-ish label/placeholder.
@@ -182,6 +252,11 @@ export async function fillPage(vault, tLabels) {
     if (el.readOnly && !isDatePickerLike(el)) continue;
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
+    const special = specialCase(ownLabel(el)); // own label only — see ownLabel
+    if (special) {
+      if (!special.skip) fields.push({ el, label, pick: null, forced: special.value });
+      continue;
+    }
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) {
@@ -209,7 +284,7 @@ export async function fillPage(vault, tLabels) {
 
   // Which member atoms does the form claim with a dedicated (atomic) field? A composite
   // then absorbs only the members NOT claimed here.
-  const claimed = new Set(fields.filter((f) => f.pick.kind === "atom").map((f) => f.pick.key));
+  const claimed = new Set(fields.filter((f) => f.pick && f.pick.kind === "atom").map((f) => f.pick.key));
   hasCcField = fields.some((f) => f.pick && f.pick.key === "phonecc"); // affects withCC()
 
   // Reformat a stored date (vault convention MM/DD/YYYY) to match what THIS field asks for.
@@ -316,15 +391,17 @@ export async function fillPage(vault, tLabels) {
     return parts.length ? parts.join(cmp.sep) : (cmp.fallback ? cmp.fallback() : "");
   };
 
-  for (const { el, label, pick } of fields) {
+  for (const { el, label, pick, forced } of fields) {
     let value;
-    if (pick.kind === "composite") {
+    if (forced != null) {
+      value = forced; // script-qualified name / qualified address, straight from its vault key
+    } else if (pick.kind === "composite") {
       value = compositeValue(pick.cmp);
     } else {
       value = atomVal(pick.key);
     }
     if (!value) continue;
-    if (pick.name && wantsInitial(label, el)) value = initial(value);
+    if (pick && pick.name && wantsInitial(label, el)) value = initial(value);
     const dt = parseVaultDate(value);
     if (dt && el.type !== "date") {
       if (await setDateSmart(el, dt, formatDateForField(value, el, label))) filled++;
@@ -346,6 +423,7 @@ export async function fillPage(vault, tLabels) {
   for (const sel of document.querySelectorAll("select")) {
     if (sel.disabled) continue;
     const label = labelOf(sel);
+    if (officeUse(ownLabel(sel))) continue; // an office-use dropdown is not the applicant's to set
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue;
@@ -389,6 +467,7 @@ export async function fillPage(vault, tLabels) {
     seen.add(h);
     let pick = null, top = 0;
     const label = labelOf(h);
+    if (officeUse(ownLabel(h))) continue; // an office-use chooser is not the applicant's to set
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) continue;
     const value = pick.kind === "composite"

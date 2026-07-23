@@ -5,6 +5,7 @@ import { resolveFields, resolveBundle } from "./fill/resolver";
 import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
 import { planProximityFill } from "./fill/pdfproximity";
+import { appearances } from "./fill/appearances";
 // Sign/annotate ENGINE — shared with the extension (flatten drawn overlays into the PDF). The
 // drawing canvas is a per-platform UI layer; this flattening core is identical on both.
 export { flattenOverlays } from "@engine/signflatten.js";
@@ -166,6 +167,7 @@ export async function applyReviewEdits(
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(bytes);
   const form = pdf.getForm();
+  const app = await appearances(pdf);
   for (const [name, value] of Object.entries(edits)) {
     let f;
     try { f = form.getField(name); } catch { continue; }
@@ -174,10 +176,11 @@ export async function applyReviewEdits(
       else if (f instanceof PDFRadioGroup) { if (value) f.select(value); }
       else if (f instanceof PDFCheckBox) { if (value === "Yes") f.check(); else f.uncheck(); }
       else if (f instanceof PDFDropdown) { if (value) f.select(value); }
+      app.note(f, value);
     } catch { /* skip a value that doesn't fit this field */ }
   }
-  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
-  return pdf.save();
+  await app.finish(); // per-field appearances with an embedded script font where needed
+  return pdf.save({ updateFieldAppearances: false });
 }
 
 function normalize(s: string): string {
@@ -224,7 +227,7 @@ async function extractTexts(bytes: ArrayBuffer): Promise<any[]> {
 
 /** Fill a PDF whose field NAMES are meaningless (XFA/LiveCycle) by matching each box to its nearest
  *  printed caption — the SAME shared planner the extension uses, applied with the desktop's pdf-lib. */
-export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, string>): Promise<{ filled: number; total: number; data: Uint8Array }> {
+export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, string>): Promise<{ filled: number; total: number; data: Uint8Array; unencodable: Array<{ field: string; value: string }> }> {
   const pdf = await PDFDocument.load(bytes);
   const form = pdf.getForm();
   const pageRefs = pdf.getPages().map((p) => p.ref);
@@ -239,20 +242,25 @@ export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, 
   }
   const { assignments } = planProximityFill(fields, texts, vault, resolveFields);
   const byId = new Map(fields.map((f) => [f.id, f.field]));
+  const app = await appearances(pdf);
   let filled = 0;
   for (const a of assignments) {
     const f: any = byId.get(a.id);
-    try { if (a.option != null) { f.select(a.option); filled++; } else if (typeof f.setText === "function") { f.setText(String(a.value)); filled++; } } catch { /* skip */ }
+    try {
+      if (a.option != null) { f.select(a.option); app.note(f, String(a.option)); filled++; }
+      else if (typeof f.setText === "function") { f.setText(String(a.value)); app.note(f, String(a.value)); filled++; }
+    } catch { /* skip */ }
   }
-  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
-  return { filled, total: fields.length, data: await pdf.save() };
+  const unencodable = await app.finish();
+  filled -= unencodable.length;
+  return { filled, total: fields.length, data: await pdf.save({ updateFieldAppearances: false }), unencodable };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function fillAndExport(
   bytes: ArrayBuffer,
   vault: Record<string, string>,
-): Promise<{ filled: number; total: number; data: Uint8Array; formLang: string }> {
+): Promise<{ filled: number; total: number; data: Uint8Array; formLang: string; unencodable: Array<{ field: string; value: string }> }> {
   const pdf = await PDFDocument.load(bytes);
   const form = pdf.getForm();
   const fields = form.getFields();
@@ -277,6 +285,7 @@ export async function fillAndExport(
     } catch { /* fall back to name-based */ }
   }
 
+  const app = await appearances(pdf);
   const acro = identifyAcroForm(names);
   if (acro) {
     const bundle = resolveBundle(vault);
@@ -287,12 +296,13 @@ export async function fillAndExport(
       if (!rule) continue;
       const val = rule.v(bundle);
       if (val == null || val === "") continue;
-      try { f.setText(String(val)); filled++; } catch { /* skip */ }
+      try { f.setText(String(val)); app.note(f, String(val)); filled++; } catch { /* skip */ }
     }
   } else {
     const textFields = fields.filter((f) => f instanceof PDFTextField) as PDFTextField[];
     const descriptors = textFields.map((f) => ({
       label: fieldTooltip(f) || f.getName(),
+      name: f.getName(), // the raw field name also decides office-use / derived boxes
       maxLength: (f.getMaxLength && f.getMaxLength()) || -1,
     }));
     const values = resolveFields(vault, descriptors);
@@ -303,14 +313,17 @@ export async function fillAndExport(
         const key = matchKey(f.getName(), vault); // legacy fallback
         v = key ? vault[key] : undefined;
       }
-      if (v != null && v !== "") { try { f.setText(String(v)); filled++; } catch { /* skip */ } }
+      if (v != null && v !== "") { try { f.setText(String(v)); app.note(f, String(v)); filled++; } catch { /* skip */ } }
     });
   }
 
   const formLang = detectLang(names.join(" ")).lang as string;
-  try { form.updateFieldAppearances(); } catch { /* best-effort */ }
-  const data = await pdf.save();
-  return { filled, total: fields.length, data, formLang };
+  // Per-field appearances with the font each value needs. A value no embeddable font can draw
+  // is left blank and reported — it no longer aborts the whole export.
+  const unencodable = await app.finish();
+  filled -= unencodable.length;
+  const data = await pdf.save({ updateFieldAppearances: false });
+  return { filled, total: fields.length, data, formLang, unencodable };
 }
 
 /**

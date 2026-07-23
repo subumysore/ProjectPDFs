@@ -56,6 +56,22 @@
       <div class="row" style="margin-top:6px">
         <button id="signPdf">✍️ Sign / handwrite on this PDF</button>
       </div>
+      <div class="row" style="margin-top:6px">
+        <button id="learnPage">📥 Save new details from this page</button>
+      </div>
+
+      <!-- New information typed onto a form is NEVER saved silently: it is listed here, with the
+           value it would replace, and only ticked rows are saved (parity with the desktop app). -->
+      <div id="learnCard" class="hidden" style="border:1px solid #e5e5e5;border-radius:8px;padding:8px;margin-top:6px">
+        <div class="sub" style="margin-bottom:6px"><b>New details found on this page.</b> Nothing is saved
+          until you tick it. These stay on this device, in your vault.</div>
+        <div id="learnList"></div>
+        <div class="row" style="margin-top:6px">
+          <button id="learnSave">Save ticked</button>
+          <button id="learnCancel">Not now</button>
+        </div>
+        <div class="sub" id="learnMsg" style="margin-top:4px;min-height:14px"></div>
+      </div>
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b>Your language</b> — the language you think in. Forms in another

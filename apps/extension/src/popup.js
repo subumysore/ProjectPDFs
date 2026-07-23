@@ -3,6 +3,8 @@
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
 import { exportVault, importVault } from "./backup.js";
+import { collectTypedValues, newInformation } from "./pagecapture.js";
+import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 import { fillPdfBytes, fillPdfByProximity } from "./pdffill.js";
 import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
@@ -831,5 +833,63 @@ $("companionFill").onclick = async () => {
 // Runs in the page, reads only the DOM, sends nothing out. tLabels (optional) is an
 // array of English-translated field labels aligned to collectFillLabels(), used when the
 // form is in another language so the (English) ontology can match it.
+
+// ---- Learn NEW details from the page, with consent ------------------------------------------
+// The desktop app shows every value it did not already know and saves only what the user ticks.
+// The extension had no equivalent, so the same action behaved two ways across one product and
+// extension users simply lost what they typed. This is the desktop's posture, ported.
+let learnPending = [];
+$("learnPage").onclick = async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = (tab && tab.url) || "";
+  if (/\.pdf(\?|#|$)/i.test(url)) {
+    return setMsg("This is a PDF — Chrome's own PDF plugin doesn't let an extension read what you typed there.", false);
+  }
+  const rv = await readVault();
+  if (!rv.ok) return setMsg(rv.error || "Locked", false);
+  let typed = [];
+  try {
+    const [{ result } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectTypedValues });
+    typed = result || [];
+  } catch (e) {
+    return setMsg("Couldn't read this page: " + ((e && e.message) || e), false);
+  }
+  learnPending = newInformation(typed, rv.vault || {}, keyFromLabel, isCapturableLabel);
+  if (!learnPending.length) {
+    $("learnCard").classList.add("hidden");
+    return setMsg("Nothing new on this page — everything filled in is already in your vault.");
+  }
+  const list = $("learnList");
+  list.textContent = "";
+  learnPending.forEach((p, i) => {
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex;gap:6px;align-items:flex-start;margin-bottom:5px;font-size:12px";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = true; cb.dataset.i = String(i); cb.className = "learnPick";
+    const txt = document.createElement("span");
+    txt.textContent = `${p.label} → ${p.value}` + (p.existing ? ` (replaces “${p.existing}”)` : "");
+    row.append(cb, txt);
+    list.appendChild(row);
+  });
+  $("learnMsg").textContent = "";
+  $("learnCard").classList.remove("hidden");
+  setMsg(`Found ${learnPending.length} new detail(s) — tick what to keep.`);
+};
+$("learnCancel").onclick = () => { $("learnCard").classList.add("hidden"); learnPending = []; };
+$("learnSave").onclick = async () => {
+  const picks = [...document.querySelectorAll(".learnPick")].filter((c) => c.checked).map((c) => learnPending[+c.dataset.i]);
+  if (!picks.length) { $("learnMsg").textContent = "Nothing ticked, so nothing was saved."; return; }
+  let saved = 0;
+  for (const p of picks) {
+    const res = COMP.on
+      ? await send({ type: "companionUpsert", profileId: await compProfile(), key: p.key, value: p.value })
+      : await send({ type: "set", key: p.key, value: p.value });
+    if (res && res.ok) saved++;
+  }
+  $("learnCard").classList.add("hidden");
+  learnPending = [];
+  renderEntries();
+  setMsg(`Saved ${saved} new detail(s) to your vault — they'll fill automatically next time.`);
+};
 
 refresh();

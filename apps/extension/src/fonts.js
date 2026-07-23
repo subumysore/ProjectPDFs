@@ -7,10 +7,20 @@ import { StandardFonts } from "../vendor/pdf-lib.esm.min.js";
 
 const FONT_BASE =
   "https://objectstorage.us-ashburn-1.oraclecloud.com/p/MeK_72_tOM4xQH7J-bSokMlJ14erObpr5QYjeVFi-Oh7PsQt-jtjyzA4YGyJRSyP/n/idlqdkwlstnb/b/polyglotformfill-dl/o/fonts/";
+// Only scripts whose font is actually HOSTED can be embedded. A script we detect but have
+// no font for falls back to Latin, which cannot draw it — the caller must treat that as
+// "leave blank and report", never write mojibake. Adding a script = upload the Noto file
+// to the bucket, add a line here.
 const FONT_FILES = {
   hi: "NotoSansDevanagari-Regular.ttf",
   zh: "NotoSansSC-Regular.otf",
 };
+
+/** True if some font we can embed is able to draw this text. */
+export function canEmbed(text) {
+  const s = scriptOf(text);
+  return s === "latin" || !!FONT_FILES[s];
+}
 
 /** Which embedded font a string needs: 'hi' (Devanagari), 'zh' (CJK/kana), or 'latin'. */
 export function scriptOf(text) {

@@ -76,7 +76,7 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
     const isRadio = isChoice && (f.widgets && f.widgets.length > 1);
     const caption = captionFor(T, f.rect, { preferColon: isRadio });
     if (isEntityText(caption + " " + headerAbove(T, f.rect))) { skipped++; continue; }
-    const value = resolveFields(vault, [{ label: caption }])[0];
+    const value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
 
     if (isChoice) {

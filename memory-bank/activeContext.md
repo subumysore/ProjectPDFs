@@ -33,8 +33,12 @@ Artefacts on the user's Desktop: `PPF-Test-2026-07-23/` (before/after PDFs, BUGS
 - **Script-qualified name fields** ("Chinese name") got the Latin name; now resolve only against a
   matching vault key and fill NOTHING rather than the wrong script.
 - **One CJK value aborted the WHOLE PDF fill** (`WinAnsi cannot encode`, thrown at save time after
-  all fields are set). Now skipped + reported via `result.unencodable`. **Real fix still open:**
-  `fonts.js` `makeFontPicker()` exists but `pdffill.js` never uses it.
+  all fields are set). **CLOSED 2026-07-23:** appearances are now generated PER FIELD with the font
+  that value needs (`appearances()` in `pdffill.js`, saved with `updateFieldAppearances:false`), so
+  the value FILLS rather than being skipped. Only scripts with no hosted font are left blank +
+  reported. Verified on the real GF340 (`陳偉明` written) and on Hindi. The desktop had the SAME bug
+  in its own `pdf.ts`; `apps/app/src/fill/appearances.ts` + `appearances.test.mjs` cover the .exe.
+  Only Devanagari + CJK-SC fonts are hosted today — the other 8 scripts 404 (upload = one step).
 - **Repeated table rows** (NameOfFirm1..9) all got the same value -> a form claiming nine identical
   employers. `repeatedRowIndexes()` keeps only the lowest-numbered row, scoped per parent.
 - **readOnly web inputs were filled** (a reference-number field got the street address). Cannot be
@@ -47,9 +51,19 @@ Artefacts on the user's Desktop: `PPF-Test-2026-07-23/` (before/after PDFs, BUGS
 - **Still untested:** Telugu OCR end-to-end (that PDF has no scan AND no text layer — vector glyphs
   with no Unicode mapping, so it needs render->raster->OCR in the real app), translation, review,
   save/versioning, Past forms, signing, radio groups, and the installed GUI.
-- **Open bugs:** checksum fields auto-filled (HKIDCheckingDigit), correspondence address silently
-  mirroring residential, and **the extension captures new values SILENTLY while the desktop asks**
-  — two consent postures for the same action; desktop's is right.
+- **Open bugs — ALL CLOSED 2026-07-23** (suite 163 → 222, all green; both artifacts rebuilt):
+  - *Checksum fields auto-filled.* `HKIDCheckingDigit` was getting the surname INITIAL: its caption
+    is "Last Digit", "last" is a surname alias, and the box is 1 char. Office-use/derived boxes are
+    now blocked by caption **or field name** — the real field needed both, each alone looks
+    innocent. `resolveFields` descriptors now carry `name` alongside `label`.
+  - *Correspondence address mirroring residential.* A qualified address fills only from a vault key
+    with that qualifier when the form also asks for the plain one; else it is left for the user.
+    A lone qualified address still fills.
+  - *Two consent postures.* The extension had NO learn flow at all (values typed on a page were
+    lost). Ported the desktop's posture: `pagecapture.js` + a popup review list, nothing saved
+    without being shown and ticked, local vault only.
+  - `engine-parity.test.mjs` now also guards the SAFETY RULES (what not to fill) across both
+    engines, not just the concept tables.
 
 ## Current focus (2026-07-22) — Desktop UX: tabs, catalog removal, privacy vocabulary
 - **Just shipped (2026-07-22):** **License is its own first tab**; new **Docs & Video tab** with a
