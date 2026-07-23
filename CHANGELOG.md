@@ -15,6 +15,35 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   justifications, data-use declarations, and the manifest-`key`/extension-ID note.
 
 ## [Unreleased]
+### Added — Language-aware OCR on both platforms (2026-07-23)
+- Desktop OCR was hardcoded to `eng`, so **any non-English scan was unreadable** — a parity gap with
+  the extension, which was already language-aware. New shared `apps/app/src/tessworker.ts` resolves an
+  ISO code to its Tesseract pack via `@engine/langcodes`, serves the engine from the app origin and
+  the language models from the app-data `models/tesseract/` dir through the `ppfmodel` scheme
+  (**not embedded in the binary** — that is what ballooned the build). Workers are cached and reused,
+  so re-scanning no longer re-initialises the model.
+- `detectFields()` and `extractFromImage()` take a language; `App` threads the user's selected
+  language into every OCR call site. Packs installed on this device: kan, kor, chi_sim, chi_tra, spa,
+  hin, jpn, ara, fra, deu, rus, tam, tel, por, eng.
+- **Production bug fixed:** the extension's asset host now returns **404**, so multi-language packs
+  never arrived and OCR silently degraded to English for every user. Added a public-mirror fallback
+  with an honest status message so the feature works while the host is down.
+- Privacy: assets flow **down only** (engine + public OCR model). The image and the recognised text
+  never leave the device; no user content, form data, or identifier is sent.
+
+### Added — Edit the form in place, with the full toolbar (2026-07-23)
+- The desktop now renders the **actual form** with real inputs laid over each field, instead of a
+  key/value list beside it. Pages are fitted to the panel and re-fit on resize; the app shell went
+  from a fixed 820px column to `min(1600px, 96vw)`.
+- Persistent **pen / text / signature / image** toolbar sits on the form, matching the extension.
+- Translation covers **labels and values**, so the whole form reads in the user's language. The
+  translated view is a reading aid: the saved file always keeps the form's original language.
+- **Fixed:** the form rendered twice — widget appearances were painted by the PDF *and* by the
+  overlay inputs, and a legacy preview canvas drew a second full copy below.
+- **Added:** anything typed onto a form that the vault does not already hold is surfaced for review —
+  the exact label, key, value, and the prior value it would replace — and saved only on confirmation,
+  to the local vault only.
+
 ### Added — Automatic two-way vault sync (extension ⇄ desktop, last-write-wins) (2026-07-23)
 - The extension and desktop vaults now **auto-reconcile on every popup open**, in both directions,
   with **per-field last-write-wins**: a field on only one side is copied over; when both hold it, the

@@ -251,6 +251,28 @@ to absolute._
   **ADR-0010** registered roles + verifiable workflows (registry model, role taxonomy, role-scoped
   workflow defs, audit+provenance binding, authority verification).
 
+## Recently shipped (2026-07-23) — desktop/extension parity push
+- **Language-aware OCR on both platforms.** Desktop was hardcoded to `eng` (non-English scans were
+  unreadable); new shared `apps/app/src/tessworker.ts` mirrors the extension's `tess.js`. Models live
+  in app-data `models/tesseract/` and are served via the `ppfmodel` scheme — never embedded in the
+  binary (embedding assets is what caused the E0786 build failure). 15 packs installed on the dev box.
+- **Extension asset host is returning 404** — multi-language OCR packs never arrived, so extension OCR
+  had silently degraded to English in production. Public-mirror fallback added; the host itself is
+  still a GA blocker (see below).
+- **Edit the form in place**: real inputs overlaid on the rendered page, fitted to the panel, with a
+  persistent pen/text/signature/image toolbar. Fixed a double-render (widget appearances + overlay,
+  plus a legacy preview canvas).
+- **Translation covers labels AND values.** Etched rule reaffirmed in code: the translated view is a
+  reading aid only — the saved file always keeps the form's ORIGINAL language.
+- **New-data capture**: values typed onto a form that the vault lacks are surfaced for explicit
+  review (label, key, value, prior value) and saved only on confirmation, to the local vault only.
+
+### Known gap worth naming
+Most real-world non-English government forms are **flat scans or XFA/LiveCycle**, not AcroForms
+(verified: Korean visa form = 0 fields; USCIS I-9 Spanish and HK ID91 = XFA). They therefore depend
+on the OCR path, which is why the language-aware OCR work above was the true blocker for
+multilingual filling — not the translation engine.
+
 ## Recently shipped (2026-07-18)
 - **Fill-a-Form flow reworked:** opening a form (PDF/image) now **auto-detects & fills** (existing
   AcroForm → fill; else OCR-create + fill); "Fill a PDF" renamed "Fill a Form"; demo sample tucked away.
