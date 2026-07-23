@@ -1,0 +1,66 @@
+// The site must speak every language the product speaks. A visitor who cannot read the download
+// page never gets as far as the app, so this is the first surface, not the last.
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { AVAILABLE, UI_LANGS, RTL, translator } from "../apps/extension/src/i18n.js";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const site = join(root, "docs", "marketing", "site");
+
+test("every catalogue language has a built landing page", () => {
+  for (const lang of AVAILABLE) {
+    if (lang === "en") continue;
+    const p = join(site, lang, "index.html");
+    assert.ok(existsSync(p), `/${lang}/ was not generated — run docs/marketing/build-site.mjs`);
+  }
+});
+
+test("each localised page is actually in that language, and declares it", () => {
+  for (const lang of AVAILABLE) {
+    if (lang === "en") continue;
+    const html = readFileSync(join(site, lang, "index.html"), "utf8");
+    const tr = translator(lang);
+    assert.ok(html.includes(`lang="${lang}"`), `/${lang}/ does not declare lang="${lang}"`);
+    assert.ok(html.includes(tr("app.tagline")), `/${lang}/ is missing the translated tagline`);
+    assert.ok(html.includes(tr("privacy.headline")), `/${lang}/ is missing the translated privacy headline`);
+    assert.ok(html.includes(tr("site.download")), `/${lang}/ is missing the translated download label`);
+    // The English tagline must NOT appear — that would mean a half-translated page.
+    assert.ok(!html.includes("Fill any form, in any language, privately on your device."),
+      `/${lang}/ still shows the English tagline`);
+  }
+});
+
+test("right-to-left languages render right-to-left", () => {
+  for (const lang of RTL) {
+    if (!AVAILABLE.includes(lang)) continue;
+    const html = readFileSync(join(site, lang, "index.html"), "utf8");
+    assert.ok(html.includes('dir="rtl"'), `/${lang}/ must set dir="rtl"`);
+  }
+});
+
+test("every localised page offers every other language", () => {
+  const html = readFileSync(join(site, "ta", "index.html"), "utf8");
+  for (const [code, label] of Object.entries(UI_LANGS)) {
+    assert.ok(html.includes(`value="${code}"`), `the picker is missing ${code}`);
+    assert.ok(html.includes(label), `the picker does not label ${code} in its own language`);
+  }
+});
+
+test("the English page offers the switcher and suggests the visitor's own language", () => {
+  const html = readFileSync(join(site, "index.html"), "utf8");
+  assert.ok(html.includes('id="lang"'), "the English page has no language picker");
+  assert.ok(html.includes("navigator.languages"), "the English page does not detect the visitor's language");
+  assert.ok(html.includes('id="langhint"'), "the English page has no own-language hint");
+  // It must SUGGEST, never redirect: an automatic redirect strands anyone who wanted English.
+  assert.ok(!/location\.(replace|href)\s*=\s*["']\/(?!'\+)/.test(html.replace(/onchange="[^"]*"/g, "")),
+    "the English page must not auto-redirect");
+});
+
+test("download links on a localised page point at the real artifacts", () => {
+  const html = readFileSync(join(site, "hi", "index.html"), "utf8");
+  assert.ok(html.includes("/download/PolyglotFormFill-Setup.exe"), "installer link missing");
+  assert.ok(html.includes("/install/"), "extension install link missing");
+});

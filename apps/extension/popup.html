@@ -26,13 +26,17 @@
   </head>
   <body>
     <h1>PolyglotFormFill Autofill <span id="ver" style="font-size:11px;font-weight:600;color:#0a6a60;background:#e3f5f2;border-radius:8px;padding:1px 7px;vertical-align:middle"></span></h1>
-    <p class="sub">Encrypted on-device vault. Nothing leaves your device.</p>
+    <p class="sub" data-i18n="app.tagline">Fill any form, in any language, privately on your device.</p>
+    <div class="row" style="margin:4px 0 8px;align-items:center;gap:6px">
+      <label class="sub" for="uiLang" data-i18n="lang.ui" style="white-space:nowrap">Language</label>
+      <select id="uiLang" style="flex:1"></select>
+    </div>
     <div class="msg" id="msg" style="position:sticky;top:0;z-index:20;background:#fff;padding:4px 0;font-weight:600"></div>
 
     <div id="locked">
-      <input id="pass" type="password" placeholder="Vault passphrase" />
+      <input id="pass" type="password" data-i18n-placeholder="unlock.placeholder" placeholder="Passphrase" />
       <div class="row">
-        <button id="unlock">Unlock</button>
+        <button id="unlock" data-i18n="unlock.button">Unlock</button>
         <button id="unlockPasskey">Unlock with passkey</button>
       </div>
       <div class="sub" style="margin-top:6px"><a id="resetVault" href="#" style="color:#9a2c2c">Forgot passphrase? Reset vault (erases saved data)</a></div>
@@ -45,19 +49,19 @@
 
     <div id="unlocked" class="hidden">
       <div class="row">
-        <button id="fill">Fill this page</button>
-        <button id="scan">📷 Scan ID / doc</button>
-        <button id="lock">Lock</button>
+        <button id="fill" data-i18n="fill.page">Fill this page</button>
+        <button id="scan" data-i18n="scan.id">Scan ID / document</button>
+        <button id="lock" data-i18n="lock.button">Lock</button>
       </div>
       <div class="row" style="margin-top:6px">
-        <button id="viewLang">🌐 View this page in my language</button>
-        <button id="restoreLang" class="hidden">↩︎ Show original</button>
+        <button id="viewLang" data-i18n="view.inMyLanguage">View this page in my language</button>
+        <button id="restoreLang" class="hidden" data-i18n="view.showOriginal">Show the original</button>
       </div>
       <div class="row" style="margin-top:6px">
-        <button id="signPdf">✍️ Sign / handwrite on this PDF</button>
+        <button id="signPdf" data-i18n="sign.pdf">Sign or handwrite on this PDF</button>
       </div>
       <div class="row" style="margin-top:6px">
-        <button id="learnPage">📥 Save new details from this page</button>
+        <button id="learnPage" data-i18n="learn.button">Save new details from this page</button>
       </div>
 
       <!-- New information typed onto a form is NEVER saved silently: it is listed here, with the
@@ -67,8 +71,8 @@
           until you tick it. These stay on this device, in your vault.</div>
         <div id="learnList"></div>
         <div class="row" style="margin-top:6px">
-          <button id="learnSave">Save ticked</button>
-          <button id="learnCancel">Not now</button>
+          <button id="learnSave" data-i18n="learn.saveTicked">Save ticked</button>
+          <button id="learnCancel" data-i18n="learn.notNow">Not now</button>
         </div>
         <div class="sub" id="learnMsg" style="margin-top:4px;min-height:14px"></div>
       </div>
@@ -92,9 +96,9 @@
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b>Your details</b> — saved encrypted on this device.</div>
         <div id="entries"></div>
-        <input id="newKey" placeholder="field (e.g. full_name, email, phone)" />
-        <input id="newVal" placeholder="value (e.g. John Doe)" />
-        <button id="add">Save field</button>
+        <input id="newKey" data-i18n-placeholder="vault.addField" placeholder="Field" />
+        <input id="newVal" data-i18n-placeholder="vault.addValue" placeholder="Value" />
+        <button id="add" data-i18n="vault.add">Add</button>
         <div class="sub" style="margin: 8px 0 4px">Or add an <b>image</b> (photo / signature) — drawn into matching PDF boxes:</div>
         <div class="row" style="align-items: center; gap: 6px">
           <input id="imgKey" placeholder="field (e.g. signature, photo)" style="flex: 1" />

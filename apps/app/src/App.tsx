@@ -13,6 +13,7 @@ import { FormView } from "./FormView";
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
 import { keyFromLabel } from "@engine/vaultkey.js";
+import { UI_LANGS, translator, dirOf, detectUiLang } from "@engine/i18n.js";
 
 // { iso: displayName } for every supported language.
 const LANGS: Record<string, string> = Object.fromEntries(
@@ -95,6 +96,19 @@ export function App() {
   const [skipNew, setSkipNew] = useState<Record<string, boolean>>({});
   const [learnMsg, setLearnMsg] = useState("");
   const [baseLang, setBaseLang] = useState<Lang>("en");
+  // UI LANGUAGE — the language the app itself speaks, from the catalogue shared with the
+  // extension and the website. Chosen on first run (pre-selected from the OS/WebView languages)
+  // and remembered on this device. Separate from the FORM's language, and separate from the
+  // vault: keys and values keep whatever script the user typed them in.
+  const [uiLang, setUiLang] = useState<string>(
+    () => localStorage.getItem("ppf.uiLang") || detectUiLang([...(navigator.languages || [navigator.language])]) || "en",
+  );
+  const tr = useMemo(() => translator(uiLang), [uiLang]);
+  useEffect(() => {
+    localStorage.setItem("ppf.uiLang", uiLang);
+    document.documentElement.lang = uiLang;
+    document.documentElement.dir = dirOf(uiLang); // Arabic/Hebrew/Urdu/Persian flip the whole app
+  }, [uiLang]);
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
   const [pass, setPass] = useState("");
@@ -817,14 +831,24 @@ export function App() {
           textAlign: "center",
         }}
       >
-        <h1 style={{ marginBottom: 4 }}>🔒 PolyglotFormFill</h1>
+        {/* The language picker sits ON the unlock screen: a user must be able to read the very
+            first screen they see, before they have any way into settings. */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center", marginBottom: 18, fontSize: 13 }}>
+          <label htmlFor="uilang-lock" style={{ color: "#55666f" }}>{tr("lang.choose")}</label>
+          <select id="uilang-lock" value={uiLang} onChange={(e) => setUiLang(e.currentTarget.value)} style={{ padding: "4px 6px" }}>
+            {Object.entries(UI_LANGS).map(([code, label]) => (
+              <option key={code} value={code}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <h1 style={{ marginBottom: 4 }}>🔒 {tr("app.name")}</h1>
         <p style={{ color: "#55666f", marginTop: 0 }}>
-          {hasPass ? "Enter your passphrase to unlock." : "Set a passphrase to protect your vault."}
+          {hasPass ? tr("unlock.title") : "Set a passphrase to protect your vault."}
         </p>
         <input
           type="password"
           autoFocus
-          placeholder={hasPass ? "Passphrase" : "Create a passphrase (min 6 chars)"}
+          placeholder={hasPass ? tr("unlock.placeholder") : "Create a passphrase (min 6 chars)"}
           value={pass}
           onChange={(e) => setPass(e.currentTarget.value)}
           onKeyDown={(e) => {
@@ -833,11 +857,11 @@ export function App() {
           style={{ width: "100%", padding: "10px 12px", margin: "12px 0", boxSizing: "border-box" }}
         />
         <button onClick={submitLock} style={{ padding: "10px 16px", width: "100%" }}>
-          {hasPass ? "Unlock" : "Set passphrase & continue"}
+          {hasPass ? tr("unlock.button") : "Set passphrase & continue"}
         </button>
         {lockMsg && <p style={{ color: "#9a2c2c", fontSize: 13 }}>{lockMsg}</p>}
         <p style={{ color: "#8a8f92", fontSize: 12, marginTop: 20 }}>
-          Your vault stays on this device, encrypted. Nobody can open the app without this passphrase.
+          {tr("unlock.note")}
         </p>
       </main>
     );
@@ -877,12 +901,17 @@ export function App() {
         </button>
       </div>
       <p style={{ color: "#55666f", marginTop: 0 }}>
-        Fill any form privately — every form is read and filled <b>entirely on your device</b>.
-        We never see the form or your data; it goes <b>only where you choose to send it</b> (like
-        submitting the finished form to its recipient).
+        {tr("privacy.body")}
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", fontSize: 13 }}>
-        <label htmlFor="baselang" style={{ color: "#55666f" }}>Your language:</label>
+        <label htmlFor="uilang" style={{ color: "#55666f" }}>{tr("lang.ui")}:</label>
+        <select id="uilang" value={uiLang} onChange={(e) => setUiLang(e.currentTarget.value)} style={{ padding: "4px 6px" }}>
+          {Object.entries(UI_LANGS).map(([code, label]) => (
+            <option key={code} value={code}>{label}</option>
+          ))}
+        </select>
+        <span style={{ color: "#8a8f92" }}>{tr("lang.hint")}</span>
+        <label htmlFor="baselang" style={{ color: "#55666f", marginLeft: 12 }}>Your language:</label>
         <select
           id="baselang"
           value={baseLang}
@@ -920,7 +949,7 @@ export function App() {
       )}
 
       <nav style={{ display: "flex", gap: 4, margin: "0 0 6px", padding: "10px 0 0", borderBottom: "2px solid #e6eeec", flexWrap: "wrap", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
-        {([["license", "1 · License"], ["setup", "2 · Profile & Vault"], ["forms", "3 · Forms to fill"], ["history", "4 · Past forms"], ["docs", "5 · Docs & Video"]] as const).map(([id, label]) => {
+        {([["license", "1 · " + tr("tab.license")], ["setup", "2 · " + tr("tab.profile")], ["forms", "3 · " + tr("tab.forms")], ["history", "4 · " + tr("tab.past")], ["docs", "5 · " + tr("tab.docs")]] as const).map(([id, label]) => {
           const locked = (id === "forms" || id === "history") && !selected;
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}

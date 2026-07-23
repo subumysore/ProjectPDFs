@@ -5,6 +5,7 @@
 import { exportVault, importVault } from "./backup.js";
 import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
+import { UI_LANGS, translator, dirOf, detectUiLang } from "./i18n.js";
 import { fillPdfBytes, fillPdfByProximity } from "./pdffill.js";
 import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
@@ -892,4 +893,44 @@ $("learnSave").onclick = async () => {
   setMsg(`Saved ${saved} new detail(s) to your vault — they'll fill automatically next time.`);
 };
 
+// ---- UI LANGUAGE ---------------------------------------------------------------------------
+// The whole popup is shown in the user's own language, from the catalogue shared with the
+// desktop app and the website. Chosen on first open (pre-selected from the browser's own
+// language list), changed any time, remembered per browser.
+//
+// This is the UI language ONLY. It never changes the form's language, and it never changes the
+// keys or values in the vault — those keep whatever script the user typed them in.
+let UI = "en";
+function applyI18n() {
+  const tr = translator(UI);
+  document.documentElement.lang = UI;
+  document.documentElement.dir = dirOf(UI);
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = tr(el.dataset.i18n);
+  for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = tr(el.dataset.i18nPlaceholder);
+}
+async function initUiLang() {
+  const sel = $("uiLang");
+  if (!sel) return;
+  const stored = (await chrome.storage.local.get(["uiLang"])).uiLang;
+  // No stored choice yet -> pre-select from the browser's OWN language order, so a Tamil user
+  // sees Tamil the very first time the popup opens rather than having to find the setting.
+  const preferred = (chrome.i18n && chrome.i18n.getAcceptLanguages)
+    ? await new Promise((r) => chrome.i18n.getAcceptLanguages(r)).catch(() => [])
+    : navigator.languages || [navigator.language];
+  UI = stored || detectUiLang(preferred || []);
+  sel.textContent = "";
+  for (const [code, label] of Object.entries(UI_LANGS)) {
+    const o = document.createElement("option");
+    o.value = code; o.textContent = label; if (code === UI) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.onchange = async () => {
+    UI = sel.value;
+    await chrome.storage.local.set({ uiLang: UI });
+    applyI18n();
+  };
+  applyI18n();
+}
+
+initUiLang();
 refresh();
