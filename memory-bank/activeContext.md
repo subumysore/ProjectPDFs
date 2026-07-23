@@ -280,6 +280,26 @@ to absolute._
    Swapping in a real cert is a one-line change: set `WINDOWS_CERT_THUMBPRINT`. See
    `docs/reference/code-signing.md`.
 
+### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
+Driven directly over native messaging (4-byte LE length + JSON), against the real
+`projectpdfs-host.exe`, with the desktop app running:
+- **Protocol round-trip:** `ping` -> `{ok:true,pong:true}`.
+- **Privacy gate, locked:** `getVaultMeta` / `listProfiles` -> `{ok:false, locked:true,
+  "the desktop app is locked — unlock it to use the shared vault"}`. Only `ping` is ungated.
+- **Privacy gate, unlocked:** `listProfiles` -> profile `Subu`; `getVaultMeta` returns real rows.
+- **Last-write-wins:** rewriting `email` with its EXACT existing value and an explicit
+  `updatedAt` moved `updated_at` from `0` to precisely the supplied stamp, value unchanged. The
+  LWW write path is therefore proven, not assumed.
+- Note: the 5 pre-existing desktop rows all carry `updated_at = 0` (legacy migration default), so
+  on a first sync the extension's richer, stamped data wins — union semantics mean no loss either way.
+
+**Browser half is BLOCKED by Chrome itself, not by our code.** Chrome 150 ignores
+`--load-extension`: the browser starts, but `chrome://extensions-internals` lists only the built-in
+PDF viewer and the toolbar shows "Action required". `--disable-extensions-except` and
+`--enable-unsafe-extension-debugging` do not restore it. `deploy/dev-launch-chrome.ps1` now detects
+this and prints the manual "Load unpacked" steps instead of failing silently. Popup auto-sync
+therefore still needs one manual extension load in the dev profile before it can be exercised.
+
 ### Known gap worth naming
 Most real-world non-English government forms are **flat scans or XFA/LiveCycle**, not AcroForms
 (verified: Korean visa form = 0 fields; USCIS I-9 Spanish and HK ID91 = XFA). They therefore depend
