@@ -9,6 +9,16 @@ chosen language**.
 > `pnpm-workspace.yaml`) so its heavy deps never touch the app or CI gates. Governance (SDD, BRD,
 > traceability) is intentionally skipped here — the goal is learning, not shipping.
 
+## Editor errors here are expected
+
+This folder has no `node_modules` and is not part of the workspace, so TypeScript reports
+`Cannot find module pdf-lib / pdfjs-dist` until you run `pnpm install` **inside this folder**.
+That is an uninstalled spike, not a broken config, and it does not affect the app, the extension,
+or `node scripts/test-all.mjs` - none of which reference this directory.
+
+The superseded parts of this experiment now live in the product: on-device OCR, translation, and
+language-aware fill. It is kept as the record of the 2026-07-15 feasibility trial.
+
 ## Run it
 
 ```bash
