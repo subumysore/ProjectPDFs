@@ -303,14 +303,21 @@ to absolute._
      1.0.0, offering both the .exe and the .msi). `winget validate --manifest deploy\winget` passes
      against the real CLI. `scripts/winget-manifest.test.mjs` (5 tests) guards `InstallerSha256`
      against drift from `release-manifest.json` — proven to fail on a corrupted hash.
-   - **NOT YET PUBLISHED — BLOCKED, needs the user.** `deploy/k8s/publish-site.ps1` was attempted
-     and **denied by the Claude Code permission classifier**; it was not worked around. Everything
-     downstream is blocked on it:
-     1. the live site still serves the **0.1.0** binaries;
-     2. the install page's runtime hash display is unverified against the live host;
-     3. the **winget PR cannot be opened** — winget validation downloads `InstallerUrl`, so the
-        1.0.0 artifacts must be reachable first.
-     Unblock by running `.\deploy\k8s\publish-site.ps1` (or granting the Bash permission).
+   - **PUBLISHED AND VERIFIED LIVE (2026-07-23 09:15 UTC).** The user ran
+     `deploy/k8s/publish-site.ps1` (the classifier denied it to the agent twice). Verified:
+     both installers **downloaded from the live host hash-match the published manifest**;
+     `/download/release-manifest.json` serves 1.0.0; the install page shows the winget section
+     (labelled not-live), the hash-verification block, and the v1.0.0 badges.
+   - **Publish is SLOW, not broken.** The run looked hung; diagnosis: the site tarball is now
+     **86 MB** (it carries the 62 MB of installers) and the upstream was **2.1 Mbps over
+     ProtonVPN** → ~5.5 min. Confirmed live by an Established TLS socket to 134.70.24.1:443 plus
+     adapter throughput. `WriteTransferCount` reads 0 for socket sends — use
+     `Get-NetAdapterStatistics`, not process I/O counters, to judge upload progress.
+   - **WebFetch caches 15 min per URL** — it served a stale pre-publish copy of `/install/` and
+     made the deploy look like it had failed. Always cache-bust (`?cb=<random>`) when verifying a
+     just-published page.
+   - **Still open:** the winget PR to `microsoft/winget-pkgs` (now unblocked — the URLs are live),
+     and one real first-run install to confirm the warning matches the page's prediction.
 
 ### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
 Driven directly over native messaging (4-byte LE length + JSON), against the real
