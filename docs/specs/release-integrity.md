@@ -93,6 +93,31 @@ Field rules:
   register is matter-of-fact: cause, proof offered, what to click.
 - The unsigned disclosure MUST NOT be removed until a CA-issued certificate is genuinely in use.
 
+## Publishing layout (added 2026-07-23)
+
+Installers are **not** carried in the site tarball. The tarball had grown to 86 MB because it
+contained ~62 MB of installers, so every HTML-only publish re-uploaded them — about 5.5 minutes on a
+2 Mbps upstream. Layout now:
+
+- `ppf-site.tar.gz` — site content only, **15.4 MB**. Uploaded on every publish.
+- `PolyglotFormFill-Setup.exe`, `polyglotformfill-extension.zip` — separate Object Storage objects,
+  uploaded only with `publish-site.ps1 -WithBinaries`, and pulled into `/web/download/` by the init
+  container so the public `/download/...` URLs are unchanged.
+- `release-manifest.json` stays **in the tarball**: it is tiny and must track the site content it is
+  displayed on.
+
+Rules:
+
+- The publish script MUST fail if an `.exe`/`.msi` appears inside the tarball — a leak silently
+  restores the slow-publish problem.
+- The init container MUST fail loudly (`curl -f`) if a binary cannot be fetched, rather than letting
+  nginx serve a site whose download links 404.
+- `$BINARIES` in `publish-site.ps1` and `BINARIES` in `site.yaml` MUST list the same files.
+- **Only the NSIS `.exe` is published.** The MSI is still produced by `tauri build` but is no longer
+  hosted (it duplicated the `.exe` for ~32 MB). Since winget validation downloads `InstallerUrl`, an
+  unhosted MSI cannot be offered through winget either — hosting and the winget manifest must agree,
+  which `scripts/winget-manifest.test.mjs` enforces in both directions.
+
 ## Boundaries & dependencies
 
 - Touches: `scripts/release-manifest.mjs`, `scripts/test-all.mjs` (adds a test step),

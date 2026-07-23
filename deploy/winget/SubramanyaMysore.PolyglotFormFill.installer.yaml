@@ -19,14 +19,13 @@ InstallModes:
 - silent
 UpgradeBehavior: install
 ReleaseDate: 2026-07-23
+# Only the NSIS installer is published. The MSI is still built by `tauri build`, but it is no
+# longer hosted (it duplicated the .exe for ~32 MB), and winget validation downloads InstallerUrl —
+# so an unhosted MSI cannot be offered here.
 Installers:
 - Architecture: x64
   InstallerType: nullsoft
   InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe
   InstallerSha256: 9AB0E4CAF1AF3FA5817AC47BB75FD53D0B1ABABBC38D0099B149C15021765240
-- Architecture: x64
-  InstallerType: wix
-  InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill.msi
-  InstallerSha256: B4FC77942892666EA92E9697429EFD0EBB9DE2EC10F6B3A260FF7D4A3EB1D020
 ManifestType: installer
 ManifestVersion: 1.6.0

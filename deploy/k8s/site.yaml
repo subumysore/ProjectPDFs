@@ -30,10 +30,29 @@ spec:
               apk add --no-cache curl >/dev/null 2>&1 &&
               curl -fsSL "$SITE_URL" -o /tmp/site.tgz &&
               tar -xzf /tmp/site.tgz -C /web &&
-              echo "extracted:" && ls /web
+              mkdir -p /web/download &&
+              for f in $BINARIES; do
+                echo "fetching $f" &&
+                curl -fsSL "$DOWNLOAD_BASE/$f" -o "/web/download/$f" || exit 1;
+              done &&
+              echo "extracted:" && ls -la /web /web/download
           env:
+            # The site tarball NO LONGER contains the installers — they are separate objects
+            # fetched below. This keeps a content-only publish at ~14 MB instead of ~86 MB.
             - name: SITE_URL
               value: "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jCtDSAbfP-E2c8UsCnBa-_pWMhr_-z7fWAK9CBs-bYV83hkH-X8OcTnAG1ronnuS/n/idlqdkwlstnb/b/polyglotformfill-dl/o/ppf-site.tar.gz"
+            # Bucket-level read PAR (prefix form, ends at /o). Create with:
+            #   oci os preauth-request create --namespace idlqdkwlstnb \
+            #     --bucket-name polyglotformfill-dl --name ppf-downloads \
+            #     --access-type AnyObjectRead --time-expires 2027-12-31T00:00:00Z
+            # then set the value below to  https://objectstorage.us-ashburn-1.oraclecloud.com<accessUri>
+            # NOTE: `curl -f` makes a missing/expired PAR fail the init container LOUDLY rather
+            # than letting nginx come up serving 404s on every download link.
+            - name: DOWNLOAD_BASE
+              value: "REPLACE_WITH_BUCKET_PAR_URL"
+            # Keep in step with $BINARIES in publish-site.ps1.
+            - name: BINARIES
+              value: "PolyglotFormFill-Setup.exe polyglotformfill-extension.zip"
           volumeMounts:
             - { name: web, mountPath: /web }
       containers:

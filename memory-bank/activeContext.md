@@ -316,8 +316,28 @@ to absolute._
    - **WebFetch caches 15 min per URL** — it served a stale pre-publish copy of `/install/` and
      made the deploy look like it had failed. Always cache-bust (`?cb=<random>`) when verifying a
      just-published page.
-   - **Still open:** the winget PR to `microsoft/winget-pkgs` (now unblocked — the URLs are live),
-     and one real first-run install to confirm the warning matches the page's prediction.
+   - **UAT PASSED (2026-07-23).** Downloaded 1.0.0 from the live site as a user would: hash matched
+     the manifest; one attempt arrived **truncated** (17.7/29.9 MB, connection reset) and the hash
+     check **caught it** — integrity story proven in anger. Defender scan clean (exit 0);
+     Authenticode `NotSigned` as designed; silent install exit 0 registering `PolyglotFormFill
+     1.0.0`; app launched, unlock screen rendered, existing vault intact.
+   - **Publish slimmed 86 MB → 15.4 MB (2026-07-23).** Installers are no longer in the site
+     tarball — they are separate Object Storage objects fetched into `/web/download/` by the init
+     container, so public URLs are unchanged. Use `publish-site.ps1 -WithBinaries` only when a
+     binary changed. The script now **fails if an .exe/.msi leaks into the tarball**.
+   - **MSI is no longer hosted** (duplicated the .exe for ~32 MB). Still built by `tauri build`.
+     Because winget validation downloads `InstallerUrl`, winget now offers **only** the NSIS .exe;
+     `scripts/winget-manifest.test.mjs` enforces hosting/manifest agreement in both directions.
+   - **BLOCKS the next publish — one-time infra needed:** create a bucket-level read PAR and set
+     `DOWNLOAD_BASE` in `deploy/k8s/site.yaml` (currently `REPLACE_WITH_BUCKET_PAR_URL`); the exact
+     `oci os preauth-request create` command is in that file. Then
+     `publish-site.ps1 -WithBinaries` once, and `kubectl apply -f deploy/k8s/site.yaml`.
+     **Until that is done the current live site is fine** (it still serves the old layout) — but a
+     new publish with the new site.yaml would 404 the downloads.
+   - **Still open:** the winget PR to `microsoft/winget-pkgs` (user decision — it is a public PR
+     under their name), and one real first-run install *from a browser download* to see the actual
+     SmartScreen box (the UAT install was PowerShell-downloaded, so it carried no Mark-of-the-Web
+     and SmartScreen did not trigger).
 
 ### Shared-vault bridge — verified end-to-end against the real host (2026-07-23)
 Driven directly over native messaging (4-byte LE length + JSON), against the real

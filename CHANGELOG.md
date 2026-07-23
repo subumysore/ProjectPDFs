@@ -42,6 +42,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   manifest — the signCommand hook correctly no-op'd with no certificate configured (ADR-0020).
 - Not yet published to the live site; that step is left as an explicit action.
 
+### Changed — installers moved out of the site tarball; MSI no longer hosted
+- **Publish payload 86 MB → 15.4 MB.** The site tarball carried ~62 MB of installers, so every
+  HTML-only publish re-uploaded them (~5.5 min on a 2 Mbps upstream). Installers are now separate
+  Object Storage objects, fetched into `/web/download/` by the init container, so the public
+  `/download/...` URLs are unchanged. Re-upload them only with `publish-site.ps1 -WithBinaries`.
+- `publish-site.ps1` **fails if an `.exe`/`.msi` leaks into the tarball**, so the slow-publish
+  problem cannot silently return; the init container uses `curl -f` so a missing or expired PAR
+  fails the pod loudly instead of serving a site whose download links 404.
+- **The MSI is no longer published** (it duplicated the `.exe` for ~32 MB). It is still built by
+  `tauri build`. Consequence: winget cannot offer it either, because winget validation downloads
+  `InstallerUrl` — so the NSIS `.exe` is now the single published installer, and the winget tests
+  enforce hosting/manifest agreement in **both** directions (nothing published is missing from
+  winget; nothing in winget is unhosted).
+- **Requires one-time infra:** a bucket-level read PAR, and `DOWNLOAD_BASE` set in `site.yaml`
+  (currently the placeholder `REPLACE_WITH_BUCKET_PAR_URL`). The exact `oci` command is in the file.
+
+### Verified — 1.0.0 downloaded from the live site, scanned, installed and run
+- Downloaded from `polyglotformfill.mooo.com` as a user would; SHA-256 matched the published
+  manifest. One attempt arrived truncated (17.7 MB of 29.9 MB, connection reset) and **the hash
+  check caught it** — the integrity story doing exactly its job.
+- Windows Defender scan: **no threats** (exit 0). Authenticode: `NotSigned`, as designed.
+- Silent install (exit 0) registered `PolyglotFormFill 1.0.0`; the app launched, showed the unlock
+  screen, and recognised the existing vault (no data disturbed).
+
 ### Added — winget package manifests (`deploy/winget/`)
 - Version, locale and installer manifests for `SubramanyaMysore.PolyglotFormFill` 1.0.0, offering
   both the NSIS `.exe` and the `.msi`. **`winget validate --manifest deploy/winget` passes** against

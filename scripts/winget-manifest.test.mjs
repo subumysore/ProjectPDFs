@@ -44,7 +44,9 @@ test("every winget manifest uses the same PackageIdentifier", () => {
 test("installer hashes match the published artifacts exactly", () => {
   const text = read(`${ID}.installer.yaml`);
   const entries = [...text.matchAll(/InstallerUrl:\s*(\S+)[\s\S]*?InstallerSha256:\s*(\S+)/g)];
-  assert.equal(entries.length, 2, "expected the NSIS .exe and the .msi");
+  // The MSI is built but no longer hosted, so it cannot be offered here — winget validation
+  // downloads InstallerUrl. Only the NSIS installer is published.
+  assert.equal(entries.length, 1, "expected exactly the NSIS .exe");
 
   for (const [, url, sha] of entries) {
     const name = url.split("/").pop();
@@ -55,10 +57,22 @@ test("installer hashes match the published artifacts exactly", () => {
   }
 });
 
-test("both published Windows installers are offered through winget", () => {
+test("every published Windows installer is offered through winget", () => {
   const text = read(`${ID}.installer.yaml`);
-  for (const name of ["PolyglotFormFill-Setup.exe", "PolyglotFormFill.msi"]) {
+  // Derived from the release manifest rather than hardcoded, so hosting a new installer without
+  // adding it to winget fails here instead of being silently unavailable to winget users.
+  const published = manifest.artifacts.map((a) => a.name).filter((n) => /\.(exe|msi)$/.test(n));
+  assert.ok(published.length > 0, "no Windows installer is published at all");
+  for (const name of published) {
     assert.ok(text.includes(name), `${name} is published but not offered via winget`);
+  }
+});
+
+test("winget never references an installer we do not host", () => {
+  const hosted = new Set(manifest.artifacts.map((a) => a.name));
+  for (const [, url] of read(`${ID}.installer.yaml`).matchAll(/InstallerUrl:\s*(\S+)/g)) {
+    const name = url.split("/").pop();
+    assert.ok(hosted.has(name), `winget offers '${name}' but it is not in release-manifest.json`);
   }
 });
 
