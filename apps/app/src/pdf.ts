@@ -421,7 +421,14 @@ export async function makeFillableAndFill(
     const page = pages[f.rect.page] ?? pages[0];
     if (!page) continue;
     const opts = { x: f.rect.x, y: f.rect.y, width: f.rect.w, height: f.rect.h };
-    const val = vault[f.ontology_key];
+    // Value for this detected field. An EXACT vault key wins (and is the only way images resolve),
+    // but fall back to the semantic resolver so a field like "Full name" composes from first_name +
+    // last_name even though the vault has no "full_name" key. Without this, OCR-detected name/city/
+    // etc. fields stayed blank whenever the vault stored the parts rather than the exact key.
+    const exact = vault[f.ontology_key];
+    const val = exact !== undefined && exact !== ""
+      ? exact
+      : resolveFields(vault, [{ label: f.name, name: f.ontology_key }])[0] ?? undefined;
     // If the vault value is an IMAGE (profile photo / signature stored as a data-URI),
     // draw it onto the page at the field's coordinates instead of a text field.
     if (typeof val === "string" && val.startsWith("data:image")) {
@@ -439,15 +446,14 @@ export async function makeFillableAndFill(
     if (f.kind === "CheckBox") {
       const cb = form.createCheckBox(f.ontology_key);
       cb.addToPage(page, opts);
-      if (vault[f.ontology_key]) {
+      if (val) {
         cb.check();
         filled++;
       }
     } else {
       const tfld = form.createTextField(f.ontology_key);
-      const v = vault[f.ontology_key];
-      if (v !== undefined) {
-        tfld.setText(v);
+      if (val !== undefined && val !== "") {
+        tfld.setText(String(val));
         filled++;
       }
       tfld.addToPage(page, opts);

@@ -302,6 +302,12 @@ export function resolveFields(vault, fields) {
     }
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(f.label, c.syn); if (s > top) { top = s; pick = c; } }
+    // If the human label was unhelpful (missing, or a bare box), fall back to the field's programmatic
+    // NAME — "full_name", "date_of_birth" — so machine-named boxes still meaning-match. Fallback only,
+    // never overriding a confident label match, so a "Company name" field is never hijacked by a name.
+    if (top < 1.5 && f.name) {
+      for (const c of CONCEPTS) { const s = score(f.name, c.syn); if (s > top) { top = s; pick = c; } }
+    }
     return top >= 1.5 ? pick : null;
   });
   const claimed = new Set(picks.filter((p) => p && p.kind === "atom").map((p) => p.key));

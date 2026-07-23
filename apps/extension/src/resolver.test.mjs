@@ -104,3 +104,14 @@ test("application/today's-date fields default to today's date", () => {
 test("resolver: an unmatched label yields no value (never a wrong guess)", () => {
   assert.equal(one({ first_name: "Asha" }, "Favourite Colour"), null);
 });
+
+test("machine-named field composes a full name from parts (OCR-detected 'full_name')", () => {
+  // An OCR-detected flat-PDF field carries a programmatic NAME ("full_name") and often no tooltip
+  // label. It must still compose from first_name + last_name — the bug where a detected "Full name"
+  // box stayed blank because the vault held the parts, not a "full_name" key.
+  const vault = { first_name: "JOHN", last_name: "DOE" };
+  assert.equal(resolveFields(vault, [{ label: "", name: "full_name" }])[0], "JOHN DOE");
+  assert.equal(resolveFields({ date_of_birth: "04/12/1988" }, [{ label: "", name: "date_of_birth" }])[0], "04/12/1988");
+  // A confident label match is NEVER overridden by the field name: "Company name" stays the org.
+  assert.equal(resolveFields({ first_name: "JOHN", last_name: "DOE", organization: "Acme" }, [{ label: "Company name", name: "name" }])[0], "Acme");
+});
