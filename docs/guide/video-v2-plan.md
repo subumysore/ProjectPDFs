@@ -11,8 +11,14 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 4. Photo + signature land in a DEDICATED photo box / signature line — never over text boxes.
 5. Manual-entry round-trip is SHOWN: type a new field once → app saves it → it appears in the vault (the 2:25 gap).
 6. OFFICE/corporate cut STARTS FRESH — clean vault, ONLY corporate profiles on screen, no personal ones.
-7. Video at FULL resolution — crisp, no 1280 blur.
-8. Audio professional with tone modulation (voice route: A/B/C — pending).
+7. TWO distinct signature features, kept separate: (a) SAVED signature IMAGE auto-placed on the line;
+   (b) MANUAL hand-drawing in the sign pad — and the drawn signature must look like a REAL flowing
+   cursive signature (designed smooth path), not the cartoonish scribble in v1.
+8. OFFICE segment: show the ACTUAL office forms (inventory/finance/vendor) FILLING with data — not
+   profiles named after forms. ("Each template is a form" / save-a-filled-form-as-template = NEW
+   feature, pending owner decision: build it, or scope to existing fill.)
+9. Video at FULL resolution — crisp, no 1280 blur.
+10. Audio professional with tone modulation (voice route: A/B/C — pending).
 
 ## Segment table (order = final cut)
 | # | TELL (narration) | SHOW (visual) |
@@ -23,11 +29,11 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 | 4 | A dead scan with no boxes becomes a live form | Flat PDF → Detect fields → fillable boxes appear |
 | 5a | One click, every field filled | The form's TEXT fields populate from the vault |
 | 5b | Not just text — drop-downs, radios, tick-boxes too | Same form: a **dropdown** picks, **radio** selects, **checkbox** ticks — in that one click |
-| 6 | Your photo and signature drop exactly where they belong | Form with a **Photo box** + **Signature line** → photo into the box, signature on the line |
+| 6 | Your photo and your SAVED signature drop exactly where they belong | Form with a **Photo box** + **Signature line** → photo into the box, the **saved signature IMAGE** onto the line (Type 1, automatic) |
 | 7 | Type anything new once and it's remembered | Type value on the form → "Save to your vault?" → **new key/value appears in the vault** |
 | 8a | At home — a profile for each family member | Personal vault: create Jane / Emma (spouse, child) |
 | 8b | At the office — a profile for each purpose | **FRESH start — clean vault, NO personal profiles**: create Acme Inventory / Finance / Vendor only |
-| 9 | Sign by hand, in any ink | Draw the signature in blue on the form |
+| 9 | OR sign by hand, in any ink (a DIFFERENT method from the saved image above) | **Draw** a REAL-looking flowing cursive signature live in the sign pad, in blue (Type 2, manual) |
 | 10 | Any online form fills in one click too | The browser **extension** filling a web form |
 | 11 | Read any form in your language — 26 of them | Website language switch to **Kannada** |
 | 12 | Everything on your device; we never see it | The privacy panel |
@@ -44,6 +50,8 @@ Each includes the controls its narration needs, so nothing is claimed-but-not-sh
 ## Quality
 - Encode at FULL 2560-wide (or 1920), CRF 18, preset slow → crisp text. Maximized app capture.
 - PII-safe: synthetic John Doe only; demo-vault swap; app-region capture (file dialogs are off-frame).
+- **Smooth transitions between segments** — short crossfades/dissolves, not hard concat cuts, so nothing
+  snaps abruptly from one context to the next (e.g. the 4:00 "clean cut over" the owner flagged).
 
 ## Voice (the one open decision)
 - A = higher-quality free Piper voice (on-device, still synthetic).
