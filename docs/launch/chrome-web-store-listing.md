@@ -29,7 +29,20 @@ field into the matching box. Keep the manifest `key` handling in mind (see botto
   device. Our servers only serve downloadable assets (fonts, language models); they never receive
   your content. No analytics, no tracking, no content telemetry.
 
+  ▶ Watch the 5-minute walkthrough: https://polyglotformfill.mooo.com/download/guide.mp4
+
+- **Promotional video (LEAVE BLANK — deliberately):** The field only accepts a YouTube URL, and
+  Google locks API-uploaded videos to private on an unverified project — so we do NOT maintain a
+  YouTube copy. The walkthrough is self-hosted (link in the description above, and a permanent URL:
+  `https://polyglotformfill.mooo.com/download/guide.mp4`). Leaving this optional field empty is
+  normal and expected; the screenshots below carry the visual story. If a public YouTube presence is
+  ever wanted, upload manually in YouTube Studio and paste the long `https://www.youtube.com/watch?v=<id>`
+  form here (it rejects `youtu.be/…`).
+
 - **Screenshots (need 1–5; 1280×800 or 640×400 PNG):**
+  Ready in `docs/guide/output/screenshots/` — good picks:
+  `w3-extension-webform.png` (one-click fill), `03-id-capture.png`, `06-one-click-fill.png`,
+  `w1-website-kannada.png` (languages), `09-profiles.png`.
   1. Popup: unlocked vault with saved fields.
   2. A web form being filled in one click.
   3. The filled-PDF viewer.
