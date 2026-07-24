@@ -105,17 +105,19 @@ secret scan · dependency/license policy. See `.github/workflows/ci.yml`.
 - **DELIVERABLES MATRIX ON EVERY SUBSTANTIVE CHANGE.** Close such work with a matrix, not prose: each
   deliverable, ✅ for done, and a clear flag for what needs the OWNER's attention and why it can't be
   automated (🔧 = I can run it, needs their go because it's outward-facing; 🙋 = only they can do it).
-- **VIDEO CHANGED → run the YouTube upload, then PROMPT for the Chrome Web Store paste (mandatory).**
-  Any time the guide video is modified:
-  1. **YouTube — AUTOMATED, run it:** `make guide-upload` uploads the new cut PUBLIC, auto-attaches the
-     matching captions, and copies the watch URL to the clipboard (needs the one-time YouTube OAuth;
-     verified 2026-07-24 that public uploads work on this project — the "unverified apps are private"
-     restriction did not apply). Also publish the site copy via `publish-site.ps1 -WithGuide` (same
-     permanent `…/download/guide.mp4` URL).
-  2. **Chrome Web Store — MANUAL (no API for it), always prompt:** the new video is a NEW url, so the
-     owner must paste `https://www.youtube.com/watch?v=<id>` (NEVER `youtu.be/…`, which the promo field
-     rejects) into the promo-video field and Save & Submit. Copy the URL to their clipboard and open
-     the listing editor to make it a paste. Never let a video change pass without this prompt.
+- **VIDEO CHANGED → I (Claude) PERFORM the whole pipeline; the owner's ONLY step is the final review.**
+  These are MY tasks, run without being asked:
+  1. `node scripts/build-guide.mjs` — rebuild video + captions.
+  2. `.\deploy\k8s\publish-site.ps1 -WithGuide` — refresh the stable site copy (`…/download/guide.mp4`).
+  3. `make guide-upload` — upload the new cut PUBLIC, auto-attach the captions, copy the watch URL to
+     the clipboard (one-time YouTube OAuth done; public uploads verified working on this project).
+  4. **Chrome Web Store promo field** (no API exists — UI only): I copy the `https://www.youtube.com/watch?v=<id>`
+     (NEVER `youtu.be/…`, which the field rejects) to the clipboard, open the listing editor, and DRIVE
+     the paste into the Global promo-video field and **Save draft**. I STOP before "Submit for review"
+     and hand the owner a one-click review — because submitting a live public listing is theirs to
+     approve. If the store SPA can't be driven reliably, I fall back to clipboard+open+prompt, but I
+     never make the owner hunt for the field or the URL.
+  Never let a video change pass without completing 1-4 and prompting for the final Submit.
 - **STABLE LINKS.** Owner-controlled destinations (website, docs, emails) must point at the permanent
   self-hosted URLs (`…/download/{PolyglotFormFill-Setup.exe,guide.mp4,…}`), which keep the same address
   across rebuilds — never at a URL that churns per build (e.g. a fresh YouTube upload).
