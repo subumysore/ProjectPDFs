@@ -1073,7 +1073,12 @@ pub fn run() {
         .setup(|app| {
             // Open the on-device vault under the OS app-data dir. Values are AES-256-GCM
             // sealed at rest with a per-install key (OS keystore in production).
-            let dir = app.path().app_data_dir().expect("app data dir");
+            // PPF_DATA_DIR overrides the location — an isolated, throwaway vault for demos/tests/
+            // portable use, so a recording or test run never touches the real vault. Unset in normal
+            // use, where the OS app-data dir is authoritative.
+            let dir = std::env::var_os("PPF_DATA_DIR")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| app.path().app_data_dir().expect("app data dir"));
             std::fs::create_dir_all(&dir).expect("create data dir");
             let key = load_or_create_key(&dir);
             let sign_secret = load_or_create_sign_key(&dir);

@@ -138,6 +138,9 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
                     <option value="">—</option>
                     {(f.options ?? []).filter(Boolean).map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
+                ) : typeof shown === "string" && shown.startsWith("data:image") ? (
+                  // A photo/signature: DRAW the image in its box, not the raw base64 text.
+                  <img src={shown} alt={f.name} style={{ width: "100%", height: "100%", objectFit: "contain", background: "#fff" }} />
                 ) : (
                   <input
                     value={shown}
