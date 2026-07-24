@@ -161,7 +161,12 @@ async function renderCompanion() {
     .join("");
   box.innerHTML = `Profile (shared with the desktop app): <select id="companionProfileSel">${opts}</select>`;
   const sel = $("companionProfileSel");
-  sel.onchange = async () => { await chrome.storage.local.set({ companionProfile: sel.value }); setCompMsg("Profile selected — used by both apps."); };
+  sel.onchange = async () => {
+    // An EXPLICIT choice: mark it so it STAYS selected until the user changes it here again — the
+    // auto "profile with the most data" pick never overrides a profile the user deliberately chose.
+    await chrome.storage.local.set({ companionProfile: sel.value, companionProfileExplicit: true });
+    setCompMsg("Profile selected — it stays until you change it here.");
+  };
 }
 
 // ---- Translation languages (download at will; nothing bundled) ----

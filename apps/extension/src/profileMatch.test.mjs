@@ -66,3 +66,14 @@ test("chooseDataProfile: all-empty falls back to the first profile; no profiles 
   assert.equal(chooseDataProfile([{ id: "a" }, { id: "b" }], { a: 0, b: 0 }, undefined), "a");
   assert.equal(chooseDataProfile([], {}, undefined), null);
 });
+
+test("chooseDataProfile: an EXPLICIT user choice is sticky, even over a bigger profile", () => {
+  const profiles = [{ id: "personal" }, { id: "work" }];
+  const counts = { personal: 12, work: 40 };
+  // The user explicitly chose "personal"; it must NOT be swapped for the larger "work".
+  assert.equal(chooseDataProfile(profiles, counts, "personal", true), "personal");
+  // Explicit choice sticks even if it is currently empty (until they change it).
+  assert.equal(chooseDataProfile(profiles, { personal: 0, work: 40 }, "personal", true), "personal");
+  // But a stale explicit id that no longer exists falls back to auto-pick.
+  assert.equal(chooseDataProfile(profiles, counts, "deleted", true), "work");
+});

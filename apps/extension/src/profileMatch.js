@@ -65,11 +65,16 @@ export function profileNameFrom(data) {
  * @param {string} [remembered]  previously chosen profile id, if any
  * @returns {string|null} the profile id to use, or null when there are no profiles
  */
-export function chooseDataProfile(profiles, counts, remembered) {
+export function chooseDataProfile(profiles, counts, remembered, explicit) {
   const list = Array.isArray(profiles) ? profiles : [];
   if (!list.length) return null;
+  const exists = (id) => list.some((p) => p.id === id);
+  // An EXPLICIT user choice is STICKY: honour it until they change it, even if it currently holds no
+  // data. Only an AUTO pick is re-evaluated below, so an empty auto-created "Me" never sticks but a
+  // profile the user deliberately selected is never silently swapped for a "bigger" one.
+  if (explicit && remembered && exists(remembered)) return remembered;
   const n = (id) => (counts && counts[id]) || 0;
-  if (remembered && list.some((p) => p.id === remembered) && n(remembered) > 0) return remembered;
+  if (remembered && exists(remembered) && n(remembered) > 0) return remembered;
   let best = list[0].id, bestN = -1;
   for (const p of list) { if (n(p.id) > bestN) { bestN = n(p.id); best = p.id; } }
   return best;

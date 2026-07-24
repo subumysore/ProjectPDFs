@@ -85,12 +85,13 @@ async function compProfile() {
     pl = await send({ type: "companionProfiles" });
   }
   if (!pl.ok || !pl.profiles || !pl.profiles.length) return COMP.profile;
+  const { companionProfileExplicit } = await chrome.storage.local.get("companionProfileExplicit");
   const counts = {};
   for (const p of pl.profiles) counts[p.id] = p.count || 0;
-  const chosen = chooseDataProfile(pl.profiles, counts, COMP.profile);
+  const chosen = chooseDataProfile(pl.profiles, counts, COMP.profile, companionProfileExplicit);
   if (chosen && chosen !== COMP.profile) {
     COMP.profile = chosen;
-    await chrome.storage.local.set({ companionProfile: COMP.profile });
+    await chrome.storage.local.set({ companionProfile: COMP.profile }); // remember the auto pick (not explicit)
   }
   return COMP.profile;
 }
