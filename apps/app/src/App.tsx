@@ -972,7 +972,7 @@ export function App() {
           title="Click to dismiss"
           onClick={() => setSavedPath("")}
         >
-          📄 Saved to your Desktop: <b style={mono}>{savedPath}</b>
+          📄 Saved to your Desktop as <b style={mono}>{savedPath.split(/[\\/]/).pop()}</b>
         </p>
       )}
 
