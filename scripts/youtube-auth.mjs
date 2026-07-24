@@ -18,8 +18,10 @@
 import http from "node:http";
 import { execFileSync } from "node:child_process";
 
-const CID = process.env.YT_CLIENT_ID, SEC = process.env.YT_CLIENT_SECRET;
-if (!CID || !SEC) { console.error("Set YT_CLIENT_ID and YT_CLIENT_SECRET first (see header)."); process.exit(1); }
+// Reuse the Chrome Web Store OAuth client (same Google project) if a YouTube-specific one isn't set.
+const CID = process.env.YT_CLIENT_ID || process.env.WEBSTORE_CLIENT_ID;
+const SEC = process.env.YT_CLIENT_SECRET || process.env.WEBSTORE_CLIENT_SECRET;
+if (!CID || !SEC) { console.error("Set YT_CLIENT_ID/SECRET (or reuse WEBSTORE_CLIENT_ID/SECRET) first — see header."); process.exit(1); }
 const SCOPE = "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.force-ssl";
 let redirect = "";
 

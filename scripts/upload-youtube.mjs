@@ -21,8 +21,13 @@ const argv = process.argv.slice(2);
 const opt = (name, def) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : def; };
 const has = (name) => argv.includes(name);
 
-const CID = process.env.YT_CLIENT_ID, SEC = process.env.YT_CLIENT_SECRET, RT = process.env.YT_REFRESH_TOKEN;
-if (!CID || !SEC || !RT) { console.error("Missing YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN — run `node scripts/youtube-auth.mjs` first."); process.exit(1); }
+// Reuse the Chrome Web Store OAuth CLIENT (same Google project) if YT_* aren't set — you only need a
+// fresh consent for the YouTube scope, stored as YT_REFRESH_TOKEN by scripts/youtube-auth.mjs.
+const CID = process.env.YT_CLIENT_ID || process.env.WEBSTORE_CLIENT_ID;
+const SEC = process.env.YT_CLIENT_SECRET || process.env.WEBSTORE_CLIENT_SECRET;
+const RT = process.env.YT_REFRESH_TOKEN;
+if (!CID || !SEC) { console.error("No OAuth client — set YT_CLIENT_ID/SECRET or WEBSTORE_CLIENT_ID/SECRET."); process.exit(1); }
+if (!RT) { console.error("Missing YT_REFRESH_TOKEN — run `node scripts/youtube-auth.mjs` first (one-time browser consent)."); process.exit(1); }
 
 async function token() {
   const r = await fetch("https://oauth2.googleapis.com/token", {
