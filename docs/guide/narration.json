@@ -1,62 +1,70 @@
 {
-  "note": "Sales-pitch narration for the guide video: hook -> pain -> features as time-saved benefits -> close. Single source of truth - build-guide-video.ps1 renders it, build-guide-subtitles.ps1 times it. Every slide/segment must be recorded with a SYNTHETIC demo profile: no real vault data in any frame (see the 2026-07-23 PII incident). `img` names are the intended shots.",
-  "voice": "piper:en_US-amy-medium",
+  "note": "v2 narration — SHOW must match TELL (see docs/guide/video-v2-plan.md). Every segment's text is written to the exact visual it plays over. Voice: on-device Piper en_US-ryan-high, mastered by scripts/build-narration.ps1. Synthetic John Doe only; no real data in any frame.",
+  "voice": "piper:en_US-ryan-high",
   "segments": [
     {
-      "img": "a-greeting.png",
-      "text": "How much of your life is spent filling in forms? The same name, the same address, the same date of birth, over and over. PolyglotFormFill does it for you, in seconds, in twenty-six languages, and entirely on your own device. Let me show you."
+      "img": "v2-00-url.png",
+      "text": "This is PolyglotFormFill. You will find it at polyglot form fill dot mooo dot com."
     },
     {
-      "img": "s-license.png",
-      "text": "Getting started takes a moment. Activate your licence with a single key, verified right here on your device, never on a server. During the beta, every feature is unlocked and free."
+      "img": "v2-00b-usecases.png",
+      "text": "Do you fill the same forms, over and over, with the same details? Forms in a language you do not read? Or help your family and coworkers fill out theirs? If any of this sounds like you, PolyglotFormFill was built for exactly this."
     },
     {
-      "img": "s-create-profile.png",
-      "text": "Create a profile for whoever you are filling forms as. Here is John Doe. Now, instead of typing every detail, just capture an ID. Take a photo of a driving licence or passport, or upload one you already have."
+      "img": "v2-01-open.png",
+      "text": "How much of your life is spent filling in forms? A passport renewal. A school enrolment. A job application. A medical form. Every one of them asks for the same name, the same address, the same date of birth, over and over again. PolyglotFormFill fills them all, from one profile you save just once."
     },
     {
-      "img": "s-id-capture.png",
-      "text": "On-device text recognition reads it and turns it into your vault automatically. Name, date of birth, licence number, address, all captured in one shot, and all kept encrypted on your device. Your profile is built in seconds, not minutes of typing."
+      "img": "v2-02-id.png",
+      "text": "Building that profile takes seconds. Snap a photo of an ID, and on-device text recognition reads it straight into your encrypted vault. Name, date of birth, licence number, address, all captured in one shot."
     },
     {
-      "img": "s-flat-before.png",
-      "text": "Now the forms. Start with the worst kind. A flat P D F. A scan with no boxes to type in. Normally that means printing it, filling it by hand, and scanning it back. Tedious work, every single time."
+      "img": "v2-03-flat.png",
+      "text": "Now the forms. Even the worst kind, a flat scan with no boxes to type in, becomes a live, fillable form right on your device. No printing, no scanner."
     },
     {
-      "img": "s-flat-detected.png",
-      "text": "Watch what happens instead. PolyglotFormFill reads the page on your device, finds every place that needs an answer, and builds real, fillable fields where there were none. A dead scan becomes a live form, in seconds, with no printing and no scanner."
+      "img": "v2-04-fill-text.png",
+      "text": "Then, one click. Every field is filled from your vault. Name, address, date of birth, all in the right place, instantly."
     },
     {
-      "img": "s-oneclick-filled.png",
-      "text": "Now the part that saves your day. One click. Every field filled from your secure vault. Name, address, date of birth, ID numbers, all in the right place, instantly. And not only text boxes. Drop-downs, radio buttons and tick-boxes are answered too. What used to take ten minutes now takes one second."
+      "img": "v2-05-fill-controls.png",
+      "text": "And not only text boxes. Drop-downs, radio buttons and tick-boxes are answered too. The sex, the marital status, the nationality, all chosen from your saved details."
     },
     {
-      "img": "s-photo-signature.png",
-      "text": "It even places your photo and your signature onto the form, exactly where they belong. No more printing a picture, cutting it out, and gluing it into a box. Your passport photo and signature drop straight in."
+      "img": "v2-06-photo-sig.png",
+      "text": "Your photo and your saved signature drop exactly where they belong. The photo into its box, the signature onto its line. No cutting, no gluing."
     },
     {
-      "img": "s-manual-fields.png",
-      "text": "Anything the form asks that is new, you simply type once, and PolyglotFormFill remembers it for next time. Every form you fill makes the next one faster."
+      "img": "v2-07-learn.png",
+      "text": "Anything the form asks that is new, you type once. PolyglotFormFill saves it to your vault, so the very next form already knows it."
     },
     {
-      "img": "s-profiles.png",
-      "text": "And it is not only your details. Keep a separate profile for each person, or each purpose. One for yourself, one for your spouse, one for each child, so a school or medical form for any of them fills without typing it all again. At the office it is a game-changer. A profile for inventory forms, another for finance forms, another for vendor paperwork, each holding exactly the right data. You pick the profile, the form fills correctly, and the mix-ups that come from copying between forms simply stop. Right data, right form, every time."
+      "img": "v2-08-family.png",
+      "text": "And it is not only your details. Keep a separate profile for each person. One for you, one for your spouse, one for each child, so any family form fills without typing it all again."
     },
     {
-      "img": "s-sign-draw.png",
-      "text": "When the form is ready, sign it right on the page. Draw your signature by hand, in any ink colour, because plenty of offices insist on blue. Or drop in a signature you saved earlier. Either way it is backed by your device's own key, proving the document is genuinely from you."
+      "img": "v2-09-office.png",
+      "text": "At the office, start fresh, with a profile for each recurring form. Inventory, finance, vendor paperwork, each holding exactly the right data. Pick the form, and it fills correctly, every time."
     },
     {
-      "img": "s-extension-webform.png",
-      "text": "And it is not just P D Fs. Add the browser extension for Chrome or Edge, and any online form fills in a single click too, from the very same vault. Web forms, Word documents, Excel spreadsheets. If it asks for your details, PolyglotFormFill fills it."
+      "img": "v2-10-sign.png",
+      "text": "When the form is ready, sign it. Draw your signature by hand, in any ink colour, or drop in the one you saved earlier. Either way it is backed by your device's own key."
     },
     {
-      "img": "s-languages.png",
-      "text": "Faced with a form in a language you do not read? It is translated for you on the spot, and you can write your answers in the language of your choice. The entire app speaks your language too. Twenty-six of them."
+      "img": "v2-11-extension.png",
+      "text": "It is not only P D Fs. Add the browser extension, and any online form fills in a single click too, from the very same vault."
     },
     {
-      "img": "s-history.png",
-      "text": "Every finished form is saved, encrypted and versioned, ready to download again whenever you need it. And all of this, the reading, the filling, the signing, happens on your device. We never see your forms or your data. Stop filling forms by hand. Get PolyglotFormFill, and get your time back."
+      "img": "v2-12-languages.png",
+      "text": "Faced with a form in a language you do not read? It is translated for you on the spot, and the whole app speaks your language too. Twenty-six of them."
+    },
+    {
+      "img": "v2-13-privacy.png",
+      "text": "And all of this, the reading, the filling, the signing, happens on your device. We never see your forms or your data."
+    },
+    {
+      "img": "v2-14-url.png",
+      "text": "Stop filling forms by hand. Get PolyglotFormFill, free during the beta, at polyglot form fill dot mooo dot com."
     }
   ]
 }

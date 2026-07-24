@@ -12,7 +12,11 @@
 param(
     [int] $Seconds = 10,
     [Parameter(Mandatory = $true)] [string] $Out,
-    [int] $Fps = 20
+    [int] $Fps = 20,
+    # Client pixels to crop off the TOP of the capture. The app shows a "Saved to your Desktop:
+    # C:\Users\<name>\..." banner in its header, so cropping the header keeps the owner's Windows
+    # username out of every frame (and focuses on the working content). 0 = full window.
+    [int] $TopCrop = 0
 )
 $ErrorActionPreference = "Stop"
 
@@ -41,6 +45,7 @@ $rc = New-Object Rec+RECT
 $tl = New-Object Rec+POINT; $tl.x = 0; $tl.y = 0
 [Rec]::ClientToScreen($p.MainWindowHandle, [ref]$tl) | Out-Null
 $w = $rc.r - $rc.l; $h = $rc.b - $rc.t
+if ($TopCrop -gt 0) { $tl.y = $tl.y + $TopCrop; $h = $h - $TopCrop }   # crop the header (name banner) off the top
 if ($w % 2) { $w-- }; if ($h % 2) { $h-- }   # even dims for yuv420p
 
 $ff = $env:FFMPEG
