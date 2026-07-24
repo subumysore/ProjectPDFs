@@ -1,7 +1,8 @@
 // The page-fill function INJECTED into the target tab via chrome.scripting.executeScript.
 // It must be fully SELF-CONTAINED (no imports/outer refs) because executeScript serializes
 // its source. Kept in its own module so it can be unit-tested under jsdom (see pagefill.test.mjs).
-export async function fillPage(vault, tLabels, eduEntries) {
+export async function fillPage(vault, tLabels, eduEntries, opts) {
+  const OPTS = opts || {};
   const norm = (s) => (s || "").toString()
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])([0-9])/g, "$1 $2") // split camelCase / letter-digit
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -338,11 +339,11 @@ export async function fillPage(vault, tLabels, eduEntries) {
   for (const el of document.querySelectorAll("input, textarea")) {
     if (["hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
     if (el.disabled) continue;
-    // Password fields ARE fillable — the user clicked "Fill this page", so it's their intent to put
-    // their saved password into the form they are submitting. But ONLY when the field is actually
-    // visible: never write a saved password into a hidden/offscreen password input, which would be a
-    // credential-harvesting vector on a hostile page.
-    if (el.type === "password" && el.offsetParent === null) continue;
+    // Password fields ARE fillable on an explicit "Fill this page" — the user's intent to put their
+    // saved password into the form they are submitting. But NEVER auto-fill a password on page load
+    // (opts.skipPassword): writing a saved password into every page automatically is a real risk.
+    // And only ever fill a VISIBLE password field — never a hidden/offscreen one (harvesting vector).
+    if (el.type === "password" && (OPTS.skipPassword || el.offsetParent === null)) continue;
     // readOnly is NOT a blanket skip: date pickers are routinely readOnly and must still be
     // filled (see setFieldValue, which briefly clears the flag). But a readOnly *text* field is
     // one the site does not want changed — a server-issued reference number, a computed total.

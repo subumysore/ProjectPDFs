@@ -891,6 +891,17 @@ $("companionFill").onclick = async () => {
 // The extension had no equivalent, so the same action behaved two ways across one product and
 // extension users simply lost what they typed. This is the desktop's posture, ported.
 let learnPending = [];
+// Auto-fill-on-load toggle: remembered in storage; the background service worker acts on it.
+if ($("autofillOnLoad")) {
+  chrome.storage.local.get("autofillOnLoad").then(({ autofillOnLoad }) => { $("autofillOnLoad").checked = !!autofillOnLoad; });
+  $("autofillOnLoad").onchange = () => {
+    chrome.storage.local.set({ autofillOnLoad: $("autofillOnLoad").checked });
+    setMsg($("autofillOnLoad").checked
+      ? "On — pages you open will fill automatically (passwords stay manual)."
+      : "Off — use “Fill this page” to fill.");
+  };
+}
+
 $("learnPage").onclick = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const url = (tab && tab.url) || "";

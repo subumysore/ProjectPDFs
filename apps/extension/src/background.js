@@ -4,6 +4,9 @@
 // holds only the SALT and the AES-GCM CIPHERTEXT — never the key, never plaintext.
 import { derivePassphraseKey, deriveWebAuthnKey, seal, open, newSalt, exportKeyB64, importKeyB64 } from "./vault.js";
 import { starterVault } from "./seed.js";
+import { fillPage } from "./pagefill.js";
+import { parseEducation } from "./education.js";
+import { chooseDataProfile } from "./profileMatch.js";
 
 let key = null; // CryptoKey, memory-only (+ mirrored to storage.session, see below)
 let vault = null; // decrypted { ontology_key: value }, memory-only
@@ -274,4 +277,58 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     }
   })();
   return true; // keep the message channel open for the async response
+});
+
+// ---- AUTO-FILL ON PAGE LOAD (opt-in) ---------------------------------------------------------
+// When the user turns on "auto-fill on load", every http(s) page that finishes loading is filled
+// from the active profile WITHOUT opening the popup. Passwords are NEVER auto-filled here (writing a
+// saved password into every page on load is unsafe) — those stay manual via the popup's Fill button.
+const AUTOFILL_VAULT_MAX = 200000; // keep the desktop read under Chrome's 1 MB native-message cap
+
+// Resolve the vault to fill from: the shared DESKTOP vault (active/explicit profile) if reachable,
+// else this browser's own unlocked vault. Returns { ok, vault } — text-only (images omitted).
+async function vaultForAutofill() {
+  try {
+    const ping = await hostRequest({ type: "ping" });
+    if (ping && ping.ok) {
+      const pl = await hostRequest({ type: "listProfiles" });
+      if (pl.ok && pl.profiles && pl.profiles.length) {
+        const { companionProfile, companionProfileExplicit } = await chrome.storage.local.get(["companionProfile", "companionProfileExplicit"]);
+        const counts = {}; for (const p of pl.profiles) counts[p.id] = p.count || 0;
+        const profileId = chooseDataProfile(pl.profiles, counts, companionProfile, companionProfileExplicit);
+        if (profileId) {
+          const gv = await hostRequest({ type: "getVault", profileId, maxValueLen: AUTOFILL_VAULT_MAX });
+          if (gv.ok && gv.vault && Object.keys(gv.vault).length) return { ok: true, vault: gv.vault };
+        }
+      }
+    }
+  } catch (_) { /* fall through to local */ }
+  // Local vault (this browser), if unlocked — cap large image fields the same way.
+  if (vault && Object.keys(vault).length) {
+    const capped = {};
+    for (const [k, v] of Object.entries(vault)) if (String(v == null ? "" : v).length <= AUTOFILL_VAULT_MAX) capped[k] = v;
+    return { ok: true, vault: capped };
+  }
+  return { ok: false };
+}
+
+const lastAutofill = new Map(); // tabId -> { url, at } — never refill the same page in a tight loop
+chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+  try {
+    if (info.status !== "complete") return;
+    const url = (tab && tab.url) || "";
+    if (!/^https?:\/\//i.test(url)) return;               // real web pages only
+    const { autofillOnLoad } = await chrome.storage.local.get("autofillOnLoad");
+    if (!autofillOnLoad) return;                          // opt-in
+    const prev = lastAutofill.get(tabId);
+    if (prev && prev.url === url && Date.now() - prev.at < 4000) return; // debounce repeat 'complete's
+    const r = await vaultForAutofill();
+    if (!r.ok) return;                                    // locked / unavailable → silent no-op
+    lastAutofill.set(tabId, { url, at: Date.now() });
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: fillPage,
+      args: [r.vault, null, parseEducation(r.vault), { skipPassword: true }],
+    });
+  } catch (_) { /* auto-fill must never throw into the worker */ }
 });
