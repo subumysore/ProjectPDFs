@@ -1288,11 +1288,8 @@ export function App() {
         <section style={cardStyle}>
           <h2 style={h2Style}>3 · Choose a form to fill</h2>
           <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
-            Bring a form from <b>your device</b>, a <b>network location</b> (shared drive /
-            <code>\\server\share</code>), a <b>web link</b>, or by <b>searching the web</b> — then it’s
-            read and filled <b>right here on your machine</b>. Whatever the source, the form and your
-            data are processed on your device — we never receive them; you send the finished form only
-            where you choose.
+            From <b>your device</b>, a <b>network share</b>, a <b>web link</b>, or a <b>web search</b> —
+            read and filled here, then sent only where you choose.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <label style={{ fontSize: 13, opacity: 0.8 }}>Open a form from this device or a network location:</label>
@@ -1333,9 +1330,7 @@ export function App() {
             </button>
           </div>
           <div style={{ fontSize: 12, color: "#8a4b0a", background: "#fbe7cf", borderRadius: 6, padding: "6px 8px", marginTop: 6 }}>
-            ⚠ Web search is the one thing that <b>leaves your device</b>: your search terms go to
-            DuckDuckGo <b>directly</b> (device → DuckDuckGo, never via our servers, no tracking). Everything
-            else — the form and your data — stays on-device. Skip this and paste a URL if you prefer.
+            ⚠ Only your <b>search terms</b> leave the device — straight to DuckDuckGo, no tracking. Prefer? paste a URL instead.
           </div>
           {searchHits.length > 0 && (
             <div style={{ marginTop: 8, border: "1px solid #eef2f4", borderRadius: 8, padding: 8 }}>
@@ -1357,16 +1352,8 @@ export function App() {
             </div>
           )}
           <div style={{ fontSize: 12, color: "#55666f", marginTop: 6 }}>
-            Pick a form (PDF or an image/scan). It’s handled <b>automatically</b>: if it already has form
-            fields they’re filled from your vault; if it has <b>none</b>, on-device OCR detects the fields,
-            creates them, and fills them — then exports a ready <code>filled.pdf</code> on your device.
-            <br />
-            <span style={{ opacity: 0.75 }}>
-              A <b>web URL</b> is downloaded on your device (direct from the site, SSRF-guarded) then
-              filled the same way. <b>Word/Excel</b> (.docx/.xlsx) forms are filled from your vault —
-              named fields (content controls / named ranges) or flat labels (table cells / “Label:”
-              lines) — and download as a filled file.
-            </span>
+            Any form works, <b>automatically</b>: existing fields fill from your vault; a flat scan gets
+            fields by on-device OCR, then exports a ready <code>filled.pdf</code>. PDFs, web links, Word and Excel.
           </div>
           {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
           {pdfBytes && (
