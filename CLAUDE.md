@@ -102,6 +102,13 @@ secret scan · dependency/license policy. See `.github/workflows/ci.yml`.
 - **KEEP THE EXTENSION CURRENT.** Any change under `apps/extension/**` — INCLUDING the shared `@engine`
   files it bundles (resolver, optmatch, i18n, …) — means the published Chrome Web Store copy must not
   lag the code: bump the version and republish. Flag it in the deliverables matrix (below).
+- **CHECK REVIEW STATE BEFORE TOUCHING THE STORE (learned the hard way).** The Chrome Web Store LOCKS an
+  item's listing read-only while a submitted version is *Pending review* — you can neither edit the
+  listing (promo video, screenshots, description) NOR upload a new version until that version
+  **publishes or fails**. So BEFORE attempting any listing edit or `publish-extension.ps1`, verify the
+  item is not pending: `GET https://www.googleapis.com/chromewebstore/v1.1/items/<id>?projection=DRAFT`
+  (WEBSTORE creds). If it's in review, DO NOT try to edit — wait for publish/fail, and tell the owner.
+  Because of frequent updates this queue matters: batch changes, don't resubmit while one is pending.
 - **DELIVERABLES MATRIX ON EVERY SUBSTANTIVE CHANGE.** Close such work with a matrix, not prose: each
   deliverable, ✅ for done, and a clear flag for what needs the OWNER's attention and why it can't be
   automated (🔧 = I can run it, needs their go because it's outward-facing; 🙋 = only they can do it).
