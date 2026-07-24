@@ -1,5 +1,17 @@
 # Active Context
 
+## OPEN RELEASE ACTIONS (2026-07-24) — the owner's next-step menu
+The website installer serves 1.0.0 and the Chrome Web Store extension are BOTH behind this session's
+fixes; the guide video on the site is current. The owner's standing menu (full detail +
+commands in `docs/launch/open-release-actions.md`):
+- **"release desktop"** (#7) — version bump → tauri build → stage installer → release-manifest →
+  `publish-site.ps1 -WithBinaries`. Ships fixes via the stable installer link. ~5-10 min.
+- **"release extension"** (#8/#9) — bump → `publish-extension.ps1` → `publish-webstore.ps1` (CWS review).
+- **"release both"** — one version bump covering both.
+- **"build the runbook"** (#13) — a single `deploy/release.ps1` orchestrator + `docs/runbooks/release.md`.
+YouTube captions automation is DONE (verified): `make guide-captions VID=<id>` (run only against a
+video whose content matches the current .srt). CWS promo field left blank on purpose.
+
 ## Guide video: automated pipeline + self-hosted at a STABLE url (2026-07-24, LIVE)
 The guide/sales video is now a repeatable pipeline, and it is PUBLISHED (owner said "run the publish").
 - **Build:** `node scripts/build-guide.mjs` (`make guide`) — data-driven from `docs/guide/guide-manifest.json`,
