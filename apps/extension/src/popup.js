@@ -47,6 +47,11 @@ function vaultBlocked(r) {
 }
 
 const COMP = { on: false, profile: "" };
+// Chrome caps a native-messaging message at 1 MB. Vaults can hold base64 images (passport scan,
+// licence, photo, signature) that dwarf that, so every bulk desktop-vault read asks the host to omit
+// values longer than this — keeping the response small so text autofill and sync never trip the cap.
+// Big fields (images) are fetched individually, on demand, only when a PDF actually needs them.
+const VAULT_TEXT_MAX = 200000;
 // AUTOMATIC single vault (no toggle): if the desktop app's companion bridge is reachable, the
 // desktop's ONE vault is authoritative and the extension reads/writes it. Otherwise the extension
 // transparently uses its own local vault. Whichever app was started first, both end up on one vault.
@@ -67,7 +72,7 @@ async function resolveVaultMode() {
 // How many fields a desktop profile holds — the signal for "this is the profile with the user's data".
 async function profileFieldCount(profileId) {
   try {
-    const r = await send({ type: "companionVaultMeta", profileId });
+    const r = await send({ type: "companionVaultMeta", profileId, maxValueLen: VAULT_TEXT_MAX });
     return r && r.ok && r.meta ? Object.keys(r.meta).length : 0;
   } catch (_) { return 0; }
 }
@@ -105,7 +110,7 @@ async function autoSync() {
   const profileId = await compProfile();
   if (!profileId) return null;
   const localR = await send({ type: "getVaultMeta" });
-  const deskR = await send({ type: "companionVaultMeta", profileId });
+  const deskR = await send({ type: "companionVaultMeta", profileId, maxValueLen: VAULT_TEXT_MAX });
   if (!localR || !localR.ok || !deskR || !deskR.ok) return null; // desktop locked/unavailable → later
   const { toLocal, toRemote } = reconcileVaults(localR.meta, deskR.meta);
   for (const [key, o] of Object.entries(toRemote)) {
@@ -163,11 +168,13 @@ async function refresh() {
   if (unlocked) await renderEntries();
 }
 
-// Read the active vault — the desktop one in companion mode, else the local one.
+// Read the active vault — the desktop one in companion mode, else the local one. Bulk reads omit
+// oversized image blobs (VAULT_TEXT_MAX) so the desktop response never trips Chrome's 1 MB cap;
+// a caller that needs a specific image fetches it on demand (getField).
 async function readVault() {
   if (COMP.on) {
     const profileId = await compProfile();
-    return send({ type: "companionVault", profileId: profileId || undefined });
+    return send({ type: "companionVault", profileId: profileId || undefined, maxValueLen: VAULT_TEXT_MAX });
   }
   return send({ type: "getVault" });
 }

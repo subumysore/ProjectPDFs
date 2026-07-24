@@ -224,7 +224,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             }
             profileId = pl.profiles[0].id;
           }
-          sendResponse(await hostRequest({ type: "getVault", profileId }));
+          // Forward maxValueLen so a picture-heavy vault stays under Chrome's 1 MB message cap.
+          sendResponse(await hostRequest({ type: "getVault", profileId, maxValueLen: msg.maxValueLen }));
           break;
         }
         case "companionProfiles":
@@ -232,7 +233,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           break;
         // Desktop vault WITH per-field timestamps — the remote input to last-write-wins sync.
         case "companionVaultMeta":
-          sendResponse(await hostRequest({ type: "getVaultMeta", profileId: msg.profileId }));
+          sendResponse(await hostRequest({ type: "getVaultMeta", profileId: msg.profileId, maxValueLen: msg.maxValueLen }));
           break;
         case "companionUpsert":
           // Write-through to the ONE authoritative desktop vault (single source of truth).

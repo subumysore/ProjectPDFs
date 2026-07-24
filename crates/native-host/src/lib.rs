@@ -216,18 +216,53 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
         },
         Some("getVault") => {
             let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            // Chrome caps a single native-messaging response at 1 MB. A vault holding base64 images
+            // (passport scan, licence, photo, signature) easily blows past that, and Chrome then drops
+            // the connection ("Error communicating with the native messaging host") — so text autofill
+            // fails outright. When `maxValueLen` is given, omit values longer than it from the bulk
+            // response and list their keys under `large`, so callers that only need text (form-fill)
+            // stay well under the limit and can fetch a big field on demand if they truly need it.
+            let max_len = req.get("maxValueLen").and_then(|m| m.as_u64()).map(|m| m as usize);
             match store.vault(pid) {
-                Ok(v) => json!({ "ok": true, "vault": v }),
+                Ok(v) => match max_len {
+                    Some(max) => {
+                        let mut kept = serde_json::Map::new();
+                        let mut large: Vec<String> = Vec::new();
+                        for (k, val) in v {
+                            if val.len() > max { large.push(k); } else { kept.insert(k, json!(val)); }
+                        }
+                        json!({ "ok": true, "vault": kept, "large": large })
+                    }
+                    None => json!({ "ok": true, "vault": v }),
+                },
+                Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+            }
+        }
+        // Fetch ONE field's value (e.g. a large image) on demand — the companion to getVault's
+        // maxValueLen filter, so a single big blob is only transferred when actually needed.
+        Some("getField") => {
+            let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            let key = req.get("key").and_then(|p| p.as_str()).unwrap_or("");
+            match store.vault(pid) {
+                Ok(v) => match v.get(key) {
+                    Some(val) => json!({ "ok": true, "value": val }),
+                    None => json!({ "ok": false, "error": "no such field" }),
+                },
                 Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
             }
         }
         // Vault WITH per-field timestamps — the input the extension needs for last-write-wins sync.
         Some("getVaultMeta") => {
             let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            // Same 1 MB guard as getVault: skip oversized values so a picture-heavy vault can't blow
+            // the native-messaging limit and break sync. Big blobs transfer via the encrypted backup
+            // file, not per-field sync.
+            let max_len = req.get("maxValueLen").and_then(|m| m.as_u64()).map(|m| m as usize);
             match store.data_points_meta(pid) {
                 Ok(rows) => {
                     let meta: serde_json::Map<String, serde_json::Value> = rows
                         .into_iter()
+                        .filter(|(_, v, _)| max_len.map_or(true, |m| v.len() <= m))
                         .map(|(k, v, t)| (k, json!({ "value": v, "updated_at": t })))
                         .collect();
                     json!({ "ok": true, "meta": meta })
@@ -336,6 +371,31 @@ mod dispatch_tests {
         assert_eq!(dispatch(&s, &json!({"type":"getVault","profileId":"p1"}))["vault"]["first_name"], "Meera");
         assert!(dispatch(&s, &json!({"type":"deleteData","profileId":"p1","key":"first_name"}))["ok"].as_bool().unwrap());
         assert!(dispatch(&s, &json!({"type":"getVault","profileId":"p1"}))["vault"].get("first_name").is_none());
+    }
+
+    #[test]
+    fn max_value_len_omits_big_blobs_and_get_field_fetches_them() {
+        let s = store();
+        assert!(dispatch(&s, &json!({"type":"createProfile","id":"p1","name":"Asha"}))["ok"].as_bool().unwrap());
+        dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"first_name","value":"Asha"}));
+        let big = "x".repeat(2000); // stand-in for a base64 image
+        dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"passport_image","value":big}));
+        // Bulk read with a cap: the small text field stays; the big one is omitted and listed in `large`.
+        let capped = dispatch(&s, &json!({"type":"getVault","profileId":"p1","maxValueLen":1000}));
+        assert_eq!(capped["vault"]["first_name"], "Asha");
+        assert!(capped["vault"].get("passport_image").is_none(), "big blob must be omitted under the cap");
+        assert_eq!(capped["large"][0], "passport_image");
+        // Meta read honours the same cap (so sync can't trip the 1 MB native-messaging limit).
+        let meta = dispatch(&s, &json!({"type":"getVaultMeta","profileId":"p1","maxValueLen":1000}));
+        assert!(meta["meta"].get("passport_image").is_none());
+        assert!(meta["meta"].get("first_name").is_some());
+        // No cap → full vault, blob included (backward compatible).
+        let full = dispatch(&s, &json!({"type":"getVault","profileId":"p1"}));
+        assert!(full["vault"].get("passport_image").is_some());
+        // getField fetches the omitted blob on demand.
+        let f = dispatch(&s, &json!({"type":"getField","profileId":"p1","key":"passport_image"}));
+        assert_eq!(f["ok"], true);
+        assert_eq!(f["value"].as_str().unwrap().len(), 2000);
     }
 
     #[test]
