@@ -98,6 +98,7 @@ export function resolveFields(vault, fields) {
     taxid:    ["tax id", "taxpayer id", "taxpayer identification number", "taxpayer identification", "tin", "itin"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
+    password: ["password", "confirm password", "create password", "new password", "choose password", "re enter password", "reenter password", "re type password", "retype password", "repeat password", "verify password", "passphrase", "pwd"],
     // A DIFFERENT person's name (dependent/nominee/etc.) — filled from the user's own
     // dependent-name key if they have one, and skipped (never the user's name) if not.
     dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name",

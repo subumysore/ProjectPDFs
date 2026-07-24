@@ -37,6 +37,7 @@ export async function fillPage(vault, tLabels) {
     dl_issue:        ["dl issue date", "driver license issue date", "drivers license issue date", "driving licence issue date", "license issue date", "licence issue date", "license issue", "licence issue", "dl issue", "licence valid from", "license valid from"],
     organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
+    password: ["password", "confirm password", "create password", "new password", "choose password", "re enter password", "reenter password", "re type password", "retype password", "repeat password", "verify password", "passphrase", "pwd"],
     dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
     dependent_dob: ["dependent dob", "dependant dob", "dependent date of birth", "dependant date of birth"],
     // Concepts below were present in resolver.js (PDF fill) but MISSING here, so they filled in
@@ -285,8 +286,13 @@ export async function fillPage(vault, tLabels) {
   const fields = [];
   let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
   for (const el of document.querySelectorAll("input, textarea")) {
-    if (["password", "hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
+    if (["hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
     if (el.disabled) continue;
+    // Password fields ARE fillable — the user clicked "Fill this page", so it's their intent to put
+    // their saved password into the form they are submitting. But ONLY when the field is actually
+    // visible: never write a saved password into a hidden/offscreen password input, which would be a
+    // credential-harvesting vector on a hostile page.
+    if (el.type === "password" && el.offsetParent === null) continue;
     // readOnly is NOT a blanket skip: date pickers are routinely readOnly and must still be
     // filled (see setFieldValue, which briefly clears the flag). But a readOnly *text* field is
     // one the site does not want changed — a server-issued reference number, a computed total.
@@ -400,6 +406,31 @@ export async function fillPage(vault, tLabels) {
     if (ro) el.readOnly = ro;
     return true;
   };
+  // Fill a field by SIMULATING KEYSTROKES, one character at a time. Some sites (especially password
+  // fields) block paste and ignore a bulk value-set, only accepting input that arrives as real typing
+  // — per-character keydown/beforeinput/input/keyup with the value growing one char at a time. This
+  // mirrors a human typing, so those fields register the value and their on-key validators run.
+  const typeFieldValue = async (el, value) => {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+    try { el.focus(); } catch (_) { /* ignore */ }
+    setter.call(el, "");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    for (const ch of String(value)) {
+      const k = { key: ch, bubbles: true, cancelable: true };
+      el.dispatchEvent(new KeyboardEvent("keydown", k));
+      el.dispatchEvent(new KeyboardEvent("keypress", k));
+      try { el.dispatchEvent(new InputEvent("beforeinput", { data: ch, inputType: "insertText", bubbles: true, cancelable: true })); } catch (_) { /* older engines */ }
+      setter.call(el, (el.value || "") + ch);
+      try { el.dispatchEvent(new InputEvent("input", { data: ch, inputType: "insertText", bubbles: true })); }
+      catch (_) { el.dispatchEvent(new Event("input", { bubbles: true })); }
+      el.dispatchEvent(new KeyboardEvent("keyup", k));
+      await wait(12);
+    }
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    el.dispatchEvent(new Event("blur", { bubbles: true }));
+    return true;
+  };
   // Is the field currently flagged invalid by its own validator? (Angular ng-invalid,
   // aria-invalid, common error classes.) Used to self-correct the date format.
   const fieldInvalid = (el) =>
@@ -451,6 +482,12 @@ export async function fillPage(vault, tLabels) {
     }
     if (!value) continue;
     if (pick && pick.name && wantsInitial(label, el)) value = initial(value);
+    // Password fields: type the value key-by-key (sites that block paste / ignore a bulk set still
+    // accept real typing). No date reformatting applies to a password.
+    if (el.type === "password") {
+      if (await typeFieldValue(el, value)) filled++;
+      continue;
+    }
     const dt = parseVaultDate(value);
     if (dt && el.type !== "date") {
       if (await setDateSmart(el, dt, formatDateForField(value, el, label))) filled++;

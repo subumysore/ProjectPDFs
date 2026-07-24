@@ -120,3 +120,21 @@ test("disabled field is never filled", async () => {
   await fillPage({ first_name: "Asha", street_address: "12 Nathan Road" });
   assert.equal($(dom, "#sys").value, "");
 });
+
+test("password fields fill from the vault (Password + Confirm Password), typed key-by-key", async () => {
+  const dom = mount(`
+    <label>Password <input id="p1" type="password"></label>
+    <label>Confirm Password <input id="p2" type="password"></label>`);
+  const n = await fillPage({ password: "Tashkent08!!" });
+  assert.equal($(dom, "#p1").value, "Tashkent08!!");
+  assert.equal($(dom, "#p2").value, "Tashkent08!!");
+  assert.ok(n >= 2, `filled at least the two password fields (got ${n})`);
+});
+
+test("a HIDDEN password field is never filled (anti-harvesting)", async () => {
+  const dom = mount(`<label>Password <input id="hp" type="password"></label>`);
+  // Simulate an offscreen/hidden field: offsetParent null (our mock returns parentNode otherwise).
+  Object.defineProperty($(dom, "#hp"), "offsetParent", { configurable: true, get() { return null; } });
+  await fillPage({ password: "secret123" });
+  assert.equal($(dom, "#hp").value, "", "hidden password field must stay empty");
+});
