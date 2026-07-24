@@ -69,3 +69,27 @@ test("a <select> still on its placeholder is not an answer", () => {
   globalThis.document = dom.window.document;
   assert.deepEqual(collectTypedValues(), []);
 });
+
+test("custom dropdown answers (Workday 'Select One') are captured, placeholder ignored", () => {
+  const dom = new JSDOM(`<!doctype html><body>
+    <div class="form-group">
+      <label id="q1">Do you now or will you in the future require sponsorship for a work visa?</label>
+      <div role="combobox" aria-labelledby="q1" class="wd-select">No</div>
+    </div>
+    <div class="form-group">
+      <label id="q2">Are you legally authorized to work in the U.S?</label>
+      <div role="combobox" aria-labelledby="q2" class="wd-select">Yes</div>
+    </div>
+    <div class="form-group">
+      <label id="q3">Unanswered question</label>
+      <div role="combobox" aria-labelledby="q3" class="wd-select">Select One</div>
+    </div>
+  </body>`);
+  globalThis.document = dom.window.document;
+  const typed = collectTypedValues();
+  const byLabel = Object.fromEntries(typed.map((t) => [t.label, t.value]));
+  assert.equal(byLabel["Do you now or will you in the future require sponsorship for a work visa?"], "No");
+  assert.equal(byLabel["Are you legally authorized to work in the U.S?"], "Yes");
+  // the placeholder-only widget is NOT captured
+  assert.equal(typed.some((t) => t.value === "Select One"), false);
+});
