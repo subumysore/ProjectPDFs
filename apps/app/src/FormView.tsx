@@ -122,6 +122,17 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
                     onChange={(e) => onEdit(f.name, e.currentTarget.checked ? "Yes" : "Off")}
                     style={{ width: "100%", height: "100%" }}
                   />
+                ) : f.kind === "radio" && f.optionValue ? (
+                  // One widget = one option of the group. Render an actual radio dot, filled when the
+                  // group's value equals this widget's export value — so the chosen option is obvious.
+                  <input
+                    type="radio"
+                    name={f.name}
+                    checked={cur === f.optionValue}
+                    onChange={() => onEdit(f.name, f.optionValue!)}
+                    title={`${f.name}: ${f.optionValue}`}
+                    style={{ width: "100%", height: "100%", margin: 0, accentColor: "#0d8f83" }}
+                  />
                 ) : f.kind === "dropdown" || f.kind === "radio" ? (
                   <select value={cur} onChange={(e) => onEdit(f.name, e.currentTarget.value)} style={inputStyle(f)}>
                     <option value="">—</option>

@@ -73,6 +73,7 @@ export interface FormFieldBox {
   kind: "text" | "radio" | "check" | "dropdown";
   value: string;
   options?: string[];
+  optionValue?: string;   // for a radio WIDGET: the export value this one widget represents ("on" state)
   left: number;   // canvas px
   top: number;
   width: number;
@@ -125,6 +126,8 @@ export async function renderPageWithFields(
       kind,
       value: typeof a.fieldValue === "string" ? a.fieldValue : a.fieldValue ? String(a.fieldValue) : "",
       options: Array.isArray(a.options) ? a.options.map((o: { displayValue?: string; exportValue?: string }) => o.displayValue || o.exportValue || "") : undefined,
+      // A radio group has one Widget annotation per option; buttonValue is THIS widget's export value.
+      optionValue: kind === "radio" ? (a.buttonValue ?? undefined) : undefined,
       left, top, width, height,
     });
   }
