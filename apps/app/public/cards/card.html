@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root { --bg:#0a5f57; --ink:#ffffff; --soft:#d7f5ef; --accent:#3fe0c5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100vw; height:100vh; overflow:hidden; background:var(--bg);
+    font-family:"Segoe UI",system-ui,sans-serif; color:var(--ink); }
+  .stage { position:relative; width:100vw; height:100vh; display:flex;
+    flex-direction:column; justify-content:center; padding:0 10.4vw; }
+
+  /* Background: rows of "form fields" that auto-fill — ties the motion to the product. */
+  .bg { position:absolute; inset:0; opacity:.10; }
+  .bar { position:absolute; height:2.4vh; border-radius:6px; background:#ffffff;
+    transform:scaleX(0); transform-origin:left; }
+  @keyframes fill { to { transform:scaleX(1); } }
+
+  /* Headline: each line reveals with a rising clip mask. */
+  .title { font-weight:800; font-size:6.1vw; line-height:1.04; letter-spacing:-1px;
+    text-shadow:0 .5vh 3vh rgba(0,0,0,.25); }
+  .title .line { display:block; overflow:hidden; padding:.1em 0; }
+  .title .line > span { display:inline-block; transform:translateY(115%);
+    animation:rise .9s cubic-bezier(.19,1,.22,1) forwards; }
+  @keyframes rise { to { transform:translateY(0); } }
+
+  .rule { height:.7vh; width:0; background:var(--accent); border-radius:3px; margin:3vh 0 2.6vh;
+    animation:draw 1s cubic-bezier(.19,1,.22,1) .5s forwards; box-shadow:0 0 2.2vh var(--accent); }
+  @keyframes draw { to { width:17.7vw; } }
+
+  .sub { font-size:2.7vw; color:var(--soft); font-weight:400; opacity:0; transform:translateY(3vh);
+    animation:appear .9s cubic-bezier(.19,1,.22,1) .8s forwards; max-width:62vw; line-height:1.35; }
+  @keyframes appear { to { opacity:1; transform:translateY(0); } }
+
+  .points { list-style:none; }
+  .points li { font-size:2.5vw; color:var(--soft); margin:1.5vh 0; display:flex; align-items:center; gap:1.4vw;
+    opacity:0; transform:translateX(-3vw); animation:slidein .8s cubic-bezier(.19,1,.22,1) forwards; }
+  .points li::before { content:""; width:1.1vw; height:1.1vw; flex:0 0 auto; border-radius:3px;
+    background:var(--accent); box-shadow:0 0 1.6vh var(--accent); }
+  @keyframes slidein { to { opacity:1; transform:translateX(0); } }
+
+  /* A soft pulsing dot on the URL/CTA. */
+  .cta { display:inline-flex; align-items:center; gap:1vw; margin-top:4vh; font-size:2.3vw;
+    color:#fff; font-weight:600; opacity:0; animation:appear .9s ease 1.15s forwards; }
+  .dot { width:1.1vw; height:1.1vw; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 0 0 var(--accent); animation:pulse 1.8s ease-out 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(63,224,197,.6);} 100%{box-shadow:0 0 0 3vw rgba(63,224,197,0);} }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bg" id="bg"></div>
+    <h1 class="title" id="title"></h1>
+    <div class="rule"></div>
+    <p class="sub" id="sub"></p>
+    <ul class="points" id="points"></ul>
+    <div class="cta" id="cta" style="display:none"><span class="dot"></span><span id="ctaText"></span></div>
+  </div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const title = (q.get("title") || "").split("|");   // lines separated by |
+  const sub = q.get("sub") || "";
+  const cta = q.get("cta") || "";
+  const t = document.getElementById("title");
+  title.forEach((ln, i) => {
+    const line = document.createElement("span"); line.className = "line";
+    const s = document.createElement("span"); s.textContent = ln;
+    s.style.animationDelay = (0.15 + i * 0.16) + "s";
+    line.appendChild(s); t.appendChild(line);
+  });
+  document.getElementById("sub").textContent = sub;
+  const pts = (q.get("points") || "").split("|").filter(Boolean);
+  const ul = document.getElementById("points");
+  pts.forEach((p, i) => { const li = document.createElement("li"); li.textContent = p;
+    li.style.animationDelay = (0.9 + i * 0.5) + "s"; ul.appendChild(li); });
+  if (cta) { document.getElementById("cta").style.display = "inline-flex"; document.getElementById("ctaText").textContent = cta; }
+  // background auto-filling field bars
+  const bg = document.getElementById("bg");
+  for (let i = 0; i < 9; i++) {
+    const b = document.createElement("div"); b.className = "bar";
+    b.style.top = (10 + i * 9.2) + "vh";
+    b.style.left = (i % 2 ? 51 : 10) + "vw";
+    b.style.width = (14 + (i * 3) % 22) + "vw";
+    b.style.animation = `fill .8s cubic-bezier(.19,1,.22,1) ${0.3 + i * 0.12}s forwards`;
+    bg.appendChild(b);
+  }
+</script>
+</body>
+</html>

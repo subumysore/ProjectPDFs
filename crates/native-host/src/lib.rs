@@ -67,6 +67,12 @@ const KEYRING_USER: &str = "vault-key";
 
 /// The app-data dir used by the native app (Tauri identifier `com.projectpdfs.app`).
 pub fn data_dir() -> PathBuf {
+    // PPF_DATA_DIR overrides the vault location (an isolated demo/test vault), matching the desktop
+    // app's override — so a Chrome launched with this env drives the extension off a synthetic vault
+    // while normal Chrome uses the real one. Unset in normal use.
+    if let Some(dir) = std::env::var_os("PPF_DATA_DIR") {
+        return PathBuf::from(dir);
+    }
     dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("com.projectpdfs.app")
