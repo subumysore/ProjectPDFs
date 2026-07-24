@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Automated YouTube publishing for the guide video. Two modes:
 //
-//   node scripts/upload-youtube.mjs [video.mp4]
-//       Upload a NEW video (resumable). Prints the watch URL AND the youtu.be URL.
-//       NOTE: YouTube does NOT let you replace the media of an existing video — a content change
-//       always yields a NEW video id/URL. That is Google's rule, not ours. Use --captions (below)
-//       when ONLY the captions changed, to update them on the SAME video.
+//   node scripts/upload-youtube.mjs [video.mp4]     (make guide-upload)
+//       Upload a NEW video, PUBLIC by default, auto-attach the matching captions, and copy the watch
+//       URL to the clipboard. Verified 2026-07-24: public uploads work on this project (the oft-cited
+//       "unverified apps are locked to private" restriction did NOT apply). One command, done.
+//       NOTE: YouTube can't replace an existing video's media — a content change yields a NEW id/URL,
+//       so the Chrome Web Store promo field must be re-pasted (no API for that field). Use --captions
+//       (below) when ONLY captions changed, to update them on the SAME video.
 //
 //   node scripts/upload-youtube.mjs --captions guide.en.srt --video-id oTBaEK1-mXk
 //       Replace the English captions on an EXISTING video IN PLACE — same URL, no re-upload.
@@ -15,6 +17,7 @@
 import { readFileSync, statSync, existsSync, openSync, readSync, closeSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -95,9 +98,7 @@ async function uploadVideo(access, file, title, description, privacy) {
   process.stdout.write("\n");
   if (!result?.id) throw new Error("no video id returned");
   console.log(`\n✔ Uploaded (${privacy}).`);
-  console.log(`  watch:   https://www.youtube.com/watch?v=${result.id}   <- paste THIS into the Chrome Web Store promo field`);
-  console.log(`  short:   https://youtu.be/${result.id}`);
-  console.log(`\n  Reminder: this is a NEW url (YouTube can't replace an existing video's media).`);
+  return result.id;
 }
 
 const access = await token();
@@ -112,6 +113,15 @@ if (has("--captions")) {
   if (!existsSync(file)) { console.error("video not found: " + file + " — run `node scripts/build-guide.mjs` first."); process.exit(1); }
   const title = opt("--title", "PolyglotFormFill — read & write any form, in any language, privately");
   const desc = opt("--description", "PolyglotFormFill fills any form — PDF, Word, Excel, or web — from your encrypted on-device vault, in 26 languages. Nothing leaves your device. Free during the beta at polyglotformfill.mooo.com");
-  const privacy = opt("--privacy", "unlisted");
-  await uploadVideo(access, file, title, desc, privacy);
+  const privacy = opt("--privacy", "public");
+  const id = await uploadVideo(access, file, title, desc, privacy);
+  // Auto-attach the matching captions (this cut's .srt) — same command, no second step.
+  const srt = resolve("docs/guide/output/captions/PolyglotFormFill-guide.en.srt");
+  if (existsSync(srt)) { try { await updateCaptions(access, id, srt); } catch (e) { console.warn("  (captions step skipped: " + e.message + ")"); } }
+  const watch = `https://www.youtube.com/watch?v=${id}`;
+  // Copy the watch URL to the clipboard so pasting it into the Chrome Web Store promo field is trivial.
+  try { execFileSync("powershell", ["-NoProfile", "-Command", `Set-Clipboard -Value '${watch}'`]); } catch { /* non-Windows / no clip */ }
+  console.log(`\n  watch (paste into the Chrome Web Store promo field — already on your clipboard):\n    ${watch}`);
+  console.log(`  short: https://youtu.be/${id}`);
+  console.log(`\n  NEXT (manual, no API for it): open the CWS listing, paste the URL into the promo-video field, Save & Submit.`);
 }
