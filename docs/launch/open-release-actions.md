@@ -22,7 +22,12 @@ Ships this session's fixes to users via the stable installer link. What I run:
 Time: ~5–10 min (Rust build + 25 MB upload).
 
 ## #8/#9 — Release the EXTENSION   🔧  (trigger: **"release extension"**)
-Required by CLAUDE.md §10 whenever `apps/extension/**` (incl. shared `@engine` files) changes. What I run:
+> ⛔ **BLOCKED until v1.0.2 clears review.** The Chrome Web Store locks the listing (and blocks new
+> uploads) while a version is *Pending review*. As of 2026-07-24, **1.0.2 is pending** — so the promo-video
+> update AND this release must wait until it PUBLISHES or FAILS. Check with `items.get?projection=DRAFT`
+> (or say "check the store"). Do not attempt store edits while pending.
+
+Required by CLAUDE.md §10 whenever `apps/extension/**` (incl. shared `@engine` files) changes. What I run (once unblocked):
 1. `node scripts/set-version.mjs patch`  (bump — the store rejects a re-uploaded version)
 2. `.\deploy\publish-extension.ps1`  → rebuilds the zip, updates the site `/download/` copy,
    and calls `.\deploy\publish-webstore.ps1` to submit to the Chrome Web Store.
