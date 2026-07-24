@@ -1,10 +1,60 @@
 // The page-fill function INJECTED into the target tab via chrome.scripting.executeScript.
 // It must be fully SELF-CONTAINED (no imports/outer refs) because executeScript serializes
 // its source. Kept in its own module so it can be unit-tested under jsdom (see pagefill.test.mjs).
-export async function fillPage(vault, tLabels) {
+export async function fillPage(vault, tLabels, eduEntries) {
   const norm = (s) => (s || "").toString()
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])([0-9])/g, "$1 $2") // split camelCase / letter-digit
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // EDUCATION (from parseEducation, passed in): map a form's Degree/Field/School/Year/GPA fields to
+  // the right stored qualification (Master's block gets the masters entry, etc.). eduEntries are
+  // pre-parsed in the popup (highest level first); here we only ROUTE them onto the live form.
+  const EDU_FIELD_SYNS = {
+    degree: ["degree", "qualification", "level of education", "education level", "degree type", "degree obtained", "highest qualification", "highest degree", "course"],
+    field:  ["field of study", "major", "specialization", "specialisation", "branch", "stream", "discipline", "subject", "area of study", "concentration"],
+    school: ["university", "institution", "college", "school name", "name of institution", "name of university", "name of college", "institution name", "university name", "alma mater", "school college university"],
+    year:   ["year of passing", "graduation year", "year of graduation", "year of completion", "passing year", "year completed", "completion year", "year of award", "end year", "to year"],
+    gpa:    ["gpa", "cgpa", "grade", "grade point average", "percentage", "marks", "score", "result", "class obtained"],
+  };
+  const edu = Array.isArray(eduEntries) ? eduEntries : [];
+  // The education LEVEL implied by a section heading, using plain phrasing (a lighter version of
+  // education.js levelOf — enough to route a field to the master's vs bachelor's block).
+  const eduLevelOf = (t) => {
+    const n = norm(t);
+    if (/\b(phd|doctor|doctoral|dphil)\b/.test(n)) return "doctorate";
+    if (/\b(master|masters|post graduate|postgraduate|pg|ms|msc|mtech|mba|ma|mphil)\b/.test(n)) return "master";
+    if (/\b(bachelor|bachelors|under graduate|undergraduate|ug|graduation|bs|bsc|btech|ba|be|bcom|degree)\b/.test(n)) return "bachelor";
+    if (/\b(diploma|associate)\b/.test(n)) return "diploma";
+    if (/\b(high school|highschool|secondary|12th|hsc|intermediate)\b/.test(n)) return "highschool";
+    return null;
+  };
+  // The section heading text around a field (climb ancestors for a legend/heading) — the routing hint.
+  const sectionContext = (el) => {
+    let txt = "";
+    let node = el;
+    for (let i = 0; i < 6 && node; i++) {
+      node = node.parentElement; if (!node) break;
+      const head = node.querySelector("legend, h1, h2, h3, h4, h5, h6, [class*='heading'], [class*='title'], [class*='legend']");
+      if (head && head.textContent) txt = head.textContent.trim() + " " + txt;
+      if (eduLevelOf(txt)) break;
+    }
+    return txt;
+  };
+  const eduEntryFor = (contextText) => {
+    if (!edu.length) return null;
+    const lvl = eduLevelOf(contextText);
+    return (lvl && edu.find((e) => e.level === lvl)) || edu[0]; // highest by default
+  };
+  // The education value for a field (input OR dropdown): match its label to Degree/Field/School/
+  // Year/GPA, then read that member from the block the field's section points at. null if not an
+  // education field. (`score` is defined later but only READ at call time.)
+  const eduValueFor = (el, label) => {
+    if (!edu.length) return null;
+    let kind = null, t = 0;
+    for (const [k, syn] of Object.entries(EDU_FIELD_SYNS)) { const s = score(label, syn); if (s > t) { t = s; kind = k; } }
+    if (!kind || t < 1.5) return null;
+    const entry = eduEntryFor(sectionContext(el) + " " + label);
+    return (entry && entry[kind]) || null;
+  };
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
 
   // 1) Canonical "atoms" <- the many ways a user might have named a key.
@@ -312,6 +362,10 @@ export async function fillPage(vault, tLabels) {
     // fills next time instead of being stored and never used.
     const ownHit = ownValueOf(el);
     if (ownHit != null) { fields.push({ el, label, pick: null, forced: ownHit }); continue; }
+    // EDUCATION fields: a Degree/Field/School/Year/GPA field is filled from the qualification whose
+    // level matches the field's section (Master's block → masters entry), else the highest one.
+    const eduV = eduValueFor(el, label);
+    if (eduV != null) { fields.push({ el, label, pick: null, forced: eduV }); continue; }
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) {
@@ -510,25 +564,27 @@ export async function fillPage(vault, tLabels) {
     if (sel.disabled) continue;
     const label = labelOf(sel);
     if (officeUse(ownLabel(sel))) continue; // an office-use dropdown is not the applicant's to set
-    let pick = null, top = 0;
-    for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
-    if (!pick || top < 1.5) continue;
-    const value = pick.kind === "composite"
-      ? compositeValue(pick.cmp)
-      : atomVal(pick.key);
+    let pick = null;
+    let value = eduValueFor(sel, label); // education dropdown (Degree, University) → the routed value
+    if (value == null) {
+      let top = 0;
+      for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
+      if (!pick || top < 1.5) continue;
+      value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
+    }
     if (!value) continue;
     // Candidate values to match an option against: the raw value plus expansions (a stored
     // gender "M" should match a "Male" option; "F" -> "Female").
     const cands = [value];
     const g = norm(value);
-    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
+    if (pick && pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
     // Country abbreviations/demonyms -> full names a <select> lists (USA -> United States).
     const SEL_COUNTRY = {
       usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"],
       uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], uae: ["United Arab Emirates"],
     };
     if (SEL_COUNTRY[g]) cands.push(...SEL_COUNTRY[g]);
-    if (pick.key === "phonecc") { const d = String(value).replace(/\D/g, ""); if (d) cands.push(d, "+" + d); const cn = atoms.country || atoms.nationality; if (cn) cands.push(String(cn)); }
+    if (pick && pick.key === "phonecc") { const d = String(value).replace(/\D/g, ""); if (d) cands.push(d, "+" + d); const cn = atoms.country || atoms.nationality; if (cn) cands.push(String(cn)); }
     const opts = [...sel.options];
     const match = opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
     if (match) {
@@ -561,19 +617,21 @@ export async function fillPage(vault, tLabels) {
   for (const h of hosts) {
     if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
     seen.add(h);
-    let pick = null, top = 0;
+    let pick = null;
     const label = labelOf(h);
     if (officeUse(ownLabel(h))) continue; // an office-use chooser is not the applicant's to set
-    for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
-    if (!pick || top < 1.5) continue;
-    const value = pick.kind === "composite"
-      ? compositeValue(pick.cmp)
-      : atomVal(pick.key);
+    let value = eduValueFor(h, label); // education chooser (Degree, University) → the routed value
+    if (value == null) {
+      let top = 0;
+      for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
+      if (!pick || top < 1.5) continue;
+      value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
+    }
     if (!value) continue;
     // Candidate strings to type/match: the value plus expansions (gender M->Male; common
     // country abbreviations/demonyms -> the full country name a dropdown lists).
     const cands = [String(value)]; const g = norm(value);
-    if (pick.key === "gender") { if (g === "m" || g === "male") cands.push("Male"); if (g === "f" || g === "female") cands.push("Female"); }
+    if (pick && pick.key === "gender") { if (g === "m" || g === "male") cands.push("Male"); if (g === "f" || g === "female") cands.push("Female"); }
     const COUNTRY = {
       usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"],
       uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], england: ["United Kingdom"],
@@ -582,7 +640,7 @@ export async function fillPage(vault, tLabels) {
     if (COUNTRY[g]) cands.push(...COUNTRY[g]);
     // A country-code dropdown may list "+1" OR "United States (+1)" — match both. The user's
     // dialling code corresponds to their country, so add the country name as a candidate too.
-    if (pick.key === "phonecc") {
+    if (pick && pick.key === "phonecc") {
       const digits = String(value).replace(/\D/g, "");
       if (digits) cands.push(digits, "+" + digits);
       const cn = atoms.country || atoms.nationality;

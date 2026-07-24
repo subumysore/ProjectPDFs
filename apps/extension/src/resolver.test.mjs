@@ -115,3 +115,21 @@ test("machine-named field composes a full name from parts (OCR-detected 'full_na
   // A confident label match is NEVER overridden by the field name: "Company name" stays the org.
   assert.equal(resolveFields({ first_name: "JOHN", last_name: "DOE", organization: "Acme" }, [{ label: "Company name", name: "name" }])[0], "Acme");
 });
+
+test("resolver: education fields fill from the routed qualification (PDF)", () => {
+  const vault = {
+    masters: "MS, Computer Science, Stanford University, 2015",
+    bachelors: "BS, Electronics, BMS College, 2013",
+  };
+  const fields = [
+    { label: "Master's University", name: "m_school" },
+    { label: "Master's Graduation Year", name: "m_year" },
+    { label: "Bachelor's Field of Study", name: "b_field" },
+    { label: "Bachelor's University", name: "b_school" },
+  ];
+  const out = resolveFields(vault, fields);
+  assert.equal(out[0], "Stanford University");
+  assert.equal(out[1], "2015");
+  assert.equal(out[2], "Electronics");
+  assert.equal(out[3], "BMS College");
+});

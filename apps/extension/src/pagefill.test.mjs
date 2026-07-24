@@ -138,3 +138,30 @@ test("a HIDDEN password field is never filled (anti-harvesting)", async () => {
   await fillPage({ password: "secret123" });
   assert.equal($(dom, "#hp").value, "", "hidden password field must stay empty");
 });
+
+test("education: routes Master's / Bachelor's blocks to the right stored qualification", async () => {
+  const dom = mount(`
+    <fieldset><legend>Master's Degree</legend>
+      <label>Field of study <input id="m_field"></label>
+      <label>University <input id="m_school"></label>
+      <label>Graduation Year <input id="m_year"></label>
+    </fieldset>
+    <fieldset><legend>Bachelor's Degree</legend>
+      <label>Field of study <input id="b_field"></label>
+      <label>University <input id="b_school"></label>
+      <label>Graduation Year <input id="b_year"></label>
+    </fieldset>`);
+  const { parseEducation } = await import("./education.js");
+  const vault = {
+    masters: "MS, Computer Science, Stanford University, 2015",
+    bachelors: "BS, Electronics, BMS College, 2013",
+  };
+  const [{ result }] = [{ result: await (await import("./pagefill.js")).fillPage(vault, null, parseEducation(vault)) }];
+  assert.equal($(dom, "#m_field").value, "Computer Science");
+  assert.equal($(dom, "#m_school").value, "Stanford University");
+  assert.equal($(dom, "#m_year").value, "2015");
+  assert.equal($(dom, "#b_field").value, "Electronics");
+  assert.equal($(dom, "#b_school").value, "BMS College");
+  assert.equal($(dom, "#b_year").value, "2013");
+  assert.ok(result >= 6);
+});

@@ -37,6 +37,7 @@ export function resolveBundle(vault) {
 }
 
 import { keyFromLabel } from "./vaultkey.js";
+import { parseEducation, EDU_FIELD_SYNS, entryForContext } from "./education.js";
 
 export function resolveFields(vault, fields) {
   // Normalise a label/field-name to space-separated lowercase WORDS. Split camelCase
@@ -204,6 +205,19 @@ export function resolveFields(vault, fields) {
   };
   const wantsInitial = (label, maxLength) => /\binitial\b|\binit\b/.test(norm(label)) || maxLength === 1;
 
+  // EDUCATION: comma-list vault keys (masters/bachelors) become structured entries; a Degree/Field/
+  // School/Year/GPA field is filled from the qualification whose level its label names (else the
+  // highest). PDF fields carry no DOM section, so the routing hint is the label + field name itself.
+  const eduEntries = parseEducation(vault);
+  const eduValueFor = (f) => {
+    if (!eduEntries.length) return null;
+    let kind = null, top = 0;
+    for (const [k, syn] of Object.entries(EDU_FIELD_SYNS)) { const s = score(f.label, syn); if (s > top) { top = s; kind = k; } }
+    if (!kind || top < 1.5) return null;
+    const entry = entryForContext(eduEntries, `${f.label || ""} ${f.name || ""}`);
+    return (entry && entry[kind]) || null;
+  };
+
   // A SCRIPT-QUALIFIED name field — "Chinese name", "Arabic name", "名前(カナ)" — asks for the
   // name written in THAT script. Filling it with the Latin name is not a near-miss, it is the
   // wrong answer, and it is exactly the case this product exists to get right. So:
@@ -322,6 +336,9 @@ export function resolveFields(vault, fields) {
     const own = ownValue(f.label) ?? (f.name ? ownValue(f.name) : null);
     // Still honour a one-character "initial" box when the concept pass saw a name there.
     if (own != null) return picks[i]?.name && wantsInitial(f.label, f.maxLength) ? initial(own) : own;
+    // Education field (Degree/Field/School/Year/GPA), routed to the matching qualification block.
+    const eduV = eduValueFor(f);
+    if (eduV != null) return eduV;
     const pick = picks[i];
     if (!pick) return null;
     let value;

@@ -25,11 +25,16 @@ const conceptKeys = (file) => {
 const PDF_ONLY = new Set([
   "photo", "signature", "drivers_license", "drivers_license_back", "passport_copy",
 ]);
+// Education field concepts (Degree/Field/School/Year/GPA) come from the SHARED education.js module
+// (EDU_FIELD_SYNS), used by both engines — resolver.js imports it, pagefill.js inlines a copy since
+// it can't import. They are therefore in parity by construction; the per-engine ALIASES scan below
+// would double-count pagefill's inlined copy, so exclude them here.
+const EDUCATION = new Set(["degree", "field", "school", "year", "gpa"]);
 
 test("every text concept in resolver.js also exists in pagefill.js", () => {
   const resolver = conceptKeys("resolver.js");
   const pagefill = conceptKeys("pagefill.js");
-  const missing = [...resolver].filter((k) => !pagefill.has(k) && !PDF_ONLY.has(k)).sort();
+  const missing = [...resolver].filter((k) => !pagefill.has(k) && !PDF_ONLY.has(k) && !EDUCATION.has(k)).sort();
   assert.deepEqual(
     missing,
     [],
@@ -41,7 +46,7 @@ test("every text concept in resolver.js also exists in pagefill.js", () => {
 test("pagefill.js introduces no concept resolver.js lacks", () => {
   const resolver = conceptKeys("resolver.js");
   const pagefill = conceptKeys("pagefill.js");
-  const extra = [...pagefill].filter((k) => !resolver.has(k)).sort();
+  const extra = [...pagefill].filter((k) => !resolver.has(k) && !EDUCATION.has(k)).sort();
   assert.deepEqual(extra, [], "concepts only on the web side: " + extra.join(", "));
 });
 

@@ -24,6 +24,7 @@ async function extractPdfTexts(bytes) {
 import { fillPage } from "./pagefill.js";
 import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./companion.js";
 import { chooseDataProfile } from "./profileMatch.js";
+import { parseEducation } from "./education.js";
 const $ = (id) => document.getElementById(id);
 // Show the loaded version in the header so it's always obvious which code is running.
 try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
@@ -460,7 +461,7 @@ async function fillActivePage(vault) {
   const [{ result } = {}] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: fillPage,
-    args: [vault, tLabels],
+    args: [vault, tLabels, parseEducation(vault)],
   });
   return result || 0;
 }
