@@ -370,6 +370,17 @@ impl Store {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
+    /// How many fields each profile holds, keyed by profile id. A plain COUNT(*) — it does NOT
+    /// decrypt any values, so it is cheap even for a vault full of large base64 images. The
+    /// companion uses it to pick the profile that actually has data without reading whole vaults.
+    pub fn profile_field_counts(&self) -> Result<std::collections::HashMap<String, i64>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT profile_id, COUNT(*) FROM data_points GROUP BY profile_id")?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+        Ok(rows.collect::<rusqlite::Result<std::collections::HashMap<_, _>>>()?)
+    }
+
     /// Insert or update a DataPoint for a Profile, stamping it `updated_at` (epoch secs) for
     /// last-write-wins sync. The value is **sealed** before storage.
     pub fn put_data_point_at(&self, profile_id: &str, dp: &DataPoint, updated_at: i64) -> Result<()> {
@@ -484,6 +495,20 @@ mod tests {
         let kept = s.vault("keep").unwrap();
         assert_eq!(kept.len(), 2);
         assert_eq!(kept.get("full_name").unwrap(), "Keeper");
+    }
+
+    #[test]
+    fn profile_field_counts_reports_per_profile_totals() {
+        let s = Store::open(":memory:", generate_key()).unwrap();
+        s.put_profile(&Profile { id: "full".into(), name: "Full".into() }).unwrap();
+        s.put_profile(&Profile { id: "empty".into(), name: "Empty".into() }).unwrap();
+        for k in ["first_name", "last_name", "email"] {
+            s.put_data_point("full", &DataPoint { key: k.into(), value: "x".into() }).unwrap();
+        }
+        let counts = s.profile_field_counts().unwrap();
+        assert_eq!(counts.get("full").copied().unwrap_or(0), 3);
+        // A profile with no data points has no row in the GROUP BY result (treated as 0).
+        assert_eq!(counts.get("empty").copied().unwrap_or(0), 0);
     }
 
     #[test]

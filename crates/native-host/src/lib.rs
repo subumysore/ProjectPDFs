@@ -208,10 +208,17 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
             read_browser_autofill(limit.min(5000))
         }
         Some("listProfiles") => match store.list_profiles() {
-            Ok(ps) => json!({
-                "ok": true,
-                "profiles": ps.iter().map(|p| json!({ "id": p.id, "name": p.name })).collect::<Vec<_>>()
-            }),
+            Ok(ps) => {
+                // Include each profile's field COUNT (cheap, no decryption) so the extension can pick
+                // the profile that holds data in ONE round-trip — instead of reading every vault.
+                let counts = store.profile_field_counts().unwrap_or_default();
+                json!({
+                    "ok": true,
+                    "profiles": ps.iter().map(|p| json!({
+                        "id": p.id, "name": p.name, "count": counts.get(&p.id).copied().unwrap_or(0)
+                    })).collect::<Vec<_>>()
+                })
+            }
             Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
         },
         Some("getVault") => {
@@ -378,6 +385,9 @@ mod dispatch_tests {
         let s = store();
         assert!(dispatch(&s, &json!({"type":"createProfile","id":"p1","name":"Asha"}))["ok"].as_bool().unwrap());
         dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"first_name","value":"Asha"}));
+        // listProfiles carries a field count so the extension picks the data profile in one call.
+        let pl = dispatch(&s, &json!({"type":"listProfiles"}));
+        assert_eq!(pl["profiles"][0]["count"], 1);
         let big = "x".repeat(2000); // stand-in for a base64 image
         dispatch(&s, &json!({"type":"upsertData","profileId":"p1","key":"passport_image","value":big}));
         // Bulk read with a cap: the small text field stays; the big one is omitted and listed in `large`.

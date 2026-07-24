@@ -545,8 +545,18 @@ export async function fillPage(vault, tLabels) {
   // VISIBLE TEXT matches the value. Only widgets that resolve to a concept + have a value are
   // opened, so unrelated menus are never touched.
   const hosts = [...document.querySelectorAll(
-    'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"]',
-  )].filter((h) => h.tagName !== "SELECT" && !h.closest("select"));
+    'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [aria-haspopup="menu"], ' +
+    '[class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"], ' +
+    '[class*="combobox"], [class*="Combobox"], [class*="-select"], [class*="Select"], [class*="dropdown"], [class*="Dropdown"]',
+  )].filter((h) => {
+    if (h.tagName === "SELECT" || h.closest("select")) return false;
+    // The class matches are broad, so require the widget to LOOK like an unset single-select
+    // chooser: its visible text is a placeholder ("Select an option", "Choose…", "-") or empty.
+    // An already-answered widget, a multiselect chip box, a menu button, etc. is left alone.
+    // (The concept-score guard below is the other half — only labelled matches are ever opened.)
+    const t = (h.textContent || "").trim().replace(/\s+/g, " ");
+    return t.length <= 40 && (t === "" || /^(select|choose|please select|pick|—|-)\b/i.test(t) || /select an option|select\.\.\.|choose an option/i.test(t));
+  });
   const seen = new Set();
   for (const h of hosts) {
     if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
