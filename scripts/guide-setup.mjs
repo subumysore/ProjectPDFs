@@ -22,7 +22,7 @@ if (!hasJohn) { await app.setInput('input[placeholder^="New profile name"]', 'Jo
 await app.setFile('input[accept="image/*"]', 'C:/ppfdemo/sample-id.png'); await sleep(3500);
 await app.ev(`const b=[...document.querySelectorAll('button')].find(x=>/Save \d+ to vault/.test(x.textContent)); if(b)b.click();`); await sleep(1200);
 // extra fields
-for (const [k, v] of [['nationality','American'],['email_address','john.doe@example.com'],['cell_phone','+1 555 0142'],['occupation','Engineer'],['gender','Male'],['marital_status','Single']]) {
+for (const [k, v] of [['first_name','John'],['last_name','Doe'],['full_name','John Doe'],['nationality','American'],['email_address','john.doe@example.com'],['cell_phone','+1 555 0142'],['occupation','Engineer'],['gender','Male'],['marital_status','Single']]) {
   await app.setInput('input[placeholder^="key (e.g. full_name)"]', k);
   await app.setInput('input[placeholder="value"]', v);
   await clickExact('Save'); await sleep(500);
