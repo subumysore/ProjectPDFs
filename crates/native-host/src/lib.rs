@@ -258,6 +258,29 @@ pub fn dispatch(store: &core_store::Store, req: &serde_json::Value) -> serde_jso
                 Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
             }
         }
+        // Fetch a BYTE SLICE of one field — so a value larger than Chrome's 1 MB native-message cap
+        // (a multi-MB passport scan) can be streamed in chunks and reassembled by the extension.
+        // Values are base64/ASCII data URIs, so byte offsets never split a character.
+        Some("getFieldChunk") => {
+            let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
+            let key = req.get("key").and_then(|p| p.as_str()).unwrap_or("");
+            let offset = req.get("offset").and_then(|o| o.as_u64()).unwrap_or(0) as usize;
+            let len = req.get("len").and_then(|l| l.as_u64()).unwrap_or(700_000) as usize;
+            match store.vault(pid) {
+                Ok(v) => match v.get(key) {
+                    Some(val) => {
+                        let bytes = val.as_bytes();
+                        let total = bytes.len();
+                        let start = offset.min(total);
+                        let end = start.saturating_add(len).min(total);
+                        let slice = String::from_utf8_lossy(&bytes[start..end]).to_string();
+                        json!({ "ok": true, "total": total, "offset": start, "chunk": slice, "done": end >= total })
+                    }
+                    None => json!({ "ok": false, "error": "no such field" }),
+                },
+                Err(e) => json!({ "ok": false, "error": format!("{e:?}") }),
+            }
+        }
         // Vault WITH per-field timestamps — the input the extension needs for last-write-wins sync.
         Some("getVaultMeta") => {
             let pid = req.get("profileId").and_then(|p| p.as_str()).unwrap_or("");
@@ -406,6 +429,18 @@ mod dispatch_tests {
         let f = dispatch(&s, &json!({"type":"getField","profileId":"p1","key":"passport_image"}));
         assert_eq!(f["ok"], true);
         assert_eq!(f["value"].as_str().unwrap().len(), 2000);
+        // getFieldChunk streams the same blob in slices that reassemble to the whole value.
+        let mut acc = String::new();
+        let mut offset = 0u64;
+        loop {
+            let c = dispatch(&s, &json!({"type":"getFieldChunk","profileId":"p1","key":"passport_image","offset":offset,"len":512}));
+            assert_eq!(c["ok"], true);
+            acc.push_str(c["chunk"].as_str().unwrap());
+            offset = c["offset"].as_u64().unwrap() + c["chunk"].as_str().unwrap().len() as u64;
+            if c["done"].as_bool().unwrap() { break; }
+        }
+        assert_eq!(acc.len(), 2000);
+        assert_eq!(acc, "x".repeat(2000));
     }
 
     #[test]

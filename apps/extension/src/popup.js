@@ -176,6 +176,34 @@ async function readVault() {
   return send({ type: "getVault" });
 }
 
+// Stream one big field (image) from the desktop vault in sub-1 MB chunks and reassemble it — for
+// values too large for a single native message (a multi-MB passport scan).
+async function fetchFieldChunked(profileId, key) {
+  let out = "", offset = 0;
+  for (let i = 0; i < 60; i++) { // safety cap (60 × 700 KB ≈ 42 MB)
+    const r = await send({ type: "companionGetFieldChunk", profileId, key, offset, len: 700000 });
+    if (!r || !r.ok) return null;
+    out += r.chunk || "";
+    offset = r.offset + (r.chunk ? r.chunk.length : 0); // data URIs are ASCII → char length == byte length
+    if (r.done) return out;
+  }
+  return out;
+}
+
+// The bulk desktop read omits big images (1 MB cap). For PDF fill — where images are DRAWN into
+// photo/signature boxes — pull those omitted IMAGE fields back in, streamed in chunks. No-op in
+// local mode (its getVault is not size-capped) or when nothing was omitted.
+async function withLargeImages(r) {
+  if (!COMP.on || !r || !r.ok || !Array.isArray(r.large) || !r.large.length) return r;
+  const profileId = await compProfile();
+  const vault = { ...(r.vault || {}) };
+  for (const key of r.large) {
+    const val = await fetchFieldChunked(profileId, key);
+    if (typeof val === "string" && val.startsWith("data:image")) vault[key] = val;
+  }
+  return { ...r, vault };
+}
+
 // Show every saved field with its value + a delete button.
 async function renderEntries() {
   const r = await readVault();
@@ -473,6 +501,7 @@ async function fillActivePage(vault) {
 // Shared by "Fill this page" and, for a PDF, "View this page in my language".
 async function runPdfFlow(r, tab, url, view = false) {
   setMsg(view ? "Reading the PDF to show it in your language…" : "Reading the PDF…");
+  if (!view) r = await withLargeImages(r); // pull in big photo/signature/ID images to DRAW on the PDF
   // Fetch the PDF bytes in the BACKGROUND service worker (robust — not tied to the popup).
   const fetched = await send({ type: "fetchBytes", url });
   if (!fetched || !fetched.ok) return setMsg("Couldn't read the PDF (" + ((fetched && fetched.error) || "no response") + "). Reload the page and try again.", false);
@@ -599,7 +628,8 @@ if ($("signPdf")) $("signPdf").onclick = async () => {
     if (fetched && fetched.ok) {
       try {
         const bytes = Uint8Array.from(atob(fetched.b64), (c) => c.charCodeAt(0));
-        const r = await readVault();
+        let r = await readVault();
+        if (r.ok) r = await withLargeImages(r); // include big ID/photo/signature images to draw
         let acro = r.ok ? await fillPdfBytes(bytes, r.vault) : null;
         if (acro && acro.xfa && r.ok) { try { const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes)); if (prox.filled > acro.filled) acro = prox; } catch (_) { /* keep name-based */ } }
         const outBytes = (acro && acro.bytes) ? acro.bytes : bytes;

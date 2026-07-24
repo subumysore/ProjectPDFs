@@ -255,6 +255,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         case "companionCreateProfile":
           sendResponse(await hostRequest({ type: "createProfile", id: msg.id, name: msg.name }));
           break;
+        case "companionGetFieldChunk":
+          // A byte slice of one big field (image), so values over the 1 MB native-message cap stream.
+          sendResponse(await hostRequest({ type: "getFieldChunk", profileId: msg.profileId, key: msg.key, offset: msg.offset, len: msg.len }));
+          break;
         case "fetchBytes": {
           // Fetch a URL (e.g. a PDF) from the service worker and return base64 bytes.
           try {
