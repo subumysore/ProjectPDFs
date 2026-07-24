@@ -1,5 +1,20 @@
 # Guide video v2 — build plan (SHOW must match TELL)
 
+## PROGRESS (2026-07-24, while owner away ~1h) — foundation DONE & VERIFIED
+- ✅ **Crisp encoder** — build-guide.mjs now full 1920 + CRF 18 + lanczos (fixes the 1280/70kbps blur).
+- ✅ **Better voice** — en_US-ryan-high + broadcast mastering (build-narration.ps1). Sample generated.
+  (If still not "professional" enough, Option C — owner records — is the drop-in.)
+- ✅ **Scenario forms built + VERIFIED filling** — passport/job/school/medical (make-scenario-forms.mjs).
+  Live test: job.pdf filled 6/6 incl. gender **radio=Male** + marital_status **dropdown=Single**;
+  school.pdf ticked the **Male checkbox**. So text + radio + dropdown + checkbox ALL fill for real.
+- ✅ **Demo vault** (John Doe, 13 fields incl. gender/marital_status) set up; real vault safe as
+  `vault.db.v2bak` (RESTORE when done).
+- NEXT (recording): add photo/signature images → verify auto-placement; then record each segment to
+  match the table below; regenerate mastered narration; build crisp; generate CC.
+- STILL PENDING OWNER DECISIONS: voice A/B/C (defaulted to A=ryan-high); corporate = Option 2 for this
+  cut (Form Templates feature is a separate later build).
+
+
 GOVERNING RULE: every segment's VISUAL shows exactly what the AUDIO says. When the voice claims
 something, the screen demonstrates that exact thing on a real form. Built from the owner's corrections
 (2026-07-24). Nothing recorded until the owner locks this + picks a voice.
