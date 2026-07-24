@@ -18,7 +18,7 @@
 # Prereqs (already set up on this machine): oci CLI (~/bin), kubectl (Docker Desktop),
 # node, and the kubeconfig at ~/.kube/ppf-oke.yaml.
 [CmdletBinding()]
-param([switch] $WithBinaries)
+param([switch] $WithBinaries, [switch] $WithGuide)
 
 $ErrorActionPreference = "Stop"
 
@@ -32,6 +32,17 @@ $DEPLOY   = "ppf-site"
 # Served from /download/ but shipped OUTSIDE the tarball (see the note above). Keep this list
 # in step with the init container's fetch list in site.yaml.
 $BINARIES = @("PolyglotFormFill-Setup.exe", "polyglotformfill-extension.zip")
+
+# Guide video + captions: uploaded as their own objects (like installers) and served at the STABLE
+# URLs /download/guide.mp4 and /download/guide.en.srt. Rebuild the video content as often as you like
+# with `node scripts/build-guide.mjs`; publish with -WithGuide and the LINK never changes (unlike
+# YouTube, which mints a new URL on every content change). Keep in step with $GUIDE in site.yaml.
+$GUIDE_SRC = [ordered]@{
+  "guide.mp4"     = "docs\guide\output\video\PolyglotFormFill-guide.mp4"
+  "guide.en.srt"  = "docs\guide\output\captions\PolyglotFormFill-guide.en.srt"
+}
+# Every large/separately-served object is excluded from the tarball (installers AND the guide).
+$TARBALL_EXCLUDE = $BINARIES + @($GUIDE_SRC.Keys)
 
 # --- locate repo root (this script lives in <root>/deploy/k8s) ---
 $root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
@@ -49,7 +60,7 @@ $tgz = Join-Path $env:TEMP "ppf-site.tar.gz"
 
 Write-Host "2/4  Packaging $siteDir -> $tgz (installers excluded) ..." -ForegroundColor Cyan
 if (Test-Path $tgz) { Remove-Item -Force $tgz }
-$excludes = $BINARIES | ForEach-Object { "--exclude=./download/$_" }
+$excludes = $TARBALL_EXCLUDE | ForEach-Object { "--exclude=./download/$_" }
 tar -czf $tgz -C $siteDir @excludes .
 if ($LASTEXITCODE -ne 0) { throw "tar failed (exit $LASTEXITCODE)" }
 Write-Host ("     Tarball {0:N1} MB" -f ((Get-Item $tgz).Length / 1MB)) -ForegroundColor Green
@@ -83,6 +94,23 @@ if ($WithBinaries) {
   Write-Host "     Installers uploaded. Pods will re-fetch them on restart." -ForegroundColor Green
 } else {
   Write-Host "3b/4 Skipping installers (content-only publish). Use -WithBinaries when they change." -ForegroundColor Yellow
+}
+
+if ($WithGuide) {
+  Write-Host "3c/4 Uploading the guide video + captions (stable /download/ URLs)..." -ForegroundColor Cyan
+  foreach ($name in $GUIDE_SRC.Keys) {
+    $src = Join-Path $root $GUIDE_SRC[$name]
+    if (-not (Test-Path $src)) { throw "missing guide asset '$src' - run 'node scripts/build-guide.mjs' first." }
+    Write-Host ("     {0} ({1:N1} MB)..." -f $name, ((Get-Item $src).Length / 1MB))
+    $ErrorActionPreference = "Continue"
+    oci os object put -ns $NS_OBJ -bn $BUCKET --name $name --file $src --force 2>$null | Out-Null
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($code -ne 0) { throw "oci upload of '$name' failed (exit $code)" }
+  }
+  Write-Host "     Guide published: https://polyglotformfill.mooo.com/download/guide.mp4 (same URL every rebuild)." -ForegroundColor Green
+} else {
+  Write-Host "3c/4 Skipping the guide video. Use -WithGuide after 'node scripts/build-guide.mjs'." -ForegroundColor Yellow
 }
 
 Write-Host "4/4  Restarting pods to pull the new content..." -ForegroundColor Cyan

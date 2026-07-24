@@ -45,6 +45,10 @@ spec:
                 echo "fetching $f" &&
                 curl -fsSL "$DOWNLOAD_BASE/$f" -o "/web/download/$f" || exit 1;
               done &&
+              for g in $GUIDE; do
+                echo "fetching guide $g (best-effort)" &&
+                curl -fsSL "$DOWNLOAD_BASE/$g" -o "/web/download/$g" || echo "guide $g not published yet - skipping";
+              done &&
               echo "extracted:" && ls -la /web /web/download
           env:
             # The site tarball NO LONGER contains the installers — they are separate objects
@@ -64,6 +68,12 @@ spec:
             # Keep in step with $BINARIES in publish-site.ps1.
             - name: BINARIES
               value: "PolyglotFormFill-Setup.exe polyglotformfill-extension.zip"
+            # Guide video + captions: served at the STABLE URLs /download/guide.mp4 and
+            # /download/guide.en.srt so the link never changes when the video content is rebuilt
+            # (unlike YouTube). Fetched best-effort - a not-yet-published guide never breaks the pod.
+            # Upload with:  .\deploy\k8s\publish-site.ps1 -WithGuide
+            - name: GUIDE
+              value: "guide.mp4 guide.en.srt"
           volumeMounts:
             - { name: web, mountPath: /web }
       containers:
