@@ -10,8 +10,9 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 3. Drop-downs, radio buttons, tick-boxes are SHOWN being answered (not a plain window).
 4. Photo + signature land in a DEDICATED photo box / signature line — never over text boxes.
 5. Manual-entry round-trip is SHOWN: type a new field once → app saves it → it appears in the vault (the 2:25 gap).
-6. Video at FULL resolution — crisp, no 1280 blur.
-7. Audio professional with tone modulation (voice route: A/B/C — pending).
+6. OFFICE/corporate cut STARTS FRESH — clean vault, ONLY corporate profiles on screen, no personal ones.
+7. Video at FULL resolution — crisp, no 1280 blur.
+8. Audio professional with tone modulation (voice route: A/B/C — pending).
 
 ## Segment table (order = final cut)
 | # | TELL (narration) | SHOW (visual) |
@@ -24,7 +25,8 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 | 5b | Not just text — drop-downs, radios, tick-boxes too | Same form: a **dropdown** picks, **radio** selects, **checkbox** ticks — in that one click |
 | 6 | Your photo and signature drop exactly where they belong | Form with a **Photo box** + **Signature line** → photo into the box, signature on the line |
 | 7 | Type anything new once and it's remembered | Type value on the form → "Save to your vault?" → **new key/value appears in the vault** |
-| 8 | A profile for each person or purpose | Create Jane / Emma / Acme (family + corporate) profiles |
+| 8a | At home — a profile for each family member | Personal vault: create Jane / Emma (spouse, child) |
+| 8b | At the office — a profile for each purpose | **FRESH start — clean vault, NO personal profiles**: create Acme Inventory / Finance / Vendor only |
 | 9 | Sign by hand, in any ink | Draw the signature in blue on the form |
 | 10 | Any online form fills in one click too | The browser **extension** filling a web form |
 | 11 | Read any form in your language — 26 of them | Website language switch to **Kannada** |
