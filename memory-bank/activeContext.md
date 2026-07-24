@@ -1,5 +1,19 @@
 # Active Context
 
+## Guide video: automated pipeline + self-hosted at a STABLE url (2026-07-24, LIVE)
+The guide/sales video is now a repeatable pipeline, and it is PUBLISHED (owner said "run the publish").
+- **Build:** `node scripts/build-guide.mjs` (`make guide`) — data-driven from `docs/guide/guide-manifest.json`,
+  muxes `output/raw/<id>.mp4` + `output/audio/<id>.wav`, concatenates, writes video + `.srt`. Amy (Piper) voice.
+- **Hosted (LIVE, verified 200):** `https://polyglotformfill.mooo.com/download/guide.mp4` +
+  `/download/guide.en.srt` — via `publish-site.ps1 -WithGuide` (own Object Storage objects, excluded from
+  the tarball like installers; `site.yaml` fetches them best-effort). URL never changes on rebuild.
+  See ADR-0022 and [[guide-video-pipeline]].
+- **YouTube** only for the Chrome Web Store promo field (`scripts/upload-youtube.mjs`, long `watch?v=` form).
+- **Content fix:** the flat-PDF fill segments were re-recorded on the FIXED build — the form now fills the
+  NAME (JOHN DOE) + DOB + Nationality, not just DOB. Forms-tab copy that repeated "on-device" 3x was trimmed.
+- **PII-safe:** app-region capture + demo-vault swap (real vault restored after each recording).
+- Run publish from NATIVE PowerShell (bsdtar); git-bash GNU tar fails on `C:\` paths.
+
 ## Fill/OCR/delete fixes + guide video recorded (2026-07-23, later) — LOCAL ONLY, NOT PUSHED
 End-to-end testing of the desktop app (driven live via a PII-safe app-window recorder) surfaced and
 fixed real bugs; all committed locally, **nothing pushed to the server or store**.

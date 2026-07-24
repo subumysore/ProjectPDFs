@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — guide video: automated pipeline + self-hosted at a stable URL (2026-07-24)
+- **One-command rebuild:** `node scripts/build-guide.mjs` (`make guide`) assembles the narrated video +
+  captions from `docs/guide/guide-manifest.json` + per-segment clips/narration. Deterministic; the caption
+  splitter keeps URLs (polyglotformfill.mooo.com) intact.
+- **Self-hosted at a permanent URL:** `publish-site.ps1 -WithGuide` serves the video + captions at
+  `https://polyglotformfill.mooo.com/download/guide.{mp4,en.srt}` (own Object Storage objects, excluded from
+  the site tarball like installers; `site.yaml` fetches them best-effort so a missing guide never breaks the
+  pod). The link never changes when the content is rebuilt — the fix for YouTube minting a new URL each time.
+  **Published and verified live (HTTP 200).** See ADR-0022.
+- **Scripted YouTube path** (only where Google requires it — the CWS promo field): `scripts/upload-youtube.mjs`
+  + `scripts/youtube-auth.mjs` (`make guide-upload`, `make guide-captions`).
+- **Content fix:** the flat-PDF fill segments were re-recorded on the fixed build — the form now fills the
+  NAME (composed) + DOB + Nationality, not just Date of birth.
+- **UI:** the Forms-to-fill screen repeated "on-device / we never see your data" three times; trimmed to one
+  line each so the controls sit higher.
+
 ### Fixed — form fill, ID capture, safer delete, and clearer vault (2026-07-23, later)
 - **The name now fills.** Filling a form left the name BLANK whenever the vault stored
   `first_name` + `last_name` rather than a single `full_name` (exactly what ID capture produces).
