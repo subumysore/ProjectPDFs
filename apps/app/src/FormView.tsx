@@ -29,6 +29,9 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
   const [numPages, setNumPages] = useState(1);
   const [busy, setBusy] = useState(true);
   const [fit, setFit] = useState(0);
+  // The form renders at a natural document width (base 720). The user can zoom it in/out to taste —
+  // small enough to see the whole page, or large enough to read fine print. Their choice, not fixed.
+  const [zoom, setZoom] = useState(1);
 
   // Re-fit the page whenever the window (and so the panel) changes size.
   useEffect(() => {
@@ -44,8 +47,10 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       if (!canvasRef.current) return;
       setBusy(true);
       try {
-        // Fit the page to the panel so the whole form is visible — nothing clipped off the right.
-        const avail = (fit || wrapRef.current?.clientWidth || 0) - 4;
+        // Fit the page to the panel, but CAP the width so the form renders at a natural document
+        // size (like a page on screen) instead of being stretched 2–3× the app's own text and controls.
+        const panel = (fit || wrapRef.current?.clientWidth || 0) - 4;
+        const avail = Math.min(panel, Math.round(720 * zoom));
         const r = await renderPageWithFields(bytes, page, canvasRef.current, 1.3, avail > 100 ? avail : undefined);
         if (cancelled) return;
         setFields(r.fields);
@@ -57,7 +62,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       if (!cancelled) setBusy(false);
     })();
     return () => { cancelled = true; };
-  }, [bytes, page, fit]);
+  }, [bytes, page, fit, zoom]);
 
   const box = (f: FormFieldBox): React.CSSProperties => ({
     position: "absolute",
@@ -92,6 +97,13 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
         <span style={{ color: "#55666f" }}>
           {busy ? "Rendering the form…" : `${fields.length} field(s) on this page — type straight onto the form`}
           {showTranslated && " · showing your language (reading aid — the saved file keeps the original)"}
+        </span>
+        {/* User-controlled zoom — resize the form to taste. */}
+        <span style={{ display: "inline-flex", gap: 4, alignItems: "center", marginLeft: "auto" }}>
+          <button onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={zoom <= 0.5} title="Zoom out">−</button>
+          <span style={{ minWidth: 42, textAlign: "center", color: "#55666f" }}>{Math.round(zoom * 100)}%</span>
+          <button onClick={() => setZoom((z) => Math.min(2.5, Math.round((z + 0.1) * 10) / 10))} disabled={zoom >= 2.5} title="Zoom in">+</button>
+          {zoom !== 1 && <button onClick={() => setZoom(1)} title="Reset zoom">Reset</button>}
         </span>
       </div>
       <div ref={wrapRef} style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>

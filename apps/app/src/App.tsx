@@ -122,6 +122,9 @@ export function App() {
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // Once a form is loaded, the big chooser (upload/URL/search) has done its job — collapse it so the
+  // actual form rises to the top of the view instead of sitting 700px down behind the picker chrome.
+  const [showPicker, setShowPicker] = useState(false);
   const [formUrl, setFormUrl] = useState("");
   const [officeFilled, setOfficeFilled] = useState<{ data: Uint8Array; kind: OfficeKind } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1286,8 +1289,17 @@ export function App() {
 
       {selected && (
         <section style={cardStyle}>
-          <h2 style={h2Style}>3 · Choose a form to fill</h2>
-          <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
+          {(() => { const formLoaded = reviewFields.length > 0 || !!pdfBytes; return (<>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <h2 style={{ ...h2Style, margin: 0 }}>3 · {formLoaded ? "Your form" : "Choose a form to fill"}</h2>
+            {formLoaded && (
+              <button onClick={() => setShowPicker((v) => !v)} style={{ fontSize: 12 }}>
+                {showPicker ? "▾ Hide" : "▸ Choose a different form"}
+              </button>
+            )}
+          </div>
+          {(!formLoaded || showPicker) && (<>
+          <p style={{ fontSize: 12, color: "#55666f", margin: "8px 0 10px" }}>
             From <b>your device</b>, a <b>network share</b>, a <b>web link</b>, or a <b>web search</b> —
             read and filled here, then sent only where you choose.
           </p>
@@ -1355,8 +1367,10 @@ export function App() {
             Any form works, <b>automatically</b>: existing fields fill from your vault; a flat scan gets
             fields by on-device OCR, then exports a ready <code>filled.pdf</code>. PDFs, web links, Word and Excel.
           </div>
-          {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{pdfMsg}</p>}
-          {pdfBytes && (
+          </>)}
+          </>); })()}
+          {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60", margin: "8px 0 0" }}>{pdfMsg}</p>}
+          {pdfBytes && reviewFields.length === 0 && (
             <div style={{ margin: "6px 0" }}>
               <button onClick={() => setSigning(true)} style={{ fontWeight: 600 }}>
                 Sign / annotate ✍︎ — draw, type, or place your signature &amp; photo
@@ -1368,11 +1382,12 @@ export function App() {
           )}
           {reviewFields.length > 0 && (
             <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 12, marginTop: 8 }}>
-              <div style={{ fontWeight: 600, marginBottom: 2 }}>Review &amp; edit the filled form</div>
-              <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
-                Check every value before you finalize — nothing is committed silently. Fix anything wrong
-                (e.g. a mis-detected option), then <b>Apply changes</b> to re-export and update the saved copy.
-              </p>
+              <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
+                Review &amp; edit the filled form
+                <span style={{ fontWeight: 400, fontSize: 12, color: "#55666f", marginLeft: 8 }}>
+                  — check each value, then <b>Apply changes</b> to re-export.
+                </span>
+              </div>
               {/* Persistent form toolbar — the SAME tools the extension exposes, in the same place:
                   on the form, always visible. Parity is the rule, not a nice-to-have. */}
               <div
