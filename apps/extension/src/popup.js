@@ -23,6 +23,7 @@ async function extractPdfTexts(bytes) {
 }
 import { fillPage } from "./pagefill.js";
 import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./companion.js";
+import { chooseDataProfile } from "./profileMatch.js";
 const $ = (id) => document.getElementById(id);
 // Show the loaded version in the header so it's always obvious which code is running.
 try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
@@ -63,18 +64,31 @@ async function resolveVaultMode() {
   } catch (_) { /* companion not installed/running → local vault */ }
   COMP.on = false;
 }
-// Resolve (and remember) which desktop profile the extension writes to. If the desktop has no
-// profile yet (e.g. the user started with the extension), create one so the single vault has a home.
+// How many fields a desktop profile holds — the signal for "this is the profile with the user's data".
+async function profileFieldCount(profileId) {
+  try {
+    const r = await send({ type: "companionVaultMeta", profileId });
+    return r && r.ok && r.meta ? Object.keys(r.meta).length : 0;
+  } catch (_) { return 0; }
+}
+// Resolve which desktop profile the extension writes to. CRITICAL: bind to the profile that actually
+// HOLDS DATA, never blindly to the first one. Earlier this latched onto profiles[0] (often an empty
+// auto-created "Me"), then cached it forever — so with a populated profile present the extension still
+// filled from the empty one (0 fields filled). Now: keep a remembered choice ONLY while it still has
+// data; otherwise pick the profile with the most fields; create "Me" only when there are none at all.
 async function compProfile() {
-  if (COMP.profile) return COMP.profile;
   let pl = await send({ type: "companionProfiles" });
   if (pl.ok && (!pl.profiles || pl.profiles.length === 0)) {
     const id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
     await send({ type: "companionCreateProfile", id, name: "Me" });
     pl = await send({ type: "companionProfiles" });
   }
-  if (pl.ok && pl.profiles && pl.profiles.length) {
-    COMP.profile = pl.profiles[0].id;
+  if (!pl.ok || !pl.profiles || !pl.profiles.length) return COMP.profile;
+  const counts = {};
+  for (const p of pl.profiles) counts[p.id] = await profileFieldCount(p.id);
+  const chosen = chooseDataProfile(pl.profiles, counts, COMP.profile);
+  if (chosen && chosen !== COMP.profile) {
+    COMP.profile = chosen;
     await chrome.storage.local.set({ companionProfile: COMP.profile });
   }
   return COMP.profile;

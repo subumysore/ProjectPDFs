@@ -51,3 +51,26 @@ export function profileNameFrom(data) {
     || d.full_name || d.name || "";
   return nm || "New profile";
 }
+
+/**
+ * Choose WHICH desktop profile the extension should bind to for reading/filling.
+ * The bug this fixes: the extension used to latch onto the first profile (often an empty
+ * auto-created "Me") and cache it forever, so with a populated profile present it still filled
+ * from the empty one — 0 fields filled. Rule now:
+ *   • honour a remembered choice ONLY while it still exists AND still holds data;
+ *   • otherwise pick the profile with the MOST fields (the one the user actually built up);
+ *   • ties and the all-empty case fall back to the first listed profile.
+ * @param {Array<{id:string}>} profiles  profiles as listed by the desktop app
+ * @param {Record<string,number>} counts  id -> number of vault fields it holds
+ * @param {string} [remembered]  previously chosen profile id, if any
+ * @returns {string|null} the profile id to use, or null when there are no profiles
+ */
+export function chooseDataProfile(profiles, counts, remembered) {
+  const list = Array.isArray(profiles) ? profiles : [];
+  if (!list.length) return null;
+  const n = (id) => (counts && counts[id]) || 0;
+  if (remembered && list.some((p) => p.id === remembered) && n(remembered) > 0) return remembered;
+  let best = list[0].id, bestN = -1;
+  for (const p of list) { if (n(p.id) > bestN) { bestN = n(p.id); best = p.id; } }
+  return best;
+}

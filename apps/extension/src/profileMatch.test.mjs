@@ -39,3 +39,30 @@ test("profileNameFrom: human name from scanned data, else a fallback", () => {
   assert.equal(profileNameFrom({ first_name: "John", last_name: "Doe" }), "John Doe");
   assert.equal(profileNameFrom({}), "New profile");
 });
+
+import { chooseDataProfile } from "./profileMatch.js";
+
+test("chooseDataProfile: binds to the profile WITH data, not an empty auto-created one", () => {
+  const profiles = [{ id: "me-empty" }, { id: "john" }];   // "me-empty" is listed first
+  const counts = { "me-empty": 0, john: 28 };
+  assert.equal(chooseDataProfile(profiles, counts, undefined), "john");
+});
+
+test("chooseDataProfile: does NOT latch onto a remembered EMPTY profile", () => {
+  const profiles = [{ id: "me-empty" }, { id: "john" }];
+  const counts = { "me-empty": 0, john: 28 };
+  // Even though 'me-empty' was remembered, it has no data now → re-pick the populated one.
+  assert.equal(chooseDataProfile(profiles, counts, "me-empty"), "john");
+});
+
+test("chooseDataProfile: keeps a remembered choice while it still holds data", () => {
+  const profiles = [{ id: "john" }, { id: "jane" }];
+  const counts = { john: 12, jane: 30 };
+  // 'john' has fewer fields than 'jane' but is remembered and non-empty → stays put (no churn).
+  assert.equal(chooseDataProfile(profiles, counts, "john"), "john");
+});
+
+test("chooseDataProfile: all-empty falls back to the first profile; no profiles → null", () => {
+  assert.equal(chooseDataProfile([{ id: "a" }, { id: "b" }], { a: 0, b: 0 }, undefined), "a");
+  assert.equal(chooseDataProfile([], {}, undefined), null);
+});
