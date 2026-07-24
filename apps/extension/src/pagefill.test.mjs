@@ -165,3 +165,27 @@ test("education: routes Master's / Bachelor's blocks to the right stored qualifi
   assert.equal($(dom, "#b_year").value, "2013");
   assert.ok(result >= 6);
 });
+
+test("custom dropdown: a mis-guessed value never selects an option (Yes/No question stays empty)", async () => {
+  const dom = mount(`
+    <div class="form-group">
+      <label>Are/were you or anyone in your immediate family a government official?</label>
+      <div role="combobox" class="Select"><span>Select...</span></div>
+      <div role="listbox"><div role="option">Yes</div><div role="option">No</div></div>
+    </div>
+    <div class="form-group">
+      <label>Gender</label>
+      <div role="combobox" class="Select"><span>Select...</span></div>
+      <div role="listbox"><div role="option">Male</div><div role="option">Female</div></div>
+    </div>`);
+  const clicked = [];
+  for (const o of dom.window.document.querySelectorAll('[role="option"]')) {
+    o.addEventListener("click", () => clicked.push(o.textContent.trim()));
+  }
+  // last_name would wrongly match a "family" concept; gender should still fill correctly.
+  await (await import("./pagefill.js")).fillPage({ last_name: "Mysore", gender: "Male" });
+  assert.equal(clicked.includes("Mysore"), false);
+  assert.equal(clicked.includes("Yes"), false, "must not pick Yes/No from a name guess");
+  assert.equal(clicked.includes("No"), false, "the government-official box must be left empty");
+  assert.equal(clicked.includes("Male"), true, "a real match (Gender → Male) still fills");
+});

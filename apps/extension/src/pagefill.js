@@ -670,25 +670,33 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (opener.click) opener.click();
       opener.focus && opener.focus();
       await wait(200); // let the option list render (overlays may attach to <body>)
-      // If the widget has a search box, TYPE the best candidate to filter a long list.
-      const box = h.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio])')
-        || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
-      if (box) {
-        const typed = cands.slice().sort((a, b) => b.length - a.length)[0];
-        box.focus();
-        const setV = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-        setV.call(box, typed);
-        box.dispatchEvent(new Event("input", { bubbles: true }));
-        box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
-        await wait(260);
-      }
-      const opts = [...document.querySelectorAll(
+      const readOpts = () => [...document.querySelectorAll(
         '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
       )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
-      let opt = null, bestScore = 0;
-      for (const o of opts) { const s = scoreOpt(o); if (s > bestScore) { bestScore = s; opt = o; } }
-      if (!opt && box && opts.length === 1) opt = opts[0]; // typed-to-filter left exactly one
-      if (opt) {
+      const bestOf = (list) => { let o = null, b = 0; for (const x of list) { const s = scoreOpt(x); if (s > b) { b = s; o = x; } } return { o, b }; };
+      // Match among the options shown ON OPEN — WITHOUT speculative typing. Typing a guessed value
+      // (a name the concept mis-picked) into a Yes/No question box is exactly how "Mysore" landed in
+      // a "government official?" dropdown. Only require a real EXACT/PREFIX match (score >= 2), never
+      // a loose containment, so a wrong guess simply selects nothing.
+      const initial = readOpts();
+      let { o: opt, b: best } = bestOf(initial);
+      // Only if the widget reveals NO options until you type (a search-to-filter list) do we type —
+      // and then still require a real match, and CLEAR the box if nothing matches (no leftover text).
+      if (best < 2 && initial.length === 0) {
+        const box = h.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio])')
+          || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
+        if (box) {
+          const setV = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+          const typed = cands.slice().sort((a, b) => b.length - a.length)[0];
+          box.focus(); setV.call(box, typed);
+          box.dispatchEvent(new Event("input", { bubbles: true }));
+          box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+          await wait(260);
+          ({ o: opt, b: best } = bestOf(readOpts()));
+          if (best < 2) { setV.call(box, ""); box.dispatchEvent(new Event("input", { bubbles: true })); } // remove typed garbage
+        }
+      }
+      if (best >= 2 && opt) {
         opt.scrollIntoView && opt.scrollIntoView({ block: "nearest" });
         opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
         opt.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
