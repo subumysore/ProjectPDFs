@@ -105,12 +105,15 @@ secret scan · dependency/license policy. See `.github/workflows/ci.yml`.
 - **DELIVERABLES MATRIX ON EVERY SUBSTANTIVE CHANGE.** Close such work with a matrix, not prose: each
   deliverable, ✅ for done, and a clear flag for what needs the OWNER's attention and why it can't be
   automated (🔧 = I can run it, needs their go because it's outward-facing; 🙋 = only they can do it).
-- **PROMPT ON VIDEO / CAPTIONS / YOUTUBE.** When the guide video or captions change, proactively state
-  the manual steps: the site copy `…/download/guide.mp4` self-updates via `publish-site.ps1 -WithGuide`,
-  but YouTube is a MANUAL drag-drop upload (Google audit locks API uploads to private on an unverified
-  project), then paste the new `https://www.youtube.com/watch?v=<id>` (never `youtu.be/…`, which the
-  Chrome Web Store promo field rejects) into that field; captions update in Studio or via
-  `make guide-captions VID=<id>`.
+- **VIDEO CHANGED → ALWAYS PROMPT FOR YOUTUBE + CHROME WEB STORE (mandatory, unprompted).** Any time
+  the guide video is modified, immediately remind the owner to do BOTH manual steps, with the how:
+  1. **Upload the new cut to YouTube** — manual drag-drop in YouTube Studio (Google audit locks API
+     uploads to private on an unverified project, so `make guide-upload` can't do a public one yet);
+     add the current captions there (or `make guide-captions VID=<id>`).
+  2. **Update the Chrome Web Store** — paste the new `https://www.youtube.com/watch?v=<id>` (NEVER
+     `youtu.be/…`, which the promo field rejects) into the promo-video field, and re-check the listing.
+  Also note the site copy `…/download/guide.mp4` self-updates via `publish-site.ps1 -WithGuide` (same
+  URL). Do not let a video change pass without this prompt — the owner asked to be reminded every time.
 - **STABLE LINKS.** Owner-controlled destinations (website, docs, emails) must point at the permanent
   self-hosted URLs (`…/download/{PolyglotFormFill-Setup.exe,guide.mp4,…}`), which keep the same address
   across rebuilds — never at a URL that churns per build (e.g. a fresh YouTube upload).
