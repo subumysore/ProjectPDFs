@@ -2,7 +2,7 @@
   "title": "PolyglotFormFill — guide",
   "note": "Ordered segment plan for scripts/build-guide.mjs. video = output/raw/<id>.mp4, audio = output/audio/<id>.wav. Edit order/captions here; re-run `node scripts/build-guide.mjs` to rebuild video + captions. All narration is the on-device Piper Amy voice.",
   "fps": 24,
-  "width": 1280,
+  "width": 1920,
   "segments": [
     {
       "id": "w0",

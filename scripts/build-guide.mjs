@@ -48,10 +48,14 @@ for (const seg of M.segments) {
   if (!existsSync(v) || !existsSync(a)) { missing.push(seg.id); continue; }
   const d = dur(a);
   const outf = resolve(tmp, `${seg.id}.mux.mp4`);
+  // CRISP: keep near-source resolution and encode with a low CRF (visually lossless for screen text),
+  // slow preset for efficiency. lanczos scaler preserves fine text edges. This replaces the old
+  // 1280-wide / ~70 kbps encode that made the text blurry.
   ff(["-i", v, "-i", a,
-    "-filter_complex", `[0:v]scale=${W}:-2,fps=${FPS},tpad=stop_mode=clone:stop_duration=600[v]`,
+    "-filter_complex", `[0:v]scale=${W}:-2:flags=lanczos,fps=${FPS},tpad=stop_mode=clone:stop_duration=600[v]`,
     "-map", "[v]", "-map", "1:a", "-t", String(d),
-    "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-b:a", "128k", outf]);
+    "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-ar", "44100", "-b:a", "160k", outf]);
   concat.push(`file '${outf.replace(/\\/g, "/")}'`);
   // captions: split on sentence-ending punctuation FOLLOWED by whitespace/end (keeps URLs whole)
   const sents = seg.caption.match(/.+?[.!?]+(?=\s|$)/gs) || [seg.caption];
