@@ -91,6 +91,32 @@ On completing any task, BEFORE reporting done:
 lint · typecheck · unit + integration tests · acceptance specs · traceability check · migration-safety ·
 secret scan · dependency/license policy. See `.github/workflows/ci.yml`.
 
+# 10. RELEASE, PUBLISHING & COMMUNICATION (do these unprompted — never make the owner remind you)
+- **TURNKEY RELEASES.** Before reporting a Desktop-app or Extension change "done", ensure EVERY piece
+  of plumbing to ship it exists and runs immediately — version bump, build, hashes, infra upload, docs,
+  and the download/store links. No inventing steps at release time. Canonical chain:
+  `scripts/set-version.mjs` → `pnpm tauri build` → stage installer to
+  `docs/marketing/site/download/PolyglotFormFill-Setup.exe` → `scripts/release-manifest.mjs` →
+  `deploy/k8s/publish-site.ps1 -WithBinaries` (desktop); `deploy/publish-extension.ps1` →
+  `deploy/publish-webstore.ps1` (extension). Keep a runbook current; prefer a single orchestrator.
+- **KEEP THE EXTENSION CURRENT.** Any change under `apps/extension/**` — INCLUDING the shared `@engine`
+  files it bundles (resolver, optmatch, i18n, …) — means the published Chrome Web Store copy must not
+  lag the code: bump the version and republish. Flag it in the deliverables matrix (below).
+- **DELIVERABLES MATRIX ON EVERY SUBSTANTIVE CHANGE.** Close such work with a matrix, not prose: each
+  deliverable, ✅ for done, and a clear flag for what needs the OWNER's attention and why it can't be
+  automated (🔧 = I can run it, needs their go because it's outward-facing; 🙋 = only they can do it).
+- **PROMPT ON VIDEO / CAPTIONS / YOUTUBE.** When the guide video or captions change, proactively state
+  the manual steps: the site copy `…/download/guide.mp4` self-updates via `publish-site.ps1 -WithGuide`,
+  but YouTube is a MANUAL drag-drop upload (Google audit locks API uploads to private on an unverified
+  project), then paste the new `https://www.youtube.com/watch?v=<id>` (never `youtu.be/…`, which the
+  Chrome Web Store promo field rejects) into that field; captions update in Studio or via
+  `make guide-captions VID=<id>`.
+- **STABLE LINKS.** Owner-controlled destinations (website, docs, emails) must point at the permanent
+  self-hosted URLs (`…/download/{PolyglotFormFill-Setup.exe,guide.mp4,…}`), which keep the same address
+  across rebuilds — never at a URL that churns per build (e.g. a fresh YouTube upload).
+- **NOTHING OUTWARD-FACING WITHOUT A GREEN LIGHT** unless durably authorized (a standing rule here or an
+  explicit "publish"/"release"). Building the plumbing is always fine; pulling the trigger needs the go.
+
 ---
 
 ## What this project is
