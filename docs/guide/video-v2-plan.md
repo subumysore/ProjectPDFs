@@ -34,7 +34,7 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 | 8a | At home — a profile for each family member | Personal vault: create Jane / Emma (spouse, child) |
 | 8b | At the office — a profile for each purpose | **FRESH start — clean vault, NO personal profiles**: create Acme Inventory / Finance / Vendor only |
 | 9 | OR sign by hand, in any ink (a DIFFERENT method from the saved image above) | **Draw** a REAL-looking flowing cursive signature live in the sign pad, in blue (Type 2, manual) |
-| 10 | Any online form fills in one click too | The browser **extension** filling a web form |
+| 10 | Any online form fills in one click too | The browser **extension** filling a web form. CLEAN CUTOVER: the browser appears ONLY when the voice starts talking about the extension — no marketing/general line playing over a browser shot |
 | 11 | Read any form in your language — 26 of them | Website language switch to **Kannada** |
 | 12 | Everything on your device; we never see it | The privacy panel |
 | 13 | Get it free at polyglotformfill.mooo.com | URL title card |
