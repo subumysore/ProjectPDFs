@@ -89,6 +89,14 @@ const HELLO_JS = `
 let LS_CFG = { slug: "", variants: {} };
 try { LS_CFG = JSON.parse(readFileSync(join(dir, "../business/ls-config.json"), "utf8")); } catch { /* not provisioned yet */ }
 const LS_VARIANTS = Object.fromEntries(Object.entries(LS_CFG.variants || {}).map(([k, v]) => [k, v.variantId]));
+const LS_LIVE = !!LS_CFG.live;   // false until LS approves the store → buy buttons fall back to the trial
+
+// A tier's CTA: a real Buy button once payments are LIVE; the free-trial download until then (so we
+// never ship a button that leads to a checkout that can't complete).
+function payBtn(tr, tier, labelKey) {
+  if (LS_LIVE) return `<a class="btn buy" data-tier="${tier}" style="margin-top:16px" rel="nofollow" href="#">${esc(tr(labelKey))}</a>`;
+  return `<a class="btn" style="margin-top:16px" href="#get">${esc(tr("price.startTrial"))}</a>`;
+}
 
 const PPP_JS = `
 (function(){
@@ -249,14 +257,14 @@ ${switcher(lang, "landing")}
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTimeDevice"))}</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("price.oneDevice"))}</div>
       <ul>${li(tr("price.proList"))}</ul>
-      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.buy"))}</a>
+      ${payBtn(tr, "pro", "price.buy")}
     </div>
     <div class="tier">
       <h3>${esc(tr("price.family"))}</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTime"))}</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${tr("price.familyDevices", { each: '<span class="ppp" data-usd="15">$15</span>' })}</div>
       <ul>${li(tr("price.familyList"))}</ul>
-      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.buy"))}</a>
+      ${payBtn(tr, "duo", "price.buy")}
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -273,7 +281,7 @@ ${switcher(lang, "landing")}
         <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
         <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tBizRange"))}</div>
         <ul>${li(tr("team.tBizList"))}</ul>
-        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.getBusiness"))}</a>
+        ${payBtn(tr, "business", "price.getBusiness")}
         <div style="font-size:12px;color:var(--muted);margin-top:8px">${esc(tr("price.seatsNote"))}</div>
       </div>
       <div class="tier">
