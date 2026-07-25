@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  :root{ --teal:#0d8f83; --teal2:#0a5f57; --accent:#3fe0c5; --ink:#1a2733; --paper:#ffffff; }
+  *{margin:0;box-sizing:border-box;}
+  html,body{width:100vw;height:100vh;overflow:hidden;background:#0e3b36;
+    font-family:"Segoe UI",system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
+  .scene{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
+  .label{position:absolute;top:6vh;font-size:2.2vw;font-weight:700;color:#eafbf8;letter-spacing:.5px;opacity:0;}
+  .lbefore{animation:phaseB 7s ease-in-out infinite;}
+  .lafter{color:var(--accent);animation:phaseA 7s ease-in-out infinite;}
+  @keyframes phaseB{0%,20%{opacity:.9;}30%,100%{opacity:0;}}
+  @keyframes phaseA{0%,58%{opacity:0;}66%,96%{opacity:.95;}100%{opacity:0;}}
+
+  /* the document */
+  .doc{position:relative;width:52vw;height:74vh;background:var(--paper);border-radius:1.2vh;
+    box-shadow:0 4vh 9vh rgba(0,0,0,.4);padding:5vh 4vw;overflow:hidden;
+    filter:grayscale(.85) contrast(.95);transform:rotate(-1.2deg) scale(.98);
+    animation:activate 7s ease-in-out infinite;}
+  /* BEFORE→AFTER: desaturate+skew (scan) → crisp+straight (fillable) */
+  @keyframes activate{
+    0%,22%{filter:grayscale(.85) contrast(.95);transform:rotate(-1.2deg) scale(.98);}
+    36%,96%{filter:grayscale(0) contrast(1);transform:rotate(0deg) scale(1);}
+    100%{filter:grayscale(.85) contrast(.95);transform:rotate(-1.2deg) scale(.98);}
+  }
+  .head{height:5vh;width:60%;background:var(--teal);border-radius:.6vh;margin-bottom:4vh;
+    display:flex;align-items:center;padding:0 1.4vw;color:#fff;font-weight:700;font-size:1.7vw;}
+  .field{margin-bottom:3.4vh;}
+  .cap{font-size:1.15vw;color:#5a6b78;font-weight:600;margin-bottom:1vh;position:relative;height:1.6vw;}
+  /* label text: English shows in BEFORE, translated in AFTER */
+  .cap .en{position:absolute;animation:capEN 7s steps(1) infinite;}
+  .cap .xx{position:absolute;color:var(--teal2);animation:capXX 7s steps(1) infinite;}
+  @keyframes capEN{0%,44%{opacity:1;}45%,100%{opacity:0;}}
+  @keyframes capXX{0%,44%{opacity:0;}45%,96%{opacity:1;}100%{opacity:0;}}
+  /* the answer area: a flat underline in BEFORE, a filled box in AFTER */
+  .ans{position:relative;height:5vh;}
+  .ans .line{position:absolute;left:0;right:20%;bottom:0;height:2px;background:#b8c4cc;
+    animation:lineFade 7s ease-in-out infinite;}
+  @keyframes lineFade{0%,30%{opacity:1;}40%,100%{opacity:0;}}
+  .ans .box{position:absolute;inset:0;border:1.5px solid var(--teal);border-radius:.8vh;background:#eaf7f4;
+    opacity:0;transform:scale(.96);animation:boxIn 7s ease-in-out infinite;}
+  @keyframes boxIn{0%,32%{opacity:0;transform:scale(.96);}42%,96%{opacity:1;transform:scale(1);}100%{opacity:0;}}
+  .ans .val{position:absolute;left:1vw;top:50%;transform:translateY(-50%);font-size:1.5vw;color:var(--ink);
+    white-space:nowrap;overflow:hidden;width:0;animation:type 7s steps(1) infinite;}
+  @keyframes type{0%,44%{width:0;}52%{width:60%;}60%,96%{width:100%;}100%{width:0;}}
+
+  /* OCR scan-line sweep during the transition */
+  .scan{position:absolute;left:0;right:0;height:3vh;background:linear-gradient(180deg,transparent,rgba(63,224,197,.55),transparent);
+    box-shadow:0 0 4vh var(--accent);opacity:0;animation:sweep 7s ease-in-out infinite;}
+  @keyframes sweep{0%,22%{opacity:0;top:-5vh;}24%{opacity:1;top:-5vh;}36%{opacity:1;top:74vh;}38%,100%{opacity:0;top:74vh;}}
+
+  .done{position:absolute;right:-3vh;bottom:-3vh;width:11vh;height:11vh;background:var(--accent);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2vh 4vh rgba(0,0,0,.3);
+    opacity:0;transform:scale(.5);animation:doneIn 7s ease-in-out infinite;}
+  @keyframes doneIn{0%,60%{opacity:0;transform:scale(.5);}68%,94%{opacity:1;transform:scale(1);}100%{opacity:0;}}
+  .done svg{width:52%;height:52%;}
+</style></head>
+<body>
+  <div class="scene">
+    <div class="label lbefore">Flat scan · not fillable</div>
+    <div class="label lafter">Filled &amp; translated · on your device</div>
+    <div class="doc" id="doc">
+      <div class="head">Application Form</div>
+      <div class="scan"></div>
+      <div class="done"><svg viewBox="0 0 24 24"><path fill="none" stroke="#0a5f57" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+    </div>
+  </div>
+<script>
+  // three fields: caption(EN / translated) + value that fills in
+  const F = [
+    { en:"Full name",     xx:"Nombre completo", val:"John Doe" },
+    { en:"Date of birth", xx:"Fecha de nacimiento", val:"04 / 12 / 1988" },
+    { en:"Address",       xx:"Dirección", val:"100 Sample Ave, Demo City" },
+  ];
+  const doc = document.getElementById("doc");
+  F.forEach((f) => {
+    const wrap = document.createElement("div"); wrap.className = "field";
+    wrap.innerHTML = `<div class="cap"><span class="en">${f.en}</span><span class="xx">${f.xx}</span></div>
+      <div class="ans"><div class="line"></div><div class="box"></div><div class="val">${f.val}</div></div>`;
+    doc.appendChild(wrap);
+  });
+</script>
+</body></html>

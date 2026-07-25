@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  /* v2-01-open: "the same details, form after form — then filled the moment you open it."
+     A smooth conveyor of real-looking forms, each asking the SAME three fields (Name, Address,
+     Date of birth); the front one auto-fills with a check. Continuous CSS animation (never choppy). */
+  :root{ --teal:#0d8f83; --teal2:#0a5f57; --accent:#3fe0c5; --ink:#12303f; --paper:#fff; }
+  *{margin:0;box-sizing:border-box;font-family:"Segoe UI",system-ui,sans-serif;}
+  html,body{width:100vw;height:100vh;overflow:hidden;background:#0e3b36;}
+  .stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
+  .cap{position:absolute;top:7vh;width:100%;text-align:center;color:#eafbf8;font-size:2vw;font-weight:700;opacity:.92;letter-spacing:.3px;}
+  .lane{position:relative;width:46vw;height:66vh;}
+  /* three forms travel through the lane on a staggered loop (the "next form, and the one after") */
+  .form{position:absolute;inset:0;background:var(--paper);border-radius:1.4vh;box-shadow:0 3vh 7vh rgba(0,0,0,.42);
+    padding:4.4vh 3vw;display:flex;flex-direction:column;gap:3.2vh;will-change:transform,opacity;}
+  .form .fh{height:5vh;background:var(--teal);border-radius:.7vh;width:58%;display:flex;align-items:center;
+    padding:0 1.2vw;color:#fff;font-weight:700;font-size:1.5vw;}
+  .field{display:flex;flex-direction:column;gap:.9vh;}
+  .lbl{font-size:1.2vw;color:#5a6b78;font-weight:600;}
+  .inp{height:4.6vh;border:1.5px solid #cdd8e0;border-radius:.7vh;background:#f7fafb;position:relative;overflow:hidden;}
+  .inp .val{position:absolute;left:1vw;top:50%;transform:translateY(-50%);font-size:1.4vw;color:var(--ink);white-space:nowrap;}
+  /* conveyor: enter from right, sit centre, exit left; three forms desynced by delay */
+  @keyframes travel{
+    0%{transform:translateX(60vw) scale(.9);opacity:0;}
+    12%{opacity:1;} 22%,44%{transform:translateX(0) scale(1);opacity:1;}
+    56%{transform:translateX(-64vw) scale(.9);opacity:0;} 100%{transform:translateX(-64vw) scale(.9);opacity:0;}
+  }
+  .f1{animation:travel 12s ease-in-out 0s infinite;}
+  .f2{animation:travel 12s ease-in-out 3s infinite;}
+  .f3{animation:travel 12s ease-in-out 6s infinite;}
+  .f4{animation:travel 12s ease-in-out 9s infinite;}
+  /* the values type in only while a form is centred */
+  @keyframes fillval{0%,16%{width:0;}24%,33%{width:100%;}35%,100%{width:0;}}
+  .f1 .val{width:0;animation:fillval 12s steps(1) 0s infinite;}
+  .f2 .val{width:0;animation:fillval 12s steps(1) 3s infinite;}
+  .f3 .val{width:0;animation:fillval 12s steps(1) 6s infinite;}
+  .f4 .val{width:0;animation:fillval 12s steps(1) 9s infinite;}
+  .inp .val{overflow:hidden;}
+  /* the green "already filled" check pops when a form is centred */
+  .chk{position:absolute;right:-2.5vh;top:-2.5vh;width:8.5vh;height:8.5vh;background:var(--accent);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 1.6vh 3.4vh rgba(0,0,0,.3);opacity:0;}
+  @keyframes pop{0%,18%{opacity:0;transform:scale(.4);}26%,33%{opacity:1;transform:scale(1);}40%,100%{opacity:0;transform:scale(.4);}}
+  .f1 .chk{animation:pop 12s ease-in-out 0s infinite;}
+  .f2 .chk{animation:pop 12s ease-in-out 3s infinite;}
+  .f3 .chk{animation:pop 12s ease-in-out 6s infinite;}
+  .f4 .chk{animation:pop 12s ease-in-out 9s infinite;}
+  .chk svg{width:52%;height:52%;}
+</style></head>
+<body>
+  <div class="stage">
+    <div class="cap">Save <b style="color:#7dffe6">any</b> detail once — reuse it on every form</div>
+    <div class="lane" id="lane"></div>
+  </div>
+<script>
+  // DIVERSE forms with DIFFERENT fields each — the point is you can save ANY data (passport no, tax
+  // ID, employer, bank account, allergy…), not just name/address, and reuse it wherever it is asked.
+  const FORMS=[
+    {title:"Job application", fields:[["Employer","Northwind Technologies"],["Annual salary","$120,000"],["Years of experience","8"],["Reference email","asha@example.com"]]},
+    {title:"Tax form (W-9)", fields:[["Taxpayer ID (SSN)","•••-••-4471"],["Filing status","Single"],["Business name","Doe Consulting LLC"],["Home address","100 Sample Ave, Demo City"]]},
+    {title:"Medical intake", fields:[["Date of birth","04 / 12 / 1988"],["Blood type","O positive"],["Allergies","Penicillin"],["Insurance ID","BX-559-2043"]]},
+    {title:"Bank / KYC", fields:[["Passport number","X1234567"],["Nationality","American"],["Account number","0042 8891 2237"],["Occupation","Engineer"]]},
+  ];
+  const check='<div class="chk"><svg viewBox="0 0 24 24"><path fill="none" stroke="#0a5f57" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>';
+  const lane=document.getElementById("lane");
+  FORMS.forEach((f,i)=>{
+    const el=document.createElement("div"); el.className="form f"+(i+1);
+    el.innerHTML=`<div class="fh">${f.title}</div>`+
+      f.fields.map(([lbl,v])=>`<div class="field"><div class="lbl">${lbl}</div><div class="inp"><span class="val">${v}</span></div></div>`).join("")+check;
+    lane.appendChild(el);
+  });
+</script>
+</body></html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  :root{ --teal:#0d8f83; --teal2:#0a5f57; --accent:#3fe0c5; --ink:#ffffff; }
+  *{margin:0;box-sizing:border-box;}
+  html,body{width:100vw;height:100vh;overflow:hidden;background:#0b1416;
+    font-family:"Segoe UI",system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
+  /* the icon is a square badge centred in the frame; capture crops to it */
+  .badge{position:relative;width:82vh;height:82vh;border-radius:22%;
+    background:var(--teal);overflow:hidden;box-shadow:0 4vh 8vh rgba(0,0,0,.45);}
+  .badge::after{content:"";position:absolute;inset:0;border-radius:22%;
+    box-shadow:inset 0 2vh 6vh rgba(255,255,255,.12), inset 0 -3vh 7vh rgba(0,0,0,.18);}
+  /* faint multilingual glyphs floating in from random points (the "hello" concept) */
+  .glyphs{position:absolute;inset:0;}
+  .g{position:absolute;color:#fff;font-weight:700;opacity:0;will-change:transform,opacity;}
+  @keyframes flyg{
+    0%{transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy))) scale(.2);opacity:0;}
+    22%{opacity:.5;} 50%{transform:translate(-50%,-50%) scale(1) rotate(var(--rr));opacity:.7;}
+    80%{opacity:.15;} 100%{transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy))) scale(.2);opacity:0;}
+  }
+  /* the FORM card — the core mark */
+  .card{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%) rotate(-4deg);
+    width:46%;height:52%;background:#fff;border-radius:12%;box-shadow:0 3vh 5vh rgba(0,0,0,.28);
+    padding:11% 10%;display:flex;flex-direction:column;justify-content:center;gap:9%;}
+  .line{height:11%;border-radius:99px;background:#cfe9e4;position:relative;overflow:hidden;}
+  .line::before{content:"";position:absolute;inset:0;background:var(--teal);transform-origin:left;
+    transform:scaleX(0);}
+  .l1::before{animation:fillx 3.4s ease-in-out .0s infinite alternate;}
+  .l2::before{animation:fillx 3.4s ease-in-out .4s infinite alternate;}
+  .l3::before{animation:fillx 3.4s ease-in-out .8s infinite alternate;background:var(--accent);}
+  @keyframes fillx{0%{transform:scaleX(.08);}55%{transform:scaleX(1);}100%{transform:scaleX(.08);}}
+  /* the polyglot field: a small square that cycles scripts */
+  .field{position:absolute;left:-7%;top:-7%;width:34%;height:34%;background:var(--teal2);
+    border-radius:20%;display:flex;align-items:center;justify-content:center;color:#fff;
+    font-size:16vh;font-weight:800;box-shadow:0 2vh 4vh rgba(0,0,0,.3);}
+  .field span{position:absolute;opacity:0;animation:cyc 8s steps(1) infinite;}
+  @keyframes cyc{0%,100%{opacity:0;}} /* per-glyph delays set inline */
+  /* filled/done check */
+  .check{position:absolute;right:-6%;bottom:-6%;width:32%;height:32%;background:var(--accent);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2vh 4vh rgba(0,0,0,.3);animation:pop 2.6s ease-in-out infinite;}
+  @keyframes pop{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  .check svg{width:56%;height:56%;}
+</style></head>
+<body>
+  <div class="badge">
+    <div class="glyphs" id="glyphs"></div>
+    <div class="card">
+      <div class="field" id="field"></div>
+      <div class="line l1"></div>
+      <div class="line l2"></div>
+      <div class="line l3"></div>
+    </div>
+    <div class="check"><svg viewBox="0 0 24 24"><path fill="none" stroke="#0a5f57" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+  </div>
+<script>
+  let seed=11; const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  // polyglot field cycles scripts
+  const SCRIPTS=["A","अ","中","ع","あ","ก","ন","한","Я","த"];
+  const field=document.getElementById("field");
+  SCRIPTS.forEach((s,i)=>{const sp=document.createElement("span");sp.textContent=s;
+    sp.style.animationDelay=(i*0.8)+"s";
+    sp.style.animationName="cyc"+i; field.appendChild(sp);
+    const st=document.createElement("style");
+    const a=(i*10), b=a+8, c=b+2;
+    st.textContent=`@keyframes cyc${i}{0%,${a}%{opacity:0;}${a+1}%,${b}%{opacity:1;}${c}%,100%{opacity:0;}}`;
+    document.head.appendChild(st);
+    sp.style.animation=`cyc${i} 8s steps(1,end) infinite`;
+  });
+  // floating multilingual hellos/glyphs behind
+  const HELLO=["Hello","नमस्ते","你好","مرحبا","こんにちは","Hola","한","สวัสดी","Olá","Привет"];
+  const gl=document.getElementById("glyphs");
+  for(let i=0;i<14;i++){const el=document.createElement("div");el.className="g";
+    el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(rnd()*100)+"%"; el.style.top=(rnd()*100)+"%";
+    el.style.fontSize=(3+rnd()*5)+"vh";
+    el.style.setProperty("--fx",((rnd()-0.5)*70)+"vh");
+    el.style.setProperty("--fy",((rnd()-0.5)*70)+"vh");
+    el.style.setProperty("--rr",((rnd()-0.5)*30)+"deg");
+    const d=5+rnd()*4; el.style.animation=`flyg ${d}s ease-in-out ${(-rnd()*d).toFixed(2)}s infinite`;
+    gl.appendChild(el);
+  }
+</script>
+</body></html>

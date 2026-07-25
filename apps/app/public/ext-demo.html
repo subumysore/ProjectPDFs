@@ -3,73 +3,110 @@
 <title>Extension demo</title>
 <style>
   *{box-sizing:border-box;} html,body{margin:0;width:100vw;height:100vh;overflow:hidden;
-    font-family:"Segoe UI",system-ui,sans-serif;background:#eef2f5;color:#1a2733;}
-  .page{display:flex;height:100vh;}
-  .site{flex:1;overflow:hidden;padding:3vh 4vw;}
-  .top{background:#12303f;color:#fff;border-radius:12px;padding:2.2vh 2vw;margin-bottom:3vh;}
-  .top h1{margin:0;font-size:2vw;} .top p{margin:.4vh 0 0;opacity:.8;font-size:1.1vw;}
-  .form{background:#fff;border-radius:12px;box-shadow:0 6px 26px rgba(20,40,60,.08);padding:3vh 2.4vw;}
-  .row{display:flex;gap:1.6vw;} .fld{flex:1;margin-bottom:2.4vh;}
-  label{display:block;font-size:1vw;font-weight:600;color:#3a4a58;margin-bottom:.8vh;}
-  .box{height:6vh;border:1px solid #cdd6dd;border-radius:8px;display:flex;align-items:center;
-    padding:0 1vw;font-size:1.15vw;color:#1a2733;background:#fff;transition:background .25s,border-color .25s;}
+    font-family:"Segoe UI",system-ui,sans-serif;background:#c7ced6;}
+  /* a whole BROWSER window, sized to fit the frame */
+  .browser{position:absolute;inset:2.2vh 2vw;background:#fff;border-radius:12px;overflow:hidden;
+    box-shadow:0 3vh 8vh rgba(20,40,60,.35);display:flex;flex-direction:column;}
+  /* chrome: tab strip + toolbar */
+  /* Chrome-on-Windows chrome: tabs from the left, window controls (min/max/close) on the far right */
+  .tabs{height:5.2vh;background:#dee3e9;display:flex;align-items:flex-end;padding:0 0 0 1vw;gap:.4vw;}
+  .tab{background:#fff;height:4vh;border-radius:9px 9px 0 0;padding:0 1.2vw;display:flex;align-items:center;
+    gap:.5vw;font-size:1.15vw;color:#2a3a47;max-width:22vw;box-shadow:0 -1px 3px rgba(0,0,0,.06);}
+  .tab .fav{width:1.1vw;height:1.1vw;border-radius:3px;background:#0d8f83;}
+  .tab.bg{background:#cdd4dc;color:#5a6b78;}
+  .newtab{color:#5a6b78;font-size:1.8vw;margin:0 0 .4vh .4vw;}
+  .wctl{margin-left:auto;display:flex;align-items:center;height:100%;}
+  .wctl i{width:3.4vw;height:100%;display:flex;align-items:center;justify-content:center;color:#3a4a58;font-size:1.2vw;}
+  .wctl i.x:hover{background:#e81123;color:#fff;}
+  .toolbar{height:5.4vh;background:#eef1f4;display:flex;align-items:center;gap:1vw;padding:0 1.2vw;border-bottom:1px solid #d7dee3;}
+  .nav{color:#5a6b78;font-size:1.7vw;}
+  .omni{flex:1;height:3.6vh;background:#fff;border:1px solid #d0d8de;border-radius:99px;display:flex;align-items:center;
+    padding:0 1.2vw;font-size:1.15vw;color:#3a4a58;gap:.7vw;}
+  .omni .lock{color:#1c7c6f;font-size:1.2vw;}
+  /* the extension toolbar button */
+  .extbtn{width:3.4vh;height:3.4vh;border-radius:8px;background:#0d8f83;color:#fff;display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:1.5vw;position:relative;box-shadow:0 0 0 0 rgba(13,143,131,.4);}
+  .extbtn.ping{animation:ping 1.2s ease-out;}
+  @keyframes ping{0%{box-shadow:0 0 0 0 rgba(13,143,131,.5);}100%{box-shadow:0 0 0 2.2vw rgba(13,143,131,0);}}
+  /* the viewport: web page on the left, extension popup floating top-right */
+  .viewport{flex:1;position:relative;background:#eef2f5;overflow:hidden;}
+  .site{position:absolute;inset:0;padding:3vh 3vw;overflow:hidden;}
+  .top{background:#12303f;color:#fff;border-radius:12px;padding:2.2vh 2vw;margin-bottom:2.6vh;}
+  .top h1{margin:0;font-size:1.9vw;} .top p{margin:.4vh 0 0;opacity:.8;font-size:1.05vw;}
+  .form{background:#fff;border-radius:12px;box-shadow:0 6px 26px rgba(20,40,60,.08);padding:2.6vh 2.2vw;}
+  .row{display:flex;gap:1.6vw;} .fld{flex:1;margin-bottom:2vh;}
+  label{display:block;font-size:.95vw;font-weight:600;color:#3a4a58;margin-bottom:.7vh;}
+  .box{height:5.4vh;border:1px solid #cdd6dd;border-radius:8px;display:flex;align-items:center;
+    padding:0 1vw;font-size:1.1vw;color:#1a2733;background:#fff;transition:background .25s,border-color .25s;}
   .box.hit{background:#e7f6f2;border-color:#1c7c6f;}
   .box .val{opacity:0;} .box.filled .val{opacity:1;transition:opacity .2s;}
-  /* extension popup */
-  .ext{width:24vw;background:#fff;border-left:1px solid #d7dee3;box-shadow:-6px 0 24px rgba(20,40,60,.08);
-    padding:2.4vh 1.4vw;}
-  .ext .eh{display:flex;align-items:center;gap:.7vw;font-weight:700;font-size:1.25vw;color:#12303f;}
-  .ext .badge{background:#0d8f83;color:#fff;font-size:.7vw;padding:.2vh .5vw;border-radius:5px;}
-  .ext .sub{color:#5a6b78;font-size:.95vw;margin:.6vh 0 2vh;}
-  .fill{width:100%;height:6vh;border:0;border-radius:8px;background:#0d8f83;color:#fff;font-size:1.2vw;
+  /* extension popup anchored under the toolbar button */
+  .ext{position:absolute;top:1.4vh;right:1.4vw;width:22vw;background:#fff;border:1px solid #d7dee3;border-radius:12px;
+    box-shadow:0 2vh 5vh rgba(20,40,60,.22);padding:2vh 1.2vw;}
+  .ext .eh{display:flex;align-items:center;gap:.6vw;font-weight:700;font-size:1.15vw;color:#12303f;}
+  .ext .badge{background:#0d8f83;color:#fff;font-size:.66vw;padding:.2vh .5vw;border-radius:5px;}
+  .ext .sub{color:#5a6b78;font-size:.9vw;margin:.6vh 0 1.6vh;}
+  .fill{width:100%;height:5.2vh;border:0;border-radius:8px;background:#0d8f83;color:#fff;font-size:1.1vw;
     font-weight:600;cursor:pointer;transition:transform .12s, box-shadow .12s;}
   .fill.press{transform:scale(.97);box-shadow:0 0 0 6px rgba(13,143,131,.25);}
-  .done{margin-top:2.2vh;font-size:1.1vw;color:#0a6a60;font-weight:600;opacity:0;transition:opacity .3s;}
+  .done{margin-top:1.8vh;font-size:1vw;color:#0a6a60;font-weight:600;opacity:0;transition:opacity .3s;}
   .done.show{opacity:1;}
-  .cursor{position:fixed;width:26px;height:26px;pointer-events:none;z-index:9;transition:left .7s cubic-bezier(.4,0,.2,1),top .7s cubic-bezier(.4,0,.2,1);
-    background:no-repeat center/contain url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23111" d="M4 2l16 8-7 2-2 7z"/><path fill="%23fff" d="M5.5 4.2l11.5 5.7-4.7 1.4-1.4 4.7z" opacity=".0"/></svg>');}
+  .cursor{position:absolute;width:24px;height:24px;pointer-events:none;z-index:9;transition:left .7s cubic-bezier(.4,0,.2,1),top .7s cubic-bezier(.4,0,.2,1);
+    background:no-repeat center/contain url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23111" stroke="%23fff" stroke-width="1.2" d="M4 2l16 8-7 2-2 7z"/></svg>');}
 </style></head>
 <body>
-  <div class="page">
-    <div class="site">
-      <div class="top"><h1>Northwind Technologies</h1><p>Candidate Application — Senior Engineer</p></div>
-      <div class="form" id="form">
-        <div class="row"><div class="fld"><label>First name *</label><div class="box" data-v="John"><span class="val">John</span></div></div>
-          <div class="fld"><label>Last name *</label><div class="box" data-v="Doe"><span class="val">Doe</span></div></div></div>
-        <div class="row"><div class="fld"><label>Email *</label><div class="box" data-v="john.doe@example.com"><span class="val">john.doe@example.com</span></div></div>
-          <div class="fld"><label>Phone</label><div class="box" data-v="+1 555 0142"><span class="val">+1 555 0142</span></div></div></div>
-        <div class="fld"><label>Street address</label><div class="box" data-v="100 Sample Ave, Demo City DC"><span class="val">100 Sample Ave, Demo City DC</span></div></div>
-        <div class="row"><div class="fld"><label>Occupation</label><div class="box" data-v="Engineer"><span class="val">Engineer</span></div></div>
-          <div class="fld"><label>Nationality</label><div class="box" data-v="American"><span class="val">American</span></div></div></div>
-      </div>
+  <div class="browser">
+    <div class="tabs">
+      <div class="tab"><span class="fav"></span> Careers — Northwind</div>
+      <div class="tab bg"><span class="fav" style="background:#8aa"></span> New tab</div>
+      <span class="newtab">+</span>
+      <span class="wctl"><i>&#9472;</i><i>&#9723;</i><i class="x">&#10005;</i></span>
     </div>
-    <div class="ext">
-      <div class="eh">PolyglotFormFill <span class="badge">on-device</span></div>
-      <div class="sub">Fill any form, privately, from your saved details.</div>
-      <button class="fill" id="fill">Fill this page</button>
-      <div class="done" id="done">✓ Filled 7 fields on this page</div>
+    <div class="toolbar">
+      <span class="nav">←</span><span class="nav">→</span><span class="nav">⟳</span>
+      <div class="omni"><span class="lock">🔒</span> https://careers.northwind.example/apply</div>
+      <div class="extbtn" id="extbtn">P</div>
+    </div>
+    <div class="viewport">
+      <div class="site">
+        <div class="top"><h1>Northwind Technologies</h1><p>Candidate Application — Senior Engineer</p></div>
+        <div class="form" id="form">
+          <div class="row"><div class="fld"><label>First name *</label><div class="box" data-v="John"><span class="val">John</span></div></div>
+            <div class="fld"><label>Last name *</label><div class="box" data-v="Doe"><span class="val">Doe</span></div></div></div>
+          <div class="row"><div class="fld"><label>Email *</label><div class="box" data-v="john.doe@example.com"><span class="val">john.doe@example.com</span></div></div>
+            <div class="fld"><label>Phone</label><div class="box" data-v="+1 555 0142"><span class="val">+1 555 0142</span></div></div></div>
+          <div class="fld"><label>Street address</label><div class="box" data-v="100 Sample Ave, Demo City DC"><span class="val">100 Sample Ave, Demo City DC</span></div></div>
+          <div class="row"><div class="fld"><label>Occupation</label><div class="box" data-v="Engineer"><span class="val">Engineer</span></div></div>
+            <div class="fld"><label>Nationality</label><div class="box" data-v="American"><span class="val">American</span></div></div></div>
+        </div>
+      </div>
+      <div class="ext">
+        <div class="eh">PolyglotFormFill <span class="badge">on-device</span></div>
+        <div class="sub">Fill any form, privately, from your saved details.</div>
+        <button class="fill" id="fill">Fill this page</button>
+        <div class="done" id="done">✓ Filled 7 fields on this page</div>
+      </div>
+      <div class="cursor" id="cur" style="left:70%;top:80%"></div>
     </div>
   </div>
-  <div class="cursor" id="cur" style="left:80vw;top:80vh"></div>
 <script>
   const boxes=[...document.querySelectorAll('.box')];
-  const cur=document.getElementById('cur'), fill=document.getElementById('fill'), done=document.getElementById('done');
+  const cur=document.getElementById('cur'), fill=document.getElementById('fill'), done=document.getElementById('done'),
+        extbtn=document.getElementById('extbtn');
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const vp=document.querySelector('.viewport').getBoundingClientRect();
+  const put=(el,ox=0,oy=0)=>{const r=el.getBoundingClientRect();cur.style.left=(r.left-vp.left+r.width*0.5+ox)+'px';cur.style.top=(r.top-vp.top+r.height*0.5+oy)+'px';};
   (async()=>{
-    await wait(900);
-    // move cursor to the Fill button and "press" it
-    const fr=fill.getBoundingClientRect();
-    cur.style.left=(fr.left+fr.width*0.5)+'px'; cur.style.top=(fr.top+fr.height*0.5)+'px';
-    await wait(800); fill.classList.add('press'); await wait(220); fill.classList.remove('press');
+    await wait(700);
+    put(extbtn); await wait(700); extbtn.classList.add('ping');   // click the toolbar extension icon
+    await wait(700);
+    put(fill); await wait(700); fill.classList.add('press'); await wait(220); fill.classList.remove('press');
     await wait(300);
-    // fill each field in turn, with a brief highlight
-    for(const b of boxes){
-      const r=b.getBoundingClientRect();
-      cur.style.left=(r.left+30)+'px'; cur.style.top=(r.top+r.height*0.5)+'px';
-      await wait(260); b.classList.add('hit'); await wait(120); b.classList.add('filled');
-      await wait(160); b.classList.remove('hit'); await wait(120);
-    }
+    for(const b of boxes){ put(b,-b.getBoundingClientRect().width*0.4,0);
+      await wait(230); b.classList.add('hit'); await wait(110); b.classList.add('filled');
+      await wait(150); b.classList.remove('hit'); await wait(110); }
     done.classList.add('show');
+    await wait(2000);
   })();
 </script>
 </body></html>

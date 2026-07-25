@@ -12,11 +12,11 @@
     },
     {
       "img": "v2-01-open.png",
-      "text": "Take a real form, like this one. It asks for your name, your address, your date of birth. The next form asks again. And the one after that. PolyglotFormFill remembers your details once, so the form is already filled the moment you open it."
+      "text": "Think of everything you type into forms, over and over. Your name and address, yes — but also your passport number, a tax ID, an employer, a bank account, an allergy. Save any detail once, and PolyglotFormFill fills it into every form that asks for it — as many times as you need, wherever you need it."
     },
     {
       "img": "v2-02-id.png",
-      "text": "You do not even have to type them. Photograph an ID — a licence, a passport — and it is read here on your device and turned into your profile. Nothing is uploaded. The reading happens right here, with you."
+      "text": "You do not even have to type them. Photograph your driver's licence. The front is read here on your device — name, date of birth, licence number — straight into your encrypted vault. The barcode on the back carries that same data exactly, and it is read on your device too. A passport works the same way. And it is not only the text: the licence and passport pictures themselves are saved with your profile. Nothing is uploaded — the reading happens right here, with you."
     },
     {
       "img": "v2-03-flat.png",
@@ -24,7 +24,7 @@
     },
     {
       "img": "v2-04-fill-text.png",
-      "text": "Then the form fills itself — the name, the address, the details you would otherwise retype every single time. You look it over. You are always in control of what goes in."
+      "text": "Then the form fills itself — not just the name and address, but the licence number, the tax ID, the employer, the bank details, whatever this particular form happens to ask for. You look it over. You are always in control of what goes in."
     },
     {
       "img": "v2-05-fill-controls.png",
@@ -56,7 +56,7 @@
     },
     {
       "img": "v2-12-languages.png",
-      "text": "If a form is in a language you do not read, it is translated for you, on the spot. And the app speaks your language too — twenty-six of them."
+      "text": "And language is never the barrier. Use the whole app in your own language — any of them. A form in a language you do not read is shown to you in yours. And you can fill it in whichever language you choose — what you type is written back in the form’s own language. Read in yours, write in theirs, or the other way around."
     },
     {
       "img": "v2-13-privacy.png",

@@ -9,12 +9,33 @@
     font-family:"Segoe UI",system-ui,sans-serif; color:var(--ink); }
   .stage { position:relative; width:100vw; height:100vh; display:flex;
     flex-direction:column; justify-content:center; padding:0 10.4vw; }
+  /* soft scrim behind the text column so foreground copy always has contrast over the moving Hellos */
+  .stage::before { content:""; position:absolute; left:0; top:0; bottom:0; width:74%;
+    background:radial-gradient(120% 80% at 20% 50%, rgba(8,54,49,.55), rgba(8,54,49,0) 70%); pointer-events:none; }
+  .title, .rule, .sub, .points, .cta { position:relative; z-index:1; }
 
-  /* Background: rows of "form fields" that auto-fill — ties the motion to the product. */
-  .bg { position:absolute; inset:0; opacity:.10; }
-  .bar { position:absolute; height:2.4vh; border-radius:6px; background:#ffffff;
+  /* Background layer 1: form-field bars that CONTINUOUSLY fill and drain (kept from before). */
+  .bg { position:absolute; inset:0; overflow:hidden; }
+  .bars { position:absolute; inset:0; opacity:.08; }
+  .bar { position:absolute; height:2.4vh; border-radius:6px; background:#fff;
     transform:scaleX(0); transform-origin:left; }
-  @keyframes fill { to { transform:scaleX(1); } }
+  @keyframes fill { 0%{transform:scaleX(.05);} 55%{transform:scaleX(1);} 100%{transform:scaleX(.05);} }
+
+  /* Background layer 2: "Hello" in many languages — each ORIGINATES from its own random distant
+     point, flies to the fore (bright), and DANCES there, then recedes. The outer element flies in;
+     an inner <b> dances continuously (wiggle + bob), so the motion never stops. */
+  /* dim, cooler tint so the Hellos read as a BACKDROP, clearly behind the (bright white) text */
+  .hello { position:absolute; font-weight:700; white-space:nowrap; color:#7fd8cb;
+    will-change:transform,opacity; opacity:0; }
+  .hello b { display:inline-block; animation:dance 1.5s ease-in-out infinite; }
+  @keyframes fly {
+    0%   { transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy))) scale(.12); opacity:0; filter:blur(3px); }
+    18%  { opacity:.30; filter:blur(.3px); }
+    50%  { transform:translate(-50%,-50%) scale(1.12); opacity:.34; }
+    84%  { opacity:.12; }
+    100% { transform:translate(calc(-50% + var(--fx)),calc(-50% + var(--fy))) scale(.12); opacity:0; filter:blur(3px); }
+  }
+  @keyframes dance { 0%,100%{transform:rotate(-7deg) translateY(0);} 50%{transform:rotate(7deg) translateY(-0.8vh);} }
 
   /* Headline: each line reveals with a rising clip mask. */
   .title { font-weight:800; font-size:6.1vw; line-height:1.04; letter-spacing:-1px;
@@ -25,16 +46,20 @@
   @keyframes rise { to { transform:translateY(0); } }
 
   .rule { height:.7vh; width:0; background:var(--accent); border-radius:3px; margin:3vh 0 2.6vh;
-    animation:draw 1s cubic-bezier(.19,1,.22,1) .5s forwards; box-shadow:0 0 2.2vh var(--accent); }
+    animation:draw 1s cubic-bezier(.19,1,.22,1) .5s forwards, glow 2.6s ease-in-out 1.6s infinite; }
   @keyframes draw { to { width:17.7vw; } }
+  /* continuous soft glow pulse on the accent so it keeps breathing */
+  @keyframes glow { 0%,100%{box-shadow:0 0 1.2vh var(--accent);} 50%{box-shadow:0 0 3.2vh var(--accent);} }
 
-  .sub { font-size:2.7vw; color:var(--soft); font-weight:400; opacity:0; transform:translateY(3vh);
-    animation:appear .9s cubic-bezier(.19,1,.22,1) .8s forwards; max-width:62vw; line-height:1.35; }
+  .sub { font-size:2.7vw; color:#ffffff; font-weight:400; opacity:0; transform:translateY(3vh);
+    animation:appear .9s cubic-bezier(.19,1,.22,1) .8s forwards; max-width:62vw; line-height:1.35;
+    text-shadow:0 .3vh 1.6vh rgba(0,0,0,.45); }
   @keyframes appear { to { opacity:1; transform:translateY(0); } }
 
   .points { list-style:none; }
-  .points li { font-size:2.5vw; color:var(--soft); margin:1.5vh 0; display:flex; align-items:center; gap:1.4vw;
-    opacity:0; transform:translateX(-3vw); animation:slidein .8s cubic-bezier(.19,1,.22,1) forwards; }
+  .points li { font-size:2.5vw; color:#ffffff; margin:1.5vh 0; display:flex; align-items:center; gap:1.4vw;
+    opacity:0; transform:translateX(-3vw); animation:slidein .8s cubic-bezier(.19,1,.22,1) forwards;
+    text-shadow:0 .3vh 1.6vh rgba(0,0,0,.45); }
   .points li::before { content:""; width:1.1vw; height:1.1vw; flex:0 0 auto; border-radius:3px;
     background:var(--accent); box-shadow:0 0 1.6vh var(--accent); }
   @keyframes slidein { to { opacity:1; transform:translateX(0); } }
@@ -74,15 +99,37 @@
   pts.forEach((p, i) => { const li = document.createElement("li"); li.textContent = p;
     li.style.animationDelay = (0.9 + i * 0.5) + "s"; ul.appendChild(li); });
   if (cta) { document.getElementById("cta").style.display = "inline-flex"; document.getElementById("ctaText").textContent = cta; }
-  // background auto-filling field bars
   const bg = document.getElementById("bg");
+  // deterministic pseudo-random so every render is identical (no Math.random — reproducible).
+  let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+
+  // layer 1: form bars that keep filling/draining
+  const bars = document.createElement("div"); bars.className = "bars"; bg.appendChild(bars);
   for (let i = 0; i < 9; i++) {
     const b = document.createElement("div"); b.className = "bar";
     b.style.top = (10 + i * 9.2) + "vh";
     b.style.left = (i % 2 ? 51 : 10) + "vw";
     b.style.width = (14 + (i * 3) % 22) + "vw";
-    b.style.animation = `fill .8s cubic-bezier(.19,1,.22,1) ${0.3 + i * 0.12}s forwards`;
-    bg.appendChild(b);
+    b.style.animation = `fill ${3.2 + (i % 4) * 0.6}s cubic-bezier(.4,0,.2,1) ${(-rnd() * 3).toFixed(2)}s infinite alternate`;
+    bars.appendChild(b);
+  }
+
+  // layer 2: multilingual "Hello", each from its OWN random distant origin, flying in + dancing
+  const HELLOS = ["Hello","नमस्ते","Hola","Bonjour","你好","こんにちは","مرحبا","Olá","Ciao","Hallo",
+    "Привет","안녕하세요","வணக்கம்","ನಮಸ್ಕಾರ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba","Habari"];
+  const N = 22;
+  for (let i = 0; i < N; i++) {
+    const el = document.createElement("div"); el.className = "hello";
+    const inner = document.createElement("b"); inner.textContent = HELLOS[i % HELLOS.length]; el.appendChild(inner);
+    el.style.left = (10 + rnd() * 80) + "vw";       // home (fore) position — random
+    el.style.top = (12 + rnd() * 74) + "vh";
+    el.style.fontSize = (1.6 + rnd() * 2.8) + "vw";
+    el.style.setProperty("--fx", ((rnd() - 0.5) * 90) + "vw");  // distant origin direction — random
+    el.style.setProperty("--fy", ((rnd() - 0.5) * 80) + "vh");
+    const dur = 6.5 + rnd() * 5.5;
+    el.style.animation = `fly ${dur}s ease-in-out ${(-rnd() * dur).toFixed(2)}s infinite`;
+    inner.style.animationDelay = (-rnd() * 1.5) + "s";          // desync the dance per word
+    bg.appendChild(el);
   }
 </script>
 </body>

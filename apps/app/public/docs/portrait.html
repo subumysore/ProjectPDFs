@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  /* A detailed FLAT-ILLUSTRATION portrait (vector, clearly not a photograph) — a privacy-safe,
+     non-real-person stand-in for an ID/passport photo. Head-and-shoulders, neutral studio look.
+     (No AI image generator is available in this environment; this is hand-authored SVG.) */
+  *{margin:0;box-sizing:border-box;}
+  html,body{width:520px;height:640px;overflow:hidden;background:#fff;}
+</style></head>
+<body>
+  <svg width="520" height="640" viewBox="0 0 520 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#eaf2f7"/><stop offset="1" stop-color="#cdddea"/>
+      </linearGradient>
+      <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f1c9a5"/><stop offset="1" stop-color="#e0ac82"/>
+      </linearGradient>
+      <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#33566e"/><stop offset="1" stop-color="#26445a"/>
+      </linearGradient>
+    </defs>
+    <rect width="520" height="640" fill="url(#bg)"/>
+    <!-- shoulders / collared shirt -->
+    <path d="M70 640 C 90 500, 175 452, 260 452 C 345 452, 430 500, 450 640 Z" fill="url(#shirt)"/>
+    <path d="M225 470 L260 512 L295 470 L281 452 L239 452 Z" fill="#f7fafb"/>
+    <path d="M239 452 L260 500 L226 476 Z" fill="#dfe8ec"/>
+    <path d="M281 452 L260 500 L294 476 Z" fill="#dfe8ec"/>
+    <!-- neck -->
+    <path d="M228 402 C 228 452, 292 452, 292 402 L292 372 L228 372 Z" fill="#d99b6f"/>
+    <!-- ears -->
+    <ellipse cx="172" cy="292" rx="20" ry="30" fill="url(#skin)"/>
+    <ellipse cx="348" cy="292" rx="20" ry="30" fill="url(#skin)"/>
+    <!-- head -->
+    <path d="M175 250 C 175 150, 345 150, 345 250 C 345 340, 315 400, 260 400 C 205 400, 175 340, 175 250 Z" fill="url(#skin)"/>
+    <!-- hair -->
+    <path d="M168 262 C 150 150, 210 108, 260 108 C 315 108, 372 152, 350 262 C 348 226, 336 196, 322 190 C 328 210, 326 232, 322 244 C 300 205, 250 200, 214 214 C 198 220, 186 236, 184 262 C 180 232, 176 214, 186 196 C 168 210, 166 240, 168 262 Z" fill="#3a2a1e"/>
+    <!-- eyebrows -->
+    <path d="M198 258 q28 -14 56 -2" stroke="#3a2a1e" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M266 256 q28 -12 54 2" stroke="#3a2a1e" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- eyes -->
+    <ellipse cx="224" cy="286" rx="20" ry="12" fill="#fff"/>
+    <ellipse cx="296" cy="286" rx="20" ry="12" fill="#fff"/>
+    <circle cx="226" cy="287" r="8.5" fill="#5a3b23"/><circle cx="298" cy="287" r="8.5" fill="#5a3b23"/>
+    <circle cx="226" cy="287" r="3.6" fill="#1b120b"/><circle cx="298" cy="287" r="3.6" fill="#1b120b"/>
+    <circle cx="229" cy="284" r="1.6" fill="#fff"/><circle cx="301" cy="284" r="1.6" fill="#fff"/>
+    <!-- nose -->
+    <path d="M258 292 C 250 316, 244 328, 252 336 C 258 342, 268 342, 274 336" stroke="#c98a5e" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- mouth -->
+    <path d="M232 360 q28 20 58 0" stroke="#a5613f" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M236 362 q24 10 50 0 q-25 6 -50 0Z" fill="#c47a56"/>
+    <!-- subtle cheek shading -->
+    <ellipse cx="205" cy="330" rx="16" ry="10" fill="#e39c74" opacity=".35"/>
+    <ellipse cx="315" cy="330" rx="16" ry="10" fill="#e39c74" opacity=".35"/>
+  </svg>
+</body></html>

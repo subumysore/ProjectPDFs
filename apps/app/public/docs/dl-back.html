@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  /* Synthetic driver-licence BACK — our own artwork. The 2D block stands in for the AAMVA
+     PDF417 barcode. It is DECORATIVE (not a live-decodable barcode); the narration explains the
+     app reads a real licence's barcode on-device — we never stage a fake decode on this. */
+  *{margin:0;box-sizing:border-box;font-family:"Arial","Segoe UI",sans-serif;}
+  html,body{width:1000px;height:630px;overflow:hidden;background:#fff;}
+  .card{position:relative;width:1000px;height:630px;
+    background:linear-gradient(135deg,#f6fafe 0%,#eef6ff 100%);border:2px solid #cdd8e2;padding:26px 30px;}
+  .t{font-size:20px;font-weight:800;color:#20303f;line-height:1.3;}
+  .rev{font-size:15px;color:#41586b;margin-top:4px;}
+  .pdf417{margin:22px 0 0;width:560px;height:150px;border:1px solid #b9c6d2;background:
+    repeating-linear-gradient(90deg,#111 0 3px,#fff 3px 6px,#111 6px 8px,#fff 8px 13px,#111 13px 15px,#fff 15px 19px);}
+  .rows{margin-top:26px;font-size:22px;color:#20303f;line-height:2;}
+  .rows b{display:inline-block;min-width:120px;color:#3a5266;}
+  .note{position:absolute;right:30px;bottom:22px;text-align:right;font-size:16px;font-weight:700;color:#41586b;}
+  .wave{position:absolute;left:0;right:0;bottom:0;height:120px;
+    background:repeating-linear-gradient(60deg,rgba(120,170,210,.18) 0 2px,transparent 2px 9px);}
+</style></head>
+<body>
+  <div class="card">
+    <div class="t">The State of Florida<br/>Driver License (back)</div>
+    <div class="rev">Rev. 00/00/0000 · Specimen — synthetic demo document</div>
+    <div class="pdf417" aria-label="PDF417 barcode (decorative)"></div>
+    <div class="rows">
+      <div><b>CLASS:</b> E</div>
+      <div><b>REST:</b> None</div>
+      <div><b>END:</b> None</div>
+    </div>
+    <div class="wave"></div>
+    <div class="note">REPLACEMENT LICENSE REQUIRED WITHIN 30 DAYS<br/>OF ADDRESS OR NAME CHANGE.</div>
+  </div>
+</body></html>

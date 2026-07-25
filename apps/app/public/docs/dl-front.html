@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<style>
+  /* Synthetic driver-licence FRONT — our own artwork (no third-party/stock image), real demo
+     values so on-device OCR genuinely extracts fields. The face is an ILLUSTRATED avatar (SVG),
+     deliberately non-photographic so it is provably not a real person. */
+  *{margin:0;box-sizing:border-box;font-family:"Arial","Segoe UI",sans-serif;}
+  html,body{width:1000px;height:630px;overflow:hidden;background:#fff;}
+  .card{position:relative;width:1000px;height:630px;background:
+      linear-gradient(135deg,#fbfdff 0%,#eef6ff 55%,#fdf2ec 100%);
+    border:2px solid #cdd8e2;padding:26px 30px;}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;}
+  .state{font-size:44px;font-weight:800;color:#1a7a3c;font-style:italic;letter-spacing:.5px;}
+  .kind{font-size:30px;font-weight:800;color:#20303f;letter-spacing:1px;margin-top:6px;}
+  .usa{text-align:right;font-size:20px;font-weight:800;color:#1a7a3c;}
+  .body{display:flex;gap:26px;margin-top:14px;}
+  .photo{width:210px;height:250px;border:1px solid #b9c6d2;border-radius:6px;background:#dce8f0;
+    display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+  .fields{flex:1;}
+  /* high-contrast, colon-labelled lines → reliable OCR extraction */
+  .row{font-size:26px;color:#10202c;margin:9px 0;line-height:1.15;}
+  .row b{display:inline-block;min-width:196px;color:#3a5266;font-weight:700;}
+  .sig{margin-top:14px;font-size:30px;font-style:italic;color:#26506b;
+    font-family:"Segoe Script","Brush Script MT",cursive;}
+  .foot{margin-top:8px;font-size:15px;color:#41586b;max-width:640px;}
+</style></head>
+<body>
+  <div class="card">
+    <div class="hdr">
+      <div><div class="state">Florida</div><div class="kind">DRIVER LICENSE</div></div>
+      <div class="usa">USA<br/><span style="font-size:15px;color:#3a5266;">Class E</span></div>
+    </div>
+    <div class="body">
+      <div class="photo">
+        <img src="/docs/portrait.png" alt="illustrated portrait" style="width:100%;height:100%;object-fit:cover;display:block"/>
+      </div>
+      <div class="fields">
+        <div class="row"><b>Last name:</b> DOE</div>
+        <div class="row"><b>First name:</b> JOHN</div>
+        <div class="row"><b>Middle name:</b> QUINCY</div>
+        <div class="row"><b>DL No:</b> D123-456-88-042-0</div>
+        <div class="row"><b>DOB:</b> 04/12/1988</div>
+        <div class="row"><b>Expires:</b> 04/12/2030</div>
+        <div class="row"><b>Sex:</b> M</div>
+      </div>
+    </div>
+    <div class="sig">John Q. Doe</div>
+    <div class="foot">Address: 100 Sample Ave, Demo City, FL 32000 · Specimen — synthetic demo document.</div>
+  </div>
+</body></html>
