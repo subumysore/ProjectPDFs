@@ -7,12 +7,22 @@ import { dirname, join } from "node:path";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 let _key;
+// The private key file. Defaults to the gitignored vendor-key.json next to this script;
+// override with LS_VENDOR_KEY_FILE (e.g. a secret mounted at deploy time, or a throwaway
+// key in tests). The private key is NEVER committed and NEVER shipped in the app.
+function vendorKeyFile() {
+  return process.env.LS_VENDOR_KEY_FILE || join(dir, "vendor-key.json");
+}
 function vendorKey() {
   if (!_key) {
-    const { jwk } = JSON.parse(readFileSync(join(dir, "vendor-key.json"), "utf8"));
+    const { jwk } = JSON.parse(readFileSync(vendorKeyFile(), "utf8"));
     _key = createPrivateKey({ key: jwk, format: "jwk" });
   }
   return _key;
+}
+// Test/DI hook: reset the memoized key (used after pointing LS_VENDOR_KEY_FILE elsewhere).
+export function _resetVendorKey() {
+  _key = undefined;
 }
 
 // EXACT field order must match the Rust License struct.

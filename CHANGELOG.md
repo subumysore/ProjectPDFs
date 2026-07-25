@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — sign/annotate no longer flattens overlays upside-down on rotated pages (2026-07-25)
+- The shared flatten engine (`apps/extension/src/signflatten.js`, used by desktop via @engine and by the extension) ignored the page’s `/Rotate`, so signatures/annotations came out upside-down on 180° scans and sideways on 90°/270°. New `overlayPlacement()` applies the INVERSE page rotation (y → pageHeight−y, w/h swapped for 90/270). Fixed in the shared engine → desktop + extension in parity. Tests +3 (`signflatten.test.mjs`, 6/6). This re-enables the guide’s “sign” segment.
+
+### Added — Lemon Squeezy license issuance (RFC-0010) (2026-07-25)
+- A webhook issuer (`scripts/license/webhook.mjs`) mints the existing Ed25519 offline license token on purchase: constant-time HMAC verification of the LS webhook, idempotent minting, refund/subscription handling, seat/subscription tiers. Reuses the on-device verify model (app embeds only the public key). Tests +6 (`webhook.test.mjs`). See `docs/rfc/0010-lemon-squeezy-license-issuance.md` and `docs/business/lemonsqueezy-setup.md`.
+
 ### Added — marketing site fully localized in all 26 UI languages (2026-07-25)
 - **Every marketing page now renders completely in the visitor's chosen language — no more 3 KB stubs.**
   The site generator (`docs/marketing/build-site.mjs`) was rewritten to render the FULL landing, privacy
