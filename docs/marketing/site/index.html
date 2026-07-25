@@ -124,7 +124,7 @@
 <body>
 <style>.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
 .langbar select{font:inherit;padding:4px 8px}</style><nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en" selected>English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
-<div id="langhint" hidden style="padding:10px 20px;background:#eef6f5;font:15px system-ui"></div>
+<div id="langhint" hidden style="display:flex;gap:14px;align-items:center;justify-content:center;padding:9px 20px;background:#eef6f5;color:#0a6a60;font:14px/1.4 system-ui;border-bottom:1px solid #d7e6e3"></div>
 <script>
 (function(){
   var have=["en","hi","bn","ta","te","kn","ml","gu","pa","mr","ur","ar","he","fa","zh","ja","ko","th","vi","id","ru","es","fr","de","pt","tr"], names={"en":"English","hi":"हिन्दी","bn":"বাংলা","ta":"தமிழ்","te":"తెలుగు","kn":"ಕನ್ನಡ","ml":"മലയാളം","gu":"ગુજરાતી","pa":"ਪੰਜਾਬੀ","mr":"मराठी","ur":"اردو","ar":"العربية","he":"עברית","fa":"فارسی","zh":"中文","ja":"日本語","ko":"한국어","th":"ไทย","vi":"Tiếng Việt","id":"Bahasa Indonesia","ru":"Русский","es":"Español","fr":"Français","de":"Deutsch","pt":"Português","tr":"Türkçe"};
@@ -134,7 +134,8 @@
     var hit=have.indexOf(tag)>=0?tag:(have.indexOf(base)>=0?base:null);
     if(hit&&hit!=="en"){
       var el=document.getElementById("langhint");
-      el.innerHTML='<a href="/'+hit+'/">'+names[hit]+'</a>';
+      el.innerHTML='<span>🌐 This page is also available in <a href="/'+hit+'/" style="font-weight:600;color:#0a6a60">'+names[hit]+' →</a></span>'+
+        '<a href="#" onclick="this.closest(\'#langhint\').hidden=true;return false" aria-label="Dismiss" style="color:#5a8;text-decoration:none">✕</a>';
       el.hidden=false;
       var sel=document.getElementById("lang"); if(sel) sel.value="en";
       break;

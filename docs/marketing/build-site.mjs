@@ -168,7 +168,7 @@ try {
   const p = join(site, "index.html");
   let html = readFileSync(p, "utf8");
   const bar = `<style>${CSS.split("\n").filter((l) => l.startsWith(".langbar")).join("\n")}</style>${switcher("en")}
-<div id="langhint" hidden style="padding:10px 20px;background:#eef6f5;font:15px system-ui"></div>
+<div id="langhint" hidden style="display:flex;gap:14px;align-items:center;justify-content:center;padding:9px 20px;background:#eef6f5;color:#0a6a60;font:14px/1.4 system-ui;border-bottom:1px solid #d7e6e3"></div>
 <script>
 (function(){
   var have=${JSON.stringify(AVAILABLE)}, names=${JSON.stringify(UI_LANGS)};
@@ -178,7 +178,8 @@ try {
     var hit=have.indexOf(tag)>=0?tag:(have.indexOf(base)>=0?base:null);
     if(hit&&hit!=="en"){
       var el=document.getElementById("langhint");
-      el.innerHTML='<a href="/'+hit+'/">'+names[hit]+'</a>';
+      el.innerHTML='<span>🌐 This page is also available in <a href="/'+hit+'/" style="font-weight:600;color:#0a6a60">'+names[hit]+' →</a></span>'+
+        '<a href="#" onclick="this.closest(\\'#langhint\\').hidden=true;return false" aria-label="Dismiss" style="color:#5a8;text-decoration:none">✕</a>';
       el.hidden=false;
       var sel=document.getElementById("lang"); if(sel) sel.value="en";
       break;
