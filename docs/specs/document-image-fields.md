@@ -23,6 +23,17 @@ the review list as a **thumbnail** (checkbox + key), and is saved to the vault l
 other field. A **signature** image is added via the popup's existing "add image" control
 with key `signature`.
 
+### Capture (desktop `App.tsx` — "Import a data source")  — parity added 2026-07-25
+The desktop import path (`onDataSource`) previously saved only the extracted TEXT fields.
+It now retains the whole source image too, under the **same ontology** (single shared
+vault, one source of truth): the classification lives in one pure function,
+`documentImageKey(fields, isBarcodeBack)` in `apps/app/src/ocr.ts` — a decoded PDF417
+barcode → `driver_license_back`; a `passport_no` → `passport_image`; a `license_no` →
+`driver_license_front`; otherwise → `document_image`. The retained image shows as a
+thumbnail with a checkbox (default on) before "Save N to vault", exactly like the
+extension's review list. (The desktop keys `license_front_scan`/… briefly introduced were
+wrong and were corrected to this shared ontology before release.)
+
 ### Fill (`pdffill.js` — already the image-value path)
 A form field whose label asks for a licence/passport/signature copy resolves (via the
 shared resolver) to the corresponding image value and is **drawn fitted + centred inside

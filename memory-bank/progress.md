@@ -2,6 +2,13 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Done (code) — 2026-07-25: desktop ID import retains the document image (extension parity)
+- Desktop `onDataSource` now retains the source licence/passport image under the shared ontology
+  (`driver_license_front`/`driver_license_back`/`passport_image`/`document_image`) via the pure
+  `documentImageKey()` in `apps/app/src/ocr.ts`; thumbnail + default-on checkbox before save. Fixed an
+  SSOT violation (brief `*_scan` keys). Unit-tested (`ocr.test.mjs` 5). Spec updated. tsc green.
+- **Known issue (deferred):** SignPad renders the PDF upside-down (sign segment dropped from the guide).
+
 ## Done (docs/assets) — 2026-07-25: launch strategy locked, guide video + landing page refreshed
 - **ADR-0023** (code signing & platform distribution strategy, zero-cost first) and **ADR-0024**
   (launch distribution & platform roadmap, entity-triggered) written and Accepted. 0024 extends 0023.

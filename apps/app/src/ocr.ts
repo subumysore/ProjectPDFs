@@ -9,6 +9,20 @@ export interface ExtractedField {
   value: string;
 }
 
+// The canonical key + human label under which the WHOLE source document image is retained in the
+// vault, alongside the recognised fields. These keys are the SAME ontology the browser extension
+// writes (apps/extension/src/capture.js docImageKey) — one shared vault, one source of truth.
+export function documentImageKey(
+  fields: ReadonlyArray<ExtractedField>,
+  isBarcodeBack: boolean,
+): { key: string; label: string } {
+  const keys = new Set(fields.map((f) => f.ontology_key));
+  if (isBarcodeBack) return { key: "driver_license_back", label: "Driver’s licence — back (barcode)" };
+  if (keys.has("passport_no")) return { key: "passport_image", label: "Passport" };
+  if (keys.has("license_no")) return { key: "driver_license_front", label: "Driver’s licence — front" };
+  return { key: "document_image", label: "ID document" };
+}
+
 
 // Label -> canonical vault key. Keys match the seeded vault ontology so an image can
 // CREATE or UPDATE the user's existing fields (name parts, address, contact, etc.).

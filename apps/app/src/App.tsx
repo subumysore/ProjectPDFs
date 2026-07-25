@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { extractFromImage, type ExtractedField } from "./ocr";
+import { extractFromImage, documentImageKey, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
@@ -118,6 +118,11 @@ export function App() {
   const [pass, setPass] = useState("");
   const [lockMsg, setLockMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
+  // The source document image itself (passport / licence front / licence back) is retained
+  // alongside the recognised fields — the picture is saved, not just the text — so the profile
+  // can later render the actual document. Everything stays on-device (a data URL in the vault).
+  const [docImage, setDocImage] = useState<{ url: string; key: string; label: string } | null>(null);
+  const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
@@ -433,13 +438,31 @@ export function App() {
   }
   async function onDataSource(file: File) {
     setExtracted([]);
+    setDocImage(null);
     setOcrPct(0);
+    // Keep the source image as an on-device data URL so the picture itself can be saved too.
+    const url = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    }).catch(() => "");
     try {
       // 1) PDF417 barcode (back of a licence) → exact AAMVA fields.
       let fields = await readIdBarcode(file);
+      const isBarcodeBack = fields.length > 0;
       // 2) else OCR the printed side (front).
       if (!fields.length) fields = (await extractFromImage(file, setOcrPct, baseLang)).fields;
       setExtracted(fields);
+      // Classify the document so the retained image gets a meaningful key. The BACK of a US/Canada
+      // licence is the PDF417 barcode; a passport carries a passport number; otherwise treat a
+      // recognised licence/id number as the FRONT of the card.
+      if (url) {
+        // Retain the whole source image under the SAME ontology the extension writes (shared vault).
+        const { key, label } = documentImageKey(fields, isBarcodeBack);
+        setDocImage({ url, key, label });
+        setSaveDocImage(true);
+      }
       if (!fields.length) {
         setErr("Couldn’t read that image. For a driver’s licence: the BACK (barcode) gives exact data; or take a sharper, well-lit photo of the FRONT.");
       }
@@ -453,7 +476,12 @@ export function App() {
     for (const f of extracted) {
       await guard(invoke("upsert_data_point", { profileId: selected, key: f.ontology_key, value: f.value }));
     }
+    // Save the document picture itself too (passport / licence front / licence back), on-device.
+    if (docImage && saveDocImage) {
+      await guard(invoke("upsert_data_point", { profileId: selected, key: docImage.key, value: docImage.url }));
+    }
     setExtracted([]);
+    setDocImage(null);
     loadPoints(selected);
   }
   // Camera capture → OCR → key/value (snap an ID/form and your profile fills itself).
@@ -1245,7 +1273,16 @@ export function App() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={saveExtracted}>Save {extracted.length} to vault</button>
+                {docImage && (
+                  <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 10px", fontSize: 13 }}>
+                    <input type="checkbox" checked={saveDocImage} onChange={(e) => setSaveDocImage(e.currentTarget.checked)} />
+                    <img src={docImage.url} alt={docImage.label} style={{ height: 46, borderRadius: 6, border: "1px solid #dde6e4" }} />
+                    <span>Also save the {docImage.label} image itself <code style={mono}>({docImage.key})</code></span>
+                  </label>
+                )}
+                <button onClick={saveExtracted}>
+                  Save {extracted.length + (docImage && saveDocImage ? 1 : 0)} to vault
+                </button>
               </div>
             )}
           </div>

@@ -1,5 +1,21 @@
 # Active Context
 
+## Desktop ID import → retains the document image (extension parity, SSOT) — 2026-07-25
+- Desktop "Import a data source" (`App.tsx onDataSource`) now saves the whole licence/passport IMAGE
+  alongside the extracted text, under the SAME shared-vault ontology the extension already writes
+  (`driver_license_front`/`driver_license_back`/`passport_image`/`document_image`). One pure classifier
+  `documentImageKey()` in `apps/app/src/ocr.ts` (unit-tested, `ocr.test.mjs` +1). Thumbnail + default-on
+  checkbox before "Save N to vault". Corrected a brief `*_scan` key divergence that would have broken the
+  shared vault. Spec `docs/specs/document-image-fields.md` updated with the desktop-capture section.
+- **Guide video (in flight):** re-recording flagged segments LIVE (not static shots) via a new reusable
+  recorder `scripts/reclive.mjs` (fixed-rate screenshots + real timing + visible cursor/highlight;
+  fixes a WebView vite-dep `ERR_CACHE_READ_FAILURE` by clearing cache on load). Done: v2-02-id
+  (DL front OCR→fields+saved image · honest back-of-card beat · passport OCR→fields+saved image),
+  v2-07-learn (type a new field → saved), v2-13 privacy card English ("Your data never leaves your
+  device"). Pending: v2-08 profiles, v2-09 workplace ERP/W2 before-after, v2-11 extension/browser,
+  cursor at ~2:22. Synthetic docs in `apps/app/public/docs/` (own artwork, non-photo avatars — NOT
+  stock; a watermarked stock DL was rejected). Rebuild LOCAL only, no upload until owner reviews.
+
 ## Launch strategy locked + assets refreshed (2026-07-25) — JUST SHIPPED (docs/assets)
 Owner's 2026-07-25 launch-planning session produced two ADRs plus refreshed launch assets:
 - **ADR-0023** — code signing & platform distribution strategy (zero-cost first): ordered Windows trust

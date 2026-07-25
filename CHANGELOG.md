@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — desktop ID import now retains the document image (extension parity, shared ontology) (2026-07-25)
+- **Desktop "Import a data source" now saves the whole licence/passport IMAGE**, not just the
+  extracted text. The extension already did this (`capture.js`, per `docs/specs/document-image-fields.md`);
+  the desktop path (`App.tsx onDataSource`) lagged. Now, after OCR/barcode extraction, the source
+  image is retained under the **same shared-vault ontology** — `driver_license_front` /
+  `driver_license_back` / `passport_image` / `document_image` — via one pure classifier
+  `documentImageKey()` in `apps/app/src/ocr.ts`, shown as a thumbnail with a default-on checkbox
+  before "Save N to vault". Corrects a single-source-of-truth violation (desktop had briefly used
+  divergent `*_scan` keys the extension would not recognise in the shared vault). Unit-tested
+  (`ocr.test.mjs`, +1). On-device only; no egress.
+
 ### Added — launch strategy: signing/platform decisions, roadmap, rebuilt guide video, landing page (2026-07-25)
 - **ADR-0023 — code signing & platform distribution strategy (zero-cost first).** Consolidates the
   ordered Windows trust plan (keep public builds honestly unsigned; publish per-artifact SHA-256;

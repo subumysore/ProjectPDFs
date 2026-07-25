@@ -54,3 +54,17 @@ test("label-only header lines produce no field", () => {
   const m = asMap("Name\nAddress");
   assert.equal(Object.keys(m).length, 0);
 });
+
+import { documentImageKey } from "./ocr.ts";
+
+// The whole source document image is retained under the SAME ontology the browser extension writes
+// (shared vault, single source of truth). Classification: a decoded back barcode → back; a passport
+// number → passport; a licence number → front; anything else → a generic document image.
+test("documentImageKey aligns with the extension's shared ontology", () => {
+  const f = (k) => [{ ontology_key: k, value: "x" }];
+  assert.equal(documentImageKey(f("license_no"), true).key, "driver_license_back"); // barcode wins
+  assert.equal(documentImageKey(f("passport_no"), false).key, "passport_image");
+  assert.equal(documentImageKey(f("license_no"), false).key, "driver_license_front");
+  assert.equal(documentImageKey(f("first_name"), false).key, "document_image");
+  assert.equal(documentImageKey([], false).key, "document_image");
+});
