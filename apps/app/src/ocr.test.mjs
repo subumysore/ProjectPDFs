@@ -68,3 +68,11 @@ test("documentImageKey aligns with the extension's shared ontology", () => {
   assert.equal(documentImageKey(f("first_name"), false).key, "document_image");
   assert.equal(documentImageKey([], false).key, "document_image");
 });
+
+test("passport 'Given names' splits into first (+middle), not first_name='names: ...'", () => {
+  const m = asMap(["Surname: DOE", "Given names: JOHN QUINCY", "Passport No: X1234567"].join("\n"));
+  assert.equal(m.last_name, "DOE");
+  assert.equal(m.first_name, "JOHN");
+  assert.equal(m.passport_no, "X1234567");
+  assert.ok(!/names:/i.test(m.first_name || ""));
+});

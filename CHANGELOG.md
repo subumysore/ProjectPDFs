@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — passport "Given names" no longer mis-parsed (OCR) (2026-07-25)
+- On-device OCR read a passport line `Given names: JOHN QUINCY` into `first_name = "names: JOHN QUINCY"` (the label `given names` was unknown, so the `given` prefix swallowed `names:`). Added `given names`/`forenames` as a full-name label that splits into first (+middle); `apps/app/src/ocr.ts`, unit-tested (`ocr.test.mjs` +1).
+
 ### Fixed — desktop ID import now retains the document image (extension parity, shared ontology) (2026-07-25)
 - **Desktop "Import a data source" now saves the whole licence/passport IMAGE**, not just the
   extracted text. The extension already did this (`capture.js`, per `docs/specs/document-image-fields.md`);

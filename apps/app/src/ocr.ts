@@ -30,7 +30,9 @@ const LABELS: ReadonlyArray<readonly [readonly string[], string]> = [
   [["first name", "given name", "forename", "given"], "first_name"],
   [["middle name", "middle"], "middle_name"],
   [["last name", "surname", "family name"], "last_name"],
-  [["full name", "name"], "__full"], // split into first/middle/last
+  // "given names" (plural, as passports print it) carries first + middle together — split it, so it
+  // is NOT swallowed by the "given" prefix into first_name = "names: JOHN QUINCY".
+  [["full name", "name", "given names", "forenames"], "__full"], // split into first/middle/last
   [["salutation", "title", "prefix"], "salutation"],
   [["gender", "sex"], "gender"],
   [["email", "e-mail", "e mail", "email address", "mail"], "email_address"],
