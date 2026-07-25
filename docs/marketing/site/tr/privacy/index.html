@@ -3,40 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gizlilik politikası — PolyglotFormFill</title>
+<title>PolyglotFormFill — Gizlilik Politikası</title>
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62}
+  .wrap{max-width:800px;margin:0 auto;padding:44px 24px 80px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--teal-ink))}
+  h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.03em;margin:24px 0 4px;font-weight:800}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+  .disclaimer{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:14px 18px;margin:20px 0;font-size:13.5px}
+  .disclaimer b{color:var(--amber)}
+  .tldr{background:var(--teal-soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .tldr b{color:var(--teal-ink)}
+  h2{font-size:18px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:6px}
+  h2 .n{font-family:var(--mono);color:var(--teal-ink);font-size:14px;margin-right:8px}
+  p,li{font-size:15px}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:22px;display:grid;gap:6px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .fill{background:var(--amber-soft);border-radius:4px;padding:0 5px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+  .egress{background:var(--amber-soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:14px}
+  .egress b{color:var(--amber)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--muted);font-size:13px}
+  a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr" selected>Türkçe</option></select></nav>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/" selected>Türkçe</option></select></div>
 <div class="wrap">
-  <h1>Gizlilik politikası</h1>
-  <p class="lede">Belgeleriniz cihazınızdan asla çıkmaz.</p>
-  <p>Hiçbir şey toplamıyoruz. Hesap yok, telemetri yok, analitik yok.</p>
-  <p>Okuma, OCR, çeviri, doldurma ve imzalama tamamen cihazınızda olur.</p>
-  <p>Formunuz yalnızca siz gönderdiğinizde cihazdan çıkar ve yalnızca seçtiğiniz alıcıya gider.</p>
-  <p>Uygulama yazı tiplerini, dil modellerini ve güncellemeleri sunucumuzdan indirir. Sizinle ilgili hiçbir şey geri gönderilmez.</p>
-  <footer>
-    <p class="note">Tam hukuki metin İngilizce olarak mevcuttur. <a href="/privacy/">English</a></p>
-    <p><a href="/tr/">Geri</a></p>
-  </footer>
+  <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+  <h1>Gizlilik Politikası</h1>
+  <div class="meta">Yürürlük tarihi: 18 July 2026 · Sürüm 1.0</div>
+  <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">Bu çeviri, kolaylık sağlamanız için sunulmuştur. Bu Gizlilik Politikası'nın İngilizce sürümü, yetkili ve yasal olarak bağlayıcı sürümdür. <a href="/privacy/">English</a></div>
+  <div class="disclaimer"><b>⚖ Taslak, yasal inceleme bekliyor — hukuki tavsiye değildir. Bu, PolyglotFormFill ürünü için bir taslak şablonudur. Yayımlanmadan önce, Hizmetin sunulduğu her yargı bölgesinde (GDPR kapsamında AB/AEA, DPDP Act 2023 kapsamında Hindistan ve CCPA/CPRA kapsamında ABD dahil) nitelikli hukuk müşavirliği tarafından incelenmeli ve onaylanmalıdır. İletişim/kimlik alanları doldurulmuştur; geniş çaplı bir kamuya açık sürümden önce yine de bir hukuk müşaviri tarafından son bir okuma önerilir.</b></div>
+  <div class="tldr">Özü, açıkça: Belgelerinizi veya girdiğiniz verileri görmez, saklamaz veya iletmeyiz ve bunları amaçlamadığınız hiçbir yere göndermeyiz. Her şey cihazınızda işlenir. İçeriğiniz cihazınızdan yalnızca belirli bir eylem gerçekleştirdiğinizde çıkar — tamamlanmış bir formu seçtiğiniz alıcıya göndermek veya yazdığınız bir web araması — ve doğrudan oraya gider, asla bizim üzerimizden değil.</div>
+
+  <h2><span class="n">1.</span>Biz kimiz</h2>
+  <p>Bu Politika, PolyglotFormFill uygulaması, tarayıcı uzantısı ve web sitesinden ("Hizmet") sorumlu olan Subramanya Mysore (şahıs işletmesi), Hindistan ("biz") tarafından yayımlanmıştır. GDPR açısından veri sorumlusu olarak hareket ederiz; Hindistan DPDP Act 2023 kapsamında Data Fiduciary olarak; kişisel veri işlemediğimiz durumlarda böyle bir rol doğmaz. Şikâyet Görevlisi / İletişim: Subramanya Mysore · subumysore@gmail.com.</p>
+
+  <h2><span class="n">2.</span>Tanımlar</h2>
+  <ul>
+    <li>Kişisel Veri — kimliği belirlenebilir bir gerçek kişiye ilişkin bilgi.</li>
+    <li>Kullanıcı İçeriği — girdiğiniz veya sakladığınız belgeler, formlar, görüntüler ve değerler (sizin "kasanız"), içindeki tüm Kişisel Veriler dahil.</li>
+    <li>Cihaz — Hizmeti çalıştırdığınız bilgisayar veya cihaz.</li>
+  </ul>
+
+  <h2><span class="n">3.</span>Temel gizlilik ilkemiz</h2>
+  <p>Hizmet, Kullanıcı İçeriğinizi görmeyeceğimiz, saklamayacağımız veya iletmeyeceğimiz ve amaçlamadığınız hiçbir yere göndermeyeceğimiz şekilde tasarlanmıştır. Özellikle:</p>
+  <ol>
+    <li>Cihazda işleme. Okuma/görüntüleme, OCR, çeviri, alan tespiti, doldurma, dışa aktarma ve imzalama, Cihazınızda yerel olarak gerçekleştirilir. Bunları yapmak için Kullanıcı İçeriğinizi almayız.</li>
+    <li>Bizim tarafımızdan toplama yok. Kullanıcı İçeriğinizi toplamaz, almaz, erişmez veya saklamayız. Hesap gerekmez ve Kullanıcı İçeriğinizin bize yüklenmesi yoktur.</li>
+    <li>Yalnızca kullanıcı yönlendirmeli iletim. Kullanıcı İçeriği, Cihazınızdan yalnızca belirli bir eylem başlattığınızda ve yalnızca seçtiğiniz hedefe çıkar:
+      <div class="egress">(a) Tamamlanmış bir form gönderme — Cihazınızdan seçtiğiniz alıcıya (örneğin bir devlet veya satıcı sitesi) doğrudan iletilir. Onu aracı olarak iletmez, engellemez, almaz, saklamaz veya erişmeyiz.</div>
+      <div class="egress">(b) Web araması (isteğe bağlı) — yalnızca yazdığınız arama terimleri, sonuç döndürmek için doğrudan üçüncü taraf arama sağlayıcısına (DuckDuckGo) gönderilir. Hiçbir Kullanıcı İçeriği, kasa verisi veya tanımlayıcı gönderilmez. Bundan tamamen kaçınmak için bir URL girin.</div>
+      İçeriğin veya arama terimlerinin Cihazınızdan çıktığı tek durumlar bunlardır — her biri kullanıcı tarafından başlatılan, açıkça etiketlenmiş ve seçtiğiniz bir hedefe yönlendirilmiştir.</li>
+  </ol>
+
+  <h2><span class="n">4.</span>İşleyebileceğimiz sınırlı, içerik dışı veriler</h2>
+  <ul>
+    <li>Yazılım dağıtımı ve güncellemeler. Hizmeti indirmek/güncellemek veya kaynakları (güncellemeler, yazı tipleri, modeller) indirmesi, ilgili kanala tek yönlü bir istek yapar; bu kanal, teknik verileri (örneğin IP) kendi politikası kapsamında bağımsız bir sorumlu olarak işleyebilir. Bu, Cihazınıza bir indirmedir ve Kullanıcı İçeriğinizi yüklemek için hiçbir yol sağlamaz.</li>
+    <li>Ödemeler ve lisanslama. Ücretli özellikler, Cihazınızda doğrulanan çevrimdışı imzalı bir lisansla açılır (hiçbir sunucuyla iletişim kurmaz). Satın alırsanız, ödeme geçerli değil (henüz ücretli özellik yok) tarafından işlenir; lisansı düzenlemek/desteklemek için gereken yalnızca (örneğin ad, e-posta, sipariş kimliği) alınır — asla Kullanıcı İçeriğiniz değil.</li>
+    <li>Gönüllü iletişimler. Destekle iletişime geçerseniz, yanıt vermek için sağladıklarınızı işleriz.</li>
+  </ul>
+  <p class="muted">Analiz, reklam tanımlayıcıları, takip teknolojileri veya içerik taşıyan çökme raporları kullanmayız.</p>
+
+  <h2><span class="n">5.</span>Hukuki dayanaklar (GDPR, geçerli olduğu yerlerde)</h2>
+  <p>§4'teki sınırlı işleme için: lisanslama/destek için sözleşme (Art. 6(1)(b)); güvenli dağıtım/güncellemeler için meşru menfaatler (Art. 6(1)(f)); gerektiğinde rıza (Art. 6(1)(a)). Kullanıcı İçeriği için hukuki dayanak gerekmez, çünkü onu işlemeyiz.</p>
+
+  <h2><span class="n">6.</span>Cihazdaki verilerinizin güvenliği</h2>
+  <ul>
+    <li>Kasanız yalnızca Cihazınızda saklanır ve beklemede şifrelenir (AES-256-GCM).</li>
+    <li>Anahtar, kilit açıldığında parola cümlenizden veya bir donanım geçiş anahtarından (WebAuthn) türetilir; asla saklanmaz ve asla iletilmez.</li>
+    <li>Uzantı, en az ayrıcalık izinleri kullanır ve uzaktan kod içermez (Manifest V3).</li>
+  </ul>
+
+  <h2><span class="n">7.</span>Paylaşım ve uluslararası aktarımlar</h2>
+  <p>Kullanıcı İçeriğinizi almadığımız için onu paylaşmaz, satmaz veya aktarmayız. §4'teki sınırlı içerik dışı veriler için yalnızca orada adı geçen sağlayıcılarla, sözleşme kapsamında paylaşırız; herhangi bir sınır ötesi aktarım, o sağlayıcının güvencelerini izler.</p>
+
+  <h2><span class="n">8.</span>Saklama</h2>
+  <p>Kullanıcı İçeriğinizi saklamayız (onu asla almayız). §4'teki içerik dışı veriler yalnızca gerekli olduğu sürece saklanır.</p>
+
+  <h2><span class="n">9.</span>Haklarınız</h2>
+  <p>Geçerli yasaya tabi olarak (GDPR Mad. 15–22; Hindistan DPDP Böl. III; CCPA/CPRA), erişim, düzeltme, silme, taşıma, kısıtlama veya itiraz etme, rızayı geri çekme ve bir denetim makamına / Data Protection Board'a şikâyette bulunma haklarına sahip olabilirsiniz. Kullanıcı İçeriğiniz yalnızca Cihazınızda bulunduğundan, ona doğrudan erişir ve silersiniz (Hizmet içinde veya yerel verileri kaldırarak). Tuttuğumuz sınırlı içerik dışı veriler için subumysore@gmail.com ile iletişime geçin.</p>
+
+  <h2><span class="n">10.</span>Çocuklar</h2>
+  <p>Hizmet 13 yaşından küçük çocuklara yönelik değildir ve bilerek onların Kişisel Verilerini işlemeyiz.</p>
+
+  <h2><span class="n">11.</span>Değişiklikler</h2>
+  <p>Bu Politikayı güncelleyebiliriz; önemli değişiklikler Yürürlük tarihini günceller ve gerektiğinde ek bildirim içerir.</p>
+
+  <hr>
+  <footer>Subramanya Mysore (şahıs işletmesi) · Şikâyet Görevlisi/İletişim: Subramanya Mysore · subumysore@gmail.com · Atanmışsa DPO/AB Temsilcisi. PolyglotFormFill — gizlilik öncelikli, cihazda form otomatik doldurma.</footer>
+  <p style="margin-top:20px"><a href="/tr/">← PolyglotFormFill'e geri dön</a></p>
 </div>
 </body>
 </html>

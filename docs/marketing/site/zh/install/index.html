@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>安装 PolyglotFormFill（测试版）</title>
+<style>
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6}
+  .wrap{max-width:760px;margin:0 auto;padding:44px 24px 80px}
+  a{color:var(--teal-ink)}
+  h1{font-size:clamp(26px,5vw,36px);letter-spacing:-.02em}
+  h2{font-size:20px;margin-top:34px}
+  .btn{display:inline-block;background:var(--teal);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;text-decoration:none;margin:8px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
+  .warn{background:var(--amber-soft);border-radius:10px;padding:12px 16px;font-size:14px}
+  .warn b{color:var(--amber)}
+  ol{padding-left:20px;display:grid;gap:8px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:13px}
+  .muted{color:var(--muted);font-size:13px}
+  .ver{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:8px;font-family:var(--mono)}
+  .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 10px;margin-bottom:10px}
+  .heads{background:var(--amber-soft);border-radius:10px;padding:14px 16px;font-size:14px;margin:14px 0}
+  .heads b{color:var(--amber)}
+  .heads ol{margin:10px 0 0;padding-left:20px;gap:4px}
+  .screen{font-family:var(--sans);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;color:var(--muted)}
+  .screen .t{display:block;font-weight:600;color:var(--ink);font-size:14px;margin-bottom:2px}
+  pre{font-family:var(--mono);background:var(--teal-soft);padding:12px 14px;border-radius:9px;font-size:12.5px;overflow-x:auto;margin:10px 0}
+  .hash{font-family:var(--mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:14px;color:var(--teal-ink);font-weight:600}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+</style>
+</head>
+<body>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/install/">English</option><option value="/hi/install/">हिन्दी</option><option value="/bn/install/">বাংলা</option><option value="/ta/install/">தமிழ்</option><option value="/te/install/">తెలుగు</option><option value="/kn/install/">ಕನ್ನಡ</option><option value="/ml/install/">മലയാളം</option><option value="/gu/install/">ગુજરાતી</option><option value="/pa/install/">ਪੰਜਾਬੀ</option><option value="/mr/install/">मराठी</option><option value="/ur/install/">اردو</option><option value="/ar/install/">العربية</option><option value="/he/install/">עברית</option><option value="/fa/install/">فارسی</option><option value="/zh/install/" selected>中文</option><option value="/ja/install/">日本語</option><option value="/ko/install/">한국어</option><option value="/th/install/">ไทย</option><option value="/vi/install/">Tiếng Việt</option><option value="/id/install/">Bahasa Indonesia</option><option value="/ru/install/">Русский</option><option value="/es/install/">Español</option><option value="/fr/install/">Français</option><option value="/de/install/">Deutsch</option><option value="/pt/install/">Português</option><option value="/tr/install/">Türkçe</option></select></div>
+<div class="wrap">
+  <p><a href="/zh/">← PolyglotFormFill</a></p>
+  <h1>安装</h1>
+  <p class="muted">从浏览器扩展开始——它是最快捷的入门方式，并能完成核心工作。桌面应用则增加了签名、历史记录和离线作业。</p>
+
+  <div class="card">
+    <span class="tag">从这里开始 · 最简单</span>
+    <h2 style="margin-top:0">🧩 浏览器扩展 <span class="ver" data-ver="ext">v1.0.1</span></h2>
+    <a class="btn" href="/download/polyglotformfill-extension.zip">下载扩展（.zip）</a>
+    <p>在上架应用商店之前，请以开发者模式加载：</p>
+    <ol>
+      <li>将下载文件解压到一个文件夹。</li>
+      <li>打开 chrome://extensions（或 edge://extensions）。</li>
+      <li>开启开发者模式（右上角）。</li>
+      <li>点击“加载已解压的扩展程序”→ 选择解压后的文件夹。PolyglotFormFill 现在会出现在您的扩展列表中。</li>
+      <li>把它固定到工具栏以便找到：点击浏览器右上角附近的拼图图标 🧩（那是扩展菜单），找到 PolyglotFormFill，点击旁边的图钉 📌。它的图标现在就出现在您的工具栏上了。</li>
+      <li>点击工具栏上的 PolyglotFormFill 图标 → 设置一个口令（或用通行密钥解锁）。</li>
+      <li>在弹窗的“您的信息”下，逐一输入每个字段（例如 full_name、email、phone）及其值，然后点击“保存字段”。这些内容会在您的设备上加密存储。随后打开一份表单，点击“填写本页”。</li>
+    </ol>
+    <p class="muted">加载后没立即看到工具栏图标？这很正常——Chrome 会把新扩展藏在 🧩 拼图菜单里，直到您固定它（第 5 步）。Firefox：使用 about:debugging →“加载临时附加组件”，然后从工具栏溢出菜单固定。</p>
+  </div>
+
+  <div class="card">
+    <span class="tag">即将推出 · 最顺畅的桌面安装</span>
+    <h2 style="margin-top:0">⌨️ Windows：用 winget 安装</h2>
+    <p>Windows 内置了包管理器。一旦我们的条目获批，桌面应用只需一条命令即可安装——没有下载提示，也无需点掉任何警告：</p>
+    <pre>winget install SubramanyaMysore.PolyglotFormFill</pre>
+    <p class="muted">winget 会获取安装程序，并在运行前对照已发布的校验和进行核对。目前尚未上线——该条目正在 Windows Package Manager 仓库中等待审核。在此之前，请使用下方的直接下载。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">🖥️ Windows 桌面应用——直接下载
+      <span class="ver" data-ver="app">v1.0.0</span></h2>
+
+    <div class="heads">
+      <b>Windows 会向您显示什么，以及为什么。</b> 我们尚未购买代码签名证书——它们只售予注册企业，每年花费数百美元，我们宁可暂缓，也不愿为此向您收费。因此 Windows 尚不认识这个发布者名称，会在您首次运行安装程序时显示这个蓝色框：
+      <div class="screen">
+        <span class="t">Windows 已保护你的电脑</span>
+        Microsoft Defender SmartScreen 阻止了一个无法识别的应用启动。
+      </div>
+      这条消息意味着“我以前没见过这个发布者”——而不是文件本身有任何问题。要继续：
+      <ol>
+        <li>点击“更多信息”（蓝色框内的小链接）。</li>
+        <li>点击“仍要运行”。</li>
+      </ol>
+      它只在首次安装时出现一次。想完全避免？请使用上面的 winget，或不受此影响的浏览器扩展。
+    </div>
+
+    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">下载安装程序（.exe）</a>
+    <p class="muted">首次启动时您将设置一个口令——在您输入之前，应用会保持锁定。</p>
+
+    <details>
+      <summary>核对下载文件与我们发布的完全一致</summary>
+      <p class="muted" style="margin-top:10px">每个版本都会列出每个文件的 SHA-256。在 PowerShell 中对您下载的文件运行以下命令并比对——如果两个字符串一致，说明文件完整无损、未经篡改地送达。</p>
+      <pre>Get-FileHash .\PolyglotFormFill-Setup.exe -Algorithm SHA256</pre>
+      <p class="muted" style="margin-bottom:4px">已发布的哈希值——针对
+        <span data-manifest="version">本版本</span>:</p>
+      <div data-manifest="artifacts" class="hash">
+        <a href="/download/release-manifest.json">release-manifest.json</a>
+      </div>
+    </details>
+  </div>
+
+  <p class="muted">您的数据留在您的设备上；我们从不查看。请参阅
+    <a href="/zh/privacy/">隐私政策</a>.</p>
+</div>
+<script>
+// Fill the published SHA-256 list (and the desktop version badge) from the release manifest that
+// ships beside the artifacts, so the page can never drift from what was actually published.
+// Same-origin fetch of our own asset: nothing about the visitor is sent or recorded.
+(async () => {
+  const list = document.querySelector('[data-manifest="artifacts"]');
+  if (!list) return;
+  try {
+    const m = await fetch('/download/release-manifest.json', { cache: 'no-cache' }).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+    const ver = document.querySelector('[data-manifest="version"]');
+    if (ver && m.version) ver.textContent = 'v' + m.version;
+    const badge = document.querySelector('[data-ver="app"]');
+    if (badge && m.version) badge.textContent = 'v' + m.version;
+    if (!Array.isArray(m.artifacts) || !m.artifacts.length) return;
+    list.textContent = '';
+    for (const a of m.artifacts) {
+      const row = document.createElement('div');
+      row.style.margin = '6px 0';
+      const name = document.createElement('b');
+      name.textContent = a.name;
+      row.append(name, document.createElement('br'), document.createTextNode(a.sha256));
+      list.append(row);
+    }
+  } catch {
+    // Manifest not reachable — leave the static link to release-manifest.json in place.
+  }
+})();
+</script>
+</body>
+</html>

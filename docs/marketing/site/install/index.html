@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -31,14 +31,24 @@
   .hash{font-family:var(--mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
   details{margin-top:12px}
   summary{cursor:pointer;font-size:14px;color:var(--teal-ink);font-weight:600}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/install/" selected>English</option><option value="/hi/install/">हिन्दी</option><option value="/bn/install/">বাংলা</option><option value="/ta/install/">தமிழ்</option><option value="/te/install/">తెలుగు</option><option value="/kn/install/">ಕನ್ನಡ</option><option value="/ml/install/">മലയാളം</option><option value="/gu/install/">ગુજરાતી</option><option value="/pa/install/">ਪੰਜਾਬੀ</option><option value="/mr/install/">मराठी</option><option value="/ur/install/">اردو</option><option value="/ar/install/">العربية</option><option value="/he/install/">עברית</option><option value="/fa/install/">فارسی</option><option value="/zh/install/">中文</option><option value="/ja/install/">日本語</option><option value="/ko/install/">한국어</option><option value="/th/install/">ไทย</option><option value="/vi/install/">Tiếng Việt</option><option value="/id/install/">Bahasa Indonesia</option><option value="/ru/install/">Русский</option><option value="/es/install/">Español</option><option value="/fr/install/">Français</option><option value="/de/install/">Deutsch</option><option value="/pt/install/">Português</option><option value="/tr/install/">Türkçe</option></select></div>
 <div class="wrap">
   <p><a href="/">← PolyglotFormFill</a></p>
   <h1>Install</h1>
-  <p class="muted">Start with the browser extension — it’s the fastest way in and does the core job.
-    The desktop app adds signing, history and offline work.</p>
+  <p class="muted">Start with the browser extension — it’s the fastest way in and does the core job. The desktop app adds signing, history and offline work.</p>
 
   <div class="card">
     <span class="tag">Start here · easiest</span>
@@ -47,32 +57,22 @@
     <p>Until it’s on the stores, load it in developer mode:</p>
     <ol>
       <li>Unzip the download to a folder.</li>
-      <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>).</li>
-      <li>Turn on <b>Developer mode</b> (top-right).</li>
-      <li>Click <b>Load unpacked</b> → select the unzipped folder. PolyglotFormFill now appears in your
-        extensions list.</li>
-      <li><b>Pin it to the toolbar so you can find it:</b> click the <b>puzzle-piece icon</b> 🧩 near the
-        top-right of the browser (that’s the Extensions menu), find <b>PolyglotFormFill</b>, and click the
-        <b>pin</b> 📌 next to it. Its icon now sits on your toolbar.</li>
-      <li>Click that <b>PolyglotFormFill toolbar icon</b> → set a passphrase (or unlock with a passkey).</li>
-      <li>Under <b>“Your details”</b> in the popup, type each field (e.g. <code>full_name</code>,
-        <code>email</code>, <code>phone</code>) and its value, then <b>Save field</b>. These are stored
-        encrypted on your device. Then open a form and click <b>Fill this page</b>.</li>
+      <li>Open chrome://extensions (or edge://extensions).</li>
+      <li>Turn on Developer mode (top-right).</li>
+      <li>Click Load unpacked → select the unzipped folder. PolyglotFormFill now appears in your extensions list.</li>
+      <li>Pin it to the toolbar so you can find it: click the puzzle-piece icon 🧩 near the top-right of the browser (that’s the Extensions menu), find PolyglotFormFill, and click the pin 📌 next to it. Its icon now sits on your toolbar.</li>
+      <li>Click that PolyglotFormFill toolbar icon → set a passphrase (or unlock with a passkey).</li>
+      <li>Under “Your details” in the popup, type each field (e.g. full_name, email, phone) and its value, then Save field. These are stored encrypted on your device. Then open a form and click Fill this page.</li>
     </ol>
-    <p class="muted">Don’t see a toolbar icon right after loading? That’s normal — Chrome hides new
-      extensions behind the 🧩 puzzle-piece menu until you pin them (step 6). Firefox: use
-      <code>about:debugging</code> → “Load Temporary Add-on”, then pin from the toolbar overflow.</p>
+    <p class="muted">Don’t see a toolbar icon right after loading? That’s normal — Chrome hides new extensions behind the 🧩 puzzle-piece menu until you pin them (step 5). Firefox: use about:debugging → “Load Temporary Add-on”, then pin from the toolbar overflow.</p>
   </div>
 
   <div class="card">
     <span class="tag">Coming shortly · smoothest desktop install</span>
     <h2 style="margin-top:0">⌨️ Windows: install with winget</h2>
-    <p>Windows has a built-in package manager. Once our listing is approved, the desktop app installs
-      with one command — no download prompt, and no warning to click through:</p>
+    <p>Windows has a built-in package manager. Once our listing is approved, the desktop app installs with one command — no download prompt, and no warning to click through:</p>
     <pre>winget install SubramanyaMysore.PolyglotFormFill</pre>
-    <p class="muted">winget fetches the installer and checks it against a published checksum before
-      running it. <b>Not live yet</b> — the listing is awaiting review in the Windows Package Manager
-      repository. Until then, use the direct download below.</p>
+    <p class="muted">winget fetches the installer and checks it against a published checksum before running it. Not live yet — the listing is awaiting review in the Windows Package Manager repository. Until then, use the direct download below.</p>
   </div>
 
   <div class="card">
@@ -80,22 +80,17 @@
       <span class="ver" data-ver="app">v1.0.0</span></h2>
 
     <div class="heads">
-      <b>What Windows will show you, and why.</b> We haven’t bought a code-signing certificate yet —
-      they’re sold to registered companies and cost a few hundred dollars a year, and we’d rather put
-      that off than charge you for it. Windows therefore doesn’t recognise the publisher name yet, and
-      shows this blue box the first time you run the installer:
+      <b>What Windows will show you, and why.</b> We haven’t bought a code-signing certificate yet — they’re sold to registered companies and cost a few hundred dollars a year, and we’d rather put that off than charge you for it. Windows therefore doesn’t recognise the publisher name yet, and shows this blue box the first time you run the installer:
       <div class="screen">
         <span class="t">Windows protected your PC</span>
         Microsoft Defender SmartScreen prevented an unrecognised app from starting.
       </div>
-      That message means <em>“I haven’t seen this publisher before”</em> — not that anything is wrong
-      with the file. To continue:
+      That message means “I haven’t seen this publisher before” — not that anything is wrong with the file. To continue:
       <ol>
-        <li>Click <b>More info</b> (small link inside the blue box).</li>
-        <li>Click <b>Run anyway</b>.</li>
+        <li>Click More info (small link inside the blue box).</li>
+        <li>Click Run anyway.</li>
       </ol>
-      It appears once, on first install. Prefer to avoid it entirely? Use <b>winget</b> above, or the
-      browser extension, which is unaffected.
+      It appears once, on first install. Prefer to avoid it entirely? Use winget above, or the browser extension, which is unaffected.
     </div>
 
     <a class="btn" href="/download/PolyglotFormFill-Setup.exe">Download installer (.exe)</a>
@@ -103,9 +98,7 @@
 
     <details>
       <summary>Check the download is exactly what we published</summary>
-      <p class="muted" style="margin-top:10px">Every release lists the SHA-256 of each file. Run this in
-        PowerShell on the file you downloaded and compare — if the two strings match, the file arrived
-        intact and unaltered.</p>
+      <p class="muted" style="margin-top:10px">Every release lists the SHA-256 of each file. Run this in PowerShell on the file you downloaded and compare — if the two strings match, the file arrived intact and unaltered.</p>
       <pre>Get-FileHash .\PolyglotFormFill-Setup.exe -Algorithm SHA256</pre>
       <p class="muted" style="margin-bottom:4px">Published hashes for
         <span data-manifest="version">this release</span>:</p>

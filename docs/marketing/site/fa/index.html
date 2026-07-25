@@ -3,45 +3,343 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PolyglotFormFill — هر فرمی را، به هر زبانی، به‌صورت خصوصی روی دستگاه خودتان پر کنید.</title>
-<meta name="description" content="اسناد شما هرگز از دستگاهتان خارج نمی‌شوند.">
+<title>PolyglotFormFill — هر فرمی را بخوانید و پر کنید، به هر زبانی.</title>
+<meta name="description" content="‏PolyglotFormFill فرمی را به یک زبان می‌خواند و آن را از داده‌های شما به زبانی دیگر پر می‌کند — روی دستگاه شما، به‌طور خصوصی. ما هرگز داده‌های شما را نمی‌بینیم.">
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{
+    --ink:#0e1a1f; --paper:#f6f8f7; --surface:#ffffff; --muted:#5a6b6d; --line:#dde6e4;
+    --teal:#0d8f83; --teal-ink:#0a6a60; --teal-soft:#e3f2ef;
+    --amber:#a8620f; --amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+      --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  }
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+    --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;
+    --teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  a{color:var(--teal-ink);text-decoration:none}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-ink)}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:18px}
+  .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--teal-ink));
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .navlinks{display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+  .navlinks a{color:var(--muted)}
+  .btn{display:inline-block;background:var(--teal);color:#fff;padding:11px 18px;border-radius:10px;
+    font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+  .btn.ghost{background:transparent;color:var(--teal-ink);box-shadow:inset 0 0 0 1px var(--line)}
+  .btn.soon{opacity:.55;cursor:not-allowed;pointer-events:none}
+
+  /* hero */
+  header{padding:56px 0 40px}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:var(--teal-soft);color:var(--teal-ink);
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;letter-spacing:.04em}
+  h1{font-size:clamp(34px,6.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:20px 0 0;
+    text-wrap:balance;font-weight:800}
+  h1 .fade{color:var(--teal-ink)}
+  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:60ch;margin:18px 0 0}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .trustline{margin-top:20px;font-size:13px;color:var(--muted);font-family:var(--mono)}
+
+  /* dataflow diagram */
+  .flow{margin:26px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:22px;box-shadow:var(--shadow)}
+  .device{border:1.5px dashed var(--teal);border-radius:12px;padding:16px;background:var(--teal-soft)}
+  .device h3{margin:0 0 12px;font-size:13px;font-family:var(--mono);letter-spacing:.06em;color:var(--teal-ink);text-transform:uppercase}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px}
+  .egress{margin-top:14px;display:grid;gap:8px}
+  .out{display:flex;gap:10px;align-items:flex-start;background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:13.5px}
+  .out b{color:var(--amber)}
+  .arrow{font-family:var(--mono);color:var(--amber);font-weight:700}
+
+  /* sections */
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .h2{font-size:clamp(24px,3.6vw,34px);letter-spacing:-.02em;margin:6px 0 0;font-weight:800;text-wrap:balance}
+  .sub{color:var(--muted);margin:12px 0 0;max-width:64ch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:30px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .card .ic{width:34px;height:34px;border-radius:9px;background:var(--teal-soft);display:grid;place-items:center;font-size:18px;margin-bottom:12px}
+  .card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .card.feature{grid-column:1/-1;background:linear-gradient(120% 140% at 0% 0%,var(--teal-soft),var(--surface));border-color:var(--teal);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:26px 28px}
+  .card.feature .ic{width:52px;height:52px;font-size:27px;margin:0;background:linear-gradient(135deg,var(--teal),var(--teal-ink));color:#fff}
+  .card.feature h3{font-size:clamp(19px,2.6vw,25px);margin-bottom:8px}
+  .card.feature p{font-size:15.5px;color:var(--ink);max-width:70ch}
+  .card.feature .flag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-ink);display:block;margin-bottom:6px}
+  @media (max-width:560px){.card.feature{grid-template-columns:1fr}}
+
+  /* polyglot band */
+  .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:34px;margin-top:8px}
+  .band .h2{color:#fff}
+  .band .sub{color:rgba(255,255,255,.85)}
+  .langrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:13px}
+  .lang{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:999px}
+
+  /* pricing */
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:30px}
+  .tier{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+  .tier.pop{border:1.5px solid var(--teal);position:relative}
+  .tier.pop::after{content:"Most popular";position:absolute;top:-11px;left:20px;background:var(--teal);color:#fff;
+    font-size:11px;font-family:var(--mono);letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+  .tier h3{margin:0;font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--teal-ink)}
+  .price{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
+  .price span:not(.ppp){font-size:14px;color:var(--muted);font-weight:500}
+  .price .ppp{font-size:inherit;font-weight:inherit;color:inherit;letter-spacing:inherit}
+  .tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;font-size:14px;color:var(--muted)}
+  .tier li::before{content:"✓ ";color:var(--teal-ink);font-weight:700}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:13px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .note{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
+  @media (max-width:560px){.navlinks{display:none}}
+  /* Multilingual "Hello" background — the same motif as the guide video. A fixed layer BEHIND all
+     content (z-index:-1) with low opacity so copy stays perfectly readable; each word drifts up and
+     fades, from its own random spot. */
+  .hellobg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .hellobg .h{position:absolute;font-weight:800;white-space:nowrap;color:var(--teal-ink);opacity:0;
+    will-change:transform,opacity;letter-spacing:-.5px;}
+  @keyframes hdrift{
+    0%{transform:translateY(26px) scale(.92);opacity:0;}
+    18%{opacity:.11;} 50%{transform:translateY(-6px) scale(1);opacity:.14;} 82%{opacity:.06;}
+    100%{transform:translateY(-42px) scale(1.06);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .tier.pop::after{content:"محبوب‌ترین"}
 </style>
-</head>
-<body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa" selected>فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+
+<div class="hellobg" id="hellobg" aria-hidden="true"></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/">English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/">தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/" selected>فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+
 <div class="wrap">
-  <h1>PolyglotFormFill</h1>
-  <p class="lede">هر فرمی را، به هر زبانی، به‌صورت خصوصی روی دستگاه خودتان پر کنید.</p>
-  <div class="cta">
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">دانلود — برای Windows</a>
-    <a class="btn alt" href="/install/">نصب — برای Chrome و Edge</a>
-  </div>
-  <h2>اسناد شما هرگز از دستگاهتان خارج نمی‌شوند.</h2>
-  <p>هر فرم روی دستگاه خودتان خوانده و پر می‌شود. ما هرگز فرم یا داده‌های شما را نمی‌بینیم؛ فقط به جایی می‌رود که خودتان انتخاب می‌کنید.</p>
-  <p class="note">همه چیز به این زبان نمایش داده می‌شود. فرم‌ها به زبان خودشان می‌مانند.</p>
-  <footer>
-    <p class="note">این صفحه به زبان شماست. از بالا زبان دیگری انتخاب کنید.</p>
-    <p><a href="/fa/privacy/">سیاست حریم خصوصی</a> · <a href="/">English</a></p>
-    <p class="note">متن کامل حقوقی به انگلیسی در دسترس است.</p>
-  </footer>
+  <nav>
+    <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+    <div class="navlinks">
+      <a href="#features">امکانات</a>
+      <a href="#who">برای چه کسانی</a>
+      <a href="#polyglot">زبان‌ها</a>
+      <a href="#pricing">قیمت‌گذاری</a>
+      <a href="/tutorials/">آموزش‌ها</a>
+      <a href="#privacy">حریم خصوصی</a>
+      <a class="btn" href="#get">دریافت</a>
+    </div>
+  </nav>
 </div>
+
+<header class="wrap">
+  <span class="badge">◉ چندزبانه · روی دستگاه · بدون تله‌متری</span>
+  <h1>هر فرمی را بخوانید و پر کنید —<br><span class="fade">به هر زبانی.</span></h1>
+  <p class="lede">‏PolyglotFormFill فرمی را به یک زبان می‌خواند و آن را از داده‌های شما به زبانی دیگر پر می‌کند — فایل‌های PDF، Word، Excel و فرم‌های وب. همه چیز روی دستگاه شما اجرا می‌شود؛ ما هرگز داده‌های شما را نمی‌بینیم. وقتی آن را ارسال می‌کنید، مستقیماً به همان گیرنده‌ای می‌رود که انتخاب کرده‌اید — هرگز از طریق ما.</p>
+  <div class="cta">
+    <a class="btn" href="#features">ببینید چگونه کار می‌کند</a>
+    <a class="btn ghost" href="/tutorials/">▶ تماشای آموزش‌ها</a>
+    <a class="btn ghost" href="#get">دریافت (نسخهٔ آزمایشی)</a>
+  </div>
+  <div class="trustline">گاوصندوق AES-256 · باز شدن با کلید عبور · بدون ابر · بدون ردیابی · باز و قابل بازرسی</div>
+
+  <div class="flow">
+    <div class="device">
+      <h3>روی دستگاه شما — جایی که همهٔ پردازش انجام می‌شود</h3>
+      <div class="chips">
+        <span class="chip">📄 خواندن و نمایش PDF</span>
+        <span class="chip">🔎 تشخیص فیلد با OCR</span>
+        <span class="chip">🌍 ترجمه</span>
+        <span class="chip">🧠 تکمیل خودکار از گاوصندوق</span>
+        <span class="chip">🖊 پر کردن و خروجی گرفتن</span>
+        <span class="chip">✍️ امضا</span>
+        <span class="chip">🔐 گاوصندوق AES-256</span>
+      </div>
+    </div>
+    <div class="egress">
+      <div class="out"><span class="arrow">→</span><div><b>چه چیزی خارج می‌شود — فقط آنچه شما می‌فرستید، و به هرکه می‌فرستید:</b>
+        فرمی که ارسال می‌کنید از دستگاه شما ← مستقیماً به گیرنده‌ای که برگزیده‌اید می‌رود · و جست‌وجوی وبی که تایپ می‌کنید فقط همان کلمات را می‌فرستد. هر دو انتخاب خود شماست، و هیچ‌کدام از طریق ما عبور نمی‌کنند. ما هرگز اسناد شما، گاوصندوق شما، یا هیچ شناسه‌ای را دریافت نمی‌کنیم — هیچ واسطهٔ ابری‌ای وجود ندارد.</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="features" class="wrap">
+  <span class="eyebrow">ویژگی شاخص</span>
+  <h2 class="h2">یک PDF غیرقابل‌تکمیل را به فرمی تبدیل کنید که واقعاً بتوانید پرش کنید</h2>
+  <p class="sub">یک PDF تخت بدون فیلد فرم — یا حتی عکس یا اسکنی از آن — در چند ثانیه به یک فرم واقعی و قابل‌تکمیل تبدیل می‌شود. بدون «چاپ، پر کردن با دست، اسکن مجدد». و بدون بارگذاری آن در وب‌سایتی برای انجام این کار.</p>
+  <div class="grid">
+    <div class="card feature">
+      <div class="ic">🧩</div>
+      <div>
+        <span class="flag">غیرقابل‌تکمیل ← قابل‌تکمیل</span>
+        <h3>هر PDF تخت، اسکن یا عکس به فرمی قابل‌ویرایش تبدیل می‌شود</h3>
+        <p>آن را به یک PDF که کادرهای قابل‌پر کردن ندارد بگیرید، یا حتی به تصویری از یک فرم کاغذی. OCR روی دستگاه چیدمان را می‌خواند، جای هر فیلد را می‌یابد، فیلدهای فرم واقعی را همان‌جا قرار می‌دهد، و آن‌ها را از گاوصندوق شما پر می‌کند — همه روی دستگاه خودتان، بدون بارگذاری هیچ‌چیز. سپس یک PDF تمیز و پرشده خروجی بگیرید.</p>
+      </div>
+    </div>
+    <div class="card"><div class="ic">🔒</div><h3>روی دستگاه، همیشه</h3><p>‏OCR، ترجمه، پر کردن و امضا به‌صورت محلی اجرا می‌شوند. داده‌های شما هرگز به ما یا هیچ‌کس دیگری نمی‌رسد.</p></div>
+    <div class="card"><div class="ic">🌍</div><h3>پر کردن چندزبانه</h3><p>یک فرم انگلیسی را از داده‌های خود به زبانی دیگر پر کنید. ترجمه روی دستگاه شما انجام می‌شود.</p></div>
+    <div class="card"><div class="ic">📄</div><h3>‏Word و Excel هم</h3><p>فرم‌های ‎.docx و ‎.xlsx را پر می‌کند — فیلدهای نام‌دار یا برچسب‌های تخت — و می‌تواند PDF خروجی بدهد.</p></div>
+    <div class="card"><div class="ic">🧠</div><h3>گاوصندوقی که یاد می‌گیرد</h3><p>یک بار به فیلد جدیدی پاسخ دهید؛ به‌خاطر سپرده می‌شود — رمزنگاری‌شده، روی دستگاه شما — برای دفعهٔ بعد.</p></div>
+    <div class="card"><div class="ic">✍️</div><h3>امضای قابل‌اعتماد</h3><p>امضاهای غیرقابل‌واگذاری و پیوسته به دستگاه با منشأ قابل‌راستی‌آزمایی. هیچ‌کس به‌جای شما امضا نمی‌کند.</p></div>
+    <div class="card"><div class="ic">🔑</div><h3>گاوصندوق قفل‌شده با کلید عبور</h3><p>با یک عبارت عبور یا کلید عبور سخت‌افزاری (WebAuthn) باز کنید. کلید هرگز ذخیره نمی‌شود — حتی نزد ما.</p></div>
+    <div class="card"><div class="ic">🔗</div><h3>دسکتاپ + مرورگر</h3><p>افزونه فرم‌های وب را پر می‌کند؛ و برنامهٔ دسکتاپ کلیدهای شما را به‌عنوان یک لنگرگاه اعتماد مقاوم نگه می‌دارد.</p></div>
+  </div>
+</section>
+
+<section id="who" class="wrap">
+  <span class="eyebrow">برای چه کسانی</span>
+  <h2 class="h2">ساخته‌شده برای هرکسی که فرم‌ها را در میان زبان‌ها و مرزها پر می‌کند</h2>
+  <p class="sub">سه گروه بیشترین بهره را از آن می‌برند — و هر یک از آن‌ها داده‌های خود را روی دستگاه خودشان نگه می‌دارند.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🛂</div><h3>آژانس‌های مهاجرت و جابه‌جایی</h3><p>فایل‌های PDF اسکن‌شدهٔ ویزا، اقامت و اسکان را با OCR روی دستگاه به فرم‌های قابل‌تکمیل تبدیل کنید، و آن‌ها را به زبان مشتری کامل کنید بی‌آنکه حتی یک سند از دستگاه شما خارج شود. یک نمایهٔ ذخیره‌شده، فرم بعدی را در چند ثانیه پر می‌کند.</p></div>
+    <div class="card"><div class="ic">💼</div><h3>فریلنسرها و کسب‌وکارهای کوچک فرامرزی</h3><p>فرم‌های مالیاتی، بانکی و پذیرش اغلب به زبانی می‌رسند که زبان شما نیست. آن‌ها را از مشخصات خودتان — نگه‌داری‌شده در یک گاوصندوق AES-256 روی دستگاه شما — پر کنید و یک PDF تمیز خروجی بگیرید، بدون آنکه چیزی از طریق ما یا هیچ شخص ثالثی مسیریابی شود.</p></div>
+    <div class="card"><div class="ic">🛡️</div><h3>جامعه‌های حریم‌خصوصی‌محور و رمزارز</h3><p>هر مرحله به‌صورت محلی و با تله‌متری صفر اجرا می‌شود، و گاوصندوق با یک کلید عبور سخت‌افزاری (WebAuthn) باز می‌شود که کلیدش هرگز ذخیره نمی‌گردد. بدون حساب، بدون ابر، بدون ردیابی — داده‌های شما روی دستگاهی که در کنترل شماست باقی می‌ماند.</p></div>
+  </div>
+</section>
+
+<section id="polyglot" class="wrap">
+  <div class="band">
+    <span class="eyebrow" style="color:rgba(255,255,255,.8)">ساخته‌شده برای جهانی چندزبانه</span>
+    <h2 class="h2">داده‌های شما به زبان شما. فرم به زبان آن‌ها.</h2>
+    <p class="sub">دولت‌ها و نهادها فرم‌ها را به یک زبان منتشر می‌کنند؛ مردم مشخصات خود را به زبانی دیگر نگه می‌دارند. ‏PolyglotFormFill این شکاف را روی دستگاه پر می‌کند — با آغاز از انگلیسی ↔ هندی، و زبان‌های بیشتری در راه.</p>
+    <div class="langrow">
+      <span class="lang">English ↔ हिन्दी</span>
+      <span class="lang">زبان‌های بیشتری در راه است</span>
+      <span class="lang">ترجمهٔ ماشینی عصبی روی دستگاه · بدون ابر</span>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="wrap">
+  <span class="eyebrow">قیمت‌گذاری</span>
+  <h2 class="h2">یک بار بخرید. مال خودتان. بدون اشتراک.</h2>
+  <p class="sub">یک مجوز یک‌بارهٔ هر دستگاه — به‌صورت آفلاین روی دستگاه شما تأیید می‌شود، پس نه سرور فعال‌سازی هست و نه حتی یک تماس شبکه‌ای. در طول نسخهٔ آزمایشی عمومی رایگان است؛ قیمت‌های زیر هنگام عرضه اعمال می‌شوند.</p>
+  <div class="tiers">
+    <div class="tier">
+      <h3>رایگان</h3>
+      <div class="price">$0</div>
+      <ul><li>تکمیل خودکار پایهٔ فرم‌های وب</li><li>یک نمایه</li><li>پر کردن پایهٔ PDF</li><li>گاوصندوق رمزنگاری‌شده روی دستگاه</li><li>کاملاً روی دستگاه، همیشه</li></ul>
+    </div>
+    <div class="tier pop">
+      <h3>حرفه‌ای</h3>
+      <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">یک‌بار / هر دستگاه</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">۱ دستگاه · or <span class="ppp" data-usd="9">$9</span>/سالانه</div>
+      <ul><li>همهٔ امکانات رایگان</li><li>۱ دستگاه</li><li>تا ۳ نمایه</li><li>هر PDF را قابل‌تکمیل کنید (OCR)</li><li>فرم‌های Word و Excel</li><li>پر کردن ترجمه‌شده (بسته‌های زبان)</li><li>جای‌گذاری امضا و عکس</li><li>پشتیبان‌گیری و انتقال رمزنگاری‌شده</li></ul>
+    </div>
+    <div class="tier">
+      <h3>خانواده</h3>
+      <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">یک‌بار</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">تا ۵ دستگاه (~<span class="ppp" data-usd="6">$6</span> هرکدام) · or <span class="ppp" data-usd="15">$15</span>/سالانه</div>
+      <ul><li>همهٔ امکانات حرفه‌ای، روی تا ۵ دستگاه</li><li>تا ۵ نمایه</li><li>نمایه‌های خانوار را از هر دستگاهی مدیریت کنید</li><li>پشتیبانی با اولویت</li></ul>
+    </div>
+  </div>
+  <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
+  <script>
+(function(){
+  var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+  var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+    var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+    if(f==null){ note("Prices shown in USD."); return; }
+    if(f<0.35)f=0.35;
+    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    document.querySelectorAll(".ppp").forEach(function(el){
+      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+    });
+    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+  }).catch(function(){ note("Prices shown in USD."); });
+})();</script>
+  <script>
+(function(){
+  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+    "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+  var bg=document.getElementById("hellobg"); if(!bg) return;
+  var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+  for(var i=0;i<N;i++){
+    var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(Math.random()*96)+"vw"; el.style.top=(Math.random()*100)+"vh";
+    el.style.fontSize=(15+Math.random()*30)+"px";
+    var dur=(9+Math.random()*9).toFixed(2);
+    el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+    bg.appendChild(el);
+  }
+})();</script>
+
+  <div style="margin-top:40px">
+    <span class="eyebrow">برای تیم‌ها و کسب‌وکار</span>
+    <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">تجاری — مجوزهای هر کاربر، نمایه‌های نامحدود</h2>
+    <p class="sub">مجوزدهی سالانهٔ هر کاربر با قیمت‌گذاری حجمی. هر کاربر همهٔ امکانات حرفه‌ای و نمایه‌های نامحدود را دریافت می‌کند — و مانند هر رده، کاملاً روی هر دستگاه اجرا می‌شود و هیچ داده‌ای به ما بازگردانده نمی‌شود. مجوزها به‌صورت متمرکز برای مدیر شما صادر و روی هر دستگاه به‌صورت آفلاین تأیید می‌شوند.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>تیم</h3>
+        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ کاربر / سال</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">۵–۵۰ کاربر</div>
+        <ul><li>همهٔ امکانات حرفه‌ای</li><li>نمایه‌های نامحدود / هر کاربر</li><li>پشتیبانی ایمیلی و به‌روزرسانی‌ها</li></ul>
+      </div>
+      <div class="tier">
+        <h3>کسب‌وکار</h3>
+        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ کاربر / سال</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">۵۱–۱۰۰ کاربر</div>
+        <ul><li>همهٔ امکانات تیم</li><li>تخفیف حجمی</li><li>پشتیبانی با اولویت</li></ul>
+      </div>
+      <div class="tier">
+        <h3>توسعه</h3>
+        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ کاربر / سال</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">۱۰۱–۵۰۰ کاربر</div>
+        <ul><li>همهٔ امکانات کسب‌وکار</li><li>بهترین نرخ هر کاربر</li><li>کمک در راه‌اندازی</li></ul>
+      </div>
+      <div class="tier">
+        <h3>سازمانی</h3>
+        <div class="price" style="font-size:22px">گفت‌وگو کنیم</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">بیش از ۵۰۰ کاربر</div>
+        <ul><li>قیمت‌گذاری و شرایط سفارشی</li><li>تأمین تأییدشده با SSO</li><li>SLA و پشتیبانی اختصاصی</li><li>کمک در استقرار</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">در طول نسخهٔ آزمایشی رایگان است. رده‌های شخصی مجوزهای Ed25519 یک‌بارهٔ هر دستگاه‌اند که به‌صورت محلی تأیید می‌شوند — بدون سرور فعال‌سازی. رده تجاری سالانه به‌ازای هر کاربر با صدور متمرکز است. قیمت‌ها به USD؛ ممکن است مالیات‌های محلی اعمال شود. سازمانی: با ما تماس بگیرید. <a href="mailto:subumysore@gmail.com">با ما تماس بگیرید</a>.</p>
+</section>
+
+<section id="get" class="wrap">
+  <span class="eyebrow">دریافت PolyglotFormFill</span>
+  <h2 class="h2">نصب در یک دقیقه</h2>
+  <p class="sub">افزونهٔ مرورگر را برای تکمیل خودکار فرم‌های وب اضافه کنید، یا برنامهٔ دسکتاپ را برای تجربهٔ کامل و مقاوم نصب کنید. آن‌ها با هم کار می‌کنند.</p>
+  <div class="cta">
+    <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">دانلود برای Windows</a>
+    <a class="btn ghost" href="/fa/install/">دریافت افزونهٔ مرورگر (نسخهٔ آزمایشی)</a>
+    <span class="btn ghost soon" aria-disabled="true">‏Chrome Web Store — به‌زودی</span>
+  </div>
+  <p class="note">دانلودهای نسخهٔ آزمایشی (میزبانی‌شده روی Oracle Cloud). نسخهٔ Windows امضا نشده است — Windows دربارهٔ «ناشر ناشناس» هشدار می‌دهد (More info ← Run anyway). افزونه فعلاً از طریق حالت توسعه‌دهنده نصب می‌شود؛ فهرست‌های فروشگاه در دست انجام است. ‏macOS و Linux در گام‌های بعد.</p>
+</section>
+
+<section id="privacy" class="wrap">
+  <span class="eyebrow">حریم خصوصی</span>
+  <h2 class="h2">این وعده، در یک خط</h2>
+  <p class="sub">داده‌های شما روی دستگاه شما پردازش می‌شود و هرگز برای ما ارسال نمی‌گردد. تنها چیزهایی که خارج می‌شوند اقداماتی هستند که خودتان انجام می‌دهید — ارسال یک فرم تکمیل‌شده (مستقیماً به گیرنده‌اش) یا جست‌وجوی وبی که تایپ می‌کنید. این‌ها مستقیماً به مقصدشان می‌روند، هرگز از طریق ما. کل فهرست همین است.</p>
+  <p style="margin-top:16px"><a class="btn ghost" href="/fa/privacy/">سیاست کامل حریم خصوصی را بخوانید</a></p>
+</section>
+
+<footer class="wrap">
+  <div>© PolyglotFormFill · تکمیل خودکار فرم با اولویت حریم خصوصی</div>
+  <div>روی دستگاه · تله‌متری صفر · باز و قابل بازرسی</div>
+</footer>
 </body>
 </html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="kn" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PolyglotFormFill ಸ್ಥಾಪಿಸಿ (ಬೀಟಾ)</title>
+<style>
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6}
+  .wrap{max-width:760px;margin:0 auto;padding:44px 24px 80px}
+  a{color:var(--teal-ink)}
+  h1{font-size:clamp(26px,5vw,36px);letter-spacing:-.02em}
+  h2{font-size:20px;margin-top:34px}
+  .btn{display:inline-block;background:var(--teal);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;text-decoration:none;margin:8px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
+  .warn{background:var(--amber-soft);border-radius:10px;padding:12px 16px;font-size:14px}
+  .warn b{color:var(--amber)}
+  ol{padding-left:20px;display:grid;gap:8px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:13px}
+  .muted{color:var(--muted);font-size:13px}
+  .ver{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:8px;font-family:var(--mono)}
+  .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--teal-ink);background:var(--teal-soft);border-radius:999px;padding:2px 10px;margin-bottom:10px}
+  .heads{background:var(--amber-soft);border-radius:10px;padding:14px 16px;font-size:14px;margin:14px 0}
+  .heads b{color:var(--amber)}
+  .heads ol{margin:10px 0 0;padding-left:20px;gap:4px}
+  .screen{font-family:var(--sans);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;color:var(--muted)}
+  .screen .t{display:block;font-weight:600;color:var(--ink);font-size:14px;margin-bottom:2px}
+  pre{font-family:var(--mono);background:var(--teal-soft);padding:12px 14px;border-radius:9px;font-size:12.5px;overflow-x:auto;margin:10px 0}
+  .hash{font-family:var(--mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:14px;color:var(--teal-ink);font-weight:600}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+</style>
+</head>
+<body>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/install/">English</option><option value="/hi/install/">हिन्दी</option><option value="/bn/install/">বাংলা</option><option value="/ta/install/">தமிழ்</option><option value="/te/install/">తెలుగు</option><option value="/kn/install/" selected>ಕನ್ನಡ</option><option value="/ml/install/">മലയാളം</option><option value="/gu/install/">ગુજરાતી</option><option value="/pa/install/">ਪੰਜਾਬੀ</option><option value="/mr/install/">मराठी</option><option value="/ur/install/">اردو</option><option value="/ar/install/">العربية</option><option value="/he/install/">עברית</option><option value="/fa/install/">فارسی</option><option value="/zh/install/">中文</option><option value="/ja/install/">日本語</option><option value="/ko/install/">한국어</option><option value="/th/install/">ไทย</option><option value="/vi/install/">Tiếng Việt</option><option value="/id/install/">Bahasa Indonesia</option><option value="/ru/install/">Русский</option><option value="/es/install/">Español</option><option value="/fr/install/">Français</option><option value="/de/install/">Deutsch</option><option value="/pt/install/">Português</option><option value="/tr/install/">Türkçe</option></select></div>
+<div class="wrap">
+  <p><a href="/kn/">← PolyglotFormFill</a></p>
+  <h1>ಸ್ಥಾಪನೆ</h1>
+  <p class="muted">ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆಯೊಂದಿಗೆ ಪ್ರಾರಂಭಿಸಿ — ಇದು ಅತ್ಯಂತ ವೇಗದ ಮಾರ್ಗ ಮತ್ತು ಪ್ರಮುಖ ಕೆಲಸವನ್ನು ಮಾಡುತ್ತದೆ. ಡೆಸ್ಕ್‌ಟಾಪ್ ಅಪ್ಲಿಕೇಶನ್ ಸಹಿ, ಇತಿಹಾಸ ಮತ್ತು ಆಫ್‌ಲೈನ್ ಕೆಲಸವನ್ನು ಸೇರಿಸುತ್ತದೆ.</p>
+
+  <div class="card">
+    <span class="tag">ಇಲ್ಲಿ ಪ್ರಾರಂಭಿಸಿ · ಅತ್ಯಂತ ಸುಲಭ</span>
+    <h2 style="margin-top:0">🧩 ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆ <span class="ver" data-ver="ext">v1.0.1</span></h2>
+    <a class="btn" href="/download/polyglotformfill-extension.zip">ವಿಸ್ತರಣೆಯನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (.zip)</a>
+    <p>ಇದು ಸ್ಟೋರ್‌ಗಳಿಗೆ ಬರುವವರೆಗೆ, ಡೆವಲಪರ್ ಮೋಡ್‌ನಲ್ಲಿ ಲೋಡ್ ಮಾಡಿ:</p>
+    <ol>
+      <li>ಡೌನ್‌ಲೋಡ್ ಅನ್ನು ಒಂದು ಫೋಲ್ಡರ್‌ಗೆ ಅನ್‌ಜಿಪ್ ಮಾಡಿ.</li>
+      <li>chrome://extensions (ಅಥವಾ edge://extensions) ತೆರೆಯಿರಿ.</li>
+      <li>Developer mode ಅನ್ನು ಆನ್ ಮಾಡಿ (ಬಲ-ಮೇಲ್ಭಾಗ).</li>
+      <li>Load unpacked ಕ್ಲಿಕ್ ಮಾಡಿ → ಅನ್‌ಜಿಪ್ ಮಾಡಿದ ಫೋಲ್ಡರ್ ಅನ್ನು ಆಯ್ಕೆಮಾಡಿ. PolyglotFormFill ಈಗ ನಿಮ್ಮ ವಿಸ್ತರಣೆಗಳ ಪಟ್ಟಿಯಲ್ಲಿ ಕಾಣಿಸಿಕೊಳ್ಳುತ್ತದೆ.</li>
+      <li>ನೀವು ಅದನ್ನು ಕಂಡುಹಿಡಿಯಲು ಟೂಲ್‌ಬಾರ್‌ಗೆ ಪಿನ್ ಮಾಡಿ: ಬ್ರೌಸರ್‌ನ ಬಲ-ಮೇಲ್ಭಾಗದಲ್ಲಿರುವ ಒಗಟು-ತುಣುಕು ಐಕಾನ್ 🧩 ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ (ಅದೇ ವಿಸ್ತರಣೆಗಳ ಮೆನು), PolyglotFormFill ಅನ್ನು ಕಂಡುಹಿಡಿದು, ಅದರ ಪಕ್ಕದಲ್ಲಿರುವ ಪಿನ್ 📌 ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ. ಅದರ ಐಕಾನ್ ಈಗ ನಿಮ್ಮ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ ಇರುತ್ತದೆ.</li>
+      <li>ಆ PolyglotFormFill ಟೂಲ್‌ಬಾರ್ ಐಕಾನ್ ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ → ಪಾಸ್‌ಫ್ರೇಸ್ ಹೊಂದಿಸಿ (ಅಥವಾ ಪಾಸ್‌ಕೀ ಮೂಲಕ ಅನ್‌ಲಾಕ್ ಮಾಡಿ).</li>
+      <li>ಪಾಪ್‌ಅಪ್‌ನಲ್ಲಿ “ನಿಮ್ಮ ವಿವರಗಳು” ಅಡಿಯಲ್ಲಿ, ಪ್ರತಿ ಕ್ಷೇತ್ರವನ್ನು (ಉದಾ. full_name, email, phone) ಮತ್ತು ಅದರ ಮೌಲ್ಯವನ್ನು ಟೈಪ್ ಮಾಡಿ, ನಂತರ Save field ಒತ್ತಿರಿ. ಇವು ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತವೆ. ನಂತರ ಒಂದು ನಮೂನೆಯನ್ನು ತೆರೆದು Fill this page ಕ್ಲಿಕ್ ಮಾಡಿ.</li>
+    </ol>
+    <p class="muted">ಲೋಡ್ ಮಾಡಿದ ತಕ್ಷಣ ಟೂಲ್‌ಬಾರ್ ಐಕಾನ್ ಕಾಣಿಸುತ್ತಿಲ್ಲವೇ? ಅದು ಸಾಮಾನ್ಯ — ನೀವು ಅವುಗಳನ್ನು ಪಿನ್ ಮಾಡುವವರೆಗೆ (ಹಂತ 5) Chrome ಹೊಸ ವಿಸ್ತರಣೆಗಳನ್ನು 🧩 ಒಗಟು-ತುಣುಕು ಮೆನುವಿನ ಹಿಂದೆ ಮರೆಮಾಡುತ್ತದೆ. Firefox: about:debugging → “Load Temporary Add-on” ಬಳಸಿ, ನಂತರ ಟೂಲ್‌ಬಾರ್ ಓವರ್‌ಫ್ಲೋನಿಂದ ಪಿನ್ ಮಾಡಿ.</p>
+  </div>
+
+  <div class="card">
+    <span class="tag">ಶೀಘ್ರದಲ್ಲೇ ಬರಲಿದೆ · ಅತ್ಯಂತ ಸುಗಮ ಡೆಸ್ಕ್‌ಟಾಪ್ ಸ್ಥಾಪನೆ</span>
+    <h2 style="margin-top:0">⌨️ Windows: winget ಮೂಲಕ ಸ್ಥಾಪಿಸಿ</h2>
+    <p>Windows ನಲ್ಲಿ ಅಂತರ್ನಿರ್ಮಿತ ಪ್ಯಾಕೇಜ್ ಮ್ಯಾನೇಜರ್ ಇದೆ. ನಮ್ಮ ಪಟ್ಟಿ ಅನುಮೋದಿಸಿದ ನಂತರ, ಡೆಸ್ಕ್‌ಟಾಪ್ ಅಪ್ಲಿಕೇಶನ್ ಒಂದೇ ಆದೇಶದೊಂದಿಗೆ ಸ್ಥಾಪಿಸುತ್ತದೆ — ಡೌನ್‌ಲೋಡ್ ಪ್ರಾಂಪ್ಟ್ ಇಲ್ಲ, ಕ್ಲಿಕ್ ಮಾಡಬೇಕಾದ ಎಚ್ಚರಿಕೆ ಇಲ್ಲ:</p>
+    <pre>winget install SubramanyaMysore.PolyglotFormFill</pre>
+    <p class="muted">winget ಸ್ಥಾಪಕವನ್ನು ತರುತ್ತದೆ ಮತ್ತು ಅದನ್ನು ಚಲಾಯಿಸುವ ಮೊದಲು ಪ್ರಕಟಿಸಿದ ಚೆಕ್‌ಸಮ್‌ನೊಂದಿಗೆ ಪರಿಶೀಲಿಸುತ್ತದೆ. ಇನ್ನೂ ಲೈವ್ ಆಗಿಲ್ಲ — ಪಟ್ಟಿ Windows Package Manager ಭಂಡಾರದಲ್ಲಿ ಪರಿಶೀಲನೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ. ಅಲ್ಲಿಯವರೆಗೆ, ಕೆಳಗಿನ ನೇರ ಡೌನ್‌ಲೋಡ್ ಅನ್ನು ಬಳಸಿ.</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">🖥️ Windows ಡೆಸ್ಕ್‌ಟಾಪ್ ಅಪ್ಲಿಕೇಶನ್ — ನೇರ ಡೌನ್‌ಲೋಡ್
+      <span class="ver" data-ver="app">v1.0.0</span></h2>
+
+    <div class="heads">
+      <b>Windows ನಿಮಗೆ ಏನನ್ನು ತೋರಿಸುತ್ತದೆ, ಮತ್ತು ಏಕೆ.</b> ನಾವು ಇನ್ನೂ ಕೋಡ್-ಸೈನಿಂಗ್ ಪ್ರಮಾಣಪತ್ರವನ್ನು ಖರೀದಿಸಿಲ್ಲ — ಅವು ನೋಂದಾಯಿತ ಕಂಪನಿಗಳಿಗೆ ಮಾರಲಾಗುತ್ತವೆ ಮತ್ತು ವರ್ಷಕ್ಕೆ ಕೆಲವು ನೂರು ಡಾಲರ್‌ಗಳ ವೆಚ್ಚವಾಗುತ್ತದೆ, ಅದನ್ನು ನಿಮ್ಮಿಂದ ವಸೂಲಿ ಮಾಡುವುದಕ್ಕಿಂತ ಮುಂದೂಡಲು ನಾವು ಬಯಸುತ್ತೇವೆ. ಆದ್ದರಿಂದ Windows ಪ್ರಕಾಶಕರ ಹೆಸರನ್ನು ಇನ್ನೂ ಗುರುತಿಸುವುದಿಲ್ಲ, ಮತ್ತು ನೀವು ಸ್ಥಾಪಕವನ್ನು ಮೊದಲ ಬಾರಿ ಚಲಾಯಿಸಿದಾಗ ಈ ನೀಲಿ ಪೆಟ್ಟಿಗೆಯನ್ನು ತೋರಿಸುತ್ತದೆ:
+      <div class="screen">
+        <span class="t">Windows ನಿಮ್ಮ PC ಅನ್ನು ರಕ್ಷಿಸಿತು</span>
+        Microsoft Defender SmartScreen ಗುರುತಿಸದ ಅಪ್ಲಿಕೇಶನ್ ಪ್ರಾರಂಭವಾಗುವುದನ್ನು ತಡೆಯಿತು.
+      </div>
+      ಆ ಸಂದೇಶದ ಅರ್ಥ “ಈ ಪ್ರಕಾಶಕರನ್ನು ನಾನು ಈ ಮೊದಲು ನೋಡಿಲ್ಲ” — ಫೈಲ್‌ನಲ್ಲಿ ಏನಾದರೂ ತಪ್ಪಿದೆ ಎಂದಲ್ಲ. ಮುಂದುವರಿಸಲು:
+      <ol>
+        <li>More info ಕ್ಲಿಕ್ ಮಾಡಿ (ನೀಲಿ ಪೆಟ್ಟಿಗೆಯೊಳಗಿನ ಸಣ್ಣ ಲಿಂಕ್).</li>
+        <li>Run anyway ಕ್ಲಿಕ್ ಮಾಡಿ.</li>
+      </ol>
+      ಇದು ಮೊದಲ ಸ್ಥಾಪನೆಯಲ್ಲಿ ಒಮ್ಮೆ ಮಾತ್ರ ಕಾಣಿಸಿಕೊಳ್ಳುತ್ತದೆ. ಅದನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ತಪ್ಪಿಸಲು ಬಯಸುವಿರಾ? ಮೇಲಿನ winget, ಅಥವಾ ಇದರಿಂದ ಪ್ರಭಾವಿತವಾಗದ ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆಯನ್ನು ಬಳಸಿ.
+    </div>
+
+    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">ಸ್ಥಾಪಕವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (.exe)</a>
+    <p class="muted">ಮೊದಲ ಪ್ರಾರಂಭದಲ್ಲಿ ನೀವು ಪಾಸ್‌ಫ್ರೇಸ್ ಹೊಂದಿಸುತ್ತೀರಿ — ನೀವು ಅದನ್ನು ನಮೂದಿಸುವವರೆಗೆ ಅಪ್ಲಿಕೇಶನ್ ಲಾಕ್ ಆಗಿರುತ್ತದೆ.</p>
+
+    <details>
+      <summary>ನಾವು ಪ್ರಕಟಿಸಿದ್ದು ನಿಖರವಾಗಿ ಇದೆಯೇ ಎಂದು ಡೌನ್‌ಲೋಡ್ ಅನ್ನು ಪರಿಶೀಲಿಸಿ</summary>
+      <p class="muted" style="margin-top:10px">ಪ್ರತಿ ಬಿಡುಗಡೆ ಪ್ರತಿ ಫೈಲ್‌ನ SHA-256 ಅನ್ನು ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ. ನೀವು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ನಲ್ಲಿ PowerShell ನಲ್ಲಿ ಇದನ್ನು ಚಲಾಯಿಸಿ ಹೋಲಿಸಿ — ಎರಡು ಸ್ಟ್ರಿಂಗ್‌ಗಳು ಹೊಂದಿಕೆಯಾದರೆ, ಫೈಲ್ ಹಾಗೆಯೇ, ಬದಲಾಗದೆ ಬಂದಿದೆ.</p>
+      <pre>Get-FileHash .\PolyglotFormFill-Setup.exe -Algorithm SHA256</pre>
+      <p class="muted" style="margin-bottom:4px">ಪ್ರಕಟಿಸಿದ ಹ್ಯಾಶ್‌ಗಳು
+        <span data-manifest="version">ಈ ಬಿಡುಗಡೆ</span>:</p>
+      <div data-manifest="artifacts" class="hash">
+        <a href="/download/release-manifest.json">release-manifest.json</a>
+      </div>
+    </details>
+  </div>
+
+  <p class="muted">ನಿಮ್ಮ ಡೇಟಾ ನಿಮ್ಮ ಸಾಧನದಲ್ಲೇ ಉಳಿಯುತ್ತದೆ; ನಾವು ಅದನ್ನು ಎಂದಿಗೂ ನೋಡುವುದಿಲ್ಲ. ನೋಡಿ
+    <a href="/kn/privacy/">ಗೌಪ್ಯತಾ ನೀತಿ</a>.</p>
+</div>
+<script>
+// Fill the published SHA-256 list (and the desktop version badge) from the release manifest that
+// ships beside the artifacts, so the page can never drift from what was actually published.
+// Same-origin fetch of our own asset: nothing about the visitor is sent or recorded.
+(async () => {
+  const list = document.querySelector('[data-manifest="artifacts"]');
+  if (!list) return;
+  try {
+    const m = await fetch('/download/release-manifest.json', { cache: 'no-cache' }).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+    const ver = document.querySelector('[data-manifest="version"]');
+    if (ver && m.version) ver.textContent = 'v' + m.version;
+    const badge = document.querySelector('[data-ver="app"]');
+    if (badge && m.version) badge.textContent = 'v' + m.version;
+    if (!Array.isArray(m.artifacts) || !m.artifacts.length) return;
+    list.textContent = '';
+    for (const a of m.artifacts) {
+      const row = document.createElement('div');
+      row.style.margin = '6px 0';
+      const name = document.createElement('b');
+      name.textContent = a.name;
+      row.append(name, document.createElement('br'), document.createTextNode(a.sha256));
+      list.append(row);
+    }
+  } catch {
+    // Manifest not reachable — leave the static link to release-manifest.json in place.
+  }
+})();
+</script>
+</body>
+</html>

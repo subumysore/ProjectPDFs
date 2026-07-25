@@ -3,40 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ગોપનીયતા નીતિ — PolyglotFormFill</title>
+<title>PolyglotFormFill — ગોપનીયતા નીતિ</title>
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62}
+  .wrap{max-width:800px;margin:0 auto;padding:44px 24px 80px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--teal-ink))}
+  h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.03em;margin:24px 0 4px;font-weight:800}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+  .disclaimer{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:14px 18px;margin:20px 0;font-size:13.5px}
+  .disclaimer b{color:var(--amber)}
+  .tldr{background:var(--teal-soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .tldr b{color:var(--teal-ink)}
+  h2{font-size:18px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:6px}
+  h2 .n{font-family:var(--mono);color:var(--teal-ink);font-size:14px;margin-right:8px}
+  p,li{font-size:15px}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:22px;display:grid;gap:6px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .fill{background:var(--amber-soft);border-radius:4px;padding:0 5px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+  .egress{background:var(--amber-soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:14px}
+  .egress b{color:var(--amber)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--muted);font-size:13px}
+  a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu" selected>ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/" selected>ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
+  <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>ગોપનીયતા નીતિ</h1>
-  <p class="lede">તમારા દસ્તાવેજો ક્યારેય તમારું ઉપકરણ છોડતા નથી.</p>
-  <p>અમે કશું એકત્ર કરતા નથી. ખાતું નહીં, ટેલિમેટ્રી નહીં, એનાલિટિક્સ નહીં.</p>
-  <p>વાંચવું, OCR, અનુવાદ, ભરવું અને સહી — બધું તમારા ઉપકરણ પર જ થાય છે.</p>
-  <p>તમે મોકલો ત્યારે જ તમારું ફોર્મ ઉપકરણ છોડે છે, અને માત્ર તમે પસંદ કરેલા પ્રાપ્તકર્તાને જ.</p>
-  <p>ઍપ અમારા સર્વરથી ફોન્ટ, ભાષા મોડેલ અને અપડેટ ડાઉનલોડ કરે છે. તમારા વિશે કશું પાછું મોકલાતું નથી.</p>
-  <footer>
-    <p class="note">સંપૂર્ણ કાનૂની લખાણ અંગ્રેજીમાં ઉપલબ્ધ છે. <a href="/privacy/">English</a></p>
-    <p><a href="/gu/">પાછળ</a></p>
-  </footer>
+  <div class="meta">અમલી તારીખ: 18 July 2026 · Version 1.0</div>
+  <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">આ અનુવાદ તમારી સુવિધા માટે પૂરો પાડવામાં આવ્યો છે. આ ગોપનીયતા નીતિનું અંગ્રેજી સંસ્કરણ જ અધિકૃત અને કાયદેસર રીતે બંધનકર્તા સંસ્કરણ છે. <a href="/privacy/">English</a></div>
+  <div class="disclaimer"><b>⚖ મુસદ્દો કાયદેસર સમીક્ષાની રાહમાં — આ કાયદેસર સલાહ નથી. આ PolyglotFormFill ઉત્પાદન માટે એક મુસદ્દા નમૂનો છે. જ્યાં આ સેવા આપવામાં આવે છે તે દરેક અધિકારક્ષેત્રમાં (EU/EEA માં GDPR હેઠળ, ભારતમાં DPDP Act 2023 હેઠળ, અને US માં CCPA/CPRA હેઠળ સહિત) પ્રકાશન પહેલાં લાયક કાનૂની સલાહકાર દ્વારા તેની સમીક્ષા અને મંજૂરી આવશ્યક છે. સંપર્ક/ઓળખ ફીલ્ડ પૂર્ણ છે; વ્યાપક જાહેર પ્રકાશન પહેલાં સલાહકાર દ્વારા અંતિમ વાંચનની તેમ છતાં ભલામણ કરવામાં આવે છે.</b></div>
+  <div class="tldr">સાર, સ્પષ્ટ રીતે: અમે તમારા દસ્તાવેજો કે તમે દાખલ કરેલો ડેટા જોતા નથી, સંગ્રહતા નથી કે પ્રસારિત કરતા નથી, અને તમે ન ઇચ્છ્યું હોય તેવા ક્યાંય અમે તે મોકલતા નથી. બધું જ તમારા ડિવાઇસ પર પ્રક્રિયા થાય છે. તમારી સામગ્રી તમારા ડિવાઇસમાંથી ફક્ત ત્યારે જ બહાર જાય છે જ્યારે તમે કોઈ ચોક્કસ ક્રિયા કરો છો — પૂર્ણ થયેલું ફોર્મ તમે પસંદ કરેલા પ્રાપ્તકર્તાને સબમિટ કરવું, અથવા તમે ટાઇપ કરેલી વેબ શોધ — અને તે સીધું જ ત્યાં જાય છે, ક્યારેય અમારા મારફતે નહીં.</div>
+
+  <h2><span class="n">1.</span>અમે કોણ છીએ</h2>
+  <p>આ નીતિ Subramanya Mysore (એકલ માલિક), ભારત ("અમે", "અમારું") દ્વારા જારી કરવામાં આવી છે, જે PolyglotFormFill એપ્લિકેશન, બ્રાઉઝર એક્સટેન્શન અને વેબસાઇટ ("સેવા") માટે જવાબદાર છે. GDPR માટે અમે ડેટા નિયંત્રક તરીકે કાર્ય કરીએ છીએ; ભારતના DPDP Act 2023 હેઠળ ડેટા ફિડ્યુશિયરી તરીકે; જ્યાં અમે કોઈ વ્યક્તિગત ડેટા પ્રક્રિયા કરતા નથી, ત્યાં આવી કોઈ ભૂમિકા ઊભી થતી નથી. ફરિયાદ અધિકારી / સંપર્ક: Subramanya Mysore · subumysore@gmail.com.</p>
+
+  <h2><span class="n">2.</span>વ્યાખ્યાઓ</h2>
+  <ul>
+    <li>વ્યક્તિગત ડેટા — ઓળખી શકાય તેવી કુદરતી વ્યક્તિ સાથે સંબંધિત માહિતી.</li>
+    <li>વપરાશકર્તા સામગ્રી — તમે દાખલ કરો કે સંગ્રહો છો તે દસ્તાવેજો, ફોર્મ, છબીઓ અને મૂલ્યો (તમારો "વૉલ્ટ"), તેમાંના કોઈપણ વ્યક્તિગત ડેટા સહિત.</li>
+    <li>ડિવાઇસ — જેના પર તમે સેવા ચલાવો છો તે કમ્પ્યુટર કે ઉપકરણ.</li>
+  </ul>
+
+  <h2><span class="n">3.</span>અમારો મુખ્ય ગોપનીયતા સિદ્ધાંત</h2>
+  <p>સેવા એવી રીતે ડિઝાઇન કરવામાં આવી છે કે અમે તમારી વપરાશકર્તા સામગ્રી જોતા નથી, સંગ્રહતા નથી કે પ્રસારિત કરતા નથી, અને તમે ન ઇચ્છ્યું હોય તેવા કોઈપણ સ્થળે અમે તે મોકલતા નથી. ખાસ કરીને:</p>
+  <ol>
+    <li>ડિવાઇસ પર પ્રક્રિયા. વાંચન/પ્રદર્શન, OCR, અનુવાદ, ફીલ્ડ ઓળખ, ભરવું, નિકાસ અને સહી તમારા ડિવાઇસ પર સ્થાનિક રીતે કરવામાં આવે છે. તે કરવા માટે અમને તમારી વપરાશકર્તા સામગ્રી મળતી નથી.</li>
+    <li>અમારા દ્વારા કોઈ સંગ્રહ નહીં. અમે તમારી વપરાશકર્તા સામગ્રી એકત્રિત, પ્રાપ્ત, ઍક્સેસ કે સંગ્રહ કરતા નથી. કોઈ ખાતાની જરૂર નથી અને તમારી વપરાશકર્તા સામગ્રીનું અમને કોઈ અપલોડ નથી.</li>
+    <li>ફક્ત વપરાશકર્તા-નિર્દેશિત પ્રસારણ. તમારી વપરાશકર્તા સામગ્રી તમારા ડિવાઇસમાંથી ફક્ત ત્યારે જ બહાર જાય છે જ્યારે તમે કોઈ ચોક્કસ ક્રિયા શરૂ કરો છો, અને ફક્ત તમે પસંદ કરેલા ગંતવ્ય પર જ:
+      <div class="egress">(a) પૂર્ણ થયેલું ફોર્મ સબમિટ કરવું — તમારા ડિવાઇસમાંથી સીધું જ તમે પસંદ કરેલા પ્રાપ્તકર્તા (દા.ત. સરકારી કે વિક્રેતા સાઇટ) ને પ્રસારિત. અમે તેને પ્રૉક્સી, અવરોધ, પ્રાપ્ત, જાળવણી કે ઍક્સેસ કરતા નથી.</div>
+      <div class="egress">(b) વેબ શોધ (વૈકલ્પિક) — ફક્ત તમે ટાઇપ કરેલા શોધ શબ્દો પરિણામ પરત કરવા માટે સીધા જ ત્રીજા-પક્ષ શોધ પ્રદાતા (DuckDuckGo) ને મોકલાય છે. કોઈ વપરાશકર્તા સામગ્રી, વૉલ્ટ ડેટા કે ઓળખકર્તા મોકલાતા નથી. તેને સંપૂર્ણપણે ટાળવા માટે એક URL દાખલ કરો.</div>
+      આ જ એકમાત્ર સંજોગો છે જેમાં સામગ્રી કે શોધ શબ્દો તમારા ડિવાઇસમાંથી બહાર જાય છે — દરેક વપરાશકર્તા દ્વારા શરૂ કરાયેલ, સ્પષ્ટપણે લેબલ કરાયેલ, અને તમે પસંદ કરેલા ગંતવ્ય તરફ નિર્દેશિત.</li>
+  </ol>
+
+  <h2><span class="n">4.</span>મર્યાદિત બિન-સામગ્રી ડેટા જે અમે પ્રક્રિયા કરી શકીએ</h2>
+  <ul>
+    <li>સૉફ્ટવેર વિતરણ અને અપડેટ. સેવા ડાઉનલોડ/અપડેટ કરવી, અથવા તેની અસ્કયામતો (અપડેટ, ફૉન્ટ, મૉડલ) નું ડાઉનલોડ, સંબંધિત ચૅનલને એકતરફી વિનંતી કરે છે, જે એક સ્વતંત્ર નિયંત્રક તરીકે તેની પોતાની નીતિ હેઠળ ટૅક્નિકલ ડેટા (દા.ત. IP) પ્રક્રિયા કરી શકે છે. આ તમારા ડિવાઇસ પર એક ડાઉનલોડ છે અને તમારી વપરાશકર્તા સામગ્રી અપલોડ કરવાનો કોઈ માર્ગ આપતું નથી.</li>
+    <li>ચુકવણી અને લાઇસન્સિંગ. પેઇડ સુવિધાઓ તમારા ડિવાઇસ પર ચકાસાયેલ ઑફલાઇન સહી કરેલા લાઇસન્સ દ્વારા અનલૉક થાય છે (કોઈ સર્વરનો સંપર્ક કરતું નથી). જો તમે ખરીદો, તો ચુકવણી લાગુ નથી દ્વારા સંભાળવામાં આવે છે (હજુ કોઈ પેઇડ સુવિધા નથી); લાઇસન્સ જારી/સહાય માટે જે જરૂરી છે તેટલું જ અમને મળે છે (દા.ત. નામ, ઈમેલ, ઓર્ડર આઈડી) — ક્યારેય તમારી વપરાશકર્તા સામગ્રી નહીં.</li>
+    <li>સ્વૈચ્છિક સંચાર. જો તમે સહાયનો સંપર્ક કરો, તો પ્રતિસાદ આપવા માટે તમે પૂરી પાડેલી માહિતી અમે પ્રક્રિયા કરીએ છીએ.</li>
+  </ul>
+  <p class="muted">અમે એનાલિટિક્સ, જાહેરાત ઓળખકર્તા, ટ્રેકિંગ ટૅક્નોલૉજી કે સામગ્રી-વાહક ક્રૅશ રિપોર્ટિંગ વાપરતા નથી.</p>
+
+  <h2><span class="n">5.</span>કાનૂની આધારો (GDPR, જ્યાં લાગુ પડે)</h2>
+  <p>§4 માં મર્યાદિત પ્રક્રિયા માટે: લાઇસન્સિંગ/સહાય માટે કરાર (Art. 6(1)(b)); સુરક્ષિત વિતરણ/અપડેટ માટે કાયદેસર હિત (Art. 6(1)(f)); જ્યાં જરૂરી હોય ત્યાં સંમતિ (Art. 6(1)(a)). વપરાશકર્તા સામગ્રી માટે કોઈ કાનૂની આધારની જરૂર નથી કારણ કે અમે તે પ્રક્રિયા કરતા નથી.</p>
+
+  <h2><span class="n">6.</span>તમારા ડિવાઇસ પરના ડેટાની સુરક્ષા</h2>
+  <ul>
+    <li>તમારો વૉલ્ટ ફક્ત તમારા ડિવાઇસ પર સંગ્રહાય છે અને વિશ્રામ સ્થિતિમાં એન્ક્રિપ્ટ થયેલ છે (AES-256-GCM).</li>
+    <li>કી અનલૉક વખતે તમારા પાસફ્રેઝ કે હાર્ડવેર પાસકી (WebAuthn) માંથી ઉત્પન્ન થાય છે; તે ક્યારેય સંગ્રહાતી કે પ્રસારિત થતી નથી.</li>
+    <li>એક્સટેન્શન લઘુત્તમ-વિશેષાધિકાર પરવાનગીઓ વાપરે છે અને તેમાં કોઈ રિમોટ કોડ નથી (Manifest V3).</li>
+  </ul>
+
+  <h2><span class="n">7.</span>શેરિંગ અને આંતરરાષ્ટ્રીય ટ્રાન્સફર</h2>
+  <p>કારણ કે અમને તમારી વપરાશકર્તા સામગ્રી મળતી નથી, અમે તે શેર, વેચતા કે ટ્રાન્સફર કરતા નથી. §4 માં મર્યાદિત બિન-સામગ્રી ડેટા માટે, અમે ફક્ત ત્યાં નામ આપેલા પ્રદાતાઓ સાથે, કરાર હેઠળ શેર કરીએ છીએ; કોઈપણ સીમાપાર ટ્રાન્સફર તે પ્રદાતાના સુરક્ષા ઉપાયોને અનુસરે છે.</p>
+
+  <h2><span class="n">8.</span>જાળવણી</h2>
+  <p>અમે તમારી વપરાશકર્તા સામગ્રી જાળવતા નથી (તે અમને ક્યારેય મળતી નથી). §4 માં બિન-સામગ્રી ડેટા ફક્ત જરૂરી હોય તેટલા સમય માટે જ જાળવાય છે.</p>
+
+  <h2><span class="n">9.</span>તમારા અધિકારો</h2>
+  <p>લાગુ પડતા કાયદાને આધીન (GDPR Arts. 15–22; ભારત DPDP Ch. III; CCPA/CPRA) તમને ઍક્સેસ, સુધારો, કાઢી નાખવા, પોર્ટ, પ્રતિબંધિત કરવા કે વાંધો ઉઠાવવા, સંમતિ પાછી ખેંચવા, અને દેખરેખ સત્તા / ડેટા સંરક્ષણ બોર્ડ સમક્ષ ફરિયાદ કરવાના અધિકારો હોઈ શકે છે. કારણ કે તમારી વપરાશકર્તા સામગ્રી ફક્ત તમારા ડિવાઇસ પર જ રહે છે, તમે તેને સીધું જ ઍક્સેસ કરો છો અને કાઢી નાખો છો (સેવામાં કે સ્થાનિક ડેટા દૂર કરીને). અમારી પાસે રહેલા મર્યાદિત બિન-સામગ્રી ડેટા માટે, subumysore@gmail.com પર સંપર્ક કરો.</p>
+
+  <h2><span class="n">10.</span>બાળકો</h2>
+  <p>આ સેવા 13 વર્ષથી નાના બાળકો માટે નિર્દેશિત નથી, અને અમે જાણી જોઈને તેમનો વ્યક્તિગત ડેટા પ્રક્રિયા કરતા નથી.</p>
+
+  <h2><span class="n">11.</span>ફેરફારો</h2>
+  <p>અમે આ નીતિ અપડેટ કરી શકીએ; મહત્ત્વપૂર્ણ ફેરફારો અમલી તારીખ અપડેટ કરે છે અને, જ્યાં જરૂરી હોય ત્યાં, વધારાની સૂચના સમાવે છે.</p>
+
+  <hr>
+  <footer>Subramanya Mysore (એકલ માલિક) · ફરિયાદ અધિકારી/સંપર્ક: Subramanya Mysore · subumysore@gmail.com · નિયુક્ત થાય તો DPO/EU પ્રતિનિધિ. PolyglotFormFill — ગોપનીયતા-પ્રથમ, ડિવાઇસ પરનું ફોર્મ ઑટોફિલ.</footer>
+  <p style="margin-top:20px"><a href="/gu/">← PolyglotFormFill પર પાછા જાઓ</a></p>
 </div>
 </body>
 </html>

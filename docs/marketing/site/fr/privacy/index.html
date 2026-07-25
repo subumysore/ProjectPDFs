@@ -3,40 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Politique de confidentialité — PolyglotFormFill</title>
+<title>PolyglotFormFill — Politique de confidentialité</title>
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62}
+  .wrap{max-width:800px;margin:0 auto;padding:44px 24px 80px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--teal-ink))}
+  h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.03em;margin:24px 0 4px;font-weight:800}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+  .disclaimer{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:14px 18px;margin:20px 0;font-size:13.5px}
+  .disclaimer b{color:var(--amber)}
+  .tldr{background:var(--teal-soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .tldr b{color:var(--teal-ink)}
+  h2{font-size:18px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:6px}
+  h2 .n{font-family:var(--mono);color:var(--teal-ink);font-size:14px;margin-right:8px}
+  p,li{font-size:15px}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:22px;display:grid;gap:6px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .fill{background:var(--amber-soft);border-radius:4px;padding:0 5px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+  .egress{background:var(--amber-soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:14px}
+  .egress b{color:var(--amber)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--muted);font-size:13px}
+  a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr" selected>Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/" selected>Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
+  <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>Politique de confidentialité</h1>
-  <p class="lede">Vos documents ne quittent jamais votre appareil.</p>
-  <p>Nous ne collectons rien. Pas de compte, pas de télémétrie, pas d'analytique.</p>
-  <p>La lecture, l'OCR, la traduction, le remplissage et la signature se font sur votre appareil.</p>
-  <p>Votre formulaire ne quitte l'appareil que lorsque vous l'envoyez, et uniquement au destinataire que vous choisissez.</p>
-  <p>L'application télécharge polices, modèles de langue et mises à jour depuis notre serveur. Rien vous concernant n'est renvoyé.</p>
-  <footer>
-    <p class="note">Le texte juridique complet est disponible en anglais. <a href="/privacy/">English</a></p>
-    <p><a href="/fr/">Retour</a></p>
-  </footer>
+  <div class="meta">Date d'entrée en vigueur : 18 July 2026 · Version 1.0</div>
+  <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">Cette traduction est fournie pour votre commodité. La version anglaise de la présente Politique de confidentialité est la version faisant autorité et juridiquement contraignante. <a href="/privacy/">English</a></div>
+  <div class="disclaimer"><b>⚖ Projet en attente d'examen juridique — ne constitue pas un avis juridique. Il s'agit d'un modèle de rédaction pour le produit PolyglotFormFill. Il doit être examiné et approuvé par un conseil juridique qualifié dans chaque juridiction où le Service est proposé (y compris l'UE/EEE au titre du GDPR, l'Inde au titre de la DPDP Act 2023 et les États-Unis au titre de la CCPA/CPRA) avant publication. Les champs de contact/identité sont renseignés ; une relecture finale par un conseil reste recommandée avant une large diffusion publique.</b></div>
+  <div class="tldr">L'essentiel, en clair : Nous ne voyons, ne stockons ni ne transmettons vos documents ou les données que vous saisissez, et nous ne les envoyons nulle part où vous ne l'aviez pas prévu. Tout est traité sur votre appareil. Votre contenu quitte votre appareil uniquement lorsque vous effectuez une action précise — soumettre un formulaire complété au destinataire que vous choisissez, ou une recherche web que vous saisissez — et il y va directement, jamais par notre intermédiaire.</div>
+
+  <h2><span class="n">1.</span>Qui nous sommes</h2>
+  <p>La présente Politique est émise par Subramanya Mysore (entrepreneur individuel), Inde (« nous »), responsable de l'application PolyglotFormFill, de l'extension de navigateur et du site web (le « Service »). Au titre du GDPR, nous agissons comme responsable du traitement ; au titre de la DPDP Act 2023 de l'Inde comme Data Fiduciary ; lorsque nous ne traitons aucune donnée personnelle, aucun tel rôle ne s'applique. Responsable des réclamations / Contact : Subramanya Mysore · subumysore@gmail.com.</p>
+
+  <h2><span class="n">2.</span>Définitions</h2>
+  <ul>
+    <li>Données personnelles — informations se rapportant à une personne physique identifiable.</li>
+    <li>Contenu de l'utilisateur — les documents, formulaires, images et valeurs que vous saisissez ou stockez (votre « coffre »), y compris toute Donnée personnelle qu'ils contiennent.</li>
+    <li>Appareil — l'ordinateur ou l'appareil sur lequel vous exécutez le Service.</li>
+  </ul>
+
+  <h2><span class="n">3.</span>Notre principe fondamental de confidentialité</h2>
+  <p>Le Service est conçu de sorte que nous ne voyions, ne stockions ni ne transmettions votre Contenu de l'utilisateur, et que nous ne l'envoyions à aucun endroit que vous n'aviez pas prévu. Plus précisément :</p>
+  <ol>
+    <li>Traitement sur l'appareil. La lecture/l'affichage, l'OCR, la traduction, la détection des champs, le remplissage, l'export et la signature sont effectués localement sur votre Appareil. Nous ne recevons pas votre Contenu de l'utilisateur pour les réaliser.</li>
+    <li>Aucune collecte de notre part. Nous ne collectons, ne recevons, n'accédons ni ne stockons votre Contenu de l'utilisateur. Aucun compte n'est requis et aucun téléversement de votre Contenu de l'utilisateur vers nous n'a lieu.</li>
+    <li>Transmission dirigée par l'utilisateur uniquement. Le Contenu de l'utilisateur quitte votre Appareil uniquement lorsque vous déclenchez une action précise, et seulement vers la destination que vous choisissez :
+      <div class="egress">(a) Soumettre un formulaire complété — transmis directement depuis votre Appareil au destinataire que vous sélectionnez (p. ex. un site gouvernemental ou d'un fournisseur). Nous ne le relayons, n'interceptons, ne recevons, ne conservons ni n'y accédons.</div>
+      <div class="egress">(b) Recherche web (facultative) — seuls les termes de recherche que vous saisissez sont envoyés, directement au fournisseur de recherche tiers (DuckDuckGo), pour renvoyer des résultats. Aucun Contenu de l'utilisateur, donnée du coffre ou identifiant n'est envoyé. Saisissez une URL pour éviter cela entièrement.</div>
+      Ce sont les seules circonstances dans lesquelles du contenu ou des termes de recherche quittent votre Appareil — chacune initiée par l'utilisateur, clairement signalée et dirigée vers une destination que vous avez sélectionnée.</li>
+  </ol>
+
+  <h2><span class="n">4.</span>Données limitées sans contenu que nous pouvons traiter</h2>
+  <ul>
+    <li>Distribution et mises à jour du logiciel. Le téléchargement/la mise à jour du Service, ou son téléchargement de ressources (mises à jour, polices, modèles), effectue une requête à sens unique vers le canal concerné, qui peut traiter des données techniques (p. ex. IP) en tant que responsable indépendant selon sa propre politique. Il s'agit d'un téléchargement vers votre Appareil et cela n'offre aucune voie pour téléverser votre Contenu de l'utilisateur.</li>
+    <li>Paiements et licences. Les fonctionnalités payantes sont débloquées par une licence signée hors ligne vérifiée sur votre Appareil (ne contacte aucun serveur). Si vous effectuez un achat, le paiement est géré par sans objet (pas encore de fonctionnalités payantes) ; nous ne recevons que ce qui est nécessaire pour émettre/prendre en charge la licence (p. ex. nom, e-mail, identifiant de commande) — jamais votre Contenu de l'utilisateur.</li>
+    <li>Communications volontaires. Si vous contactez l'assistance, nous traitons ce que vous fournissez pour répondre.</li>
+  </ul>
+  <p class="muted">Nous n'utilisons pas d'analytique, d'identifiants publicitaires, de technologies de suivi ni de rapports de plantage contenant du contenu.</p>
+
+  <h2><span class="n">5.</span>Bases juridiques (GDPR, le cas échéant)</h2>
+  <p>Pour le traitement limité du §4 : contrat (Art. 6(1)(b)) pour la licence/l'assistance ; intérêts légitimes (Art. 6(1)(f)) pour la distribution/les mises à jour sécurisées ; consentement (Art. 6(1)(a)) lorsque requis. Aucune base juridique n'est requise pour le Contenu de l'utilisateur car nous ne le traitons pas.</p>
+
+  <h2><span class="n">6.</span>Sécurité de vos données sur l'appareil</h2>
+  <ul>
+    <li>Votre coffre est stocké uniquement sur votre Appareil et est chiffré au repos (AES-256-GCM).</li>
+    <li>La clé est dérivée au déverrouillage à partir de votre phrase secrète ou d'une clé d'accès matérielle (WebAuthn) ; elle n'est jamais stockée ni transmise.</li>
+    <li>L'extension utilise des permissions au moindre privilège et ne contient aucun code distant (Manifest V3).</li>
+  </ul>
+
+  <h2><span class="n">7.</span>Partage et transferts internationaux</h2>
+  <p>Comme nous ne recevons pas votre Contenu de l'utilisateur, nous ne le partageons, ne le vendons ni ne le transférons. Pour les données limitées sans contenu du §4, nous partageons uniquement avec les fournisseurs qui y sont nommés, sous contrat ; tout transfert transfrontalier suit les garanties de ce fournisseur.</p>
+
+  <h2><span class="n">8.</span>Conservation</h2>
+  <p>Nous ne conservons pas votre Contenu de l'utilisateur (nous ne le recevons jamais). Les données sans contenu du §4 sont conservées uniquement le temps nécessaire.</p>
+
+  <h2><span class="n">9.</span>Vos droits</h2>
+  <p>Sous réserve du droit applicable (GDPR Art. 15–22 ; Inde DPDP Ch. III ; CCPA/CPRA), vous pouvez avoir le droit d'accéder, de corriger, de supprimer, de porter, de restreindre ou de vous opposer, de retirer votre consentement et de déposer une réclamation auprès d'une autorité de contrôle / de la Data Protection Board. Comme votre Contenu de l'utilisateur réside uniquement sur votre Appareil, vous y accédez et le supprimez directement (dans le Service ou en supprimant les données locales). Pour les données limitées sans contenu que nous détenons, contactez subumysore@gmail.com.</p>
+
+  <h2><span class="n">10.</span>Enfants</h2>
+  <p>Le Service ne s'adresse pas aux enfants de moins de 13 ans, et nous ne traitons pas sciemment leurs Données personnelles.</p>
+
+  <h2><span class="n">11.</span>Modifications</h2>
+  <p>Nous pouvons mettre à jour la présente Politique ; les modifications substantielles mettent à jour la Date d'entrée en vigueur et, lorsque requis, incluent un avis supplémentaire.</p>
+
+  <hr>
+  <footer>Subramanya Mysore (entrepreneur individuel) · Responsable des réclamations/Contact : Subramanya Mysore · subumysore@gmail.com · DPO/Représentant dans l'UE si désigné. PolyglotFormFill — remplissage de formulaires sur l'appareil, axé sur la confidentialité.</footer>
+  <p style="margin-top:20px"><a href="/fr/">← Retour à PolyglotFormFill</a></p>
 </div>
 </body>
 </html>

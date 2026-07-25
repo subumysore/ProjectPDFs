@@ -1,201 +1,532 @@
-// Build a deployable static site from the artifact-style marketing pages.
-// The landing/privacy files contain a <title> + <style> + body markup (authored for
-// the Artifact wrapper). This wraps each into a complete, standalone HTML document
-// and writes them to docs/marketing/site/ ready for Cloudflare Pages / Netlify /
-// GitHub Pages. No build tools, no external requests.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+// Build a fully-localised static marketing site from ONE set of templates + a per-language string
+// catalogue (docs/marketing/i18n/<lang>.json). Every UI language in the shared catalogue gets a
+// COMPLETE landing, privacy, and install page — never a stub, never half-English — each carrying a
+// language switcher and language-preserving navigation. English lives at / , /privacy/ , /install/ ;
+// every other language at /<lang>/… . No build tools, no external requests at build time.
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const site = join(dir, "site");
-mkdirSync(join(site, "privacy"), { recursive: true });
+const i18nDir = join(dir, "i18n");
 
-function wrap(inner) {
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-${inner.trim()}
-</body>
-</html>
-`;
-}
-// The source files are "<title>…</title>\n<style>…</style>\n<body markup>".
-// We move </head> after the </style> and open <body> before the markup.
-function toDoc(src) {
-  const styleEnd = src.indexOf("</style>");
-  const head = src.slice(0, styleEnd + "</style>".length);
-  const body = src.slice(styleEnd + "</style>".length);
-  return wrap(`${head}\n</head>\n<body>\n${body}`);
-}
-
-const landing = readFileSync(join(dir, "landing.html"), "utf8")
-  // point the "full privacy policy" button at the hosted privacy page
-  .replace('href="#">Read the full privacy policy', 'href="/privacy/">Read the full privacy policy');
-const privacy = readFileSync(join(dir, "privacy.html"), "utf8");
-
-writeFileSync(join(site, "index.html"), toDoc(landing));
-writeFileSync(join(site, "privacy", "index.html"), toDoc(privacy));
-
-// Keep the install page's version badges in sync with the ACTUAL builds — read the versions
-// from the extension manifest + the Tauri config and inject them (no manual drift per release).
-try {
-  const root = join(dir, "..", "..");
-  const extVer = JSON.parse(readFileSync(join(root, "apps", "extension", "manifest.json"), "utf8")).version;
-  const tauri = JSON.parse(readFileSync(join(root, "apps", "app", "src-tauri", "tauri.conf.json"), "utf8"));
-  const appVer = tauri.version || (tauri.package && tauri.package.version) || "0.0.0";
-  const installPath = join(site, "install", "index.html");
-  let html = readFileSync(installPath, "utf8");
-  html = html.replace(/(<span class="ver" data-ver="ext">)[^<]*(<\/span>)/, `$1v${extVer}$2`);
-  html = html.replace(/(<span class="ver" data-ver="app">)[^<]*(<\/span>)/, `$1v${appVer}$2`);
-  writeFileSync(installPath, html);
-  console.log(`install page versions injected — extension v${extVer}, desktop v${appVer}`);
-} catch (e) { console.warn("install-page version injection skipped:", e.message); }
-
-// ---- Localised pages: /<lang>/ for every language in the shared catalogue -------------------
-// The site speaks the same catalogue as the extension and the desktop app, so a visitor reads the
-// product in their own language BEFORE they install anything. The rich English landing page keeps
-// its long-form copy; each localised page is generated wholly from translated strings, so there
-// is never a page that is half in the visitor's language and half in English.
-const { UI_LANGS, AVAILABLE, translator, dirOf } = await import(
+// The site speaks the same catalogue as the extension and the desktop app. We reuse its language
+// labels (each in its own script), RTL set, and the already-translated shared strings (app.*,
+// privacy.*, site.*), and layer the marketing-only copy on top from docs/marketing/i18n/.
+const { UI_LANGS, AVAILABLE, dirOf, STRINGS: SHARED } = await import(
   new URL("../../apps/extension/src/i18n.js", import.meta.url)
 );
 
-function switcher(current) {
+// ---- string catalogue -----------------------------------------------------------------------
+const EN = JSON.parse(readFileSync(join(i18nDir, "en.json"), "utf8"));
+const MARKETING = { en: EN };
+for (const f of readdirSync(i18nDir)) {
+  if (!f.endsWith(".json") || f === "en.json") continue;
+  const lang = f.replace(/\.json$/, "");
+  MARKETING[lang] = JSON.parse(readFileSync(join(i18nDir, f), "utf8"));
+}
+
+// A translator bound to one language: marketing catalogue first, then the shared extension
+// catalogue, then English — a visible English word always beats a blank. `{name}` placeholders are
+// substituted; arrays pass through untouched.
+function translator(lang) {
+  const m = MARKETING[lang] || {};
+  const shared = SHARED[lang] || {};
+  return (key, vars = null) => {
+    let s = m[key];
+    if (s === undefined) s = shared[key];
+    if (s === undefined) s = EN[key];
+    if (s === undefined) s = SHARED.en[key];
+    if (s === undefined) return key;
+    if (Array.isArray(s)) return s;
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.split("{" + k + "}").join(String(v));
+    return s;
+  };
+}
+
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// ---- URLs + switcher (language-preserving navigation) ---------------------------------------
+// Each page type has ONE canonical URL per language; the switcher options carry the full localised
+// URL for the SAME page type, so choosing a language keeps you on the page you were reading.
+function urlFor(lang, page) {
+  const base = lang === "en" ? "" : `/${lang}`;
+  if (page === "landing") return base === "" ? "/" : `${base}/`;
+  if (page === "privacy") return `${base}/privacy/`;
+  if (page === "install") return `${base}/install/`;
+  return `${base}/`;
+}
+
+function switcher(current, page) {
   const opts = Object.entries(UI_LANGS)
     .map(([code, label]) =>
-      `<option value="${code}"${code === current ? " selected" : ""}>${label}</option>`)
+      `<option value="${urlFor(code, page)}"${code === current ? " selected" : ""}>${label}</option>`)
     .join("");
-  // Plain navigation, no framework: choosing a language goes to that language's page.
-  return `<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'">${opts}</select></nav>`;
+  return `<div class="langbar"><label for="lang">🌐</label>` +
+    `<select id="lang" aria-label="Language" onchange="location.href=this.value">${opts}</select></div>`;
 }
 
-const CSS = `
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+const HELLO_JS = `
+(function(){
+  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+    "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+  var bg=document.getElementById("hellobg"); if(!bg) return;
+  var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+  for(var i=0;i<N;i++){
+    var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(Math.random()*96)+"vw"; el.style.top=(Math.random()*100)+"vh";
+    el.style.fontSize=(15+Math.random()*30)+"px";
+    var dur=(9+Math.random()*9).toFixed(2);
+    el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+    bg.appendChild(el);
+  }
+})();`;
+
+const PPP_JS = `
+(function(){
+  var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+  var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+    var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+    if(f==null){ note("Prices shown in USD."); return; }
+    if(f<0.35)f=0.35;
+    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    document.querySelectorAll(".ppp").forEach(function(el){
+      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+    });
+    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+  }).catch(function(){ note("Prices shown in USD."); });
+})();`;
+
+// The full landing CSS (kept from the original hand-written landing.html so every localised page
+// looks identical to the English one).
+const LANDING_CSS = readFileSync(join(dir, "landing.html"), "utf8")
+  .match(/<style>([\s\S]*?)<\/style>/)[1];
+
+const LANGBAR_CSS = `
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 `;
+
+// ---- landing template -----------------------------------------------------------------------
+function landingPage(lang) {
+  const tr = translator(lang);
+  const li = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
+  const feats = [1, 2, 3, 4, 5, 6, 7].map((n) =>
+    `<div class="card"><div class="ic">${["🔒","🌍","📄","🧠","✍️","🔑","🔗"][n-1]}</div>` +
+    `<h3>${esc(tr("feat.c"+n+"t"))}</h3><p>${esc(tr("feat.c"+n+"b"))}</p></div>`).join("\n    ");
+  return `<!doctype html>
+<html lang="${lang}" dir="${dirOf(lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(tr("app.name"))} — ${esc(tr("meta.landingTitle"))}</title>
+<meta name="description" content="${esc(tr("meta.landingDesc"))}">
+<style>${LANDING_CSS}${LANGBAR_CSS}
+  .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
+</style>
+
+<div class="hellobg" id="hellobg" aria-hidden="true"></div>
+${switcher(lang, "landing")}
+
+<div class="wrap">
+  <nav>
+    <div class="brand"><span class="dot"></span> ${esc(tr("app.name"))}</div>
+    <div class="navlinks">
+      <a href="#features">${esc(tr("nav.features"))}</a>
+      <a href="#who">${esc(tr("nav.who"))}</a>
+      <a href="#polyglot">${esc(tr("nav.languages"))}</a>
+      <a href="#pricing">${esc(tr("nav.pricing"))}</a>
+      <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
+      <a href="#privacy">${esc(tr("nav.privacy"))}</a>
+      <a class="btn" href="#get">${esc(tr("nav.getit"))}</a>
+    </div>
+  </nav>
+</div>
+
+<header class="wrap">
+  <span class="badge">◉ ${esc(tr("hero.badge"))}</span>
+  <h1>${esc(tr("hero.h1a"))}<br><span class="fade">${esc(tr("hero.h1b"))}</span></h1>
+  <p class="lede">${esc(tr("hero.lede"))}</p>
+  <div class="cta">
+    <a class="btn" href="#features">${esc(tr("hero.cta1"))}</a>
+    <a class="btn ghost" href="/tutorials/">${esc(tr("hero.cta2"))}</a>
+    <a class="btn ghost" href="#get">${esc(tr("hero.cta3"))}</a>
+  </div>
+  <div class="trustline">${esc(tr("hero.trust"))}</div>
+
+  <div class="flow">
+    <div class="device">
+      <h3>${esc(tr("flow.deviceTitle"))}</h3>
+      <div class="chips">
+        <span class="chip">📄 ${esc(tr("flow.chip1"))}</span>
+        <span class="chip">🔎 ${esc(tr("flow.chip2"))}</span>
+        <span class="chip">🌍 ${esc(tr("flow.chip3"))}</span>
+        <span class="chip">🧠 ${esc(tr("flow.chip4"))}</span>
+        <span class="chip">🖊 ${esc(tr("flow.chip5"))}</span>
+        <span class="chip">✍️ ${esc(tr("flow.chip6"))}</span>
+        <span class="chip">🔐 ${esc(tr("flow.chip7"))}</span>
+      </div>
+    </div>
+    <div class="egress">
+      <div class="out"><span class="arrow">→</span><div><b>${esc(tr("flow.egressLabel"))}</b>
+        ${esc(tr("flow.egressBody"))}</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="features" class="wrap">
+  <span class="eyebrow">${esc(tr("feat.eyebrow"))}</span>
+  <h2 class="h2">${esc(tr("feat.h2"))}</h2>
+  <p class="sub">${esc(tr("feat.sub"))}</p>
+  <div class="grid">
+    <div class="card feature">
+      <div class="ic">🧩</div>
+      <div>
+        <span class="flag">${esc(tr("feat.flag"))}</span>
+        <h3>${esc(tr("feat.mainTitle"))}</h3>
+        <p>${esc(tr("feat.mainBody"))}</p>
+      </div>
+    </div>
+    ${feats}
+  </div>
+</section>
+
+<section id="who" class="wrap">
+  <span class="eyebrow">${esc(tr("who.eyebrow"))}</span>
+  <h2 class="h2">${esc(tr("who.h2"))}</h2>
+  <p class="sub">${esc(tr("who.sub"))}</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🛂</div><h3>${esc(tr("who.c1t"))}</h3><p>${esc(tr("who.c1b"))}</p></div>
+    <div class="card"><div class="ic">💼</div><h3>${esc(tr("who.c2t"))}</h3><p>${esc(tr("who.c2b"))}</p></div>
+    <div class="card"><div class="ic">🛡️</div><h3>${esc(tr("who.c3t"))}</h3><p>${esc(tr("who.c3b"))}</p></div>
+  </div>
+</section>
+
+<section id="polyglot" class="wrap">
+  <div class="band">
+    <span class="eyebrow" style="color:rgba(255,255,255,.8)">${esc(tr("band.eyebrow"))}</span>
+    <h2 class="h2">${esc(tr("band.h2"))}</h2>
+    <p class="sub">${esc(tr("band.sub"))}</p>
+    <div class="langrow">
+      <span class="lang">English ↔ हिन्दी</span>
+      <span class="lang">${esc(tr("band.chip2"))}</span>
+      <span class="lang">${esc(tr("band.chip3"))}</span>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="wrap">
+  <span class="eyebrow">${esc(tr("price.eyebrow"))}</span>
+  <h2 class="h2">${esc(tr("price.h2"))}</h2>
+  <p class="sub">${esc(tr("price.sub"))}</p>
+  <div class="tiers">
+    <div class="tier">
+      <h3>${esc(tr("price.free"))}</h3>
+      <div class="price">$0</div>
+      <ul>${li(tr("price.freeList"))}</ul>
+    </div>
+    <div class="tier pop">
+      <h3>${esc(tr("price.pro"))}</h3>
+      <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTimeDevice"))}</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("price.oneDevice"))} · or <span class="ppp" data-usd="9">$9</span>${esc(tr("price.perYear"))}</div>
+      <ul>${li(tr("price.proList"))}</ul>
+    </div>
+    <div class="tier">
+      <h3>${esc(tr("price.family"))}</h3>
+      <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTime"))}</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${tr("price.familyDevices", { each: '<span class="ppp" data-usd="6">$6</span>' })} · or <span class="ppp" data-usd="15">$15</span>${esc(tr("price.perYear"))}</div>
+      <ul>${li(tr("price.familyList"))}</ul>
+    </div>
+  </div>
+  <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
+  <script>${PPP_JS}</script>
+  <script>${HELLO_JS}</script>
+
+  <div style="margin-top:40px">
+    <span class="eyebrow">${esc(tr("team.eyebrow"))}</span>
+    <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">${esc(tr("team.h2"))}</h2>
+    <p class="sub">${esc(tr("team.sub"))}</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>${esc(tr("team.tTeam"))}</h3>
+        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tTeamRange"))}</div>
+        <ul>${li(tr("team.tTeamList"))}</ul>
+      </div>
+      <div class="tier">
+        <h3>${esc(tr("team.tBiz"))}</h3>
+        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tBizRange"))}</div>
+        <ul>${li(tr("team.tBizList"))}</ul>
+      </div>
+      <div class="tier">
+        <h3>${esc(tr("team.tScale"))}</h3>
+        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tScaleRange"))}</div>
+        <ul>${li(tr("team.tScaleList"))}</ul>
+      </div>
+      <div class="tier">
+        <h3>${esc(tr("team.tEnt"))}</h3>
+        <div class="price" style="font-size:22px">${esc(tr("team.tEntPrice"))}</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tEntRange"))}</div>
+        <ul>${li(tr("team.tEntList"))}</ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">${esc(tr("price.note"))} <a href="mailto:subumysore@gmail.com">${esc(tr("price.contactUs"))}</a>.</p>
+</section>
+
+<section id="get" class="wrap">
+  <span class="eyebrow">${esc(tr("get.eyebrow"))}</span>
+  <h2 class="h2">${esc(tr("get.h2"))}</h2>
+  <p class="sub">${esc(tr("get.sub"))}</p>
+  <div class="cta">
+    <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">${esc(tr("get.win"))}</a>
+    <a class="btn ghost" href="${urlFor(lang, "install")}">${esc(tr("get.ext"))}</a>
+    <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
+  </div>
+  <p class="note">${esc(tr("get.note"))}</p>
+</section>
+
+<section id="privacy" class="wrap">
+  <span class="eyebrow">${esc(tr("privS.eyebrow"))}</span>
+  <h2 class="h2">${esc(tr("privS.h2"))}</h2>
+  <p class="sub">${esc(tr("privS.sub"))}</p>
+  <p style="margin-top:16px"><a class="btn ghost" href="${urlFor(lang, "privacy")}">${esc(tr("privS.readFull"))}</a></p>
+</section>
+
+<footer class="wrap">
+  <div>${esc(tr("foot.left"))}</div>
+  <div>${esc(tr("foot.right"))}</div>
+</footer>
+</body>
+</html>
+`;
+}
+
+// ---- privacy template -----------------------------------------------------------------------
+const PRIVACY_CSS = readFileSync(join(dir, "privacy.html"), "utf8")
+  .match(/<style>([\s\S]*?)<\/style>/)[1];
+
+function privacyPage(lang) {
+  const tr = translator(lang);
+  const isEn = lang === "en";
+  const authNote = isEn ? "" :
+    `<div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">${esc(tr("privP.authNote"))} <a href="/privacy/">English</a></div>`;
+  return `<!doctype html>
+<html lang="${lang}" dir="${dirOf(lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(tr("app.name"))} — ${esc(tr("privP.title"))}</title>
+<style>${PRIVACY_CSS}${LANGBAR_CSS}</style>
+</head>
+<body>
+${switcher(lang, "privacy")}
+<div class="wrap">
+  <div class="brand"><span class="dot"></span> ${esc(tr("app.name"))}</div>
+  <h1>${esc(tr("privP.title"))}</h1>
+  <div class="meta">${esc(tr("privP.effective"))} 18 July 2026 · ${esc(tr("privP.version"))}</div>
+  ${authNote}
+  <div class="disclaimer"><b>${esc(tr("privP.disclaimer"))}</b></div>
+  <div class="tldr">${esc(tr("privP.tldr"))}</div>
+
+  <h2><span class="n">1.</span>${esc(tr("privP.h1"))}</h2>
+  <p>${esc(tr("privP.b1"))}</p>
+
+  <h2><span class="n">2.</span>${esc(tr("privP.h2"))}</h2>
+  <ul>
+    <li>${esc(tr("privP.def1"))}</li>
+    <li>${esc(tr("privP.def2"))}</li>
+    <li>${esc(tr("privP.def3"))}</li>
+  </ul>
+
+  <h2><span class="n">3.</span>${esc(tr("privP.h3"))}</h2>
+  <p>${esc(tr("privP.b3"))}</p>
+  <ol>
+    <li>${esc(tr("privP.p3a"))}</li>
+    <li>${esc(tr("privP.p3b"))}</li>
+    <li>${esc(tr("privP.p3c"))}
+      <div class="egress">${esc(tr("privP.egressA"))}</div>
+      <div class="egress">${esc(tr("privP.egressB"))}</div>
+      ${esc(tr("privP.p3end"))}</li>
+  </ol>
+
+  <h2><span class="n">4.</span>${esc(tr("privP.h4"))}</h2>
+  <ul>
+    <li>${esc(tr("privP.li4a"))}</li>
+    <li>${esc(tr("privP.li4b"))}</li>
+    <li>${esc(tr("privP.li4c"))}</li>
+  </ul>
+  <p class="muted">${esc(tr("privP.b4end"))}</p>
+
+  <h2><span class="n">5.</span>${esc(tr("privP.h5"))}</h2>
+  <p>${esc(tr("privP.b5"))}</p>
+
+  <h2><span class="n">6.</span>${esc(tr("privP.h6"))}</h2>
+  <ul>
+    <li>${esc(tr("privP.li6a"))}</li>
+    <li>${esc(tr("privP.li6b"))}</li>
+    <li>${esc(tr("privP.li6c"))}</li>
+  </ul>
+
+  <h2><span class="n">7.</span>${esc(tr("privP.h7"))}</h2>
+  <p>${esc(tr("privP.b7"))}</p>
+
+  <h2><span class="n">8.</span>${esc(tr("privP.h8"))}</h2>
+  <p>${esc(tr("privP.b8"))}</p>
+
+  <h2><span class="n">9.</span>${esc(tr("privP.h9"))}</h2>
+  <p>${esc(tr("privP.b9"))}</p>
+
+  <h2><span class="n">10.</span>${esc(tr("privP.h10"))}</h2>
+  <p>${esc(tr("privP.b10"))}</p>
+
+  <h2><span class="n">11.</span>${esc(tr("privP.h11"))}</h2>
+  <p>${esc(tr("privP.b11"))}</p>
+
+  <hr>
+  <footer>${esc(tr("privP.footer"))}</footer>
+  <p style="margin-top:20px"><a href="${urlFor(lang, "landing")}">${esc(tr("privP.backHome"))}</a></p>
+</div>
+</body>
+</html>
+`;
+}
+
+// ---- install template -----------------------------------------------------------------------
+const INSTALL_CSS = readFileSync(join(site, "install", "index.html"), "utf8")
+  .match(/<style>([\s\S]*?)<\/style>/)[1];
+// version badges from the ACTUAL builds (no manual drift per release)
+let EXT_VER = "1.0.1", APP_VER = "1.0.0";
+try {
+  const root = join(dir, "..", "..");
+  EXT_VER = JSON.parse(readFileSync(join(root, "apps", "extension", "manifest.json"), "utf8")).version || EXT_VER;
+  const tauri = JSON.parse(readFileSync(join(root, "apps", "app", "src-tauri", "tauri.conf.json"), "utf8"));
+  APP_VER = tauri.version || (tauri.package && tauri.package.version) || APP_VER;
+} catch (e) { console.warn("install version read skipped:", e.message); }
+
+const INSTALL_SCRIPT = readFileSync(join(site, "install", "index.html"), "utf8")
+  .match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
+
+function installPage(lang) {
+  const tr = translator(lang);
+  return `<!doctype html>
+<html lang="${lang}" dir="${dirOf(lang)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(tr("install.title"))}</title>
+<style>${INSTALL_CSS}${LANGBAR_CSS}</style>
+</head>
+<body>
+${switcher(lang, "install")}
+<div class="wrap">
+  <p><a href="${urlFor(lang, "landing")}">${esc(tr("install.back"))}</a></p>
+  <h1>${esc(tr("install.h1"))}</h1>
+  <p class="muted">${esc(tr("install.intro"))}</p>
+
+  <div class="card">
+    <span class="tag">${esc(tr("install.extTag"))}</span>
+    <h2 style="margin-top:0">${esc(tr("install.extH2"))} <span class="ver" data-ver="ext">v${EXT_VER}</span></h2>
+    <a class="btn" href="/download/polyglotformfill-extension.zip">${esc(tr("install.extDownload"))}</a>
+    <p>${esc(tr("install.extLoad"))}</p>
+    <ol>
+      <li>${esc(tr("install.extStep1"))}</li>
+      <li>${esc(tr("install.extStep2"))}</li>
+      <li>${esc(tr("install.extStep3"))}</li>
+      <li>${esc(tr("install.extStep4"))}</li>
+      <li>${esc(tr("install.extStep5"))}</li>
+      <li>${esc(tr("install.extStep6"))}</li>
+      <li>${esc(tr("install.extStep7"))}</li>
+    </ol>
+    <p class="muted">${esc(tr("install.extNote"))}</p>
+  </div>
+
+  <div class="card">
+    <span class="tag">${esc(tr("install.wingetTag"))}</span>
+    <h2 style="margin-top:0">${esc(tr("install.wingetH2"))}</h2>
+    <p>${esc(tr("install.wingetBody"))}</p>
+    <pre>winget install SubramanyaMysore.PolyglotFormFill</pre>
+    <p class="muted">${esc(tr("install.wingetNote"))}</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">${esc(tr("install.deskH2"))}
+      <span class="ver" data-ver="app">v${APP_VER}</span></h2>
+
+    <div class="heads">
+      <b>${esc(tr("install.headsTitle"))}</b> ${esc(tr("install.headsBody"))}
+      <div class="screen">
+        <span class="t">${esc(tr("install.screenTitle"))}</span>
+        ${esc(tr("install.screenBody"))}
+      </div>
+      ${esc(tr("install.headsMeans"))}
+      <ol>
+        <li>${esc(tr("install.headsStep1"))}</li>
+        <li>${esc(tr("install.headsStep2"))}</li>
+      </ol>
+      ${esc(tr("install.headsAfter"))}
+    </div>
+
+    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("install.deskDownload"))}</a>
+    <p class="muted">${esc(tr("install.deskNote"))}</p>
+
+    <details>
+      <summary>${esc(tr("install.verifySummary"))}</summary>
+      <p class="muted" style="margin-top:10px">${esc(tr("install.verifyBody"))}</p>
+      <pre>Get-FileHash .\\PolyglotFormFill-Setup.exe -Algorithm SHA256</pre>
+      <p class="muted" style="margin-bottom:4px">${esc(tr("install.verifyHashes"))}
+        <span data-manifest="version">${esc(tr("install.verifyThisRelease"))}</span>:</p>
+      <div data-manifest="artifacts" class="hash">
+        <a href="/download/release-manifest.json">release-manifest.json</a>
+      </div>
+    </details>
+  </div>
+
+  <p class="muted">${esc(tr("install.privacyNote"))}
+    <a href="${urlFor(lang, "privacy")}">${esc(tr("install.privacyLink"))}</a>.</p>
+</div>
+<script>${INSTALL_SCRIPT}</script>
+</body>
+</html>
+`;
+}
+
+// ---- write everything -----------------------------------------------------------------------
+function out(lang, page, html) {
+  const path = lang === "en"
+    ? (page === "landing" ? join(site, "index.html")
+      : join(site, page, "index.html"))
+    : (page === "landing" ? join(site, lang, "index.html")
+      : join(site, lang, page, "index.html"));
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, html);
+}
 
 for (const lang of AVAILABLE) {
-  if (lang === "en") continue; // English keeps the full hand-written landing page
-  const tr = translator(lang);
-  const page = `<!doctype html>
-<html lang="${lang}" dir="${dirOf(lang)}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${tr("app.name")} — ${tr("app.tagline")}</title>
-<meta name="description" content="${tr("privacy.headline")}">
-<style>${CSS}</style>
-</head>
-<body>
-${switcher(lang)}
-<div class="wrap">
-  <h1>${tr("app.name")}</h1>
-  <p class="lede">${tr("app.tagline")}</p>
-  <div class="cta">
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${tr("site.download")} — ${tr("site.forWindows")}</a>
-    <a class="btn alt" href="/install/">${tr("site.install")} — ${tr("site.forChrome")}</a>
-  </div>
-  <h2>${tr("privacy.headline")}</h2>
-  <p>${tr("privacy.body")}</p>
-  <p class="note">${tr("lang.hint")}</p>
-  <footer>
-    <p class="note">${tr("site.langNote")}</p>
-    <p><a href="/${lang}/privacy/">${tr("site.privacyPolicy")}</a> · <a href="/">English</a></p>
-    <p class="note">${tr("privacy.legalNote")}</p>
-  </footer>
-</div>
-</body>
-</html>
-`;
-  mkdirSync(join(site, lang), { recursive: true });
-  writeFileSync(join(site, lang, "index.html"), page);
-
-  // A privacy page in the visitor's own language. The English page is the full legal text; this
-  // states the same four commitments in plain language, and says plainly that the legal wording
-  // is English — so nobody is asked to accept something they cannot read without being told.
-  const priv = `<!doctype html>
-<html lang="${lang}" dir="${dirOf(lang)}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${tr("site.privacyPolicy")} — ${tr("app.name")}</title>
-<style>${CSS}</style>
-</head>
-<body>
-${switcher(lang)}
-<div class="wrap">
-  <h1>${tr("site.privacyPolicy")}</h1>
-  <p class="lede">${tr("privacy.headline")}</p>
-  <p>${tr("privacy.noCollect")}</p>
-  <p>${tr("privacy.onDevice")}</p>
-  <p>${tr("privacy.egress")}</p>
-  <p>${tr("privacy.assets")}</p>
-  <footer>
-    <p class="note">${tr("privacy.legalNote")} <a href="/privacy/">English</a></p>
-    <p><a href="/${lang}/">${tr("action.back")}</a></p>
-  </footer>
-</div>
-</body>
-</html>
-`;
-  mkdirSync(join(site, lang, "privacy"), { recursive: true });
-  writeFileSync(join(site, lang, "privacy", "index.html"), priv);
+  out(lang, "landing", landingPage(lang));
+  out(lang, "privacy", privacyPage(lang));
+  out(lang, "install", installPage(lang));
 }
-console.log(`wrote ${AVAILABLE.length - 1} localised landing pages (/<lang>/)`);
 
-// The English landing page gets the same switcher, plus a one-line hint that sends a visitor whose
-// browser asks for another language to their own page. It only ever SUGGESTS — it never redirects
-// automatically, because a silent redirect strands anyone who wanted the English page.
-try {
-  const p = join(site, "index.html");
-  let html = readFileSync(p, "utf8");
-  const bar = `<style>${CSS.split("\n").filter((l) => l.startsWith(".langbar")).join("\n")}</style>${switcher("en")}
-<div id="langhint" hidden style="display:flex;gap:14px;align-items:center;justify-content:center;padding:9px 20px;background:#eef6f5;color:#0a6a60;font:14px/1.4 system-ui;border-bottom:1px solid #d7e6e3"></div>
-<script>
-(function(){
-  var have=${JSON.stringify(AVAILABLE)}, names=${JSON.stringify(UI_LANGS)};
-  var prefs=(navigator.languages||[navigator.language||"en"]).map(function(x){return String(x).toLowerCase()});
-  for (var i=0;i<prefs.length;i++){
-    var tag=prefs[i], base=tag.split("-")[0];
-    var hit=have.indexOf(tag)>=0?tag:(have.indexOf(base)>=0?base:null);
-    if(hit&&hit!=="en"){
-      var el=document.getElementById("langhint");
-      el.innerHTML='<span>🌐 This page is also available in <a href="/'+hit+'/" style="font-weight:600;color:#0a6a60">'+names[hit]+' →</a></span>'+
-        '<a href="#" onclick="this.closest(\\'#langhint\\').hidden=true;return false" aria-label="Dismiss" style="color:#5a8;text-decoration:none">✕</a>';
-      el.hidden=false;
-      var sel=document.getElementById("lang"); if(sel) sel.value="en";
-      break;
-    }
-  }
-})();
-</script>`;
-  html = html.replace("<body>", "<body>\n" + bar);
-  writeFileSync(p, html);
-  console.log("English landing page: language switcher + own-language hint added");
-} catch (e) { console.warn("landing switcher skipped:", e.message); }
-
-// A tiny 404 that sends visitors home.
+// A tiny localised-aware 404 that sends visitors home.
 writeFileSync(
   join(site, "404.html"),
-  wrap('<title>Not found — PolyglotFormFill</title>\n</head>\n<body style="font-family:system-ui;padding:40px"><h1>404</h1><p><a href="/">Back to PolyglotFormFill</a></p>'),
+  `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not found — PolyglotFormFill</title></head>
+<body style="font-family:system-ui;padding:40px"><h1>404</h1>
+<p><a href="/">Back to PolyglotFormFill</a></p></body></html>`,
 );
 
-console.log("wrote site/index.html, site/privacy/index.html, site/404.html");
+console.log(`install page versions: extension v${EXT_VER}, desktop v${APP_VER}`);
+console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404`);

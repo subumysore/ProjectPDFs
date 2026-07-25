@@ -3,40 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>개인정보 처리방침 — PolyglotFormFill</title>
+<title>PolyglotFormFill — 개인정보처리방침</title>
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62}
+  .wrap{max-width:800px;margin:0 auto;padding:44px 24px 80px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--teal-ink))}
+  h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.03em;margin:24px 0 4px;font-weight:800}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+  .disclaimer{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:14px 18px;margin:20px 0;font-size:13.5px}
+  .disclaimer b{color:var(--amber)}
+  .tldr{background:var(--teal-soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .tldr b{color:var(--teal-ink)}
+  h2{font-size:18px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:6px}
+  h2 .n{font-family:var(--mono);color:var(--teal-ink);font-size:14px;margin-right:8px}
+  p,li{font-size:15px}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:22px;display:grid;gap:6px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .fill{background:var(--amber-soft);border-radius:4px;padding:0 5px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+  .egress{background:var(--amber-soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:14px}
+  .egress b{color:var(--amber)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--muted);font-size:13px}
+  a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko" selected>한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/" selected>한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
-  <h1>개인정보 처리방침</h1>
-  <p class="lede">당신의 문서는 절대 기기를 벗어나지 않습니다.</p>
-  <p>우리는 아무것도 수집하지 않습니다. 계정도, 원격 측정도, 분석도 없습니다.</p>
-  <p>읽기, OCR, 번역, 작성, 서명 모두 당신의 기기에서 이루어집니다.</p>
-  <p>서식은 당신이 보낼 때만 기기를 떠나며, 당신이 고른 수신자에게만 갑니다.</p>
-  <p>앱은 글꼴, 언어 모델, 업데이트를 우리 서버에서 내려받습니다. 당신에 관한 정보는 결코 되돌아가지 않습니다.</p>
-  <footer>
-    <p class="note">전체 법률 문안은 영어로 제공됩니다. <a href="/privacy/">English</a></p>
-    <p><a href="/ko/">뒤로</a></p>
-  </footer>
+  <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+  <h1>개인정보처리방침</h1>
+  <div class="meta">발효일: 18 July 2026 · 버전 1.0</div>
+  <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">본 번역은 편의를 위해 제공됩니다. 본 개인정보처리방침의 영어 버전이 권위 있고 법적 구속력을 갖는 버전입니다. <a href="/privacy/">English</a></div>
+  <div class="disclaimer"><b>⚖ 법률 검토 대기 중인 초안 — 법률 자문이 아닙니다. 이것은 PolyglotFormFill 제품을 위한 작성 템플릿입니다. 본 서비스가 제공되는 각 관할권(GDPR 하의 EU/EEA, DPDP Act 2023 하의 인도, CCPA/CPRA 하의 미국 포함)에서 게시 전에 자격을 갖춘 법률 고문의 검토와 승인을 받아야 합니다. 연락처/신원 항목은 작성되었으나, 폭넓은 공개 배포 전에 고문의 최종 검토를 여전히 권장합니다.</b></div>
+  <div class="tldr">요지를 쉽게: 저희는 사용자의 문서나 사용자가 입력한 데이터를 보지도, 저장하지도, 전송하지도 않으며, 사용자가 의도하지 않은 어디로도 보내지 않습니다. 모든 것은 사용자의 기기에서 처리됩니다. 사용자의 콘텐츠가 기기를 떠나는 것은 사용자가 특정 행위를 취할 때뿐입니다 — 완성된 양식을 사용자가 선택한 수신자에게 제출할 때, 또는 사용자가 입력하는 웹 검색 때 — 그리고 그것은 목적지로 직접 가며, 결코 저희를 거치지 않습니다.</div>
+
+  <h2><span class="n">1.</span>저희는 누구인가</h2>
+  <p>본 방침은 PolyglotFormFill 애플리케이션, 브라우저 확장 프로그램, 웹사이트("본 서비스")를 책임지는 인도의 Subramanya Mysore(개인 사업자)("저희")가 발행합니다. GDPR상 저희는 데이터 관리자로서, 인도 DPDP Act 2023상 데이터 수탁자로서 행동합니다. 개인 데이터를 처리하지 않는 경우 그러한 역할은 발생하지 않습니다. 고충 처리 담당자 / 연락처: Subramanya Mysore · subumysore@gmail.com.</p>
+
+  <h2><span class="n">2.</span>정의</h2>
+  <ul>
+    <li>개인 데이터 — 식별 가능한 자연인과 관련된 정보.</li>
+    <li>사용자 콘텐츠 — 사용자가 입력하거나 저장하는 문서, 양식, 이미지, 값(사용자의 "보관함"), 그 안의 모든 개인 데이터를 포함합니다.</li>
+    <li>기기 — 사용자가 본 서비스를 실행하는 컴퓨터 또는 장치.</li>
+  </ul>
+
+  <h2><span class="n">3.</span>저희의 핵심 개인정보 원칙</h2>
+  <p>본 서비스는 저희가 사용자의 사용자 콘텐츠를 보지 않고, 저장하지 않고, 전송하지 않으며, 사용자가 의도하지 않은 어디로도 보내지 않도록 설계되었습니다. 구체적으로:</p>
+  <ol>
+    <li>기기 내 처리. 읽기/렌더링, OCR, 번역, 필드 감지, 작성, 내보내기, 서명은 사용자의 기기에서 로컬로 수행됩니다. 저희는 그것들을 위해 사용자의 사용자 콘텐츠를 받지 않습니다.</li>
+    <li>저희의 수집 없음. 저희는 사용자의 사용자 콘텐츠를 수집, 수신, 접근, 저장하지 않습니다. 계정이 필요 없으며, 사용자의 사용자 콘텐츠를 저희에게 업로드하는 일도 없습니다.</li>
+    <li>사용자 주도 전송만. 사용자 콘텐츠가 사용자의 기기를 떠나는 것은 사용자가 특정 행위를 개시할 때뿐이며, 오직 사용자가 선택한 목적지로만 갑니다:
+      <div class="egress">(a) 완성된 양식 제출 — 사용자의 기기에서 사용자가 선택한 수신자(예: 정부 또는 공급업체 사이트)에게 직접 전송됩니다. 저희는 그것을 프록시하거나, 가로채거나, 수신하거나, 보관하거나, 접근하지 않습니다.</div>
+      <div class="egress">(b) 웹 검색(선택) — 사용자가 입력한 검색어만 결과를 반환하기 위해 제3자 검색 제공자(DuckDuckGo)에게 직접 전송됩니다. 어떤 사용자 콘텐츠, 보관함 데이터, 식별 정보도 전송되지 않습니다. URL을 입력하면 이를 완전히 피할 수 있습니다.</div>
+      이상이 콘텐츠 또는 검색어가 사용자의 기기를 떠나는 유일한 상황입니다 — 각각 사용자가 개시하고, 명확히 표시되며, 사용자가 선택한 목적지로 향합니다.</li>
+  </ol>
+
+  <h2><span class="n">4.</span>저희가 처리할 수 있는 제한적 비콘텐츠 데이터</h2>
+  <ul>
+    <li>소프트웨어 배포 및 업데이트. 본 서비스를 다운로드/업데이트하거나 그 자산(업데이트, 글꼴, 모델)을 다운로드하면 해당 채널로 일방향 요청이 이루어지며, 그 채널은 독립적 관리자로서 자체 방침에 따라 기술 데이터(예: IP)를 처리할 수 있습니다. 이것은 사용자의 기기로의 다운로드이며, 사용자의 사용자 콘텐츠를 업로드할 어떤 경로도 제공하지 않습니다.</li>
+    <li>결제 및 라이선스. 유료 기능은 사용자의 기기에서 검증되는 오프라인 서명 라이선스로 잠금 해제됩니다(어떤 서버에도 접속하지 않음). 구매하는 경우 결제는 해당 없음(아직 유료 기능 없음)이 처리합니다. 저희는 라이선스 발급/지원에 필요한 것(예: 이름, 이메일, 주문 ID)만 받으며 — 결코 사용자의 사용자 콘텐츠는 받지 않습니다.</li>
+    <li>자발적 소통. 지원팀에 연락하시면, 저희는 답변을 위해 제공하신 내용을 처리합니다.</li>
+  </ul>
+  <p class="muted">저희는 분석, 광고 식별자, 추적 기술, 콘텐츠를 담은 충돌 보고를 사용하지 않습니다.</p>
+
+  <h2><span class="n">5.</span>법적 근거(GDPR, 해당 시)</h2>
+  <p>§4의 제한적 처리에 대하여: 라이선스/지원은 계약(Art. 6(1)(b)); 안전한 배포/업데이트는 정당한 이익(Art. 6(1)(f)); 필요한 경우 동의(Art. 6(1)(a)). 사용자 콘텐츠에 대해서는 저희가 처리하지 않으므로 법적 근거가 필요하지 않습니다.</p>
+
+  <h2><span class="n">6.</span>사용자 기기 내 데이터의 보안</h2>
+  <ul>
+    <li>사용자의 보관함은 오직 사용자의 기기에만 저장되며 저장 시 암호화됩니다(AES-256-GCM).</li>
+    <li>키는 잠금 해제 시 사용자의 암호구절 또는 하드웨어 패스키(WebAuthn)에서 파생됩니다. 결코 저장되지 않고 결코 전송되지 않습니다.</li>
+    <li>확장 프로그램은 최소 권한을 사용하며 원격 코드를 포함하지 않습니다(Manifest V3).</li>
+  </ul>
+
+  <h2><span class="n">7.</span>공유 및 국제 이전</h2>
+  <p>저희는 사용자의 사용자 콘텐츠를 받지 않으므로, 그것을 공유, 판매, 이전하지 않습니다. §4의 제한적 비콘텐츠 데이터에 대해서는 그곳에 명시된 제공자와만 계약에 따라 공유하며, 모든 국경 간 이전은 해당 제공자의 보호 조치를 따릅니다.</p>
+
+  <h2><span class="n">8.</span>보존</h2>
+  <p>저희는 사용자의 사용자 콘텐츠를 보존하지 않습니다(결코 받지 않습니다). §4의 비콘텐츠 데이터는 필요한 기간에 한해 보존됩니다.</p>
+
+  <h2><span class="n">9.</span>사용자의 권리</h2>
+  <p>관련 법률(GDPR 제15~22조, 인도 DPDP 제III장, CCPA/CPRA)에 따라, 사용자는 접근, 정정, 삭제, 이동, 제한, 반대의 권리, 동의 철회의 권리, 감독 기관 / 데이터 보호 위원회에 이의를 제기할 권리를 가질 수 있습니다. 사용자의 사용자 콘텐츠는 오직 사용자의 기기에만 존재하므로, 사용자는 직접 그것에 접근하고 삭제할 수 있습니다(본 서비스 내에서 또는 로컬 데이터를 제거하여). 저희가 보유한 제한적 비콘텐츠 데이터에 대해서는 subumysore@gmail.com으로 연락하세요.</p>
+
+  <h2><span class="n">10.</span>아동</h2>
+  <p>본 서비스는 13세 미만 아동을 대상으로 하지 않으며, 저희는 그들의 개인 데이터를 알면서 처리하지 않습니다.</p>
+
+  <h2><span class="n">11.</span>변경</h2>
+  <p>저희는 본 방침을 업데이트할 수 있으며, 중대한 변경은 발효일을 갱신하고 필요한 경우 추가 고지를 포함합니다.</p>
+
+  <hr>
+  <footer>Subramanya Mysore(개인 사업자) · 고충 처리 담당자/연락처: Subramanya Mysore · subumysore@gmail.com · 선임된 경우 DPO/EU 대리인. PolyglotFormFill — 프라이버시 우선, 기기 내 양식 자동 입력.</footer>
+  <p style="margin-top:20px"><a href="/ko/">← PolyglotFormFill로 돌아가기</a></p>
 </div>
 </body>
 </html>

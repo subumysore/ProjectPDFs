@@ -2,6 +2,16 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Done (site) — 2026-07-25: marketing site fully localized in all 26 UI languages
+- `docs/marketing/build-site.mjs` now renders FULL landing + privacy + install per language from one
+  template set + `docs/marketing/i18n/<lang>.json` (188 keys each); old per-language stubs gone.
+- English site copy extracted to `i18n/en.json` (SSOT); 25 translation files added (hi bn ta te kn ml gu
+  pa mr ur ar he fa zh ja ko th vi id ru es fr de pt tr). Shared `app.*`/`privacy.*`/`site.*` still from
+  the extension catalogue. New validator `check-i18n.mjs` (25/25 pass). Switcher + language-preserving
+  links on every page; RTL for ar/he/fa/ur; Hello bg + PPP + version injection + SEO meta preserved.
+- Built + verified LOCAL only (78/78 generated pages carry the switcher). NOT published — owner reviews.
+- Known follow-up (owner): pricing copy change → re-translate `price.*` only.
+
 ## Done (code) — 2026-07-25: desktop ID import retains the document image (extension parity)
 - Desktop `onDataSource` now retains the source licence/passport image under the shared ontology
   (`driver_license_front`/`driver_license_back`/`passport_image`/`document_image`) via the pure

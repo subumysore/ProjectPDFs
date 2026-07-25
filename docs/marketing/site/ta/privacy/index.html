@@ -3,40 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>தனியுரிமைக் கொள்கை — PolyglotFormFill</title>
+<title>PolyglotFormFill — தனியுரிமைக் கொள்கை</title>
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}}
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;--teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;--teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.62}
+  .wrap{max-width:800px;margin:0 auto;padding:44px 24px 80px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .dot{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--teal-ink))}
+  h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.03em;margin:24px 0 4px;font-weight:800}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em}
+  .disclaimer{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:14px 18px;margin:20px 0;font-size:13.5px}
+  .disclaimer b{color:var(--amber)}
+  .tldr{background:var(--teal-soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .tldr b{color:var(--teal-ink)}
+  h2{font-size:18px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:6px}
+  h2 .n{font-family:var(--mono);color:var(--teal-ink);font-size:14px;margin-right:8px}
+  p,li{font-size:15px}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:22px;display:grid;gap:6px}
+  code{font-family:var(--mono);background:var(--teal-soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+  .fill{background:var(--amber-soft);border-radius:4px;padding:0 5px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+  .egress{background:var(--amber-soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:14px}
+  .egress b{color:var(--amber)}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+  footer{color:var(--muted);font-size:13px}
+  a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta" selected>தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/" selected>தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
+  <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>தனியுரிமைக் கொள்கை</h1>
-  <p class="lede">உங்கள் ஆவணங்கள் உங்கள் சாதனத்தை விட்டு வெளியேறுவதில்லை.</p>
-  <p>நாங்கள் எதையும் சேகரிப்பதில்லை. கணக்கு இல்லை, டெலிமெட்ரி இல்லை, பகுப்பாய்வு இல்லை.</p>
-  <p>படித்தல், OCR, மொழிபெயர்ப்பு, நிரப்புதல், கையொப்பம் — அனைத்தும் உங்கள் சாதனத்திலேயே நடக்கிறது.</p>
-  <p>நீங்கள் அனுப்பும்போது மட்டுமே உங்கள் படிவம் சாதனத்தை விட்டு வெளியேறும், அதுவும் நீங்கள் தேர்ந்தெடுத்த பெறுநருக்கு மட்டுமே.</p>
-  <p>செயலி எங்கள் சேவையகத்திலிருந்து எழுத்துருக்கள், மொழி மாதிரிகள், புதுப்பிப்புகளைப் பதிவிறக்கும். உங்களைப் பற்றி எதுவும் திரும்ப அனுப்பப்படுவதில்லை.</p>
-  <footer>
-    <p class="note">முழு சட்டப்பூர்வ உரை ஆங்கிலத்தில் உள்ளது. <a href="/privacy/">English</a></p>
-    <p><a href="/ta/">பின்</a></p>
-  </footer>
+  <div class="meta">நடைமுறை தேதி: 18 July 2026 · பதிப்பு 1.0</div>
+  <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">இந்த மொழிபெயர்ப்பு உங்கள் வசதிக்காக வழங்கப்படுகிறது. இந்த தனியுரிமைக் கொள்கையின் ஆங்கிலப் பதிப்பே அதிகாரப்பூர்வமான மற்றும் சட்டப்பூர்வமாகக் கட்டுப்படுத்தும் பதிப்பாகும். <a href="/privacy/">English</a></div>
+  <div class="disclaimer"><b>⚖ சட்ட மதிப்பாய்வுக்கு நிலுவையில் உள்ள வரைவு — சட்ட ஆலோசனை அல்ல. இது PolyglotFormFill தயாரிப்புக்கான ஒரு வரைவு டெம்ப்ளேட். சேவை வழங்கப்படும் ஒவ்வொரு அதிகார வரம்பிலும் (EU/EEA GDPR-இன் கீழ், இந்தியா DPDP சட்டம் 2023-இன் கீழ், மற்றும் US CCPA/CPRA-இன் கீழ் உட்பட) வெளியிடுவதற்கு முன் தகுதி வாய்ந்த சட்ட ஆலோசகரால் இது மதிப்பாய்வு செய்யப்பட்டு அங்கீகரிக்கப்பட வேண்டும். தொடர்பு/அடையாளப் புலங்கள் நிறைவு செய்யப்பட்டுள்ளன; பரவலான பொது வெளியீட்டிற்கு முன் ஆலோசகரின் இறுதி வாசிப்பு இன்னும் பரிந்துரைக்கப்படுகிறது.</b></div>
+  <div class="tldr">சாராம்சம், தெளிவாக: உங்கள் ஆவணங்களையோ நீங்கள் உள்ளிடும் தரவையோ நாங்கள் பார்ப்பதில்லை, சேமிப்பதில்லை, அல்லது அனுப்புவதில்லை, மேலும் நீங்கள் விரும்பாத எந்த இடத்திற்கும் அவற்றை நாங்கள் அனுப்புவதில்லை. அனைத்தும் உங்கள் சாதனத்திலேயே செயலாக்கப்படுகிறது. நீங்கள் ஒரு குறிப்பிட்ட செயலை மேற்கொள்ளும்போது மட்டுமே உங்கள் உள்ளடக்கம் உங்கள் சாதனத்தை விட்டு வெளியேறுகிறது — நீங்கள் தேர்ந்தெடுக்கும் பெறுநருக்கு முடிக்கப்பட்ட படிவத்தைச் சமர்ப்பிப்பது, அல்லது நீங்கள் தட்டச்சு செய்யும் இணையத் தேடல் — மேலும் அது நேரடியாக அங்கே செல்கிறது, ஒருபோதும் எங்கள் வழியாக அல்ல.</div>
+
+  <h2><span class="n">1.</span>நாங்கள் யார்</h2>
+  <p>இந்தக் கொள்கை PolyglotFormFill பயன்பாடு, உலாவி நீட்டிப்பு மற்றும் வலைத்தளத்திற்கு ("சேவை") பொறுப்பான Subramanya Mysore (தனி உரிமையாளர்), இந்தியா ("நாங்கள்", "எங்கள்") ஆல் வழங்கப்படுகிறது. GDPR-க்கு நாங்கள் தரவுக் கட்டுப்படுத்துபவராக செயல்படுகிறோம்; இந்தியா DPDP சட்டம் 2023-இன் கீழ் தரவு நம்பிக்கையாளராக; நாங்கள் எந்த தனிப்பட்ட தரவையும் செயலாக்காத இடத்தில், அத்தகைய பங்கு எழுவதில்லை. குறைதீர்ப்பு அதிகாரி / தொடர்பு: Subramanya Mysore · subumysore@gmail.com.</p>
+
+  <h2><span class="n">2.</span>வரையறைகள்</h2>
+  <ul>
+    <li>தனிப்பட்ட தரவு — அடையாளம் காணக்கூடிய ஒரு இயற்கை நபருடன் தொடர்புடைய தகவல்.</li>
+    <li>பயனர் உள்ளடக்கம் — நீங்கள் உள்ளிடும் அல்லது சேமிக்கும் ஆவணங்கள், படிவங்கள், படங்கள் மற்றும் மதிப்புகள் (உங்கள் "பெட்டகம்"), அவற்றுக்குள் உள்ள எந்த தனிப்பட்ட தரவும் உட்பட.</li>
+    <li>சாதனம் — நீங்கள் சேவையை இயக்கும் கணினி அல்லது சாதனம்.</li>
+  </ul>
+
+  <h2><span class="n">3.</span>எங்கள் அடிப்படை தனியுரிமைக் கொள்கை</h2>
+  <p>சேவையானது, உங்கள் பயனர் உள்ளடக்கத்தை நாங்கள் பார்க்காமல், சேமிக்காமல், அல்லது அனுப்பாமல், மேலும் நீங்கள் விரும்பாத எந்த இடத்திற்கும் அதை அனுப்பாமல் இருக்கும்படி வடிவமைக்கப்பட்டுள்ளது. குறிப்பாக:</p>
+  <ol>
+    <li>சாதனத்திலேயே செயலாக்கம். படித்தல்/காட்டுதல், OCR, மொழிபெயர்ப்பு, புலம் கண்டறிதல், நிரப்புதல், ஏற்றுமதி மற்றும் கையொப்பம் உங்கள் சாதனத்தில் உள்ளூரிலேயே செய்யப்படுகின்றன. அவற்றைச் செய்ய உங்கள் பயனர் உள்ளடக்கத்தை நாங்கள் பெறுவதில்லை.</li>
+    <li>எங்களால் சேகரிப்பு இல்லை. உங்கள் பயனர் உள்ளடக்கத்தை நாங்கள் சேகரிப்பதில்லை, பெறுவதில்லை, அணுகுவதில்லை, அல்லது சேமிப்பதில்லை. கணக்கு தேவையில்லை, உங்கள் பயனர் உள்ளடக்கத்தை எங்களுக்குப் பதிவேற்றமும் இல்லை.</li>
+    <li>பயனர்-வழிநடத்தப்பட்ட பரிமாற்றம் மட்டுமே. நீங்கள் ஒரு குறிப்பிட்ட செயலைத் தொடங்கும்போது மட்டுமே, மேலும் நீங்கள் தேர்ந்தெடுக்கும் இலக்கிற்கு மட்டுமே பயனர் உள்ளடக்கம் உங்கள் சாதனத்தை விட்டு வெளியேறுகிறது:
+      <div class="egress">(அ) முடிக்கப்பட்ட படிவத்தைச் சமர்ப்பித்தல் — உங்கள் சாதனத்திலிருந்து நீங்கள் தேர்ந்தெடுக்கும் பெறுநருக்கு (எ.கா. ஒரு அரசாங்க அல்லது விற்பனையாளர் தளம்) நேரடியாக அனுப்பப்படுகிறது. நாங்கள் அதை பதிலாள் மூலம் அனுப்புவதில்லை, இடைமறிப்பதில்லை, பெறுவதில்லை, தக்கவைப்பதில்லை, அல்லது அணுகுவதில்லை.</div>
+      <div class="egress">(ஆ) இணையத் தேடல் (விருப்பத்தேர்வு) — நீங்கள் தட்டச்சு செய்யும் தேடல் சொற்கள் மட்டுமே, முடிவுகளைத் திரும்பப் பெற, மூன்றாம் தரப்பு தேடல் வழங்குநருக்கு (DuckDuckGo) நேரடியாக அனுப்பப்படுகின்றன. எந்த பயனர் உள்ளடக்கமும், பெட்டகத் தரவும், அடையாளங்களும் அனுப்பப்படுவதில்லை. இதை முழுவதுமாகத் தவிர்க்க ஒரு URL-ஐ உள்ளிடவும்.</div>
+      உள்ளடக்கம் அல்லது தேடல் சொற்கள் உங்கள் சாதனத்தை விட்டு வெளியேறும் ஒரே சூழ்நிலைகள் இவைதான் — ஒவ்வொன்றும் பயனரால் தொடங்கப்பட்டது, தெளிவாக லேபிளிடப்பட்டது, மேலும் நீங்கள் தேர்ந்தெடுத்த ஒரு இலக்கை நோக்கி வழிநடத்தப்பட்டது.</li>
+  </ol>
+
+  <h2><span class="n">4.</span>நாங்கள் செயலாக்கக்கூடிய வரையறுக்கப்பட்ட உள்ளடக்கமற்ற தரவு</h2>
+  <ul>
+    <li>மென்பொருள் விநியோகம் மற்றும் புதுப்பிப்புகள். சேவையைப் பதிவிறக்குதல்/புதுப்பித்தல், அல்லது அதன் சொத்துக்களைப் (புதுப்பிப்புகள், எழுத்துருக்கள், மாதிரிகள்) பதிவிறக்குதல், தொடர்புடைய சேனலுக்கு ஒருவழி கோரிக்கையை உருவாக்குகிறது, அது அதன் சொந்தக் கொள்கையின் கீழ் ஒரு சுயாதீனக் கட்டுப்படுத்துபவராக தொழில்நுட்பத் தரவை (எ.கா. IP) செயலாக்கலாம். இது உங்கள் சாதனத்திற்கான ஒரு பதிவிறக்கம் மற்றும் உங்கள் பயனர் உள்ளடக்கத்தைப் பதிவேற்ற எந்த வழியையும் வழங்காது.</li>
+    <li>கட்டணங்கள் மற்றும் உரிமம். கட்டண அம்சங்கள் உங்கள் சாதனத்தில் சரிபார்க்கப்படும் ஆஃப்லைன் கையொப்பமிடப்பட்ட உரிமத்தால் திறக்கப்படுகின்றன (எந்த சர்வரையும் தொடர்பு கொள்வதில்லை). நீங்கள் வாங்கினால், கட்டணம் பொருந்தாது (இன்னும் கட்டண அம்சங்கள் இல்லை) மூலம் கையாளப்படுகிறது; உரிமத்தை வழங்க/ஆதரிக்கத் தேவையானதை மட்டுமே நாங்கள் பெறுகிறோம் (எ.கா. பெயர், மின்னஞ்சல், ஆர்டர் ஐடி) — ஒருபோதும் உங்கள் பயனர் உள்ளடக்கத்தை அல்ல.</li>
+    <li>தன்னார்வ தகவல்தொடர்புகள். நீங்கள் ஆதரவைத் தொடர்பு கொண்டால், பதிலளிக்க நீங்கள் வழங்குவதை நாங்கள் செயலாக்குகிறோம்.</li>
+  </ul>
+  <p class="muted">நாங்கள் பகுப்பாய்வு, விளம்பர அடையாளங்கள், கண்காணிப்பு தொழில்நுட்பங்கள், அல்லது உள்ளடக்கம் தாங்கிய செயலிழப்பு அறிக்கையிடலைப் பயன்படுத்துவதில்லை.</p>
+
+  <h2><span class="n">5.</span>சட்ட அடிப்படைகள் (GDPR, பொருந்தும் இடத்தில்)</h2>
+  <p>§4-இல் உள்ள வரையறுக்கப்பட்ட செயலாக்கத்திற்கு: உரிமம்/ஆதரவுக்கு ஒப்பந்தம் (Art. 6(1)(b)); பாதுகாப்பான விநியோகம்/புதுப்பிப்புகளுக்கு நியாயமான நலன்கள் (Art. 6(1)(f)); தேவைப்படும் இடத்தில் ஒப்புதல் (Art. 6(1)(a)). பயனர் உள்ளடக்கத்தை நாங்கள் செயலாக்காததால், அதற்கு எந்த சட்ட அடிப்படையும் தேவையில்லை.</p>
+
+  <h2><span class="n">6.</span>உங்கள் சாதனத்திலுள்ள தரவின் பாதுகாப்பு</h2>
+  <ul>
+    <li>உங்கள் பெட்டகம் உங்கள் சாதனத்தில் மட்டுமே சேமிக்கப்பட்டு, ஓய்வில் மறையாக்கம் செய்யப்படுகிறது (AES-256-GCM).</li>
+    <li>திறக்கும்போது உங்கள் கடவுச்சொல் அல்லது வன்பொருள் பாஸ்கீ (WebAuthn) இலிருந்து சாவி பெறப்படுகிறது; அது ஒருபோதும் சேமிக்கப்படுவதில்லை மற்றும் ஒருபோதும் அனுப்பப்படுவதில்லை.</li>
+    <li>நீட்டிப்பு குறைந்தபட்ச-சலுகை அனுமதிகளைப் பயன்படுத்துகிறது மற்றும் தொலைநிலைக் குறியீடு எதையும் கொண்டிருக்கவில்லை (Manifest V3).</li>
+  </ul>
+
+  <h2><span class="n">7.</span>பகிர்வு மற்றும் சர்வதேச பரிமாற்றங்கள்</h2>
+  <p>உங்கள் பயனர் உள்ளடக்கத்தை நாங்கள் பெறாததால், அதை நாங்கள் பகிர்வதில்லை, விற்பதில்லை, அல்லது பரிமாற்றுவதில்லை. §4-இல் உள்ள வரையறுக்கப்பட்ட உள்ளடக்கமற்ற தரவுக்கு, அங்கே பெயரிடப்பட்ட வழங்குநர்களுடன் மட்டுமே, ஒப்பந்தத்தின் கீழ் நாங்கள் பகிர்கிறோம்; எந்த எல்லை கடந்த பரிமாற்றமும் அந்த வழங்குநரின் பாதுகாப்புகளைப் பின்பற்றுகிறது.</p>
+
+  <h2><span class="n">8.</span>தக்கவைப்பு</h2>
+  <p>உங்கள் பயனர் உள்ளடக்கத்தை நாங்கள் தக்கவைப்பதில்லை (அதை நாங்கள் ஒருபோதும் பெறுவதில்லை). §4-இல் உள்ள உள்ளடக்கமற்ற தரவு தேவையான அளவுக்கு மட்டுமே தக்கவைக்கப்படுகிறது.</p>
+
+  <h2><span class="n">9.</span>உங்கள் உரிமைகள்</h2>
+  <p>பொருந்தும் சட்டத்திற்கு உட்பட்டு (GDPR Arts. 15–22; இந்தியா DPDP Ch. III; CCPA/CPRA) நீங்கள் அணுகல், திருத்தம், நீக்கம், கொண்டு செல்லுதல், கட்டுப்படுத்துதல், அல்லது எதிர்ப்பு தெரிவித்தல், ஒப்புதலைத் திரும்பப் பெறுதல், மற்றும் ஒரு மேற்பார்வை அதிகாரம் / தரவுப் பாதுகாப்பு வாரியத்திடம் புகார் அளித்தல் ஆகிய உரிமைகளைக் கொண்டிருக்கலாம். உங்கள் பயனர் உள்ளடக்கம் உங்கள் சாதனத்தில் மட்டுமே இருப்பதால், நீங்கள் அதை நேரடியாக அணுகி நீக்குகிறீர்கள் (சேவையில் அல்லது உள்ளூர் தரவை அகற்றுவதன் மூலம்). நாங்கள் வைத்திருக்கும் வரையறுக்கப்பட்ட உள்ளடக்கமற்ற தரவுக்கு, subumysore@gmail.com-ஐத் தொடர்பு கொள்ளவும்.</p>
+
+  <h2><span class="n">10.</span>குழந்தைகள்</h2>
+  <p>இந்த சேவை 13 வயதுக்குட்பட்ட குழந்தைகளை நோக்கி அல்ல, மேலும் அவர்களின் தனிப்பட்ட தரவை நாங்கள் அறிந்தே செயலாக்குவதில்லை.</p>
+
+  <h2><span class="n">11.</span>மாற்றங்கள்</h2>
+  <p>நாங்கள் இந்தக் கொள்கையைப் புதுப்பிக்கலாம்; கணிசமான மாற்றங்கள் நடைமுறை தேதியைப் புதுப்பித்து, தேவைப்படும் இடத்தில், கூடுதல் அறிவிப்பை உள்ளடக்கும்.</p>
+
+  <hr>
+  <footer>Subramanya Mysore (தனி உரிமையாளர்) · குறைதீர்ப்பு அதிகாரி/தொடர்பு: Subramanya Mysore · subumysore@gmail.com · DPO/EU பிரதிநிதி நியமிக்கப்பட்டால். PolyglotFormFill — தனியுரிமை-முதன்மை, சாதனத்திலேயே படிவ தானியங்கி நிரப்புதல்.</footer>
+  <p style="margin-top:20px"><a href="/ta/">← PolyglotFormFill-க்குத் திரும்பு</a></p>
 </div>
 </body>
 </html>

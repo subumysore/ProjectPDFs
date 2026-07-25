@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PolyglotFormFill — Read &amp; write any form, in any language.</title>
+<meta name="description" content="PolyglotFormFill reads a form in one language and fills it from your data in another — on your device, privately. We never see your data.">
 <style>
   :root{
     --ink:#0e1a1f; --paper:#f6f8f7; --surface:#ffffff; --muted:#5a6b6d; --line:#dde6e4;
@@ -119,33 +120,17 @@
     100%{transform:translateY(-42px) scale(1.06);opacity:0;}
   }
   @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
-</style>
-</head>
-<body>
-<style>.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}</style><nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en" selected>English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
-<div id="langhint" hidden style="display:flex;gap:14px;align-items:center;justify-content:center;padding:9px 20px;background:#eef6f5;color:#0a6a60;font:14px/1.4 system-ui;border-bottom:1px solid #d7e6e3"></div>
-<script>
-(function(){
-  var have=["en","hi","bn","ta","te","kn","ml","gu","pa","mr","ur","ar","he","fa","zh","ja","ko","th","vi","id","ru","es","fr","de","pt","tr"], names={"en":"English","hi":"हिन्दी","bn":"বাংলা","ta":"தமிழ்","te":"తెలుగు","kn":"ಕನ್ನಡ","ml":"മലയാളം","gu":"ગુજરાતી","pa":"ਪੰਜਾਬੀ","mr":"मराठी","ur":"اردو","ar":"العربية","he":"עברית","fa":"فارسی","zh":"中文","ja":"日本語","ko":"한국어","th":"ไทย","vi":"Tiếng Việt","id":"Bahasa Indonesia","ru":"Русский","es":"Español","fr":"Français","de":"Deutsch","pt":"Português","tr":"Türkçe"};
-  var prefs=(navigator.languages||[navigator.language||"en"]).map(function(x){return String(x).toLowerCase()});
-  for (var i=0;i<prefs.length;i++){
-    var tag=prefs[i], base=tag.split("-")[0];
-    var hit=have.indexOf(tag)>=0?tag:(have.indexOf(base)>=0?base:null);
-    if(hit&&hit!=="en"){
-      var el=document.getElementById("langhint");
-      el.innerHTML='<span>🌐 This page is also available in <a href="/'+hit+'/" style="font-weight:600;color:#0a6a60">'+names[hit]+' →</a></span>'+
-        '<a href="#" onclick="this.closest(\'#langhint\').hidden=true;return false" aria-label="Dismiss" style="color:#5a8;text-decoration:none">✕</a>';
-      el.hidden=false;
-      var sel=document.getElementById("lang"); if(sel) sel.value="en";
-      break;
-    }
-  }
-})();
-</script>
 
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .tier.pop::after{content:"Most popular"}
+</style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/" selected>English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/">தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
 
 <div class="wrap">
   <nav>
@@ -165,9 +150,7 @@
 <header class="wrap">
   <span class="badge">◉ Polyglot · on-device · zero telemetry</span>
   <h1>Read &amp; write any form —<br><span class="fade">in any language.</span></h1>
-  <p class="lede">PolyglotFormFill reads a form in one language and fills it from your data in another —
-    PDFs, Word, Excel, and web forms. Everything runs on your device; <b>we never see your data</b>. When
-    you submit, it goes straight to the recipient you chose — never through us.</p>
+  <p class="lede">PolyglotFormFill reads a form in one language and fills it from your data in another — PDFs, Word, Excel, and web forms. Everything runs on your device; we never see your data. When you submit, it goes straight to the recipient you chose — never through us.</p>
   <div class="cta">
     <a class="btn" href="#features">See how it works</a>
     <a class="btn ghost" href="/tutorials/">▶ Watch the tutorials</a>
@@ -190,9 +173,7 @@
     </div>
     <div class="egress">
       <div class="out"><span class="arrow">→</span><div><b>What leaves — only what you send, to whom you send it:</b>
-        a <b>form you submit</b> goes device → the recipient you picked, directly · a <b>web search</b> you type
-        sends just those terms. Both are your choice, and neither passes through us. We never receive your
-        documents, your vault, or any identifier — there is no cloud middleman.</div></div>
+        a form you submit goes device → the recipient you picked, directly · a web search you type sends just those terms. Both are your choice, and neither passes through us. We never receive your documents, your vault, or any identifier — there is no cloud middleman.</div></div>
     </div>
   </div>
 </header>
@@ -200,17 +181,14 @@
 <section id="features" class="wrap">
   <span class="eyebrow">The headline feature</span>
   <h2 class="h2">Turn a non-fillable PDF into a form you can actually fill</h2>
-  <p class="sub">A flat PDF with no form fields — or even a photo or scan of one — becomes a real, fillable form
-    in seconds. No “print, hand-write, re-scan.” No uploading it to some website to do it.</p>
+  <p class="sub">A flat PDF with no form fields — or even a photo or scan of one — becomes a real, fillable form in seconds. No “print, hand-write, re-scan.” No uploading it to some website to do it.</p>
   <div class="grid">
     <div class="card feature">
       <div class="ic">🧩</div>
       <div>
         <span class="flag">Non-fillable → fillable</span>
         <h3>Any flat PDF, scan, or photo becomes an editable form</h3>
-        <p>Point it at a PDF that has no fillable boxes, or even a picture of a paper form. On-device OCR reads
-          the layout, finds where every field belongs, places real form fields there, and fills them from your
-          vault — all on your machine, nothing uploaded. Then export a clean, filled PDF.</p>
+        <p>Point it at a PDF that has no fillable boxes, or even a picture of a paper form. On-device OCR reads the layout, finds where every field belongs, places real form fields there, and fills them from your vault — all on your machine, nothing uploaded. Then export a clean, filled PDF.</p>
       </div>
     </div>
     <div class="card"><div class="ic">🔒</div><h3>On-device, always</h3><p>OCR, translation, filling and signing run locally. Your data never travels to us or anyone.</p></div>
@@ -228,27 +206,9 @@
   <h2 class="h2">Built for anyone who fills forms across languages and borders</h2>
   <p class="sub">Three groups get the most out of it — and every one of them keeps their data on their own device.</p>
   <div class="grid">
-    <div class="card">
-      <div class="ic">🛂</div>
-      <h3>Immigration &amp; relocation agencies</h3>
-      <p>Turn scanned visa, residency, and settlement PDFs into fillable forms with on-device OCR, and complete
-        them in a client's language without a single document leaving your machine. One saved profile fills the
-        next form in seconds.</p>
-    </div>
-    <div class="card">
-      <div class="ic">💼</div>
-      <h3>Cross-border freelancers &amp; small businesses</h3>
-      <p>Tax, banking, and onboarding forms often arrive in a language that isn't yours. Fill them from your own
-        details — held in an AES-256 vault on your device — and export a clean PDF, with nothing routed through
-        us or any third party.</p>
-    </div>
-    <div class="card">
-      <div class="ic">🛡️</div>
-      <h3>Privacy-first &amp; crypto communities</h3>
-      <p>Every step runs locally with zero telemetry, and the vault unlocks with a hardware passkey (WebAuthn)
-        whose key is never stored. No account, no cloud, no tracking — your data stays on the device you
-        control.</p>
-    </div>
+    <div class="card"><div class="ic">🛂</div><h3>Immigration &amp; relocation agencies</h3><p>Turn scanned visa, residency, and settlement PDFs into fillable forms with on-device OCR, and complete them in a client's language without a single document leaving your machine. One saved profile fills the next form in seconds.</p></div>
+    <div class="card"><div class="ic">💼</div><h3>Cross-border freelancers &amp; small businesses</h3><p>Tax, banking, and onboarding forms often arrive in a language that isn't yours. Fill them from your own details — held in an AES-256 vault on your device — and export a clean PDF, with nothing routed through us or any third party.</p></div>
+    <div class="card"><div class="ic">🛡️</div><h3>Privacy-first &amp; crypto communities</h3><p>Every step runs locally with zero telemetry, and the vault unlocks with a hardware passkey (WebAuthn) whose key is never stored. No account, no cloud, no tracking — your data stays on the device you control.</p></div>
   </div>
 </section>
 
@@ -256,8 +216,7 @@
   <div class="band">
     <span class="eyebrow" style="color:rgba(255,255,255,.8)">Built for a multilingual world</span>
     <h2 class="h2">Your data in your language. The form in theirs.</h2>
-    <p class="sub">Governments and institutions publish forms in one language; people hold their details in another.
-      PolyglotFormFill bridges that gap on-device — starting with English ↔ Hindi, with more to come.</p>
+    <p class="sub">Governments and institutions publish forms in one language; people hold their details in another. PolyglotFormFill bridges that gap on-device — starting with English ↔ Hindi, with more to come.</p>
     <div class="langrow">
       <span class="lang">English ↔ हिन्दी</span>
       <span class="lang">more languages coming</span>
@@ -269,9 +228,7 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Pricing</span>
   <h2 class="h2">Buy once. Own it. No subscription.</h2>
-  <p class="sub">A <b>one-time, per-device</b> license — verified <b>offline</b> on your device, so there's
-    no activation server and not a single network call. <b>Free during the public beta;</b> the prices
-    below take effect at launch.</p>
+  <p class="sub">A one-time, per-device license — verified offline on your device, so there's no activation server and not a single network call. Free during the public beta; the prices below take effect at launch.</p>
   <div class="tiers">
     <div class="tier">
       <h3>Free</h3>
@@ -282,63 +239,54 @@
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time / device</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 device · or <span class="ppp" data-usd="9">$9</span>/year</div>
-      <ul><li>Everything in Free</li><li><b>1 device</b></li><li><b>Up to 3 profiles</b></li><li>Make any PDF fillable (OCR)</li><li>Word &amp; Excel forms</li><li>Translated fill (language packs)</li><li>Signature &amp; photo placement</li><li>Encrypted backup &amp; transfer</li></ul>
+      <ul><li>Everything in Free</li><li>1 device</li><li>Up to 3 profiles</li><li>Make any PDF fillable (OCR)</li><li>Word &amp; Excel forms</li><li>Translated fill (language packs)</li><li>Signature &amp; photo placement</li><li>Encrypted backup &amp; transfer</li></ul>
     </div>
     <div class="tier">
       <h3>Family</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">one-time</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">up to 5 devices (~<span class="ppp" data-usd="6">$6</span> each) · or <span class="ppp" data-usd="15">$15</span>/year</div>
-      <ul><li>Everything in Pro, on <b>up to 5 devices</b></li><li><b>Up to 5 profiles</b></li><li>Manage the household's profiles from any device</li><li>Priority support</li></ul>
+      <ul><li>Everything in Pro, on up to 5 devices</li><li>Up to 5 profiles</li><li>Manage the household's profiles from any device</li><li>Priority support</li></ul>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
   <script>
-  (function(){
-    // Purchasing-power multipliers vs the US (~GDP-per-capita PPP), floored at 0.35.
-    var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
-    var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
-    function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
-    fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
-      var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-      if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-      if(f==null){ note("Prices shown in USD."); return; }
-      if(f<0.35)f=0.35;
-      if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-      document.querySelectorAll(".ppp").forEach(function(el){
-        var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-      });
-      note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
-    }).catch(function(){ note("Prices shown in USD."); });
-  })();
-  </script>
+(function(){
+  var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+  var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+    var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+    if(f==null){ note("Prices shown in USD."); return; }
+    if(f<0.35)f=0.35;
+    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    document.querySelectorAll(".ppp").forEach(function(el){
+      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+    });
+    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+  }).catch(function(){ note("Prices shown in USD."); });
+})();</script>
   <script>
-  // Fill the page background with "Hello" in many languages, each drifting up and fading — the same
-  // multilingual motif as the guide video. Purely decorative (aria-hidden), behind all content.
-  (function(){
-    var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
-      "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
-      "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
-    var bg=document.getElementById("hellobg"); if(!bg) return;
-    var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
-    for(var i=0;i<N;i++){
-      var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
-      el.style.left=(Math.random()*96)+"vw";
-      el.style.top=(Math.random()*100)+"vh";
-      el.style.fontSize=(15+Math.random()*30)+"px";
-      var dur=(9+Math.random()*9).toFixed(2);
-      el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
-      bg.appendChild(el);
-    }
-  })();
-  </script>
+(function(){
+  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+    "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+  var bg=document.getElementById("hellobg"); if(!bg) return;
+  var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+  for(var i=0;i<N;i++){
+    var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(Math.random()*96)+"vw"; el.style.top=(Math.random()*100)+"vh";
+    el.style.fontSize=(15+Math.random()*30)+"px";
+    var dur=(9+Math.random()*9).toFixed(2);
+    el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+    bg.appendChild(el);
+  }
+})();</script>
 
   <div style="margin-top:40px">
     <span class="eyebrow">For teams &amp; business</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Commercial — seat licenses, unlimited profiles</h2>
-    <p class="sub">Per-seat annual licensing with volume pricing. Every seat gets all Pro features and
-      <b>unlimited profiles</b> — and, like every tier, runs <b>entirely on each device with zero data
-      sent back to us</b>. Licenses are issued centrally to your admin and verified offline on each
-      device.</p>
+    <p class="sub">Per-seat annual licensing with volume pricing. Every seat gets all Pro features and unlimited profiles — and, like every tier, runs entirely on each device with zero data sent back to us. Licenses are issued centrally to your admin and verified offline on each device.</p>
     <div class="tiers">
       <div class="tier">
         <h3>Team</h3>
@@ -367,32 +315,25 @@
     </div>
   </div>
 
-  <p class="note">Free while in beta. Personal tiers are one-time, per-device Ed25519 licenses verified
-    locally — no activation server. Commercial is annual per seat with central issuance. Prices in USD;
-    local taxes may apply. Enterprise: <a href="mailto:subumysore@gmail.com">contact us</a>.</p>
+  <p class="note">Free while in beta. Personal tiers are one-time, per-device Ed25519 licenses verified locally — no activation server. Commercial is annual per seat with central issuance. Prices in USD; local taxes may apply. Enterprise: contact us. <a href="mailto:subumysore@gmail.com">contact us</a>.</p>
 </section>
 
 <section id="get" class="wrap">
   <span class="eyebrow">Get PolyglotFormFill</span>
   <h2 class="h2">Install in a minute</h2>
-  <p class="sub">Add the browser extension for web-form autofill, or install the desktop app for the full,
-    hardened experience. They work together.</p>
+  <p class="sub">Add the browser extension for web-form autofill, or install the desktop app for the full, hardened experience. They work together.</p>
   <div class="cta">
     <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">Download for Windows</a>
     <a class="btn ghost" href="/install/">Get the browser extension (beta)</a>
     <span class="btn ghost soon" aria-disabled="true">Chrome Web Store — soon</span>
   </div>
-  <p class="note">Beta downloads (hosted on Oracle Cloud). The Windows build is <b>unsigned</b> — Windows
-    warns “unknown publisher” (More info → Run anyway). The extension installs via developer mode for now;
-    store listings are in progress. macOS &amp; Linux next.</p>
+  <p class="note">Beta downloads (hosted on Oracle Cloud). The Windows build is unsigned — Windows warns “unknown publisher” (More info → Run anyway). The extension installs via developer mode for now; store listings are in progress. macOS &amp; Linux next.</p>
 </section>
 
 <section id="privacy" class="wrap">
   <span class="eyebrow">Privacy</span>
   <h2 class="h2">The promise, in one line</h2>
-  <p class="sub">Your data is processed on your device and is <b>never sent to us</b>. The only things that leave
-    are actions you take — submitting a finished form (straight to its recipient) or a web search you type.
-    Those go directly to their destination, never through us. That's the whole list.</p>
+  <p class="sub">Your data is processed on your device and is never sent to us. The only things that leave are actions you take — submitting a finished form (straight to its recipient) or a web search you type. Those go directly to their destination, never through us. That's the whole list.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/privacy/">Read the full privacy policy</a></p>
 </section>
 

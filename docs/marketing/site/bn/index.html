@@ -3,45 +3,343 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PolyglotFormFill — যেকোনো ফর্ম, যেকোনো ভাষায়, আপনার ডিভাইসে গোপনে পূরণ করুন।</title>
-<meta name="description" content="আপনার নথি কখনো আপনার ডিভাইস ছাড়ে না।">
+<title>PolyglotFormFill — যেকোনো ভাষায়, যেকোনো ফর্ম পড়ুন ও পূরণ করুন।</title>
+<meta name="description" content="PolyglotFormFill এক ভাষায় লেখা একটি ফর্ম পড়ে এবং আপনার তথ্য থেকে অন্য ভাষায় সেটি পূরণ করে — তা-ও আপনার ডিভাইসে, ব্যক্তিগতভাবে। আমরা আপনার তথ্য কখনও দেখি না।">
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{
+    --ink:#0e1a1f; --paper:#f6f8f7; --surface:#ffffff; --muted:#5a6b6d; --line:#dde6e4;
+    --teal:#0d8f83; --teal-ink:#0a6a60; --teal-soft:#e3f2ef;
+    --amber:#a8620f; --amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+      --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  }
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+    --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;
+    --teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  a{color:var(--teal-ink);text-decoration:none}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-ink)}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:18px}
+  .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--teal-ink));
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .navlinks{display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+  .navlinks a{color:var(--muted)}
+  .btn{display:inline-block;background:var(--teal);color:#fff;padding:11px 18px;border-radius:10px;
+    font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+  .btn.ghost{background:transparent;color:var(--teal-ink);box-shadow:inset 0 0 0 1px var(--line)}
+  .btn.soon{opacity:.55;cursor:not-allowed;pointer-events:none}
+
+  /* hero */
+  header{padding:56px 0 40px}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:var(--teal-soft);color:var(--teal-ink);
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;letter-spacing:.04em}
+  h1{font-size:clamp(34px,6.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:20px 0 0;
+    text-wrap:balance;font-weight:800}
+  h1 .fade{color:var(--teal-ink)}
+  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:60ch;margin:18px 0 0}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .trustline{margin-top:20px;font-size:13px;color:var(--muted);font-family:var(--mono)}
+
+  /* dataflow diagram */
+  .flow{margin:26px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:22px;box-shadow:var(--shadow)}
+  .device{border:1.5px dashed var(--teal);border-radius:12px;padding:16px;background:var(--teal-soft)}
+  .device h3{margin:0 0 12px;font-size:13px;font-family:var(--mono);letter-spacing:.06em;color:var(--teal-ink);text-transform:uppercase}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px}
+  .egress{margin-top:14px;display:grid;gap:8px}
+  .out{display:flex;gap:10px;align-items:flex-start;background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:13.5px}
+  .out b{color:var(--amber)}
+  .arrow{font-family:var(--mono);color:var(--amber);font-weight:700}
+
+  /* sections */
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .h2{font-size:clamp(24px,3.6vw,34px);letter-spacing:-.02em;margin:6px 0 0;font-weight:800;text-wrap:balance}
+  .sub{color:var(--muted);margin:12px 0 0;max-width:64ch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:30px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .card .ic{width:34px;height:34px;border-radius:9px;background:var(--teal-soft);display:grid;place-items:center;font-size:18px;margin-bottom:12px}
+  .card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .card.feature{grid-column:1/-1;background:linear-gradient(120% 140% at 0% 0%,var(--teal-soft),var(--surface));border-color:var(--teal);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:26px 28px}
+  .card.feature .ic{width:52px;height:52px;font-size:27px;margin:0;background:linear-gradient(135deg,var(--teal),var(--teal-ink));color:#fff}
+  .card.feature h3{font-size:clamp(19px,2.6vw,25px);margin-bottom:8px}
+  .card.feature p{font-size:15.5px;color:var(--ink);max-width:70ch}
+  .card.feature .flag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-ink);display:block;margin-bottom:6px}
+  @media (max-width:560px){.card.feature{grid-template-columns:1fr}}
+
+  /* polyglot band */
+  .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:34px;margin-top:8px}
+  .band .h2{color:#fff}
+  .band .sub{color:rgba(255,255,255,.85)}
+  .langrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:13px}
+  .lang{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:999px}
+
+  /* pricing */
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:30px}
+  .tier{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+  .tier.pop{border:1.5px solid var(--teal);position:relative}
+  .tier.pop::after{content:"Most popular";position:absolute;top:-11px;left:20px;background:var(--teal);color:#fff;
+    font-size:11px;font-family:var(--mono);letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+  .tier h3{margin:0;font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--teal-ink)}
+  .price{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
+  .price span:not(.ppp){font-size:14px;color:var(--muted);font-weight:500}
+  .price .ppp{font-size:inherit;font-weight:inherit;color:inherit;letter-spacing:inherit}
+  .tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;font-size:14px;color:var(--muted)}
+  .tier li::before{content:"✓ ";color:var(--teal-ink);font-weight:700}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:13px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .note{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
+  @media (max-width:560px){.navlinks{display:none}}
+  /* Multilingual "Hello" background — the same motif as the guide video. A fixed layer BEHIND all
+     content (z-index:-1) with low opacity so copy stays perfectly readable; each word drifts up and
+     fades, from its own random spot. */
+  .hellobg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .hellobg .h{position:absolute;font-weight:800;white-space:nowrap;color:var(--teal-ink);opacity:0;
+    will-change:transform,opacity;letter-spacing:-.5px;}
+  @keyframes hdrift{
+    0%{transform:translateY(26px) scale(.92);opacity:0;}
+    18%{opacity:.11;} 50%{transform:translateY(-6px) scale(1);opacity:.14;} 82%{opacity:.06;}
+    100%{transform:translateY(-42px) scale(1.06);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .tier.pop::after{content:"সবচেয়ে জনপ্রিয়"}
 </style>
-</head>
-<body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn" selected>বাংলা</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+
+<div class="hellobg" id="hellobg" aria-hidden="true"></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/">English</option><option value="/hi/">हिन्दी</option><option value="/bn/" selected>বাংলা</option><option value="/ta/">தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+
 <div class="wrap">
-  <h1>PolyglotFormFill</h1>
-  <p class="lede">যেকোনো ফর্ম, যেকোনো ভাষায়, আপনার ডিভাইসে গোপনে পূরণ করুন।</p>
-  <div class="cta">
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">ডাউনলোড — Windows-এর জন্য</a>
-    <a class="btn alt" href="/install/">ইনস্টল — Chrome ও Edge-এর জন্য</a>
-  </div>
-  <h2>আপনার নথি কখনো আপনার ডিভাইস ছাড়ে না।</h2>
-  <p>প্রতিটি ফর্ম আপনার নিজের ডিভাইসেই পড়া ও পূরণ করা হয়। আমরা আপনার ফর্ম বা তথ্য কখনো দেখি না; তা কেবল সেখানেই যায় যেখানে আপনি পাঠাতে চান।</p>
-  <p class="note">সবকিছু এই ভাষায় দেখানো হবে। ফর্ম নিজের ভাষাতেই থাকবে।</p>
-  <footer>
-    <p class="note">এই পাতা আপনার ভাষায় দেখানো হচ্ছে। উপরে অন্য ভাষা বেছে নিন।</p>
-    <p><a href="/bn/privacy/">গোপনীয়তা নীতি</a> · <a href="/">English</a></p>
-    <p class="note">সম্পূর্ণ আইনি লেখাটি ইংরেজিতে পাওয়া যাবে।</p>
-  </footer>
+  <nav>
+    <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+    <div class="navlinks">
+      <a href="#features">বৈশিষ্ট্য</a>
+      <a href="#who">কাদের জন্য</a>
+      <a href="#polyglot">ভাষাসমূহ</a>
+      <a href="#pricing">মূল্য</a>
+      <a href="/tutorials/">টিউটোরিয়াল</a>
+      <a href="#privacy">গোপনীয়তা</a>
+      <a class="btn" href="#get">সংগ্রহ করুন</a>
+    </div>
+  </nav>
 </div>
+
+<header class="wrap">
+  <span class="badge">◉ বহুভাষিক · ডিভাইসে · শূন্য টেলিমেট্রি</span>
+  <h1>যেকোনো ফর্ম পড়ুন ও পূরণ করুন —<br><span class="fade">যেকোনো ভাষায়।</span></h1>
+  <p class="lede">PolyglotFormFill এক ভাষায় লেখা একটি ফর্ম পড়ে এবং আপনার তথ্য থেকে অন্য ভাষায় সেটি পূরণ করে — PDF, Word, Excel এবং ওয়েব ফর্ম। সবকিছু আপনার ডিভাইসে চলে; আমরা আপনার তথ্য কখনও দেখি না। আপনি যখন জমা দেন, তা সরাসরি আপনার বেছে নেওয়া প্রাপকের কাছে যায় — কখনও আমাদের মাধ্যমে নয়।</p>
+  <div class="cta">
+    <a class="btn" href="#features">কীভাবে কাজ করে দেখুন</a>
+    <a class="btn ghost" href="/tutorials/">▶ টিউটোরিয়াল দেখুন</a>
+    <a class="btn ghost" href="#get">সংগ্রহ করুন (বিটা)</a>
+  </div>
+  <div class="trustline">AES-256 ভল্ট · পাসকি আনলক · কোনো ক্লাউড নয় · কোনো ট্র্যাকিং নয় · উন্মুক্ত ও নিরীক্ষণযোগ্য</div>
+
+  <div class="flow">
+    <div class="device">
+      <h3>আপনার ডিভাইসে — যেখানে সমস্ত প্রক্রিয়াকরণ ঘটে</h3>
+      <div class="chips">
+        <span class="chip">📄 PDF পড়া ও প্রদর্শন</span>
+        <span class="chip">🔎 OCR ফিল্ড শনাক্তকরণ</span>
+        <span class="chip">🌍 অনুবাদ</span>
+        <span class="chip">🧠 ভল্ট অটোফিল</span>
+        <span class="chip">🖊 পূরণ ও রপ্তানি</span>
+        <span class="chip">✍️ স্বাক্ষর</span>
+        <span class="chip">🔐 AES-256 ভল্ট</span>
+      </div>
+    </div>
+    <div class="egress">
+      <div class="out"><span class="arrow">→</span><div><b>কী বেরিয়ে যায় — কেবল যা আপনি পাঠান, যাকে পাঠান তার কাছে:</b>
+        আপনার জমা দেওয়া একটি ফর্ম ডিভাইস → আপনার বেছে নেওয়া প্রাপকের কাছে সরাসরি যায় · আপনার টাইপ করা একটি ওয়েব অনুসন্ধান কেবল সেই শব্দগুলিই পাঠায়। দুটোই আপনার পছন্দ, এবং কোনোটিই আমাদের মধ্য দিয়ে যায় না। আমরা কখনও আপনার নথি, আপনার ভল্ট, বা কোনো শনাক্তকারী পাই না — কোনো ক্লাউড মধ্যস্থতাকারী নেই।</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="features" class="wrap">
+  <span class="eyebrow">প্রধান বৈশিষ্ট্য</span>
+  <h2 class="h2">একটি পূরণ-অযোগ্য PDF-কে এমন একটি ফর্মে পরিণত করুন যা আপনি সত্যিই পূরণ করতে পারেন</h2>
+  <p class="sub">ফর্ম ফিল্ডবিহীন একটি সমতল PDF — এমনকি তার একটি ছবি বা স্ক্যান — কয়েক সেকেন্ডে একটি সত্যিকারের, পূরণযোগ্য ফর্মে পরিণত হয়। "প্রিন্ট করো, হাতে লেখো, আবার স্ক্যান করো" নয়। কোনো ওয়েবসাইটে আপলোড করার প্রয়োজন নেই।</p>
+  <div class="grid">
+    <div class="card feature">
+      <div class="ic">🧩</div>
+      <div>
+        <span class="flag">পূরণ-অযোগ্য → পূরণযোগ্য</span>
+        <h3>যেকোনো সমতল PDF, স্ক্যান বা ছবি একটি সম্পাদনযোগ্য ফর্মে পরিণত হয়</h3>
+        <p>এমন একটি PDF-এর দিকে নির্দেশ করুন যাতে কোনো পূরণযোগ্য ঘর নেই, এমনকি একটি কাগুজে ফর্মের ছবিও। ডিভাইসের OCR লেআউট পড়ে, প্রতিটি ফিল্ড কোথায় থাকবে তা খুঁজে বের করে, সেখানে সত্যিকারের ফর্ম ফিল্ড বসায় এবং আপনার ভল্ট থেকে সেগুলি পূরণ করে — সবই আপনার যন্ত্রে, কিছুই আপলোড হয় না। এরপর একটি পরিচ্ছন্ন, পূরণ করা PDF রপ্তানি করুন।</p>
+      </div>
+    </div>
+    <div class="card"><div class="ic">🔒</div><h3>সর্বদা ডিভাইসে</h3><p>OCR, অনুবাদ, পূরণ ও স্বাক্ষর স্থানীয়ভাবে চলে। আপনার তথ্য কখনও আমাদের কাছে বা অন্য কারও কাছে যায় না।</p></div>
+    <div class="card"><div class="ic">🌍</div><h3>বহুভাষিক পূরণ</h3><p>আপনার অন্য ভাষার তথ্য থেকে একটি ইংরেজি ফর্ম পূরণ করুন। অনুবাদ আপনার ডিভাইসে ঘটে।</p></div>
+    <div class="card"><div class="ic">📄</div><h3>Word ও Excel-ও</h3><p>.docx ও .xlsx ফর্ম পূরণ করে — নামযুক্ত ফিল্ড বা সমতল লেবেল — এবং একটি PDF রপ্তানি করতে পারে।</p></div>
+    <div class="card"><div class="ic">🧠</div><h3>একটি ভল্ট যা শেখে</h3><p>একটি নতুন ফিল্ডের উত্তর একবার দিন; পরের বারের জন্য তা মনে রাখা হয় — এনক্রিপ্ট করা, আপনার ডিভাইসে।</p></div>
+    <div class="card"><div class="ic">✍️</div><h3>বিশ্বাসযোগ্য স্বাক্ষর</h3><p>অহস্তান্তরযোগ্য, ডিভাইস-আবদ্ধ স্বাক্ষর যার উৎস যাচাইযোগ্য। কেউ আপনার হয়ে স্বাক্ষর করে না।</p></div>
+    <div class="card"><div class="ic">🔑</div><h3>পাসকি-লক করা ভল্ট</h3><p>একটি পাসফ্রেজ বা হার্ডওয়্যার পাসকি (WebAuthn) দিয়ে আনলক করুন। কী কখনও সংরক্ষিত হয় না — আমাদের দ্বারাও নয়।</p></div>
+    <div class="card"><div class="ic">🔗</div><h3>ডেস্কটপ + ব্রাউজার</h3><p>এক্সটেনশন ওয়েব ফর্ম পূরণ করে; ডেস্কটপ অ্যাপ আপনার কীগুলি একটি সুরক্ষিত বিশ্বাস-ভিত্তি হিসেবে ধরে রাখে।</p></div>
+  </div>
+</section>
+
+<section id="who" class="wrap">
+  <span class="eyebrow">কাদের জন্য</span>
+  <h2 class="h2">যারা ভাষা ও সীমানা পেরিয়ে ফর্ম পূরণ করেন তাদের সকলের জন্য তৈরি</h2>
+  <p class="sub">তিনটি গোষ্ঠী এর থেকে সবচেয়ে বেশি সুবিধা পায় — এবং তাদের প্রত্যেকে নিজের তথ্য নিজের ডিভাইসেই রাখে।</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🛂</div><h3>অভিবাসন ও পুনর্বাসন সংস্থা</h3><p>স্ক্যান করা ভিসা, বসবাস ও বসতির PDF-কে ডিভাইসের OCR দিয়ে পূরণযোগ্য ফর্মে পরিণত করুন এবং একটি নথিও আপনার যন্ত্র থেকে বেরিয়ে না গিয়ে সেগুলি ক্লায়েন্টের ভাষায় সম্পূর্ণ করুন। একটি সংরক্ষিত প্রোফাইল পরবর্তী ফর্ম কয়েক সেকেন্ডে পূরণ করে।</p></div>
+    <div class="card"><div class="ic">💼</div><h3>সীমান্ত-পেরোনো ফ্রিল্যান্সার ও ছোট ব্যবসা</h3><p>কর, ব্যাঙ্কিং ও অনবোর্ডিং ফর্ম প্রায়ই এমন ভাষায় আসে যা আপনার নয়। সেগুলি আপনার নিজের বিবরণ থেকে পূরণ করুন — যা আপনার ডিভাইসে একটি AES-256 ভল্টে রাখা — এবং একটি পরিচ্ছন্ন PDF রপ্তানি করুন, কিছুই আমাদের বা কোনো তৃতীয় পক্ষের মধ্য দিয়ে না পাঠিয়ে।</p></div>
+    <div class="card"><div class="ic">🛡️</div><h3>গোপনীয়তা-প্রথম ও ক্রিপ্টো সম্প্রদায়</h3><p>প্রতিটি ধাপ শূন্য টেলিমেট্রি সহ স্থানীয়ভাবে চলে, এবং ভল্ট একটি হার্ডওয়্যার পাসকি (WebAuthn) দিয়ে আনলক হয় যার কী কখনও সংরক্ষিত হয় না। কোনো অ্যাকাউন্ট নয়, কোনো ক্লাউড নয়, কোনো ট্র্যাকিং নয় — আপনার তথ্য আপনার নিয়ন্ত্রণাধীন ডিভাইসেই থাকে।</p></div>
+  </div>
+</section>
+
+<section id="polyglot" class="wrap">
+  <div class="band">
+    <span class="eyebrow" style="color:rgba(255,255,255,.8)">একটি বহুভাষিক বিশ্বের জন্য তৈরি</span>
+    <h2 class="h2">আপনার তথ্য আপনার ভাষায়। ফর্ম তাদের ভাষায়।</h2>
+    <p class="sub">সরকার ও প্রতিষ্ঠানগুলি এক ভাষায় ফর্ম প্রকাশ করে; মানুষ তাদের বিবরণ অন্য ভাষায় রাখে। PolyglotFormFill এই ব্যবধান ডিভাইসেই মেটায় — ইংরেজি ↔ হিন্দি দিয়ে শুরু, আরও ভাষা আসছে।</p>
+    <div class="langrow">
+      <span class="lang">English ↔ हिन्दी</span>
+      <span class="lang">আরও ভাষা আসছে</span>
+      <span class="lang">ডিভাইসে NMT · কোনো ক্লাউড নয়</span>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="wrap">
+  <span class="eyebrow">মূল্য</span>
+  <h2 class="h2">একবার কিনুন। মালিক হন। কোনো সাবস্ক্রিপশন নয়।</h2>
+  <p class="sub">একবারের, প্রতি-ডিভাইস লাইসেন্স — আপনার ডিভাইসে অফলাইনে যাচাই করা, তাই কোনো অ্যাক্টিভেশন সার্ভার নেই এবং একটিও নেটওয়ার্ক কল নেই। পাবলিক বিটা চলাকালীন বিনামূল্যে; নিচের মূল্যগুলি লঞ্চের সময় কার্যকর হয়।</p>
+  <div class="tiers">
+    <div class="tier">
+      <h3>বিনামূল্যে</h3>
+      <div class="price">$0</div>
+      <ul><li>মূল ওয়েব-ফর্ম অটোফিল</li><li>একটি প্রোফাইল</li><li>মৌলিক PDF পূরণ</li><li>এনক্রিপ্ট করা ডিভাইস-ভিত্তিক ভল্ট</li><li>সম্পূর্ণ ডিভাইসে, সর্বদা</li></ul>
+    </div>
+    <div class="tier pop">
+      <h3>প্রো</h3>
+      <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">একবার / ডিভাইস</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">১টি ডিভাইস · or <span class="ppp" data-usd="9">$9</span>/বছর</div>
+      <ul><li>বিনামূল্যের সবকিছু</li><li>১টি ডিভাইস</li><li>৩টি পর্যন্ত প্রোফাইল</li><li>যেকোনো PDF পূরণযোগ্য করুন (OCR)</li><li>Word ও Excel ফর্ম</li><li>অনূদিত পূরণ (ভাষা প্যাক)</li><li>স্বাক্ষর ও ছবি স্থাপন</li><li>এনক্রিপ্ট করা ব্যাকআপ ও স্থানান্তর</li></ul>
+    </div>
+    <div class="tier">
+      <h3>পরিবার</h3>
+      <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">একবার</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">৫টি পর্যন্ত ডিভাইস (~<span class="ppp" data-usd="6">$6</span> প্রতিটি) · or <span class="ppp" data-usd="15">$15</span>/বছর</div>
+      <ul><li>প্রো-এর সবকিছু, ৫টি পর্যন্ত ডিভাইসে</li><li>৫টি পর্যন্ত প্রোফাইল</li><li>যেকোনো ডিভাইস থেকে পরিবারের প্রোফাইল পরিচালনা করুন</li><li>অগ্রাধিকার সহায়তা</li></ul>
+    </div>
+  </div>
+  <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
+  <script>
+(function(){
+  var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+  var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+    var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+    if(f==null){ note("Prices shown in USD."); return; }
+    if(f<0.35)f=0.35;
+    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    document.querySelectorAll(".ppp").forEach(function(el){
+      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+    });
+    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+  }).catch(function(){ note("Prices shown in USD."); });
+})();</script>
+  <script>
+(function(){
+  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+    "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+  var bg=document.getElementById("hellobg"); if(!bg) return;
+  var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+  for(var i=0;i<N;i++){
+    var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(Math.random()*96)+"vw"; el.style.top=(Math.random()*100)+"vh";
+    el.style.fontSize=(15+Math.random()*30)+"px";
+    var dur=(9+Math.random()*9).toFixed(2);
+    el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+    bg.appendChild(el);
+  }
+})();</script>
+
+  <div style="margin-top:40px">
+    <span class="eyebrow">দল ও ব্যবসার জন্য</span>
+    <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">বাণিজ্যিক — আসন লাইসেন্স, সীমাহীন প্রোফাইল</h2>
+    <p class="sub">ভলিউম মূল্য সহ প্রতি-আসন বার্ষিক লাইসেন্সিং। প্রতিটি আসন সমস্ত প্রো বৈশিষ্ট্য ও সীমাহীন প্রোফাইল পায় — এবং, প্রতিটি স্তরের মতো, এটি সম্পূর্ণভাবে প্রতিটি ডিভাইসে চলে, আমাদের কাছে কোনো তথ্য ফেরত না পাঠিয়ে। লাইসেন্স কেন্দ্রীয়ভাবে আপনার অ্যাডমিনকে ইস্যু করা হয় এবং প্রতিটি ডিভাইসে অফলাইনে যাচাই করা হয়।</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>দল</h3>
+        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ আসন / বছর</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">৫–৫০ আসন</div>
+        <ul><li>সমস্ত প্রো বৈশিষ্ট্য</li><li>সীমাহীন প্রোফাইল / আসন</li><li>ইমেল সহায়তা ও আপডেট</li></ul>
+      </div>
+      <div class="tier">
+        <h3>ব্যবসা</h3>
+        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ আসন / বছর</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">৫১–১০০ আসন</div>
+        <ul><li>দলের সবকিছু</li><li>ভলিউম ছাড়</li><li>অগ্রাধিকার সহায়তা</li></ul>
+      </div>
+      <div class="tier">
+        <h3>স্কেল</h3>
+        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ আসন / বছর</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">১০১–৫০০ আসন</div>
+        <ul><li>ব্যবসার সবকিছু</li><li>সেরা প্রতি-আসন হার</li><li>অনবোর্ডিং সহায়তা</li></ul>
+      </div>
+      <div class="tier">
+        <h3>এন্টারপ্রাইজ</h3>
+        <div class="price" style="font-size:22px">চলুন কথা বলি</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">৫০০+ আসন</div>
+        <ul><li>কাস্টম মূল্য ও শর্তাবলী</li><li>SSO-যাচাইকৃত ব্যবস্থাপনা</li><li>SLA ও নিবেদিত সহায়তা</li><li>স্থাপনা সহায়তা</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">বিটা চলাকালীন বিনামূল্যে। ব্যক্তিগত স্তরগুলি একবারের, প্রতি-ডিভাইস Ed25519 লাইসেন্স যা স্থানীয়ভাবে যাচাই করা হয় — কোনো অ্যাক্টিভেশন সার্ভার নয়। বাণিজ্যিক হলো প্রতি আসনে বার্ষিক, কেন্দ্রীয় ইস্যু সহ। মূল্য USD-তে; স্থানীয় কর প্রযোজ্য হতে পারে। এন্টারপ্রাইজ: আমাদের সাথে যোগাযোগ করুন। <a href="mailto:subumysore@gmail.com">আমাদের সাথে যোগাযোগ করুন</a>.</p>
+</section>
+
+<section id="get" class="wrap">
+  <span class="eyebrow">PolyglotFormFill সংগ্রহ করুন</span>
+  <h2 class="h2">এক মিনিটে ইনস্টল করুন</h2>
+  <p class="sub">ওয়েব-ফর্ম অটোফিলের জন্য ব্রাউজার এক্সটেনশন যোগ করুন, অথবা সম্পূর্ণ, সুরক্ষিত অভিজ্ঞতার জন্য ডেস্কটপ অ্যাপ ইনস্টল করুন। এগুলি একসাথে কাজ করে।</p>
+  <div class="cta">
+    <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">Windows-এর জন্য ডাউনলোড করুন</a>
+    <a class="btn ghost" href="/bn/install/">ব্রাউজার এক্সটেনশন সংগ্রহ করুন (বিটা)</a>
+    <span class="btn ghost soon" aria-disabled="true">Chrome Web Store — শীঘ্রই</span>
+  </div>
+  <p class="note">বিটা ডাউনলোড (Oracle Cloud-এ হোস্ট করা)। Windows বিল্ডটি অস্বাক্ষরিত — Windows "unknown publisher" সতর্কতা দেখায় (More info → Run anyway)। এক্সটেনশনটি আপাতত ডেভেলপার মোডে ইনস্টল হয়; স্টোর তালিকা চলমান। macOS ও Linux পরবর্তীতে।</p>
+</section>
+
+<section id="privacy" class="wrap">
+  <span class="eyebrow">গোপনীয়তা</span>
+  <h2 class="h2">প্রতিশ্রুতি, এক লাইনে</h2>
+  <p class="sub">আপনার তথ্য আপনার ডিভাইসে প্রক্রিয়া করা হয় এবং কখনও আমাদের কাছে পাঠানো হয় না। কেবল সেই জিনিসগুলিই বেরিয়ে যায় যা আপনি করেন — একটি সম্পূর্ণ ফর্ম জমা দেওয়া (সরাসরি তার প্রাপকের কাছে) বা আপনার টাইপ করা একটি ওয়েব অনুসন্ধান। সেগুলি সরাসরি তাদের গন্তব্যে যায়, কখনও আমাদের মাধ্যমে নয়। এটাই সম্পূর্ণ তালিকা।</p>
+  <p style="margin-top:16px"><a class="btn ghost" href="/bn/privacy/">সম্পূর্ণ গোপনীয়তা নীতি পড়ুন</a></p>
+</section>
+
+<footer class="wrap">
+  <div>© PolyglotFormFill · গোপনীয়তা-প্রথম ফর্ম অটোফিল</div>
+  <div>ডিভাইসে · শূন্য টেলিমেট্রি · উন্মুক্ত ও নিরীক্ষণযোগ্য</div>
+</footer>
 </body>
 </html>

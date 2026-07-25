@@ -3,45 +3,343 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PolyglotFormFill — எந்தப் படிவத்தையும், எந்த மொழியிலும், உங்கள் சாதனத்தில் தனிப்பட்ட முறையில் நிரப்புங்கள்.</title>
-<meta name="description" content="உங்கள் ஆவணங்கள் உங்கள் சாதனத்தை விட்டு வெளியேறுவதில்லை.">
+<title>PolyglotFormFill — எந்த மொழியிலும் எந்தப் படிவத்தையும் படியுங்கள், நிரப்புங்கள்.</title>
+<meta name="description" content="PolyglotFormFill ஒரு மொழியில் உள்ள படிவத்தைப் படித்து, உங்கள் தரவை மற்றொரு மொழியில் இருந்து நிரப்புகிறது — உங்கள் சாதனத்திலேயே, தனிப்பட்ட முறையில். உங்கள் தரவை நாங்கள் ஒருபோதும் பார்ப்பதில்லை.">
 <style>
-:root{color-scheme:light dark}
-*{box-sizing:border-box}
-body{font:16px/1.6 system-ui,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Arabic",sans-serif;margin:0;color:#101a20;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 20px;border-bottom:1px solid #e9eeee}
-.langbar select{font:inherit;padding:4px 8px}
-h1{font-size:30px;line-height:1.25;margin:24px 0 8px}
-h2{font-size:20px;margin:32px 0 6px}
-p{margin:8px 0}
-.lede{font-size:18px;color:#33474f}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
-.btn{display:inline-block;padding:12px 18px;border-radius:10px;background:#0d8f83;color:#fff;text-decoration:none;font-weight:600}
-.btn.alt{background:#eef6f5;color:#0a6a60}
-.note{color:#55666f;font-size:14px}
-footer{margin-top:40px;border-top:1px solid #e9eeee;padding-top:16px;font-size:14px}
-[dir=rtl] .langbar{justify-content:flex-start}
-@media (prefers-color-scheme:dark){body{background:#0f1417;color:#e8eef0}.lede{color:#a8bcc2}.langbar{border-color:#222c31}.btn.alt{background:#16232a;color:#7fd8ce}footer{border-color:#222c31}}
+  :root{
+    --ink:#0e1a1f; --paper:#f6f8f7; --surface:#ffffff; --muted:#5a6b6d; --line:#dde6e4;
+    --teal:#0d8f83; --teal-ink:#0a6a60; --teal-soft:#e3f2ef;
+    --amber:#a8620f; --amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+      --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  }
+  :root[data-theme="dark"]{--ink:#e8f0ee;--paper:#0b1214;--surface:#111c1f;--muted:#93a6a6;--line:#22322f;
+    --teal:#3fbcae;--teal-ink:#7fded2;--teal-soft:#12312c;--amber:#e0a24d;--amber-soft:#33260f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.4);}
+  :root[data-theme="light"]{--ink:#0e1a1f;--paper:#f6f8f7;--surface:#fff;--muted:#5a6b6d;--line:#dde6e4;
+    --teal:#0d8f83;--teal-ink:#0a6a60;--teal-soft:#e3f2ef;--amber:#a8620f;--amber-soft:#f6e8d2;
+    --shadow:0 1px 2px rgba(14,26,31,.04),0 8px 30px rgba(14,26,31,.06);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  a{color:var(--teal-ink);text-decoration:none}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-ink)}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:18px}
+  .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--teal-ink));
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .navlinks{display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+  .navlinks a{color:var(--muted)}
+  .btn{display:inline-block;background:var(--teal);color:#fff;padding:11px 18px;border-radius:10px;
+    font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+  .btn.ghost{background:transparent;color:var(--teal-ink);box-shadow:inset 0 0 0 1px var(--line)}
+  .btn.soon{opacity:.55;cursor:not-allowed;pointer-events:none}
+
+  /* hero */
+  header{padding:56px 0 40px}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:var(--teal-soft);color:var(--teal-ink);
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;letter-spacing:.04em}
+  h1{font-size:clamp(34px,6.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:20px 0 0;
+    text-wrap:balance;font-weight:800}
+  h1 .fade{color:var(--teal-ink)}
+  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:60ch;margin:18px 0 0}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .trustline{margin-top:20px;font-size:13px;color:var(--muted);font-family:var(--mono)}
+
+  /* dataflow diagram */
+  .flow{margin:26px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:22px;box-shadow:var(--shadow)}
+  .device{border:1.5px dashed var(--teal);border-radius:12px;padding:16px;background:var(--teal-soft)}
+  .device h3{margin:0 0 12px;font-size:13px;font-family:var(--mono);letter-spacing:.06em;color:var(--teal-ink);text-transform:uppercase}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px}
+  .egress{margin-top:14px;display:grid;gap:8px}
+  .out{display:flex;gap:10px;align-items:flex-start;background:var(--amber-soft);border-radius:10px;padding:10px 12px;font-size:13.5px}
+  .out b{color:var(--amber)}
+  .arrow{font-family:var(--mono);color:var(--amber);font-weight:700}
+
+  /* sections */
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .h2{font-size:clamp(24px,3.6vw,34px);letter-spacing:-.02em;margin:6px 0 0;font-weight:800;text-wrap:balance}
+  .sub{color:var(--muted);margin:12px 0 0;max-width:64ch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:30px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .card .ic{width:34px;height:34px;border-radius:9px;background:var(--teal-soft);display:grid;place-items:center;font-size:18px;margin-bottom:12px}
+  .card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .card.feature{grid-column:1/-1;background:linear-gradient(120% 140% at 0% 0%,var(--teal-soft),var(--surface));border-color:var(--teal);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:26px 28px}
+  .card.feature .ic{width:52px;height:52px;font-size:27px;margin:0;background:linear-gradient(135deg,var(--teal),var(--teal-ink));color:#fff}
+  .card.feature h3{font-size:clamp(19px,2.6vw,25px);margin-bottom:8px}
+  .card.feature p{font-size:15.5px;color:var(--ink);max-width:70ch}
+  .card.feature .flag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-ink);display:block;margin-bottom:6px}
+  @media (max-width:560px){.card.feature{grid-template-columns:1fr}}
+
+  /* polyglot band */
+  .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:34px;margin-top:8px}
+  .band .h2{color:#fff}
+  .band .sub{color:rgba(255,255,255,.85)}
+  .langrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:13px}
+  .lang{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:999px}
+
+  /* pricing */
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:30px}
+  .tier{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+  .tier.pop{border:1.5px solid var(--teal);position:relative}
+  .tier.pop::after{content:"Most popular";position:absolute;top:-11px;left:20px;background:var(--teal);color:#fff;
+    font-size:11px;font-family:var(--mono);letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+  .tier h3{margin:0;font-size:15px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--teal-ink)}
+  .price{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
+  .price span:not(.ppp){font-size:14px;color:var(--muted);font-weight:500}
+  .price .ppp{font-size:inherit;font-weight:inherit;color:inherit;letter-spacing:inherit}
+  .tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;font-size:14px;color:var(--muted)}
+  .tier li::before{content:"✓ ";color:var(--teal-ink);font-weight:700}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:13px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .note{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
+  @media (max-width:560px){.navlinks{display:none}}
+  /* Multilingual "Hello" background — the same motif as the guide video. A fixed layer BEHIND all
+     content (z-index:-1) with low opacity so copy stays perfectly readable; each word drifts up and
+     fades, from its own random spot. */
+  .hellobg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .hellobg .h{position:absolute;font-weight:800;white-space:nowrap;color:var(--teal-ink);opacity:0;
+    will-change:transform,opacity;letter-spacing:-.5px;}
+  @keyframes hdrift{
+    0%{transform:translateY(26px) scale(.92);opacity:0;}
+    18%{opacity:.11;} 50%{transform:translateY(-6px) scale(1);opacity:.14;} 82%{opacity:.06;}
+    100%{transform:translateY(-42px) scale(1.06);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+
+  .tier.pop::after{content:"மிகவும் பிரபலமானது"}
 </style>
-</head>
-<body>
-<nav class="langbar"><label for="lang">🌐</label><select id="lang" onchange="location.href=this.value==='en'?'/':'/'+this.value+'/'"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="ta" selected>தமிழ்</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="ml">മലയാളം</option><option value="gu">ગુજરાતી</option><option value="pa">ਪੰਜਾਬੀ</option><option value="mr">मराठी</option><option value="ur">اردو</option><option value="ar">العربية</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option><option value="id">Bahasa Indonesia</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="tr">Türkçe</option></select></nav>
+
+<div class="hellobg" id="hellobg" aria-hidden="true"></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/">English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/" selected>தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+
 <div class="wrap">
-  <h1>PolyglotFormFill</h1>
-  <p class="lede">எந்தப் படிவத்தையும், எந்த மொழியிலும், உங்கள் சாதனத்தில் தனிப்பட்ட முறையில் நிரப்புங்கள்.</p>
-  <div class="cta">
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">பதிவிறக்கு — Windows-க்கு</a>
-    <a class="btn alt" href="/install/">நிறுவு — Chrome மற்றும் Edge-க்கு</a>
-  </div>
-  <h2>உங்கள் ஆவணங்கள் உங்கள் சாதனத்தை விட்டு வெளியேறுவதில்லை.</h2>
-  <p>ஒவ்வொரு படிவமும் உங்கள் சொந்த சாதனத்திலேயே படிக்கப்பட்டு நிரப்பப்படுகிறது. உங்கள் படிவத்தையோ தரவையோ நாங்கள் பார்ப்பதில்லை; நீங்கள் அனுப்பத் தேர்ந்தெடுக்கும் இடத்திற்கு மட்டுமே அது செல்கிறது.</p>
-  <p class="note">அனைத்தும் இந்த மொழியில் காட்டப்படும். படிவங்கள் அவற்றின் மொழியிலேயே இருக்கும்.</p>
-  <footer>
-    <p class="note">இந்தப் பக்கம் உங்கள் மொழியில் உள்ளது. மேலே வேறு மொழியைத் தேர்ந்தெடுக்கவும்.</p>
-    <p><a href="/ta/privacy/">தனியுரிமைக் கொள்கை</a> · <a href="/">English</a></p>
-    <p class="note">முழு சட்டப்பூர்வ உரை ஆங்கிலத்தில் உள்ளது.</p>
-  </footer>
+  <nav>
+    <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+    <div class="navlinks">
+      <a href="#features">அம்சங்கள்</a>
+      <a href="#who">யாருக்காக</a>
+      <a href="#polyglot">மொழிகள்</a>
+      <a href="#pricing">விலை</a>
+      <a href="/tutorials/">பயிற்சிகள்</a>
+      <a href="#privacy">தனியுரிமை</a>
+      <a class="btn" href="#get">பெறுங்கள்</a>
+    </div>
+  </nav>
 </div>
+
+<header class="wrap">
+  <span class="badge">◉ பன்மொழி · சாதனத்திலேயே · பூஜ்ஜிய டெலிமெட்ரி</span>
+  <h1>எந்தப் படிவத்தையும் படியுங்கள், நிரப்புங்கள் —<br><span class="fade">எந்த மொழியிலும்.</span></h1>
+  <p class="lede">PolyglotFormFill ஒரு மொழியில் உள்ள படிவத்தைப் படித்து, உங்கள் தரவை மற்றொரு மொழியில் இருந்து நிரப்புகிறது — PDF, Word, Excel மற்றும் இணையப் படிவங்கள். அனைத்தும் உங்கள் சாதனத்திலேயே இயங்குகிறது; உங்கள் தரவை நாங்கள் ஒருபோதும் பார்ப்பதில்லை. நீங்கள் சமர்ப்பிக்கும்போது, அது நீங்கள் தேர்ந்தெடுத்த பெறுநருக்கு நேரடியாகச் செல்கிறது — ஒருபோதும் எங்கள் வழியாக அல்ல.</p>
+  <div class="cta">
+    <a class="btn" href="#features">இது எப்படி வேலை செய்கிறது என்று பாருங்கள்</a>
+    <a class="btn ghost" href="/tutorials/">▶ பயிற்சிகளைப் பாருங்கள்</a>
+    <a class="btn ghost" href="#get">பெறுங்கள் (பீட்டா)</a>
+  </div>
+  <div class="trustline">AES-256 பெட்டகம் · பாஸ்கீ திறப்பு · கிளவுட் இல்லை · கண்காணிப்பு இல்லை · திறந்த மற்றும் தணிக்கை செய்யத்தக்கது</div>
+
+  <div class="flow">
+    <div class="device">
+      <h3>உங்கள் சாதனத்தில் — அனைத்து செயலாக்கமும் நடைபெறும் இடம்</h3>
+      <div class="chips">
+        <span class="chip">📄 PDF படிக்க மற்றும் காட்ட</span>
+        <span class="chip">🔎 OCR புலம் கண்டறிதல்</span>
+        <span class="chip">🌍 மொழிபெயர்</span>
+        <span class="chip">🧠 பெட்டகம் தானியங்கி நிரப்புதல்</span>
+        <span class="chip">🖊 நிரப்பி ஏற்றுமதி செய்</span>
+        <span class="chip">✍️ கையொப்பம்</span>
+        <span class="chip">🔐 AES-256 பெட்டகம்</span>
+      </div>
+    </div>
+    <div class="egress">
+      <div class="out"><span class="arrow">→</span><div><b>என்ன வெளியேறுகிறது — நீங்கள் அனுப்புவது மட்டுமே, யாருக்கு அனுப்புகிறீர்களோ அவருக்கு மட்டுமே:</b>
+        நீங்கள் சமர்ப்பிக்கும் ஒரு படிவம் சாதனத்திலிருந்து → நீங்கள் தேர்ந்தெடுத்த பெறுநருக்கு நேரடியாகச் செல்கிறது · நீங்கள் தட்டச்சு செய்யும் ஒரு இணையத் தேடல் அந்தச் சொற்களை மட்டுமே அனுப்புகிறது. இரண்டும் உங்கள் தேர்வு, இரண்டும் எங்கள் வழியாகச் செல்வதில்லை. உங்கள் ஆவணங்களையோ, உங்கள் பெட்டகத்தையோ, எந்த அடையாளத்தையோ நாங்கள் ஒருபோதும் பெறுவதில்லை — எந்தக் கிளவுட் இடைத்தரகரும் இல்லை.</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="features" class="wrap">
+  <span class="eyebrow">தலைமை அம்சம்</span>
+  <h2 class="h2">நிரப்ப முடியாத PDF-ஐ நீங்கள் உண்மையிலேயே நிரப்பக்கூடிய படிவமாக மாற்றுங்கள்</h2>
+  <p class="sub">படிவப் புலங்கள் இல்லாத ஒரு தட்டையான PDF — அல்லது அதன் புகைப்படமோ ஸ்கேனோ கூட — வினாடிகளில் உண்மையான, நிரப்பக்கூடிய படிவமாக மாறுகிறது. “அச்சிட்டு, கையால் எழுதி, மீண்டும் ஸ்கேன்” இல்லை. அதைச் செய்ய ஏதோ ஒரு வலைத்தளத்திற்குப் பதிவேற்றம் இல்லை.</p>
+  <div class="grid">
+    <div class="card feature">
+      <div class="ic">🧩</div>
+      <div>
+        <span class="flag">நிரப்ப முடியாதது → நிரப்பக்கூடியது</span>
+        <h3>எந்த தட்டையான PDF, ஸ்கேன் அல்லது புகைப்படமும் திருத்தக்கூடிய படிவமாக மாறுகிறது</h3>
+        <p>நிரப்பக்கூடிய பெட்டிகள் இல்லாத PDF-ஐ, அல்லது ஒரு காகிதப் படிவத்தின் படத்தைக் கூட காட்டுங்கள். சாதனத்திலேயே இயங்கும் OCR தளவமைப்பைப் படித்து, ஒவ்வொரு புலமும் எங்கே இருக்க வேண்டும் என்பதைக் கண்டறிந்து, அங்கே உண்மையான படிவப் புலங்களை வைத்து, உங்கள் பெட்டகத்திலிருந்து அவற்றை நிரப்புகிறது — அனைத்தும் உங்கள் இயந்திரத்திலேயே, எதுவும் பதிவேற்றப்படாமல். பின்னர் ஒரு தூய்மையான, நிரப்பப்பட்ட PDF-ஐ ஏற்றுமதி செய்யுங்கள்.</p>
+      </div>
+    </div>
+    <div class="card"><div class="ic">🔒</div><h3>எப்போதும் சாதனத்திலேயே</h3><p>OCR, மொழிபெயர்ப்பு, நிரப்புதல் மற்றும் கையொப்பம் உள்ளூரிலேயே இயங்குகின்றன. உங்கள் தரவு எங்களுக்கோ யாருக்கோ ஒருபோதும் செல்வதில்லை.</p></div>
+    <div class="card"><div class="ic">🌍</div><h3>பன்மொழி நிரப்புதல்</h3><p>ஒரு ஆங்கிலப் படிவத்தை உங்கள் தரவிலிருந்து மற்றொரு மொழியில் நிரப்புங்கள். மொழிபெயர்ப்பு உங்கள் சாதனத்திலேயே நடைபெறுகிறது.</p></div>
+    <div class="card"><div class="ic">📄</div><h3>Word மற்றும் Excel-ஐயும்</h3><p>.docx மற்றும் .xlsx படிவங்களை நிரப்புகிறது — பெயரிடப்பட்ட புலங்கள் அல்லது தட்டையான லேபிள்கள் — மேலும் PDF-ஐ ஏற்றுமதி செய்யலாம்.</p></div>
+    <div class="card"><div class="ic">🧠</div><h3>கற்றுக்கொள்ளும் பெட்டகம்</h3><p>ஒரு புதிய புலத்திற்கு ஒருமுறை பதிலளியுங்கள்; அது நினைவில் வைக்கப்படுகிறது — மறையாக்கம் செய்யப்பட்டு, உங்கள் சாதனத்தில் — அடுத்த முறைக்காக.</p></div>
+    <div class="card"><div class="ic">✍️</div><h3>நம்பகமான கையொப்பம்</h3><p>வேறொருவருக்கு ஒப்படைக்க முடியாத, சாதனத்துடன் பிணைக்கப்பட்ட, சரிபார்க்கக்கூடிய தோற்றம் கொண்ட கையொப்பங்கள். உங்கள் சார்பாக யாரும் கையொப்பமிடுவதில்லை.</p></div>
+    <div class="card"><div class="ic">🔑</div><h3>பாஸ்கீ-பூட்டப்பட்ட பெட்டகம்</h3><p>ஒரு கடவுச்சொல் அல்லது வன்பொருள் பாஸ்கீ (WebAuthn) மூலம் திறக்கவும். சாவி ஒருபோதும் சேமிக்கப்படுவதில்லை — எங்களால் கூட.</p></div>
+    <div class="card"><div class="ic">🔗</div><h3>டெஸ்க்டாப் + உலாவி</h3><p>நீட்டிப்பு இணையப் படிவங்களை நிரப்புகிறது; டெஸ்க்டாப் பயன்பாடு உங்கள் சாவிகளை வலுவூட்டப்பட்ட நம்பிக்கை ஆதாரமாக வைத்திருக்கிறது.</p></div>
+  </div>
+</section>
+
+<section id="who" class="wrap">
+  <span class="eyebrow">யாருக்காக</span>
+  <h2 class="h2">மொழிகள் மற்றும் எல்லைகளைத் தாண்டி படிவங்களை நிரப்பும் எவருக்கும் உருவாக்கப்பட்டது</h2>
+  <p class="sub">மூன்று குழுக்கள் இதிலிருந்து மிகுந்த பயனைப் பெறுகின்றன — மேலும் அவர்கள் ஒவ்வொருவரும் தங்கள் தரவைத் தங்கள் சொந்த சாதனத்திலேயே வைத்திருக்கிறார்கள்.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🛂</div><h3>குடிவரவு மற்றும் இடமாற்ற முகவர் நிறுவனங்கள்</h3><p>ஸ்கேன் செய்யப்பட்ட விசா, குடியிருப்பு மற்றும் குடியேற்ற PDF-களை சாதனத்திலேயே இயங்கும் OCR மூலம் நிரப்பக்கூடிய படிவங்களாக மாற்றி, ஒரு ஆவணம் கூட உங்கள் இயந்திரத்தை விட்டு வெளியேறாமல் வாடிக்கையாளரின் மொழியில் அவற்றை நிறைவு செய்யுங்கள். சேமிக்கப்பட்ட ஒரு சுயவிவரம் அடுத்த படிவத்தை வினாடிகளில் நிரப்புகிறது.</p></div>
+    <div class="card"><div class="ic">💼</div><h3>எல்லை கடந்த சுயதொழிலாளர்கள் மற்றும் சிறு வணிகங்கள்</h3><p>வரி, வங்கி மற்றும் இணைப்புப் படிவங்கள் பெரும்பாலும் உங்களுடையது அல்லாத ஒரு மொழியில் வருகின்றன. உங்கள் சாதனத்தில் உள்ள AES-256 பெட்டகத்தில் வைக்கப்பட்டுள்ள உங்கள் சொந்த விவரங்களிலிருந்து அவற்றை நிரப்பி, ஒரு தூய்மையான PDF-ஐ ஏற்றுமதி செய்யுங்கள் — எதுவும் எங்கள் வழியாகவோ எந்த மூன்றாம் தரப்பினர் வழியாகவோ செல்லாமல்.</p></div>
+    <div class="card"><div class="ic">🛡️</div><h3>தனியுரிமை-முதன்மை மற்றும் கிரிப்டோ சமூகங்கள்</h3><p>ஒவ்வொரு படியும் உள்ளூரிலேயே பூஜ்ஜிய டெலிமெட்ரியுடன் இயங்குகிறது, மேலும் பெட்டகம் ஒரு வன்பொருள் பாஸ்கீ (WebAuthn) மூலம் திறக்கிறது, அதன் சாவி ஒருபோதும் சேமிக்கப்படுவதில்லை. கணக்கு இல்லை, கிளவுட் இல்லை, கண்காணிப்பு இல்லை — உங்கள் தரவு நீங்கள் கட்டுப்படுத்தும் சாதனத்திலேயே இருக்கிறது.</p></div>
+  </div>
+</section>
+
+<section id="polyglot" class="wrap">
+  <div class="band">
+    <span class="eyebrow" style="color:rgba(255,255,255,.8)">பன்மொழி உலகிற்காக உருவாக்கப்பட்டது</span>
+    <h2 class="h2">உங்கள் தரவு உங்கள் மொழியில். படிவம் அவர்களுடையதில்.</h2>
+    <p class="sub">அரசாங்கங்களும் நிறுவனங்களும் ஒரு மொழியில் படிவங்களை வெளியிடுகின்றன; மக்கள் தங்கள் விவரங்களை மற்றொரு மொழியில் வைத்திருக்கிறார்கள். PolyglotFormFill அந்த இடைவெளியை சாதனத்திலேயே இணைக்கிறது — ஆங்கிலம் ↔ இந்தி மொழியில் தொடங்கி, மேலும் பல வரவிருக்கின்றன.</p>
+    <div class="langrow">
+      <span class="lang">English ↔ हिन्दी</span>
+      <span class="lang">மேலும் மொழிகள் வரவிருக்கின்றன</span>
+      <span class="lang">சாதனத்திலேயே NMT · கிளவுட் இல்லை</span>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="wrap">
+  <span class="eyebrow">விலை</span>
+  <h2 class="h2">ஒருமுறை வாங்குங்கள். சொந்தமாக்குங்கள். சந்தா இல்லை.</h2>
+  <p class="sub">ஒரு முறை, ஒரு சாதனத்திற்கான உரிமம் — உங்கள் சாதனத்தில் ஆஃப்லைனில் சரிபார்க்கப்படுகிறது, எனவே செயல்படுத்தும் சர்வர் இல்லை மற்றும் ஒரு நெட்வொர்க் அழைப்பு கூட இல்லை. பொது பீட்டாவின் போது இலவசம்; கீழே உள்ள விலைகள் வெளியீட்டின் போது நடைமுறைக்கு வரும்.</p>
+  <div class="tiers">
+    <div class="tier">
+      <h3>இலவசம்</h3>
+      <div class="price">$0</div>
+      <ul><li>அடிப்படை இணையப் படிவ தானியங்கி நிரப்புதல்</li><li>ஒரு சுயவிவரம்</li><li>அடிப்படை PDF நிரப்புதல்</li><li>மறையாக்கம் செய்யப்பட்ட சாதன பெட்டகம்</li><li>எப்போதும் முழுமையாக சாதனத்திலேயே</li></ul>
+    </div>
+    <div class="tier pop">
+      <h3>Pro</h3>
+      <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">ஒருமுறை / சாதனம்</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 சாதனம் · or <span class="ppp" data-usd="9">$9</span>/ஆண்டு</div>
+      <ul><li>இலவசத்தில் உள்ள அனைத்தும்</li><li>1 சாதனம்</li><li>3 சுயவிவரங்கள் வரை</li><li>எந்த PDF-ஐயும் நிரப்பக்கூடியதாக்குங்கள் (OCR)</li><li>Word மற்றும் Excel படிவங்கள்</li><li>மொழிபெயர்க்கப்பட்ட நிரப்புதல் (மொழி தொகுப்புகள்)</li><li>கையொப்பம் மற்றும் புகைப்படம் வைப்பு</li><li>மறையாக்கம் செய்யப்பட்ட காப்புப்பிரதி மற்றும் இடமாற்றம்</li></ul>
+    </div>
+    <div class="tier">
+      <h3>குடும்பம்</h3>
+      <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">ஒருமுறை</span></div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5 சாதனங்கள் வரை (~<span class="ppp" data-usd="6">$6</span> ஒவ்வொன்றும்) · or <span class="ppp" data-usd="15">$15</span>/ஆண்டு</div>
+      <ul><li>Pro-வில் உள்ள அனைத்தும், 5 சாதனங்கள் வரை</li><li>5 சுயவிவரங்கள் வரை</li><li>எந்த சாதனத்திலிருந்தும் வீட்டின் சுயவிவரங்களை நிர்வகியுங்கள்</li><li>முன்னுரிமை ஆதரவு</li></ul>
+    </div>
+  </div>
+  <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
+  <script>
+(function(){
+  var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
+  var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
+    var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
+    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
+    if(f==null){ note("Prices shown in USD."); return; }
+    if(f<0.35)f=0.35;
+    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    document.querySelectorAll(".ppp").forEach(function(el){
+      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
+    });
+    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+  }).catch(function(){ note("Prices shown in USD."); });
+})();</script>
+  <script>
+(function(){
+  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+    "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+  var bg=document.getElementById("hellobg"); if(!bg) return;
+  var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+  for(var i=0;i<N;i++){
+    var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+    el.style.left=(Math.random()*96)+"vw"; el.style.top=(Math.random()*100)+"vh";
+    el.style.fontSize=(15+Math.random()*30)+"px";
+    var dur=(9+Math.random()*9).toFixed(2);
+    el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+    bg.appendChild(el);
+  }
+})();</script>
+
+  <div style="margin-top:40px">
+    <span class="eyebrow">குழுக்கள் மற்றும் வணிகத்திற்காக</span>
+    <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">வணிக — இருக்கை உரிமங்கள், வரம்பற்ற சுயவிவரங்கள்</h2>
+    <p class="sub">அளவு விலையுடன் ஒவ்வொரு இருக்கைக்கும் ஆண்டுதோறும் உரிமம். ஒவ்வொரு இருக்கையும் அனைத்து Pro அம்சங்களையும் வரம்பற்ற சுயவிவரங்களையும் பெறுகிறது — மேலும், ஒவ்வொரு அடுக்கையும் போலவே, ஒவ்வொரு சாதனத்திலும் முழுமையாக இயங்கி, எங்களுக்கு எந்தத் தரவும் திரும்ப அனுப்பப்படாமல். உரிமங்கள் உங்கள் நிர்வாகிக்கு மையமாக வழங்கப்பட்டு, ஒவ்வொரு சாதனத்திலும் ஆஃப்லைனில் சரிபார்க்கப்படுகின்றன.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>குழு</h3>
+        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ இருக்கை / ஆண்டு</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 இருக்கைகள்</div>
+        <ul><li>அனைத்து Pro அம்சங்கள்</li><li>இருக்கைக்கு வரம்பற்ற சுயவிவரங்கள்</li><li>மின்னஞ்சல் ஆதரவு மற்றும் புதுப்பிப்புகள்</li></ul>
+      </div>
+      <div class="tier">
+        <h3>வணிகம்</h3>
+        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ இருக்கை / ஆண்டு</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 இருக்கைகள்</div>
+        <ul><li>குழுவில் உள்ள அனைத்தும்</li><li>அளவு தள்ளுபடி</li><li>முன்னுரிமை ஆதரவு</li></ul>
+      </div>
+      <div class="tier">
+        <h3>அளவீடு</h3>
+        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ இருக்கை / ஆண்டு</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 இருக்கைகள்</div>
+        <ul><li>வணிகத்தில் உள்ள அனைத்தும்</li><li>சிறந்த இருக்கைக்கான விலை</li><li>இணைப்பு உதவி</li></ul>
+      </div>
+      <div class="tier">
+        <h3>நிறுவனம்</h3>
+        <div class="price" style="font-size:22px">பேசுவோம்</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ இருக்கைகள்</div>
+        <ul><li>தனிப்பயன் விலை மற்றும் விதிமுறைகள்</li><li>SSO-சரிபார்க்கப்பட்ட வழங்கல்</li><li>SLA மற்றும் அர்ப்பணிக்கப்பட்ட ஆதரவு</li><li>வரிசைப்படுத்தல் உதவி</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">பீட்டாவில் இருக்கும் போது இலவசம். தனிப்பட்ட அடுக்குகள் ஒருமுறை, ஒரு சாதனத்திற்கான Ed25519 உரிமங்கள், உள்ளூரிலேயே சரிபார்க்கப்படுகின்றன — செயல்படுத்தும் சர்வர் இல்லை. வணிகம் மைய வழங்கலுடன் ஒவ்வொரு இருக்கைக்கும் ஆண்டுதோறும். விலைகள் USD-யில்; உள்ளூர் வரிகள் பொருந்தலாம். நிறுவனம்: எங்களைத் தொடர்பு கொள்ளுங்கள். <a href="mailto:subumysore@gmail.com">எங்களைத் தொடர்பு கொள்ளுங்கள்</a>.</p>
+</section>
+
+<section id="get" class="wrap">
+  <span class="eyebrow">PolyglotFormFill-ஐப் பெறுங்கள்</span>
+  <h2 class="h2">ஒரு நிமிடத்தில் நிறுவுங்கள்</h2>
+  <p class="sub">இணையப் படிவ தானியங்கி நிரப்புதலுக்கு உலாவி நீட்டிப்பைச் சேர்க்கவும், அல்லது முழுமையான, வலுவூட்டப்பட்ட அனுபவத்திற்கு டெஸ்க்டாப் பயன்பாட்டை நிறுவவும். அவை ஒன்றாக வேலை செய்கின்றன.</p>
+  <div class="cta">
+    <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">Windows-க்கு பதிவிறக்கவும்</a>
+    <a class="btn ghost" href="/ta/install/">உலாவி நீட்டிப்பைப் பெறுங்கள் (பீட்டா)</a>
+    <span class="btn ghost soon" aria-disabled="true">Chrome Web Store — விரைவில்</span>
+  </div>
+  <p class="note">பீட்டா பதிவிறக்கங்கள் (Oracle Cloud-இல் ஹோஸ்ட் செய்யப்பட்டவை). Windows பதிப்பு கையொப்பமிடப்படாதது — Windows “அறியப்படாத வெளியீட்டாளர்” என எச்சரிக்கிறது (More info → Run anyway). நீட்டிப்பு இப்போதைக்கு டெவலப்பர் பயன்முறை வழியாக நிறுவப்படுகிறது; ஸ்டோர் பட்டியல்கள் நடைபெறுகின்றன. macOS மற்றும் Linux அடுத்தது.</p>
+</section>
+
+<section id="privacy" class="wrap">
+  <span class="eyebrow">தனியுரிமை</span>
+  <h2 class="h2">வாக்குறுதி, ஒரே வரியில்</h2>
+  <p class="sub">உங்கள் தரவு உங்கள் சாதனத்திலேயே செயலாக்கப்படுகிறது, ஒருபோதும் எங்களுக்கு அனுப்பப்படுவதில்லை. வெளியேறும் ஒரே விஷயங்கள் நீங்கள் மேற்கொள்ளும் செயல்கள் மட்டுமே — முடிக்கப்பட்ட ஒரு படிவத்தைச் சமர்ப்பிப்பது (அதன் பெறுநருக்கு நேரடியாக) அல்லது நீங்கள் தட்டச்சு செய்யும் இணையத் தேடல். அவை தங்கள் இலக்கிற்கு நேரடியாகச் செல்கின்றன, ஒருபோதும் எங்கள் வழியாக அல்ல. அதுதான் முழுப் பட்டியல்.</p>
+  <p style="margin-top:16px"><a class="btn ghost" href="/ta/privacy/">முழு தனியுரிமைக் கொள்கையைப் படியுங்கள்</a></p>
+</section>
+
+<footer class="wrap">
+  <div>© PolyglotFormFill · தனியுரிமை-முதன்மை படிவ தானியங்கி நிரப்புதல்</div>
+  <div>சாதனத்திலேயே · பூஜ்ஜிய டெலிமெட்ரி · திறந்த மற்றும் தணிக்கை செய்யத்தக்கது</div>
+</footer>
 </body>
 </html>

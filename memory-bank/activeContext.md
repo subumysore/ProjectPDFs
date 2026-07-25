@@ -1,5 +1,19 @@
 # Active Context
 
+## Marketing site fully localized in all 26 UI languages — 2026-07-25
+- `docs/marketing/build-site.mjs` rewritten: FULL landing + privacy + install rendered per language from
+  ONE template set + a per-language catalogue, replacing the old ~3 KB per-language stubs. English at
+  `/`, `/privacy/`, `/install/`; every other language at `/<lang>/…`.
+- SSOT: English site copy lives in `docs/marketing/i18n/en.json` (188 keys); 25 sibling `<lang>.json`
+  files carry the translations. Shared strings (`app.*`, `privacy.*`, `site.*`) still sourced from
+  `apps/extension/src/i18n.js` (not duplicated). Validator: `docs/marketing/check-i18n.mjs` (all pass).
+- Language switcher on every page + language-preserving nav/footer/switcher links; RTL for ar/he/fa/ur;
+  Hello background on all localized landings; PPP script, install version injection, SEO meta preserved.
+- **NOT deployed** — build is local only; owner reviews before `publish-site.ps1`.
+- **HEADS-UP (incoming, not done here):** pricing model changing (Free→30-day trial, Family 5→2 devices,
+  drop annual). Owner will update English `price.*` keys and re-translate just those separately. The
+  structure/switcher/links/RTL are complete for all 25 languages regardless of that copy change.
+
 ## Desktop ID import → retains the document image (extension parity, SSOT) — 2026-07-25
 - Desktop "Import a data source" (`App.tsx onDataSource`) now saves the whole licence/passport IMAGE
   alongside the extracted text, under the SAME shared-vault ontology the extension already writes

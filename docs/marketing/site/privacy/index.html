@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,118 +32,80 @@
   hr{border:none;border-top:1px solid var(--line);margin:34px 0}
   footer{color:var(--muted);font-size:13px}
   a{color:var(--teal-ink)}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
 </style>
 </head>
 <body>
-
-
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/" selected>English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
   <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>Privacy Policy</h1>
-  <div class="meta">Effective date: <span class="fill">18 July 2026</span> · Version 1.0</div>
-
-  <div class="disclaimer"><b>⚖ Draft pending legal review — not legal advice.</b> This is a drafting
-    template for the PolyglotFormFill product. It must be reviewed and approved by qualified legal counsel in
-    each jurisdiction where the Service is offered (incl. the EU/EEA under the GDPR, India under the DPDP
-    Act 2023, and the US under the CCPA/CPRA) before publication. Contact/identity fields are completed; a final read by counsel is still recommended before wide public release.</div>
-
-  <div class="tldr"><b>The substance, plainly:</b> <b>We do not see, store, or transmit your documents or
-    the data you enter, and we do not send them anywhere you did not intend.</b> Everything is processed on
-    your device. Your content leaves your device only when <i>you</i> take a specific action — submitting a
-    completed form to the recipient <i>you</i> choose, or a web search <i>you</i> type — and it goes
-    directly there, never through us.</div>
+  <div class="meta">Effective date: 18 July 2026 · Version 1.0</div>
+  
+  <div class="disclaimer"><b>⚖ Draft pending legal review — not legal advice. This is a drafting template for the PolyglotFormFill product. It must be reviewed and approved by qualified legal counsel in each jurisdiction where the Service is offered (incl. the EU/EEA under the GDPR, India under the DPDP Act 2023, and the US under the CCPA/CPRA) before publication. Contact/identity fields are completed; a final read by counsel is still recommended before wide public release.</b></div>
+  <div class="tldr">The substance, plainly: We do not see, store, or transmit your documents or the data you enter, and we do not send them anywhere you did not intend. Everything is processed on your device. Your content leaves your device only when you take a specific action — submitting a completed form to the recipient you choose, or a web search you type — and it goes directly there, never through us.</div>
 
   <h2><span class="n">1.</span>Who we are</h2>
-  <p>This Policy is issued by <span class="fill">Subramanya Mysore (sole proprietor)</span>, <span class="fill">India</span> ("we", "us"), responsible for the PolyglotFormFill application, browser extension, and
-    website (the "Service"). For the GDPR we act as <b>data controller</b>; under the India DPDP Act 2023 as
-    the <b>Data Fiduciary</b>; where we process no personal data, no such role arises.
-    <b>Grievance Officer / Contact:</b> <span class="fill">Subramanya Mysore · subumysore@gmail.com</span>.</p>
+  <p>This Policy is issued by Subramanya Mysore (sole proprietor), India ("we", "us"), responsible for the PolyglotFormFill application, browser extension, and website (the "Service"). For the GDPR we act as data controller; under the India DPDP Act 2023 as the Data Fiduciary; where we process no personal data, no such role arises. Grievance Officer / Contact: Subramanya Mysore · subumysore@gmail.com.</p>
 
   <h2><span class="n">2.</span>Definitions</h2>
   <ul>
-    <li><b>Personal Data</b> — information relating to an identifiable natural person.</li>
-    <li><b>User Content</b> — the documents, forms, images, and values you enter or store (your "vault"),
-      including any Personal Data within them.</li>
-    <li><b>Device</b> — the computer or device on which you run the Service.</li>
+    <li>Personal Data — information relating to an identifiable natural person.</li>
+    <li>User Content — the documents, forms, images, and values you enter or store (your "vault"), including any Personal Data within them.</li>
+    <li>Device — the computer or device on which you run the Service.</li>
   </ul>
 
   <h2><span class="n">3.</span>Our core privacy principle</h2>
-  <p>The Service is designed so that <b>we do not see, store, or transmit your User Content, and we do not
-    send it to any location you did not intend.</b> Specifically:</p>
+  <p>The Service is designed so that we do not see, store, or transmit your User Content, and we do not send it to any location you did not intend. Specifically:</p>
   <ol>
-    <li><b>On-device processing.</b> Reading/rendering, OCR, translation, field detection, filling, export,
-      and signing are performed <b>locally on your Device</b>. We do not receive your User Content to do them.</li>
-    <li><b>No collection by us.</b> We do not collect, receive, access, or store your User Content. There is
-      <b>no account</b> required and <b>no upload</b> of your User Content to us.</li>
-    <li><b>User-directed transmission only.</b> User Content leaves your Device only when you initiate a
-      specific action, and only to the destination you choose:
-      <div class="egress"><b>(a) Submitting a completed form</b> — transmitted <b>directly from your Device
-        to the recipient you select</b> (e.g. a government or vendor site). We do not proxy, intercept,
-        receive, retain, or access it.</div>
-      <div class="egress"><b>(b) Web search (optional)</b> — only the <b>search terms you type</b> are sent,
-        directly to the third-party search provider (<span class="fill">DuckDuckGo</span>), to return
-        results. No User Content, vault data, or identifiers are sent. Enter a URL to avoid this entirely.</div>
-      These are the only circumstances in which content or search terms leave your Device — each
-      user-initiated, clearly labelled, and directed to a destination you selected.</li>
+    <li>On-device processing. Reading/rendering, OCR, translation, field detection, filling, export, and signing are performed locally on your Device. We do not receive your User Content to do them.</li>
+    <li>No collection by us. We do not collect, receive, access, or store your User Content. There is no account required and no upload of your User Content to us.</li>
+    <li>User-directed transmission only. User Content leaves your Device only when you initiate a specific action, and only to the destination you choose:
+      <div class="egress">(a) Submitting a completed form — transmitted directly from your Device to the recipient you select (e.g. a government or vendor site). We do not proxy, intercept, receive, retain, or access it.</div>
+      <div class="egress">(b) Web search (optional) — only the search terms you type are sent, directly to the third-party search provider (DuckDuckGo), to return results. No User Content, vault data, or identifiers are sent. Enter a URL to avoid this entirely.</div>
+      These are the only circumstances in which content or search terms leave your Device — each user-initiated, clearly labelled, and directed to a destination you selected.</li>
   </ol>
 
   <h2><span class="n">4.</span>Limited non-content data we may process</h2>
   <ul>
-    <li><b>Software distribution & updates.</b> Downloading/updating the Service, or its download of assets
-      (updates, fonts, models), makes a one-way request to the relevant channel, which may process technical
-      data (e.g. IP) as an independent controller under its own policy. This is a <b>download to your
-      Device</b> and provides no path to upload your User Content. <span class="fill">[confirm hosts]</span></li>
-    <li><b>Payments & licensing.</b> Paid features are unlocked by an <b>offline signed license verified on
-      your Device</b> (contacts no server). If you purchase, payment is handled by
-      <span class="fill">not applicable (no paid features yet)</span>; we receive only what is needed to issue/support the license
-      (e.g. name, email, order id) — never your User Content.</li>
-    <li><b>Voluntary communications.</b> If you contact support, we process what you provide to respond.</li>
+    <li>Software distribution &amp; updates. Downloading/updating the Service, or its download of assets (updates, fonts, models), makes a one-way request to the relevant channel, which may process technical data (e.g. IP) as an independent controller under its own policy. This is a download to your Device and provides no path to upload your User Content.</li>
+    <li>Payments &amp; licensing. Paid features are unlocked by an offline signed license verified on your Device (contacts no server). If you purchase, payment is handled by not applicable (no paid features yet); we receive only what is needed to issue/support the license (e.g. name, email, order id) — never your User Content.</li>
+    <li>Voluntary communications. If you contact support, we process what you provide to respond.</li>
   </ul>
-  <p class="muted">We do not use analytics, advertising identifiers, tracking technologies, or
-    content-bearing crash reporting.</p>
+  <p class="muted">We do not use analytics, advertising identifiers, tracking technologies, or content-bearing crash reporting.</p>
 
   <h2><span class="n">5.</span>Legal bases (GDPR, where applicable)</h2>
-  <p>For the limited processing in §4: contract (Art. 6(1)(b)) for licensing/support; legitimate interests
-    (Art. 6(1)(f)) for secure distribution/updates; consent (Art. 6(1)(a)) where required. No legal basis is
-    required for User Content because we do not process it. <span class="fill">[counsel to confirm]</span></p>
+  <p>For the limited processing in §4: contract (Art. 6(1)(b)) for licensing/support; legitimate interests (Art. 6(1)(f)) for secure distribution/updates; consent (Art. 6(1)(a)) where required. No legal basis is required for User Content because we do not process it.</p>
 
   <h2><span class="n">6.</span>Security of your on-device data</h2>
   <ul>
-    <li>Your vault is stored only on your Device and is <b>encrypted at rest (AES-256-GCM)</b>.</li>
-    <li>The key is derived on unlock from your passphrase or a hardware passkey (WebAuthn); it is
-      <b>never stored</b> and never transmitted.</li>
-    <li>The extension uses least-privilege permissions and contains <b>no remote code</b> (Manifest V3).</li>
+    <li>Your vault is stored only on your Device and is encrypted at rest (AES-256-GCM).</li>
+    <li>The key is derived on unlock from your passphrase or a hardware passkey (WebAuthn); it is never stored and never transmitted.</li>
+    <li>The extension uses least-privilege permissions and contains no remote code (Manifest V3).</li>
   </ul>
 
-  <h2><span class="n">7.</span>Sharing & international transfers</h2>
-  <p>Because we do not receive your User Content, <b>we do not share, sell, or transfer it</b>. For the
-    limited non-content data in §4, we share only with the providers named there, under contract; any
-    cross-border transfer follows that provider's safeguards. <span class="fill">[transfer mechanisms +
-    sub-processors]</span></p>
+  <h2><span class="n">7.</span>Sharing &amp; international transfers</h2>
+  <p>Because we do not receive your User Content, we do not share, sell, or transfer it. For the limited non-content data in §4, we share only with the providers named there, under contract; any cross-border transfer follows that provider's safeguards.</p>
 
   <h2><span class="n">8.</span>Retention</h2>
-  <p>We do not retain your User Content (we never receive it). Non-content data in §4 is retained only as
-    long as necessary. <span class="fill">[specify periods]</span></p>
+  <p>We do not retain your User Content (we never receive it). Non-content data in §4 is retained only as long as necessary.</p>
 
   <h2><span class="n">9.</span>Your rights</h2>
-  <p>Subject to applicable law (GDPR Arts. 15–22; India DPDP Ch. III; CCPA/CPRA) you may have rights to
-    access, correct, delete, port, restrict, or object, to withdraw consent, and to complain to a
-    supervisory authority / the Data Protection Board. <b>Because your User Content resides solely on your
-    Device, you access and delete it directly</b> (in the Service or by removing local data). For the
-    limited non-content data we hold, contact <span class="fill">subumysore@gmail.com</span>.</p>
+  <p>Subject to applicable law (GDPR Arts. 15–22; India DPDP Ch. III; CCPA/CPRA) you may have rights to access, correct, delete, port, restrict, or object, to withdraw consent, and to complain to a supervisory authority / the Data Protection Board. Because your User Content resides solely on your Device, you access and delete it directly (in the Service or by removing local data). For the limited non-content data we hold, contact subumysore@gmail.com.</p>
 
   <h2><span class="n">10.</span>Children</h2>
-  <p>The Service is not directed to, and we do not knowingly process Personal Data of, children under
-    <span class="fill">13</span>.</p>
+  <p>The Service is not directed to, and we do not knowingly process Personal Data of, children under 13.</p>
 
   <h2><span class="n">11.</span>Changes</h2>
-  <p>We may update this Policy; material changes update the Effective date and, where required, include
-    additional notice.</p>
+  <p>We may update this Policy; material changes update the Effective date and, where required, include additional notice.</p>
 
   <hr>
-  <footer><span class="fill">Subramanya Mysore (sole proprietor)</span> · Grievance Officer/Contact:
-    <span class="fill">Subramanya Mysore · subumysore@gmail.com</span> · DPO/EU Representative if appointed. PolyglotFormFill —
-    privacy-first, on-device form autofill.</footer>
+  <footer>Subramanya Mysore (sole proprietor) · Grievance Officer/Contact: Subramanya Mysore · subumysore@gmail.com · DPO/EU Representative if appointed. PolyglotFormFill — privacy-first, on-device form autofill.</footer>
+  <p style="margin-top:20px"><a href="/">← Back to PolyglotFormFill</a></p>
 </div>
 </body>
 </html>

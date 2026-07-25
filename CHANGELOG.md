@@ -4,6 +4,27 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — marketing site fully localized in all 26 UI languages (2026-07-25)
+- **Every marketing page now renders completely in the visitor's chosen language — no more 3 KB stubs.**
+  The site generator (`docs/marketing/build-site.mjs`) was rewritten to render the FULL landing, privacy
+  policy, and install page from ONE set of templates plus a per-language string catalogue, once per
+  language. Previously only English was full and each `/<lang>/` page was a translated headline + blurb.
+- **Single source of truth for site copy:** all visible English marketing/legal/install text was
+  extracted into `docs/marketing/i18n/en.json` (188 keys); each of the 25 other UI languages has a
+  sibling `<lang>.json` with high-quality human-style translations (hi bn ta te kn ml gu pa mr ur ar he
+  fa zh ja ko th vi id ru es fr de pt tr). Shared strings (`app.*`, `privacy.*`, `site.*`) still come
+  from the extension catalogue (`apps/extension/src/i18n.js`) — not duplicated.
+- **Language switcher on EVERY page** (landing, privacy, install), in every language, with
+  **language-preserving navigation**: on `/es/` the nav/footer links point at `/es/privacy/`,
+  `/es/install/`, and the switcher swaps only the language segment while keeping the same page type;
+  English stays at `/`, `/privacy/`, `/install/`.
+- **RTL** (`dir="rtl"`) for ar/he/fa/ur across all three page types; the animated multilingual "Hello"
+  background renders on all localized landings; pricing PPP script, install-page version injection
+  (extension v1.0.1 / desktop v1.0.0), and SEO meta preserved.
+- New validator `docs/marketing/check-i18n.mjs` enforces identical key sets, matching types/array
+  lengths, and `{each}` placeholder preservation across all language files (all 25 pass, 188 keys each).
+- On-device / privacy invariant unaffected: pure build-time static generation, no user content, no egress.
+
 ### Fixed — desktop classifies an OCR'd licence BACK as driver_license_back (extension parity) (2026-07-25)
 - `documentImageKey()` now takes the OCR text and mirrors the extension's `docImageKey()` fully: a decoded barcode = BACK, identity fields (name/DOB/address/licence no) = FRONT, class/restriction/endorsement boilerplate = BACK, passport markings = passport. So importing the BACK of a licence (no scannable barcode) still retains its image as a `driver_license_back` vault entry, and an image-only result (no text fields) no longer shows a “couldn’t read” error or hides Save. Unit-tested (`ocr.test.mjs` +1).
 
