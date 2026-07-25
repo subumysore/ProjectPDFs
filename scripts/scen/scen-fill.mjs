@@ -29,15 +29,23 @@ export default async function ({ ev, setFile, clickText, point, spotlight, clear
     await ev(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Fill existing fields')?.click();`);
     for (let i = 0; i < 7; i++) await sleep(900);
   }
-  await sleep(1200);
-  // AFTER: reveal the filled fields as a clean key/value list so the DIVERSE data is obvious. The
-  // toggle is a clickable summary/link — walk up from the text node to something clickable.
-  await ev(`
-    const hit=[...document.querySelectorAll('summary,button,a,div,span,p')].find(e=>/Prefer a list|every field as a key/i.test((e.textContent||''))&&e.textContent.length<80);
-    if(hit){ let t=hit; for(let i=0;i<3&&t;i++){ t.click(); t=t.parentElement; } }
-    return !!hit;`);
   await sleep(1000);
-  await ev(`const t=[...document.querySelectorAll('table,tbody')].map(x=>x).find(x=>x.getBoundingClientRect().height>80); if(t)t.scrollIntoView({block:'start'}); window.scrollBy(0,-40); return true;`);
-  await sleep(500);
-  await spotlight('table', 14, 'last'); await sleep(3200); await clearSpotlight();
+  // AFTER: keep the picture MOVING — smoothly scroll through the filled form so every filled field
+  // (the diverse data) is revealed in continuous motion, instead of holding on a static frame.
+  // Find the tallest scrollable region (the form/PDF review) and pan it top→bottom, then back up.
+  await ev(`
+    window.__sc = (()=>{ let best=document.scrollingElement, bh=0;
+      for(const el of document.querySelectorAll('*')){ const s=el.scrollHeight-el.clientHeight; const cs=getComputedStyle(el);
+        if(s>bh && /(auto|scroll)/.test(cs.overflowY) && el.clientHeight>200){ best=el; bh=s; } }
+      return best; })();
+    if(window.__sc.scrollTo){window.__sc.scrollTo({top:0});}else{window.scrollTo(0,0);} return true;`);
+  await sleep(600);
+  const range = (await ev(`return window.__sc.scrollHeight-window.__sc.clientHeight`)) || 600;
+  const steps = 26;
+  for (let i = 0; i <= steps; i++) {
+    const y = Math.round((range * i) / steps);
+    await ev(`window.__sc.scrollTo?window.__sc.scrollTo({top:${y},behavior:'auto'}):window.scrollTo(0,${y}); return true;`);
+    await sleep(150);
+  }
+  await sleep(600);
 }
