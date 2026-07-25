@@ -11,15 +11,25 @@ export interface ExtractedField {
 
 // The canonical key + human label under which the WHOLE source document image is retained in the
 // vault, alongside the recognised fields. These keys are the SAME ontology the browser extension
-// writes (apps/extension/src/capture.js docImageKey) — one shared vault, one source of truth.
+// writes, and the classification MIRRORS apps/extension/src/capture.js docImageKey() so the desktop
+// and extension agree on a shared vault (one source of truth): a decoded PDF417 barcode is the BACK;
+// otherwise the printed side is classified from the OCR TEXT — identity markers (name/DOB/address) =
+// FRONT, the boilerplate side (class/restrictions/endorsements) = BACK.
+const BACK_MARKERS = /\b(class|restr|restrictions|endorsement|gvwr|commercial|legal presence|organ donor|noncommercial)\b/i;
+const DL_MARKERS = /driver|licen[sc]e|\bdln\b/i;
+const PASSPORT_MARKERS = /passport|passeport|pasaporte/i;
 export function documentImageKey(
   fields: ReadonlyArray<ExtractedField>,
-  isBarcodeBack: boolean,
+  opts: { isBarcodeBack?: boolean; text?: string } = {},
 ): { key: string; label: string } {
   const keys = new Set(fields.map((f) => f.ontology_key));
-  if (isBarcodeBack) return { key: "driver_license_back", label: "Driver’s licence — back (barcode)" };
-  if (keys.has("passport_no")) return { key: "passport_image", label: "Passport" };
-  if (keys.has("license_no")) return { key: "driver_license_front", label: "Driver’s licence — front" };
+  const text = opts.text || "";
+  if (opts.isBarcodeBack) return { key: "driver_license_back", label: "Driver’s licence — back (barcode)" };
+  if (keys.has("passport_no") || PASSPORT_MARKERS.test(text)) return { key: "passport_image", label: "Passport" };
+  const hasIdentity = ["first_name", "last_name", "date_of_birth", "address_1"].some((k) => keys.has(k)) || keys.has("license_no");
+  if (hasIdentity) return { key: "driver_license_front", label: "Driver’s licence — front" };
+  if (BACK_MARKERS.test(text)) return { key: "driver_license_back", label: "Driver’s licence — back" };
+  if (DL_MARKERS.test(text)) return { key: "driver_license_front", label: "Driver’s licence — front" };
   return { key: "document_image", label: "ID document" };
 }
 

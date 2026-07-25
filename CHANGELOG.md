@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — desktop classifies an OCR'd licence BACK as driver_license_back (extension parity) (2026-07-25)
+- `documentImageKey()` now takes the OCR text and mirrors the extension's `docImageKey()` fully: a decoded barcode = BACK, identity fields (name/DOB/address/licence no) = FRONT, class/restriction/endorsement boilerplate = BACK, passport markings = passport. So importing the BACK of a licence (no scannable barcode) still retains its image as a `driver_license_back` vault entry, and an image-only result (no text fields) no longer shows a “couldn’t read” error or hides Save. Unit-tested (`ocr.test.mjs` +1).
+
 ### Fixed — passport "Given names" no longer mis-parsed (OCR) (2026-07-25)
 - On-device OCR read a passport line `Given names: JOHN QUINCY` into `first_name = "names: JOHN QUINCY"` (the label `given names` was unknown, so the `given` prefix swallowed `names:`). Added `given names`/`forenames` as a full-name label that splits into first (+middle); `apps/app/src/ocr.ts`, unit-tested (`ocr.test.mjs` +1).
 

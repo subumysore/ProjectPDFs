@@ -62,11 +62,22 @@ import { documentImageKey } from "./ocr.ts";
 // number → passport; a licence number → front; anything else → a generic document image.
 test("documentImageKey aligns with the extension's shared ontology", () => {
   const f = (k) => [{ ontology_key: k, value: "x" }];
-  assert.equal(documentImageKey(f("license_no"), true).key, "driver_license_back"); // barcode wins
-  assert.equal(documentImageKey(f("passport_no"), false).key, "passport_image");
-  assert.equal(documentImageKey(f("license_no"), false).key, "driver_license_front");
-  assert.equal(documentImageKey(f("first_name"), false).key, "document_image");
-  assert.equal(documentImageKey([], false).key, "document_image");
+  assert.equal(documentImageKey(f("license_no"), { isBarcodeBack: true }).key, "driver_license_back"); // barcode wins
+  assert.equal(documentImageKey(f("passport_no")).key, "passport_image");
+  assert.equal(documentImageKey(f("license_no")).key, "driver_license_front");
+  assert.equal(documentImageKey(f("first_name")).key, "driver_license_front"); // identity present
+  assert.equal(documentImageKey([]).key, "document_image");
+});
+
+// The BACK of a licence has NO identity fields but DOES carry class/restriction/endorsement text —
+// OCR (no barcode) must still classify it as driver_license_back, so its image saves as a KV pair.
+test("documentImageKey: OCR'd licence back (no barcode) → driver_license_back from text markers", () => {
+  const backText = "The State of Florida\nDriver License (back)\nCLASS: E\nREST: None\nEND: None";
+  assert.equal(documentImageKey([], { text: backText }).key, "driver_license_back");
+  // a passport data page (text) → passport_image even without a parsed passport_no
+  assert.equal(documentImageKey([], { text: "United States of America PASSPORT" }).key, "passport_image");
+  // a plain document with no markers → generic
+  assert.equal(documentImageKey([], { text: "Hello world" }).key, "document_image");
 });
 
 test("passport 'Given names' splits into first (+middle), not first_name='names: ...'", () => {

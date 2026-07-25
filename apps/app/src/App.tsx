@@ -451,19 +451,23 @@ export function App() {
       // 1) PDF417 barcode (back of a licence) → exact AAMVA fields.
       let fields = await readIdBarcode(file);
       const isBarcodeBack = fields.length > 0;
-      // 2) else OCR the printed side (front).
-      if (!fields.length) fields = (await extractFromImage(file, setOcrPct, baseLang)).fields;
+      // 2) else OCR the printed side. Keep the recognised TEXT too — it lets us classify a licence
+      //    BACK (class/restrictions boilerplate, no identity fields) even without a scannable barcode.
+      let ocrText = "";
+      if (!fields.length) { const r = await extractFromImage(file, setOcrPct, baseLang); fields = r.fields; ocrText = r.text; }
       setExtracted(fields);
-      // Classify the document so the retained image gets a meaningful key. The BACK of a US/Canada
-      // licence is the PDF417 barcode; a passport carries a passport number; otherwise treat a
-      // recognised licence/id number as the FRONT of the card.
+      // Classify the document so the retained image gets a meaningful key (shared ontology with the
+      // extension): decoded barcode = licence BACK; identity fields = FRONT; class/restriction text
+      // = BACK; a passport number/marking = passport.
       if (url) {
-        // Retain the whole source image under the SAME ontology the extension writes (shared vault).
-        const { key, label } = documentImageKey(fields, isBarcodeBack);
+        const { key, label } = documentImageKey(fields, { isBarcodeBack, text: ocrText });
         setDocImage({ url, key, label });
         setSaveDocImage(true);
       }
-      if (!fields.length) {
+      // Only warn if we got NOTHING usable — no text fields AND no document image to retain. A
+      // licence BACK (class/restriction boilerplate) yields no vault text fields but is still worth
+      // keeping as its image (driver_license_back), so that path must not show a scary error.
+      if (!fields.length && !url) {
         setErr("Couldn’t read that image. For a driver’s licence: the BACK (barcode) gives exact data; or take a sharper, well-lit photo of the FRONT.");
       }
     } catch (e) {
