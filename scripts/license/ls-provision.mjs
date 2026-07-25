@@ -61,20 +61,20 @@ const WANT = [
   console.log(`Store: ${store.attributes.name}  id=${storeId}  slug=${slug}  currency=${currency}`);
   if (currency !== "USD") console.warn(`  ! Store currency is ${currency}, expected USD.`);
 
-  // 2) Read back the variants (IDs) for our 3 products
-  const variants = await all(`${BASE}/variants?filter[status]=published`);
+  // 2) Read back the variant ID for each of our 3 products (fetch variants PER product — no global
+  //    status filter, which returns nothing while the store is still in review / test mode).
   const products = await all(`${BASE}/products?filter[store_id]=${storeId}`);
-  const prodName = Object.fromEntries(products.map((p) => [p.id, p.attributes.name]));
+  console.log(`  products: ${products.map((p) => `${p.attributes.name} [${p.attributes.status}]`).join(" · ") || "(none)"}`);
   const found = {};
   for (const w of WANT) {
-    const v = variants.find((x) => w.match.test(prodName[x.attributes.product_id] || x.attributes.name || ""));
-    if (v) {
-      found[w.key] = { variantId: v.id, product: prodName[v.attributes.product_id], price: v.attributes.price };
-      const priceOk = v.attributes.price === w.price ? "✓" : `! expected ${w.price}`;
-      console.log(`  ${w.key.padEnd(9)} variantId=${v.id}  "${found[w.key].product}"  price=${v.attributes.price} ${priceOk}`);
-    } else {
-      console.warn(`  ${w.key.padEnd(9)} NOT FOUND — create the "${w.key}" product in the dashboard (see setup sheet).`);
-    }
+    const prod = products.find((p) => w.match.test(p.attributes.name || ""));
+    if (!prod) { console.warn(`  ${w.key.padEnd(9)} product NOT FOUND — make sure a product name contains "${w.key}".`); continue; }
+    const vs = await all(`${BASE}/variants?filter[product_id]=${prod.id}`);
+    const v = vs[0];
+    if (!v) { console.warn(`  ${w.key.padEnd(9)} "${prod.attributes.name}" has no variant yet.`); continue; }
+    found[w.key] = { variantId: v.id, product: prod.attributes.name, price: v.attributes.price, status: v.attributes.status };
+    const priceOk = v.attributes.price === w.price ? "✓" : `! expected ${w.price}`;
+    console.log(`  ${w.key.padEnd(9)} variantId=${v.id}  "${prod.attributes.name}"  price=${v.attributes.price} [${v.attributes.status}] ${priceOk}`);
   }
 
   // 3) Discounts — create any missing PPP band (percent, forever, unlimited, all products)

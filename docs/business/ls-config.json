@@ -1,0 +1,35 @@
+{
+  "storeId": "439064",
+  "slug": "polyglotformfill",
+  "currency": "USD",
+  "variants": {
+    "pro": {
+      "variantId": "1948077",
+      "product": "PolyglotFormFil PRO",
+      "price": 1900,
+      "status": "pending"
+    },
+    "duo": {
+      "variantId": "1948114",
+      "product": "PolyglotFormFil DUO",
+      "price": 2900,
+      "status": "pending"
+    },
+    "business": {
+      "variantId": "1948127",
+      "product": "PolyglotFormFil Business",
+      "price": 2900,
+      "status": "pending"
+    }
+  },
+  "pppBands": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    65
+  ],
+  "generatedNote": "non-secret; safe to commit"
+}
