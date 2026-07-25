@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Preise</span>
   <h2 class="h2">Einmal kaufen. Es gehört Ihnen. Kein Abo.</h2>
-  <p class="sub">Eine einmalige Lizenz pro Gerät — offline auf Ihrem Gerät verifiziert, also kein Aktivierungsserver und kein einziger Netzwerkaufruf. Kostenlos während der öffentlichen Beta; die Preise unten treten zum Start in Kraft.</p>
+  <p class="sub">Beginnen Sie mit einer 30-tägigen kostenlosen Testphase — alle Funktionen, auf Ihrem Gerät. Behalten Sie es mit einer einmaligen Lizenz pro Gerät, offline verifiziert: kein Aktivierungsserver, kein Abo, kein Konto.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Kostenlos</h3>
-      <div class="price">$0</div>
-      <ul><li>Grundlegendes automatisches Ausfüllen von Web-Formularen</li><li>Ein Profil</li><li>Grundlegendes PDF-Ausfüllen</li><li>Verschlüsselter Tresor auf dem Gerät</li><li>Immer vollständig auf dem Gerät</li></ul>
+      <h3>Kostenlose Testphase</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">für 30 Tage</span></div>
+      <ul><li>Alle Funktionen, 30 Tage lang kostenlos</li><li>Auf diesem Gerät</li><li>Kein Konto · vollständig auf dem Gerät</li><li>Danach ein einmaliger Kauf, um es zu behalten</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Kostenlos testen</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">einmalig / Gerät</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 Gerät · or <span class="ppp" data-usd="9">$9</span>/Jahr</div>
-      <ul><li>Alles aus Kostenlos</li><li>1 Gerät</li><li>Bis zu 3 Profile</li><li>Jedes PDF ausfüllbar machen (OCR)</li><li>Word- und Excel-Formulare</li><li>Übersetztes Ausfüllen (Sprachpakete)</li><li>Platzierung von Unterschrift und Foto</li><li>Verschlüsseltes Backup und Übertragung</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 Gerät</div>
+      <ul><li>Alle Funktionen, freigeschaltet</li><li>1 Gerät</li><li>Bis zu 3 Profile</li><li>Jedes PDF ausfüllbar machen (OCR)</li><li>Word- und Excel-Formulare</li><li>Übersetztes Ausfüllen (alle Sprachen)</li><li>Platzierung von Unterschrift und Foto</li><li>Verschlüsseltes Backup und Übertragung</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Kaufen</a>
     </div>
     <div class="tier">
-      <h3>Familie</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">einmalig</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">bis zu 5 Geräte (~<span class="ppp" data-usd="6">$6</span> je) · or <span class="ppp" data-usd="15">$15</span>/Jahr</div>
-      <ul><li>Alles aus Pro, auf bis zu 5 Geräten</li><li>Bis zu 5 Profile</li><li>Verwalten Sie die Profile des Haushalts von jedem Gerät aus</li><li>Priorisierter Support</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 Geräte (~<span class="ppp" data-usd="15">$15</span> je)</div>
+      <ul><li>Alles aus Pro, auf 2 Geräten</li><li>Bis zu 5 Profile</li><li>Geteilt zwischen Ihren beiden Geräten</li><li>Priorisierter Support</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Kaufen</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Für Teams und Unternehmen</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Kommerziell — Platzlizenzen, unbegrenzte Profile</h2>
-    <p class="sub">Jährliche Lizenzierung pro Platz mit Mengenpreisen. Jeder Platz erhält alle Pro-Funktionen und unbegrenzte Profile — und läuft, wie jede Stufe, vollständig auf jedem Gerät, ohne dass Daten an uns zurückgesendet werden. Lizenzen werden zentral an Ihren Administrator ausgestellt und offline auf jedem Gerät verifiziert.</p>
+    <p class="sub">Jährliche Lizenzierung pro Platz — ein einfacher Preis, für jede Teamgröße. Jeder Platz erhält alle Pro-Funktionen und unbegrenzte Profile, läuft vollständig auf jedem Gerät, ohne dass Daten an uns zurückgesendet werden, und wird zentral an Ihren Administrator ausgestellt und offline verifiziert.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Team</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ Platz / Jahr</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 Plätze</div>
-        <ul><li>Alle Pro-Funktionen</li><li>Unbegrenzte Profile / Platz</li><li>E-Mail-Support und Updates</li></ul>
-      </div>
-      <div class="tier">
         <h3>Business</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ Platz / Jahr</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 Plätze</div>
-        <ul><li>Alles aus Team</li><li>Mengenrabatt</li><li>Priorisierter Support</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Scale</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ Platz / Jahr</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 Plätze</div>
-        <ul><li>Alles aus Business</li><li>Bester Preis pro Platz</li><li>Onboarding-Hilfe</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ Platz / Jahr</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 Plätze</div>
+        <ul><li>Alle Pro-Funktionen</li><li>Unbegrenzte Profile pro Platz</li><li>Zentrale Ausstellung an Ihren Administrator</li><li>Priorisierter Support und Updates</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Business holen</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Plätze an der Kasse wählen · 20+ → kontaktieren Sie uns</div>
       </div>
       <div class="tier">
         <h3>Enterprise</h3>
         <div class="price" style="font-size:22px">Sprechen wir</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">über 500 Plätze</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ Plätze</div>
         <ul><li>Individuelle Preise und Konditionen</li><li>SSO-verifizierte Bereitstellung</li><li>SLA und dedizierter Support</li><li>Unterstützung bei der Bereitstellung</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Sprechen wir</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Kostenlos während der Beta. Persönliche Stufen sind einmalige Ed25519-Lizenzen pro Gerät, lokal verifiziert — kein Aktivierungsserver. Kommerziell ist jährlich pro Platz mit zentraler Ausstellung. Preise in USD; lokale Steuern können anfallen. Enterprise: kontaktieren Sie uns. <a href="mailto:subumysore@gmail.com">kontaktieren Sie uns</a>.</p>
+  <p class="note">30 Tage lang kostenlos starten. Persönliche Stufen sind einmalige Ed25519-Lizenzen pro Gerät, lokal verifiziert — kein Aktivierungsserver, kein Abo. Kommerziell kostet $29 pro Platz und Jahr mit zentraler Ausstellung. Preise in USD, an Ihre Region angepasst; lokale Steuern können anfallen. Enterprise (20+ Plätze): <a href="mailto:subumysore@gmail.com">kontaktieren Sie uns</a>.</p>
 </section>
 
 <section id="get" class="wrap">

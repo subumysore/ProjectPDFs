@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Giá</span>
   <h2 class="h2">Mua một lần. Sở hữu trọn đời. Không thuê bao.</h2>
-  <p class="sub">Giấy phép một lần, cho mỗi thiết bị — được xác minh ngoại tuyến trên thiết bị của bạn, nên không có máy chủ kích hoạt và không một lần gọi mạng nào. Miễn phí trong giai đoạn beta công khai; các mức giá dưới đây có hiệu lực khi ra mắt.</p>
+  <p class="sub">Bắt đầu với bản dùng thử miễn phí 30 ngày — mọi tính năng, trên thiết bị của bạn. Giữ lại bằng một giấy phép trả một lần, cho mỗi thiết bị, được xác minh ngoại tuyến: không máy chủ kích hoạt, không thuê bao, không tài khoản.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Miễn phí</h3>
-      <div class="price">$0</div>
-      <ul><li>Tự điền biểu mẫu web cốt lõi</li><li>Một hồ sơ</li><li>Điền PDF cơ bản</li><li>Két mã hóa trên thiết bị</li><li>Luôn hoàn toàn trên thiết bị</li></ul>
+      <h3>Dùng thử miễn phí</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">trong 30 ngày</span></div>
+      <ul><li>Mọi tính năng, miễn phí trong 30 ngày</li><li>Trên thiết bị này</li><li>Không tài khoản · hoàn toàn trên thiết bị</li><li>Sau đó mua một lần để giữ lại</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Bắt đầu dùng thử miễn phí</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">một lần / thiết bị</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 thiết bị · or <span class="ppp" data-usd="9">$9</span>/năm</div>
-      <ul><li>Mọi thứ trong bản Miễn phí</li><li>1 thiết bị</li><li>Tối đa 3 hồ sơ</li><li>Biến mọi PDF thành điền được (OCR)</li><li>Biểu mẫu Word và Excel</li><li>Điền có dịch (gói ngôn ngữ)</li><li>Đặt chữ ký và ảnh</li><li>Sao lưu và chuyển giao mã hóa</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 thiết bị</div>
+      <ul><li>Mọi tính năng, được mở khóa</li><li>1 thiết bị</li><li>Tối đa 3 hồ sơ</li><li>Biến mọi PDF thành điền được (OCR)</li><li>Biểu mẫu Word và Excel</li><li>Điền có dịch (mọi ngôn ngữ)</li><li>Đặt chữ ký và ảnh</li><li>Sao lưu và chuyển giao mã hóa</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Mua</a>
     </div>
     <div class="tier">
-      <h3>Gia đình</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">một lần</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">tối đa 5 thiết bị (~<span class="ppp" data-usd="6">$6</span> mỗi thiết bị) · or <span class="ppp" data-usd="15">$15</span>/năm</div>
-      <ul><li>Mọi thứ trong Pro, trên tối đa 5 thiết bị</li><li>Tối đa 5 hồ sơ</li><li>Quản lý hồ sơ của cả nhà từ bất kỳ thiết bị nào</li><li>Hỗ trợ ưu tiên</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 thiết bị (~<span class="ppp" data-usd="15">$15</span> mỗi thiết bị)</div>
+      <ul><li>Mọi thứ trong Pro, trên 2 thiết bị</li><li>Tối đa 5 hồ sơ</li><li>Chia sẻ giữa cả hai thiết bị của bạn</li><li>Hỗ trợ ưu tiên</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Mua</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Dành cho nhóm và doanh nghiệp</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Thương mại — giấy phép theo ghế, hồ sơ không giới hạn</h2>
-    <p class="sub">Cấp phép hằng năm theo từng ghế với giá theo số lượng. Mỗi ghế có tất cả tính năng Pro và hồ sơ không giới hạn — và, như mọi bậc, chạy hoàn toàn trên từng thiết bị mà không gửi dữ liệu nào về chúng tôi. Giấy phép được cấp tập trung cho quản trị viên của bạn và xác minh ngoại tuyến trên từng thiết bị.</p>
+    <p class="sub">Cấp phép hằng năm theo từng ghế — một mức giá đơn giản, cho mọi quy mô nhóm. Mỗi ghế có tất cả tính năng Pro và hồ sơ không giới hạn, chạy hoàn toàn trên từng thiết bị mà không gửi dữ liệu nào về chúng tôi, và được cấp tập trung cho quản trị viên của bạn cùng xác minh ngoại tuyến.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Nhóm</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ghế / năm</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 ghế</div>
-        <ul><li>Tất cả tính năng Pro</li><li>Hồ sơ không giới hạn / ghế</li><li>Hỗ trợ qua email và cập nhật</li></ul>
-      </div>
-      <div class="tier">
         <h3>Doanh nghiệp</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ghế / năm</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 ghế</div>
-        <ul><li>Mọi thứ trong Nhóm</li><li>Giảm giá theo số lượng</li><li>Hỗ trợ ưu tiên</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Mở rộng</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ghế / năm</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 ghế</div>
-        <ul><li>Mọi thứ trong Doanh nghiệp</li><li>Giá mỗi ghế tốt nhất</li><li>Hỗ trợ khởi đầu</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ ghế / năm</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 ghế</div>
+        <ul><li>Tất cả tính năng Pro</li><li>Hồ sơ không giới hạn mỗi ghế</li><li>Cấp phát tập trung cho quản trị viên của bạn</li><li>Hỗ trợ và cập nhật ưu tiên</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Nhận Business</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Chọn ghế khi thanh toán · 20+ → liên hệ với chúng tôi</div>
       </div>
       <div class="tier">
         <h3>Tập đoàn</h3>
         <div class="price" style="font-size:22px">Hãy trao đổi</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ ghế</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ ghế</div>
         <ul><li>Giá và điều khoản tùy chỉnh</li><li>Cấp phép xác minh bằng SSO</li><li>SLA và hỗ trợ chuyên trách</li><li>Hỗ trợ triển khai</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Hãy trao đổi</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Miễn phí khi còn beta. Các bậc cá nhân là giấy phép Ed25519 một lần, theo thiết bị, xác minh cục bộ — không máy chủ kích hoạt. Thương mại là hằng năm theo ghế với cấp phát tập trung. Giá tính bằng USD; có thể áp dụng thuế địa phương. Tập đoàn: liên hệ chúng tôi. <a href="mailto:subumysore@gmail.com">liên hệ chúng tôi</a>.</p>
+  <p class="note">Bắt đầu miễn phí trong 30 ngày. Các bậc cá nhân là giấy phép Ed25519 trả một lần, theo thiết bị, xác minh cục bộ — không máy chủ kích hoạt, không thuê bao. Thương mại là $29 mỗi ghế mỗi năm với cấp phát tập trung. Giá tính bằng USD, điều chỉnh theo khu vực của bạn; có thể áp dụng thuế địa phương. Tập đoàn (20+ ghế): <a href="mailto:subumysore@gmail.com">liên hệ chúng tôi</a>.</p>
 </section>
 
 <section id="get" class="wrap">

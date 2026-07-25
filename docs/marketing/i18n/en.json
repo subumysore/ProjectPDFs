@@ -209,5 +209,9 @@
   "privP.b11": "We may update this Policy; material changes update the Effective date and, where required, include additional notice.",
   "privP.footer": "Subramanya Mysore (sole proprietor) · Grievance Officer/Contact: Subramanya Mysore · subumysore@gmail.com · DPO/EU Representative if appointed. PolyglotFormFill — privacy-first, on-device form autofill.",
   "privP.backHome": "← Back to PolyglotFormFill",
-  "price.freeDuration": "for 30 days"
+  "price.freeDuration": "for 30 days",
+  "price.startTrial": "Start free trial",
+  "price.buy": "Buy",
+  "price.getBusiness": "Get Business",
+  "price.seatsNote": "Choose seats at checkout · 20+ → contact us"
 }

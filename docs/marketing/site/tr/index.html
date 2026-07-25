@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Fiyatlandırma</span>
   <h2 class="h2">Bir kez satın alın. Sizin olsun. Abonelik yok.</h2>
-  <p class="sub">Cihaz başına tek seferlik bir lisans — cihazınızda çevrimdışı doğrulanır, dolayısıyla etkinleştirme sunucusu yoktur ve tek bir ağ çağrısı bile yapılmaz. Herkese açık beta boyunca ücretsiz; aşağıdaki fiyatlar lansmanda geçerli olur.</p>
+  <p class="sub">30 günlük ücretsiz denemeyle başlayın — tüm özellikler, cihazınızda. Cihaz başına tek seferlik, çevrimdışı doğrulanan bir lisansla elinizde tutun: etkinleştirme sunucusu yok, abonelik yok, hesap yok.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Ücretsiz</h3>
-      <div class="price">$0</div>
-      <ul><li>Temel web formu otomatik doldurma</li><li>Bir profil</li><li>Temel PDF doldurma</li><li>Cihazda şifreli kasa</li><li>Her zaman tamamen cihazda</li></ul>
+      <h3>Ücretsiz deneme</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">30 gün boyunca</span></div>
+      <ul><li>Tüm özellikler, 30 gün boyunca ücretsiz</li><li>Bu cihazda</li><li>Hesap yok · tamamen cihazda</li><li>Ardından elinizde tutmak için tek seferlik satın alma</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Ücretsiz denemeyi başlat</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">tek seferlik / cihaz</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 cihaz · or <span class="ppp" data-usd="9">$9</span>/yıl</div>
-      <ul><li>Ücretsiz'deki her şey</li><li>1 cihaz</li><li>En fazla 3 profil</li><li>Herhangi bir PDF'yi doldurulabilir yapın (OCR)</li><li>Word ve Excel formları</li><li>Çevrilmiş doldurma (dil paketleri)</li><li>İmza ve fotoğraf yerleştirme</li><li>Şifreli yedekleme ve aktarım</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 cihaz</div>
+      <ul><li>Tüm özellikler, kilidi açık</li><li>1 cihaz</li><li>En fazla 3 profil</li><li>Herhangi bir PDF'yi doldurulabilir yapın (OCR)</li><li>Word ve Excel formları</li><li>Çevrilmiş doldurma (tüm diller)</li><li>İmza ve fotoğraf yerleştirme</li><li>Şifreli yedekleme ve aktarım</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Satın al</a>
     </div>
     <div class="tier">
-      <h3>Aile</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">tek seferlik</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">en fazla 5 cihaz (~<span class="ppp" data-usd="6">$6</span> her biri) · or <span class="ppp" data-usd="15">$15</span>/yıl</div>
-      <ul><li>Pro'daki her şey, en fazla 5 cihazda</li><li>En fazla 5 profil</li><li>Hanenin profillerini herhangi bir cihazdan yönetin</li><li>Öncelikli destek</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 cihaz (~<span class="ppp" data-usd="15">$15</span> her biri)</div>
+      <ul><li>Pro'daki her şey, 2 cihazda</li><li>En fazla 5 profil</li><li>İki cihazınız arasında paylaşımlı</li><li>Öncelikli destek</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Satın al</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Ekipler ve işletmeler için</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Ticari — koltuk lisansları, sınırsız profil</h2>
-    <p class="sub">Hacim fiyatlandırmasıyla koltuk başına yıllık lisanslama. Her koltuk tüm Pro özelliklerini ve sınırsız profili alır — ve her kademe gibi, hiçbir veriyi bize geri göndermeden tamamen her cihazda çalışır. Lisanslar merkezî olarak yöneticinize verilir ve her cihazda çevrimdışı doğrulanır.</p>
+    <p class="sub">Koltuk başına yıllık lisanslama — tek bir basit fiyat, her ekip boyutu için. Her koltuk tüm Pro özelliklerini ve sınırsız profili alır, hiçbir veriyi bize geri göndermeden tamamen her cihazda çalışır ve merkezî olarak yöneticinize verilip çevrimdışı doğrulanır.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Ekip</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ koltuk / yıl</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 koltuk</div>
-        <ul><li>Tüm Pro özellikleri</li><li>Koltuk başına sınırsız profil</li><li>E-posta desteği ve güncellemeler</li></ul>
-      </div>
-      <div class="tier">
         <h3>İşletme</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ koltuk / yıl</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 koltuk</div>
-        <ul><li>Ekip'teki her şey</li><li>Hacim indirimi</li><li>Öncelikli destek</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Ölçek</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ koltuk / yıl</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 koltuk</div>
-        <ul><li>İşletme'deki her şey</li><li>En iyi koltuk başına fiyat</li><li>İşe başlama yardımı</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ koltuk / yıl</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 koltuk</div>
+        <ul><li>Tüm Pro özellikleri</li><li>Koltuk başına sınırsız profil</li><li>Yöneticinize merkezî düzenleme</li><li>Öncelikli destek ve güncellemeler</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Business'ı al</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Ödemede koltukları seçin · 20+ → bize ulaşın</div>
       </div>
       <div class="tier">
         <h3>Kurumsal</h3>
         <div class="price" style="font-size:22px">Konuşalım</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ koltuk</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ koltuk</div>
         <ul><li>Özel fiyatlandırma ve koşullar</li><li>SSO ile doğrulanmış hazırlama</li><li>SLA ve özel destek</li><li>Dağıtım yardımı</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Konuşalım</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Beta boyunca ücretsiz. Kişisel kademeler, yerel olarak doğrulanan, cihaz başına tek seferlik Ed25519 lisanslarıdır — etkinleştirme sunucusu yok. Ticari, merkezî düzenlemeyle koltuk başına yıllıktır. Fiyatlar USD cinsindendir; yerel vergiler uygulanabilir. Kurumsal: bize ulaşın. <a href="mailto:subumysore@gmail.com">bize ulaşın</a>.</p>
+  <p class="note">30 gün boyunca ücretsiz başlayın. Kişisel kademeler, yerel olarak doğrulanan, cihaz başına tek seferlik Ed25519 lisanslarıdır — etkinleştirme sunucusu yok, abonelik yok. Ticari, merkezî düzenlemeyle koltuk başına yılda $29'dur. Fiyatlar USD cinsindendir, bölgenize göre ayarlanır; yerel vergiler uygulanabilir. Kurumsal (20+ koltuk): <a href="mailto:subumysore@gmail.com">bize ulaşın</a>.</p>
 </section>
 
 <section id="get" class="wrap">

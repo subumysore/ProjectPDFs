@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">מחירים</span>
   <h2 class="h2">קנו פעם אחת. זה שלכם. ללא מנוי.</h2>
-  <p class="sub">רישיון חד-פעמי לכל מכשיר — מאומת במצב לא מקוון על המכשיר שלכם, כך שאין שרת הפעלה ואף לא שיחת רשת אחת. חינם בתקופת הבטא הציבורית; המחירים שלהלן ייכנסו לתוקף בהשקה.</p>
+  <p class="sub">התחילו בתקופת ניסיון חינם ל-30 יום — כל תכונה, על המכשיר שלכם. שמרו אותה עם רישיון חד-פעמי לכל מכשיר, המאומת במצב לא מקוון: ללא שרת הפעלה, ללא מנוי, ללא חשבון.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>חינם</h3>
-      <div class="price">$0</div>
-      <ul><li>מילוי אוטומטי בסיסי של טפסים מקוונים</li><li>פרופיל אחד</li><li>מילוי PDF בסיסי</li><li>כספת מוצפנת על המכשיר</li><li>לגמרי על המכשיר, תמיד</li></ul>
+      <h3>ניסיון חינם</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">ל-30 יום</span></div>
+      <ul><li>כל תכונה, חינם ל-30 יום</li><li>על המכשיר הזה</li><li>ללא חשבון · לגמרי על המכשיר</li><li>ואז רכישה חד-פעמית כדי לשמור אותה</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">התחילו תקופת ניסיון חינם</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">חד-פעמי / למכשיר</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">מכשיר אחד · or <span class="ppp" data-usd="9">$9</span>/לשנה</div>
-      <ul><li>כל מה שבחינם</li><li>מכשיר אחד</li><li>עד 3 פרופילים</li><li>הפכו כל PDF לניתן למילוי (OCR)</li><li>טפסי Word ו-Excel</li><li>מילוי מתורגם (חבילות שפה)</li><li>מיקום חתימה ותמונה</li><li>גיבוי והעברה מוצפנים</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">מכשיר אחד</div>
+      <ul><li>כל תכונה, פתוחה</li><li>מכשיר אחד</li><li>עד 3 פרופילים</li><li>הפכו כל PDF לניתן למילוי (OCR)</li><li>טפסי Word ו-Excel</li><li>מילוי מתורגם (כל השפות)</li><li>מיקום חתימה ותמונה</li><li>גיבוי והעברה מוצפנים</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">קנייה</a>
     </div>
     <div class="tier">
-      <h3>משפחה</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">חד-פעמי</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">עד 5 מכשירים (~<span class="ppp" data-usd="6">$6</span> לכל אחד) · or <span class="ppp" data-usd="15">$15</span>/לשנה</div>
-      <ul><li>כל מה שב-Pro, על עד 5 מכשירים</li><li>עד 5 פרופילים</li><li>נהלו את פרופילי משק הבית מכל מכשיר</li><li>תמיכה בעדיפות</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 מכשירים (~<span class="ppp" data-usd="15">$15</span> לכל אחד)</div>
+      <ul><li>כל מה שב-Pro, על 2 מכשירים</li><li>עד 5 פרופילים</li><li>משותף בין שני המכשירים שלכם</li><li>תמיכה בעדיפות</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">קנייה</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">לצוותים ולעסקים</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">מסחרי — רישיונות למושב, פרופילים ללא הגבלה</h2>
-    <p class="sub">רישוי שנתי למושב עם תמחור לפי כמות. כל מושב מקבל את כל תכונות ה-Pro ופרופילים ללא הגבלה — וכמו בכל דרגה, פועל כולו על כל מכשיר בלי שנתונים כלשהם יישלחו אלינו בחזרה. הרישיונות מונפקים באופן מרכזי למנהל שלכם ומאומתים במצב לא מקוון על כל מכשיר.</p>
+    <p class="sub">רישוי שנתי למושב — מחיר אחד ופשוט, לכל גודל צוות. כל מושב מקבל את כל תכונות ה-Pro ופרופילים ללא הגבלה, פועל כולו על כל מכשיר בלי שנתונים כלשהם יישלחו אלינו בחזרה, ומונפק באופן מרכזי למנהל שלכם ומאומת במצב לא מקוון.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>צוות</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ מושב / שנה</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 מושבים</div>
-        <ul><li>כל תכונות ה-Pro</li><li>פרופילים ללא הגבלה / למושב</li><li>תמיכה בדוא"ל ועדכונים</li></ul>
-      </div>
-      <div class="tier">
         <h3>עסק</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ מושב / שנה</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 מושבים</div>
-        <ul><li>כל מה שבצוות</li><li>הנחת כמות</li><li>תמיכה בעדיפות</li></ul>
-      </div>
-      <div class="tier">
-        <h3>צמיחה</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ מושב / שנה</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 מושבים</div>
-        <ul><li>כל מה שבעסק</li><li>התעריף הטוב ביותר למושב</li><li>עזרה בקליטה</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ מושב / שנה</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 מושבים</div>
+        <ul><li>כל תכונות ה-Pro</li><li>פרופילים ללא הגבלה לכל מושב</li><li>הנפקה מרכזית למנהל שלכם</li><li>תמיכה ועדכונים בעדיפות</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">קבלת Business</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">בחרו מושבים בתשלום · 20+ → צרו קשר</div>
       </div>
       <div class="tier">
         <h3>ארגוני</h3>
         <div class="price" style="font-size:22px">בואו נדבר</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ מושבים</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ מושבים</div>
         <ul><li>תמחור ותנאים מותאמים אישית</li><li>הקצאה מאומתת ב-SSO</li><li>SLA ותמיכה ייעודית</li><li>סיוע בפריסה</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">בואו נדבר</a>
       </div>
     </div>
   </div>
 
-  <p class="note">חינם בזמן הבטא. הדרגות האישיות הן רישיונות Ed25519 חד-פעמיים לכל מכשיר, מאומתים מקומית — ללא שרת הפעלה. המסחרי שנתי למושב עם הנפקה מרכזית. המחירים ב-USD; ייתכנו מיסים מקומיים. ארגוני: צרו קשר. <a href="mailto:subumysore@gmail.com">צרו קשר</a>.</p>
+  <p class="note">התחילו חינם ל-30 יום. הדרגות האישיות הן רישיונות Ed25519 חד-פעמיים לכל מכשיר, מאומתים מקומית — ללא שרת הפעלה, ללא מנוי. המסחרי הוא $29 למושב לשנה עם הנפקה מרכזית. המחירים ב-USD, מותאמים לאזור שלכם; ייתכנו מיסים מקומיים. ארגוני (20+ מושבים): <a href="mailto:subumysore@gmail.com">צרו קשר</a>.</p>
 </section>
 
 <section id="get" class="wrap">

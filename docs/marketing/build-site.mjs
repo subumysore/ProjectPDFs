@@ -84,21 +84,32 @@ const HELLO_JS = `
   }
 })();`;
 
+// Lemon Squeezy store config (variant IDs + slug) captured by scripts/license/ls-provision.mjs.
+// Injected at build time so the Buy buttons point at the right checkout. Absent → buttons stay "#".
+let LS_CFG = { slug: "", variants: {} };
+try { LS_CFG = JSON.parse(readFileSync(join(dir, "../business/ls-config.json"), "utf8")); } catch { /* not provisioned yet */ }
+const LS_VARIANTS = Object.fromEntries(Object.entries(LS_CFG.variants || {}).map(([k, v]) => [k, v.variantId]));
+
 const PPP_JS = `
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG=${JSON.stringify(LS_CFG.slug || "")}, LS_VARIANTS=${JSON.stringify(LS_VARIANTS)}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();`;
 
@@ -231,18 +242,21 @@ ${switcher(lang, "landing")}
       <h3>${esc(tr("price.free"))}</h3>
       <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.freeDuration"))}</span></div>
       <ul>${li(tr("price.freeList"))}</ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">${esc(tr("price.startTrial"))}</a>
     </div>
     <div class="tier pop">
       <h3>${esc(tr("price.pro"))}</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTimeDevice"))}</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("price.oneDevice"))}</div>
       <ul>${li(tr("price.proList"))}</ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.buy"))}</a>
     </div>
     <div class="tier">
       <h3>${esc(tr("price.family"))}</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTime"))}</span></div>
       <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${tr("price.familyDevices", { each: '<span class="ppp" data-usd="15">$15</span>' })}</div>
       <ul>${li(tr("price.familyList"))}</ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.buy"))}</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -259,12 +273,15 @@ ${switcher(lang, "landing")}
         <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
         <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tBizRange"))}</div>
         <ul>${li(tr("team.tBizList"))}</ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">${esc(tr("price.getBusiness"))}</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">${esc(tr("price.seatsNote"))}</div>
       </div>
       <div class="tier">
         <h3>${esc(tr("team.tEnt"))}</h3>
         <div class="price" style="font-size:22px">${esc(tr("team.tEntPrice"))}</div>
         <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tEntRange"))}</div>
         <ul>${li(tr("team.tEntList"))}</ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">${esc(tr("team.tEntPrice"))}</a>
       </div>
     </div>
   </div>

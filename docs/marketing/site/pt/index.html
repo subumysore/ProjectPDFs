@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Preços</span>
   <h2 class="h2">Compre uma vez. É seu. Sem assinatura.</h2>
-  <p class="sub">Uma licença única, por dispositivo — verificada offline no seu dispositivo, então não há servidor de ativação nem uma única chamada de rede. Grátis durante o beta público; os preços abaixo entram em vigor no lançamento.</p>
+  <p class="sub">Comece com um teste gratuito de 30 dias — todos os recursos, no seu dispositivo. Mantenha-o com uma licença única, por dispositivo, verificada offline: sem servidor de ativação, sem assinatura, sem conta.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Grátis</h3>
-      <div class="price">$0</div>
-      <ul><li>Preenchimento automático básico de formulários web</li><li>Um perfil</li><li>Preenchimento básico de PDF</li><li>Cofre criptografado no dispositivo</li><li>Totalmente no dispositivo, sempre</li></ul>
+      <h3>Teste gratuito</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">por 30 dias</span></div>
+      <ul><li>Todos os recursos, grátis por 30 dias</li><li>Neste dispositivo</li><li>Sem conta · totalmente no dispositivo</li><li>Depois, uma compra única para mantê-lo</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Iniciar teste gratuito</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">pagamento único / dispositivo</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 dispositivo · or <span class="ppp" data-usd="9">$9</span>/ano</div>
-      <ul><li>Tudo do Grátis</li><li>1 dispositivo</li><li>Até 3 perfis</li><li>Torne qualquer PDF preenchível (OCR)</li><li>Formulários Word e Excel</li><li>Preenchimento traduzido (pacotes de idioma)</li><li>Posicionamento de assinatura e foto</li><li>Backup e transferência criptografados</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 dispositivo</div>
+      <ul><li>Todos os recursos, desbloqueados</li><li>1 dispositivo</li><li>Até 3 perfis</li><li>Torne qualquer PDF preenchível (OCR)</li><li>Formulários Word e Excel</li><li>Preenchimento traduzido (todos os idiomas)</li><li>Posicionamento de assinatura e foto</li><li>Backup e transferência criptografados</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Comprar</a>
     </div>
     <div class="tier">
-      <h3>Família</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">pagamento único</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">até 5 dispositivos (~<span class="ppp" data-usd="6">$6</span> cada) · or <span class="ppp" data-usd="15">$15</span>/ano</div>
-      <ul><li>Tudo do Pro, em até 5 dispositivos</li><li>Até 5 perfis</li><li>Gerencie os perfis da casa de qualquer dispositivo</li><li>Suporte prioritário</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 dispositivos (~<span class="ppp" data-usd="15">$15</span> cada)</div>
+      <ul><li>Tudo do Pro, em 2 dispositivos</li><li>Até 5 perfis</li><li>Compartilhado entre seus dois dispositivos</li><li>Suporte prioritário</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Comprar</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Para equipes e empresas</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Comercial — licenças por assento, perfis ilimitados</h2>
-    <p class="sub">Licenciamento anual por assento com preços por volume. Cada assento recebe todos os recursos Pro e perfis ilimitados — e, como cada nível, é executado inteiramente em cada dispositivo, sem enviar dados de volta para nós. As licenças são emitidas de forma centralizada ao seu administrador e verificadas offline em cada dispositivo.</p>
+    <p class="sub">Licenciamento anual por assento — um preço simples, para qualquer tamanho de equipe. Cada assento recebe todos os recursos Pro e perfis ilimitados, é executado inteiramente em cada dispositivo sem enviar nenhum dado de volta para nós, e é emitido de forma centralizada ao seu administrador e verificado offline.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Equipe</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ assento / ano</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 assentos</div>
-        <ul><li>Todos os recursos Pro</li><li>Perfis ilimitados / assento</li><li>Suporte por e-mail e atualizações</li></ul>
-      </div>
-      <div class="tier">
         <h3>Empresarial</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ assento / ano</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 assentos</div>
-        <ul><li>Tudo do Equipe</li><li>Desconto por volume</li><li>Suporte prioritário</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Escala</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ assento / ano</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 assentos</div>
-        <ul><li>Tudo do Empresarial</li><li>Melhor tarifa por assento</li><li>Ajuda na integração</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ assento / ano</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 assentos</div>
+        <ul><li>Todos os recursos Pro</li><li>Perfis ilimitados por assento</li><li>Emissão centralizada ao seu administrador</li><li>Suporte e atualizações prioritários</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Obter Business</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Escolha os lugares no checkout · 20+ → fale conosco</div>
       </div>
       <div class="tier">
         <h3>Enterprise</h3>
         <div class="price" style="font-size:22px">Vamos conversar</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">mais de 500 assentos</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ assentos</div>
         <ul><li>Preços e termos personalizados</li><li>Provisionamento verificado por SSO</li><li>SLA e suporte dedicado</li><li>Assistência na implantação</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Vamos conversar</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Grátis durante o beta. Os níveis pessoais são licenças Ed25519 únicas, por dispositivo, verificadas localmente — sem servidor de ativação. O comercial é anual por assento com emissão centralizada. Preços em USD; impostos locais podem se aplicar. Enterprise: entre em contato. <a href="mailto:subumysore@gmail.com">entre em contato</a>.</p>
+  <p class="note">Comece grátis por 30 dias. Os níveis pessoais são licenças Ed25519 únicas, por dispositivo, verificadas localmente — sem servidor de ativação, sem assinatura. O comercial custa $29 por assento por ano com emissão centralizada. Preços em USD, ajustados à sua região; impostos locais podem se aplicar. Enterprise (20+ assentos): <a href="mailto:subumysore@gmail.com">entre em contato</a>.</p>
 </section>
 
 <section id="get" class="wrap">

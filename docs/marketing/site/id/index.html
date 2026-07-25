@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Harga</span>
   <h2 class="h2">Beli sekali. Miliki. Tanpa langganan.</h2>
-  <p class="sub">Lisensi sekali beli, per perangkat — diverifikasi secara luring di perangkat Anda, jadi tidak ada server aktivasi dan tidak ada satu pun panggilan jaringan. Gratis selama beta publik; harga di bawah berlaku saat peluncuran.</p>
+  <p class="sub">Mulai dengan uji coba gratis 30 hari — setiap fitur, di perangkat Anda. Simpan dengan lisensi sekali beli, per perangkat, diverifikasi secara luring: tanpa server aktivasi, tanpa langganan, tanpa akun.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Gratis</h3>
-      <div class="price">$0</div>
-      <ul><li>Isi otomatis dasar formulir web</li><li>Satu profil</li><li>Pengisian PDF dasar</li><li>Brankas terenkripsi di perangkat</li><li>Sepenuhnya di perangkat, selalu</li></ul>
+      <h3>Uji coba gratis</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">selama 30 hari</span></div>
+      <ul><li>Setiap fitur, gratis selama 30 hari</li><li>Di perangkat ini</li><li>Tanpa akun · sepenuhnya di perangkat</li><li>Lalu beli sekali untuk menyimpannya</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Mulai uji coba gratis</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">sekali beli / perangkat</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 perangkat · or <span class="ppp" data-usd="9">$9</span>/tahun</div>
-      <ul><li>Semua yang ada di Gratis</li><li>1 perangkat</li><li>Hingga 3 profil</li><li>Jadikan PDF apa pun dapat diisi (OCR)</li><li>Formulir Word &amp; Excel</li><li>Pengisian terjemahan (paket bahasa)</li><li>Penempatan tanda tangan &amp; foto</li><li>Cadangan &amp; transfer terenkripsi</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 perangkat</div>
+      <ul><li>Setiap fitur, terbuka</li><li>1 perangkat</li><li>Hingga 3 profil</li><li>Jadikan PDF apa pun dapat diisi (OCR)</li><li>Formulir Word &amp; Excel</li><li>Pengisian terjemahan (semua bahasa)</li><li>Penempatan tanda tangan &amp; foto</li><li>Cadangan &amp; transfer terenkripsi</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Beli</a>
     </div>
     <div class="tier">
-      <h3>Keluarga</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">sekali beli</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">hingga 5 perangkat (~<span class="ppp" data-usd="6">$6</span> masing-masing) · or <span class="ppp" data-usd="15">$15</span>/tahun</div>
-      <ul><li>Semua yang ada di Pro, pada hingga 5 perangkat</li><li>Hingga 5 profil</li><li>Kelola profil rumah tangga dari perangkat mana pun</li><li>Dukungan prioritas</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 perangkat (~<span class="ppp" data-usd="15">$15</span> masing-masing)</div>
+      <ul><li>Semua yang ada di Pro, pada 2 perangkat</li><li>Hingga 5 profil</li><li>Dibagikan di kedua perangkat Anda</li><li>Dukungan prioritas</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Beli</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Untuk tim &amp; bisnis</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Komersial — lisensi per kursi, profil tanpa batas</h2>
-    <p class="sub">Lisensi tahunan per kursi dengan harga volume. Setiap kursi memperoleh semua fitur Pro dan profil tanpa batas — dan, seperti setiap tingkat, berjalan sepenuhnya di setiap perangkat tanpa data yang dikirim kembali ke kami. Lisensi diterbitkan secara terpusat kepada admin Anda dan diverifikasi secara luring di setiap perangkat.</p>
+    <p class="sub">Lisensi tahunan per kursi — satu harga sederhana, untuk tim ukuran berapa pun. Setiap kursi memperoleh semua fitur Pro dan profil tanpa batas, berjalan sepenuhnya di setiap perangkat tanpa data yang dikirim kembali ke kami, dan diterbitkan secara terpusat kepada admin Anda serta diverifikasi secara luring.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Tim</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ kursi / thn</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 kursi</div>
-        <ul><li>Semua fitur Pro</li><li>Profil tanpa batas / kursi</li><li>Dukungan email &amp; pembaruan</li></ul>
-      </div>
-      <div class="tier">
         <h3>Bisnis</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ kursi / thn</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 kursi</div>
-        <ul><li>Semua yang ada di Tim</li><li>Diskon volume</li><li>Dukungan prioritas</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Skala</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ kursi / thn</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 kursi</div>
-        <ul><li>Semua yang ada di Bisnis</li><li>Tarif per kursi terbaik</li><li>Bantuan pengenalan</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ kursi / thn</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 kursi</div>
+        <ul><li>Semua fitur Pro</li><li>Profil tanpa batas per kursi</li><li>Penerbitan terpusat kepada admin Anda</li><li>Dukungan &amp; pembaruan prioritas</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Dapatkan Business</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Pilih kursi saat checkout · 20+ → hubungi kami</div>
       </div>
       <div class="tier">
         <h3>Enterprise</h3>
         <div class="price" style="font-size:22px">Mari berbicara</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ kursi</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ kursi</div>
         <ul><li>Harga &amp; ketentuan khusus</li><li>Penyediaan terverifikasi SSO</li><li>SLA &amp; dukungan khusus</li><li>Bantuan penerapan</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Mari berbicara</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Gratis selama beta. Tingkat personal adalah lisensi Ed25519 sekali beli, per perangkat, diverifikasi secara lokal — tanpa server aktivasi. Komersial adalah tahunan per kursi dengan penerbitan terpusat. Harga dalam USD; pajak lokal mungkin berlaku. Enterprise: hubungi kami. <a href="mailto:subumysore@gmail.com">hubungi kami</a>.</p>
+  <p class="note">Mulai gratis selama 30 hari. Tingkat personal adalah lisensi Ed25519 sekali beli, per perangkat, diverifikasi secara lokal — tanpa server aktivasi, tanpa langganan. Komersial adalah $29 per kursi per tahun dengan penerbitan terpusat. Harga dalam USD, disesuaikan untuk wilayah Anda; pajak lokal mungkin berlaku. Enterprise (20+ kursi): <a href="mailto:subumysore@gmail.com">hubungi kami</a>.</p>
 </section>
 
 <section id="get" class="wrap">

@@ -209,5 +209,9 @@
   "privP.h11": "การเปลี่ยนแปลง",
   "privP.b11": "เราอาจปรับปรุงนโยบายนี้ การเปลี่ยนแปลงที่มีสาระสำคัญจะปรับวันที่มีผลบังคับ และรวมการแจ้งเตือนเพิ่มเติมในกรณีที่จำเป็น",
   "privP.footer": "Subramanya Mysore (เจ้าของกิจการรายเดียว) · เจ้าหน้าที่รับเรื่องร้องเรียน/ผู้ติดต่อ: Subramanya Mysore · subumysore@gmail.com · DPO/ผู้แทน EU หากมีการแต่งตั้ง PolyglotFormFill — การกรอกแบบฟอร์มอัตโนมัติบนอุปกรณ์ที่ให้ความเป็นส่วนตัวมาก่อน",
-  "privP.backHome": "← กลับไปที่ PolyglotFormFill"
+  "privP.backHome": "← กลับไปที่ PolyglotFormFill",
+  "price.startTrial": "เริ่มทดลองใช้ฟรี",
+  "price.buy": "ซื้อ",
+  "price.getBusiness": "รับ Business",
+  "price.seatsNote": "เลือกที่นั่งตอนชำระเงิน · 20+ → ติดต่อเรา"
 }

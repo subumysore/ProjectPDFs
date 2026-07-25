@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">料金</span>
   <h2 class="h2">一度購入すれば、ずっとあなたのもの。サブスクなし。</h2>
-  <p class="sub">一回限り・デバイスごとのライセンス——お使いのデバイス上でオフラインに検証されるため、アクティベーションサーバーはなく、ネットワーク通信は一切発生しません。公開ベータ期間中は無料。以下の価格は正式リリース時に適用されます。</p>
+  <p class="sub">まずは 30 日間の無料トライアルを——すべての機能を、お使いのデバイス上で。一回限り・デバイスごとのライセンスで使い続けられ、オフラインに検証されます：アクティベーションサーバーなし、サブスクなし、アカウントなし。</p>
   <div class="tiers">
     <div class="tier">
-      <h3>無料</h3>
-      <div class="price">$0</div>
-      <ul><li>基本のウェブフォーム自動入力</li><li>プロファイル 1 件</li><li>基本の PDF 記入</li><li>デバイス上の暗号化保管庫</li><li>常に完全にデバイス上で</li></ul>
+      <h3>無料トライアル</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">30 日間</span></div>
+      <ul><li>すべての機能を 30 日間無料で</li><li>このデバイス上で</li><li>アカウントなし · 完全にデバイス上で</li><li>その後は一回限りの購入で使い続けられます</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">無料トライアルを開始</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">一回限り / デバイス</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 デバイス · or <span class="ppp" data-usd="9">$9</span>/年</div>
-      <ul><li>無料版のすべて</li><li>1 デバイス</li><li>最大 3 プロファイル</li><li>あらゆる PDF を記入可能に（OCR）</li><li>Word・Excel フォーム</li><li>翻訳記入（言語パック）</li><li>署名・写真の配置</li><li>暗号化バックアップと移行</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 デバイス</div>
+      <ul><li>すべての機能を解放</li><li>1 デバイス</li><li>最大 3 プロファイル</li><li>あらゆる PDF を記入可能に（OCR）</li><li>Word・Excel フォーム</li><li>翻訳記入（すべての言語）</li><li>署名・写真の配置</li><li>暗号化バックアップと移行</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">購入</a>
     </div>
     <div class="tier">
-      <h3>ファミリー</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">一回限り</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">最大 5 デバイス（各 ~<span class="ppp" data-usd="6">$6</span>） · or <span class="ppp" data-usd="15">$15</span>/年</div>
-      <ul><li>Pro のすべてを最大 5 デバイスで</li><li>最大 5 プロファイル</li><li>どのデバイスからでも世帯のプロファイルを管理</li><li>優先サポート</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 デバイス（各 ~<span class="ppp" data-usd="15">$15</span>）</div>
+      <ul><li>Pro のすべてを 2 デバイスで</li><li>最大 5 プロファイル</li><li>2 台のデバイス間で共有</li><li>優先サポート</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">購入</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">チーム・ビジネス向け</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">商用——シートライセンス、プロファイル無制限</h2>
-    <p class="sub">シート単位の年間ライセンスで、ボリューム価格に対応。すべてのシートが Pro の全機能とプロファイル無制限を利用でき——どのプランとも同じく、各デバイス上で完全に動作し、私たちへのデータ送信は一切ありません。ライセンスは御社の管理者へ一括発行され、各デバイスでオフラインに検証されます。</p>
+    <p class="sub">シート単位の年間ライセンス——シンプルな一つの価格で、どんなチーム規模にも。すべてのシートが Pro の全機能とプロファイル無制限を利用でき、各デバイス上で完全に動作して私たちへのデータ送信は一切なく、御社の管理者へ一括発行され、オフラインに検証されます。</p>
     <div class="tiers">
       <div class="tier">
-        <h3>チーム</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ シート / 年</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5〜50 シート</div>
-        <ul><li>Pro の全機能</li><li>シートごとにプロファイル無制限</li><li>メールサポートと更新</li></ul>
-      </div>
-      <div class="tier">
         <h3>ビジネス</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ シート / 年</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51〜100 シート</div>
-        <ul><li>チームのすべて</li><li>ボリューム割引</li><li>優先サポート</li></ul>
-      </div>
-      <div class="tier">
-        <h3>スケール</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ シート / 年</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101〜500 シート</div>
-        <ul><li>ビジネスのすべて</li><li>最良のシート単価</li><li>導入支援</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ シート / 年</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 シート</div>
+        <ul><li>Pro の全機能</li><li>シートごとにプロファイル無制限</li><li>御社の管理者へ一括発行</li><li>優先サポートと更新</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Business を入手</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">チェックアウトで席数を選択 · 20+ → お問い合わせください</div>
       </div>
       <div class="tier">
         <h3>エンタープライズ</h3>
         <div class="price" style="font-size:22px">ご相談ください</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500 シート以上</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ シート</div>
         <ul><li>カスタム価格・条件</li><li>SSO 検証によるプロビジョニング</li><li>SLA と専任サポート</li><li>展開支援</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">ご相談ください</a>
       </div>
     </div>
   </div>
 
-  <p class="note">ベータ期間中は無料。個人向けプランは一回限り・デバイスごとの Ed25519 ライセンスで、ローカルに検証されます——アクティベーションサーバーはありません。商用はシート単位の年間契約で一括発行。価格は USD 表示。現地の税金がかかる場合があります。エンタープライズ：お問い合わせください。 <a href="mailto:subumysore@gmail.com">お問い合わせ</a>.</p>
+  <p class="note">まずは 30 日間無料で。個人向けプランは一回限り・デバイスごとの Ed25519 ライセンスで、ローカルに検証されます——アクティベーションサーバーなし、サブスクなし。商用はシートあたり年 $29 で一括発行。価格は USD 表示で、お住まいの地域に合わせて調整されます。現地の税金がかかる場合があります。エンタープライズ（20+ シート）： <a href="mailto:subumysore@gmail.com">お問い合わせ</a>.</p>
 </section>
 
 <section id="get" class="wrap">

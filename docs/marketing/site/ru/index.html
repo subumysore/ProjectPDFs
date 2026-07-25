@@ -228,24 +228,27 @@
 <section id="pricing" class="wrap">
   <span class="eyebrow">Цены</span>
   <h2 class="h2">Купите один раз. Владейте. Без подписки.</h2>
-  <p class="sub">Разовая лицензия на устройство — проверяется офлайн на вашем устройстве, поэтому нет сервера активации и ни одного сетевого запроса. Бесплатно во время публичной беты; указанные ниже цены вступают в силу при запуске.</p>
+  <p class="sub">Начните с 30-дневной бесплатной пробной версии — все возможности, на вашем устройстве. Сохраните её с помощью разовой лицензии на устройство, проверяемой офлайн: без сервера активации, без подписки, без аккаунта.</p>
   <div class="tiers">
     <div class="tier">
-      <h3>Бесплатно</h3>
-      <div class="price">$0</div>
-      <ul><li>Базовое автозаполнение веб-форм</li><li>Один профиль</li><li>Базовое заполнение PDF</li><li>Зашифрованное хранилище на устройстве</li><li>Полностью на устройстве, всегда</li></ul>
+      <h3>Пробная версия</h3>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">на 30 дней</span></div>
+      <ul><li>Все возможности, бесплатно 30 дней</li><li>На этом устройстве</li><li>Без аккаунта · полностью на устройстве</li><li>Затем разовая покупка, чтобы оставить себе</li></ul>
+      <a class="btn ghost" style="margin-top:16px" href="#get">Начать бесплатный период</a>
     </div>
     <div class="tier pop">
       <h3>Pro</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">разово / устройство</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 устройство · or <span class="ppp" data-usd="9">$9</span>/год</div>
-      <ul><li>Всё из Бесплатного</li><li>1 устройство</li><li>До 3 профилей</li><li>Сделать любой PDF заполняемым (OCR)</li><li>Формы Word и Excel</li><li>Заполнение с переводом (языковые пакеты)</li><li>Размещение подписи и фото</li><li>Зашифрованное резервное копирование и перенос</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1 устройство</div>
+      <ul><li>Все возможности, разблокированы</li><li>1 устройство</li><li>До 3 профилей</li><li>Сделать любой PDF заполняемым (OCR)</li><li>Формы Word и Excel</li><li>Заполнение с переводом (все языки)</li><li>Размещение подписи и фото</li><li>Зашифрованное резервное копирование и перенос</li></ul>
+      <a class="btn buy" data-tier="pro" style="margin-top:16px" rel="nofollow" href="#">Купить</a>
     </div>
     <div class="tier">
-      <h3>Семейный</h3>
+      <h3>Duo</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">разово</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">до 5 устройств (~<span class="ppp" data-usd="6">$6</span> за каждое) · or <span class="ppp" data-usd="15">$15</span>/год</div>
-      <ul><li>Всё из Pro, на устройствах до 5 штук</li><li>До 5 профилей</li><li>Управляйте профилями семьи с любого устройства</li><li>Приоритетная поддержка</li></ul>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">2 устройства (~<span class="ppp" data-usd="15">$15</span> за каждое)</div>
+      <ul><li>Всё из Pro, на 2 устройствах</li><li>До 5 профилей</li><li>Общий доступ на обоих ваших устройствах</li><li>Приоритетная поддержка</li></ul>
+      <a class="btn buy" data-tier="duo" style="margin-top:16px" rel="nofollow" href="#">Купить</a>
     </div>
   </div>
   <div id="ppp-note" style="color:var(--muted);font-size:13px;margin-top:14px"></div>
@@ -253,17 +256,22 @@
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
+  var LS_SLUG="polyglotformfill", LS_VARIANTS={"pro":"1948077","duo":"1948114","business":"1948127"}, BANDS=[10,20,30,40,50,60,65];
+  function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
+    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+    document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
+  setBuys(0); // full USD by default (works before the region lookup resolves)
   fetch("https://api.country.is/").then(function(r){return r.json();}).then(function(d){
     var cc=(d.country||"").toUpperCase(); var f=PPP[cc];
-    if(cc==="US"){ note("Prices shown in USD for the United States."); return; }
-    if(f==null){ note("Prices shown in USD."); return; }
+    if(!f){ note("Prices shown in USD."); return; }
     if(f<0.35)f=0.35;
-    if(f===1){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
-    document.querySelectorAll(".ppp").forEach(function(el){
-      var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*f));
-    });
-    note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
+    if(f>=0.98){ note("Prices shown in USD for your region ("+(NAMES[cc]||cc)+")."); return; }
+    var band=nearestBand(Math.round((1-f)*100)); var ef=band?(1-band/100):1; // snap DISPLAY to the band so shown == charged
+    document.querySelectorAll(".ppp").forEach(function(el){ var usd=+el.getAttribute("data-usd"); el.textContent="$"+Math.max(1,Math.round(usd*ef)); });
+    setBuys(band);
+    note("Prices adjusted for "+(NAMES[cc]||cc)+" (\u2248"+band+"% regional discount, applied automatically at checkout).");
   }).catch(function(){ note("Prices shown in USD."); });
 })();</script>
   <script>
@@ -286,36 +294,27 @@
   <div style="margin-top:40px">
     <span class="eyebrow">Для команд и бизнеса</span>
     <h2 class="h2" style="font-size:clamp(20px,3vw,26px)">Коммерческая — лицензии на место, неограниченные профили</h2>
-    <p class="sub">Годовое лицензирование на место с объёмными ценами. Каждое место получает все возможности Pro и неограниченные профили — и, как и каждый уровень, работает полностью на каждом устройстве, не отправляя нам никаких данных. Лицензии выдаются централизованно вашему администратору и проверяются офлайн на каждом устройстве.</p>
+    <p class="sub">Годовое лицензирование на место — одна простая цена для команды любого размера. Каждое место получает все возможности Pro и неограниченные профили, работает полностью на каждом устройстве, не отправляя нам никаких данных, и выдаётся централизованно вашему администратору с проверкой офлайн.</p>
     <div class="tiers">
       <div class="tier">
-        <h3>Команда</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ место / год</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">5–50 мест</div>
-        <ul><li>Все возможности Pro</li><li>Неограниченные профили / место</li><li>Поддержка по эл. почте и обновления</li></ul>
-      </div>
-      <div class="tier">
         <h3>Бизнес</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ место / год</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">51–100 мест</div>
-        <ul><li>Всё из Команды</li><li>Объёмная скидка</li><li>Приоритетная поддержка</li></ul>
-      </div>
-      <div class="tier">
-        <h3>Масштаб</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">/ место / год</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">101–500 мест</div>
-        <ul><li>Всё из Бизнеса</li><li>Лучшая цена за место</li><li>Помощь с внедрением</li></ul>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">/ место / год</span></div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">1–19 мест</div>
+        <ul><li>Все возможности Pro</li><li>Неограниченные профили на место</li><li>Централизованная выдача вашему администратору</li><li>Приоритетная поддержка и обновления</li></ul>
+        <a class="btn buy" data-tier="business" style="margin-top:16px" rel="nofollow" href="#">Получить Business</a>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">Выберите места при оформлении · 20+ → свяжитесь с нами</div>
       </div>
       <div class="tier">
         <h3>Enterprise</h3>
         <div class="price" style="font-size:22px">Обсудим</div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">500+ мест</div>
+        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">20+ мест</div>
         <ul><li>Индивидуальные цены и условия</li><li>Подготовка с проверкой через SSO</li><li>SLA и выделенная поддержка</li><li>Помощь с развёртыванием</li></ul>
+        <a class="btn ghost" style="margin-top:16px" href="mailto:subumysore@gmail.com">Обсудим</a>
       </div>
     </div>
   </div>
 
-  <p class="note">Бесплатно во время беты. Персональные уровни — это разовые лицензии Ed25519 на устройство, проверяемые локально — без сервера активации. Коммерческая — годовая на место с централизованной выдачей. Цены в USD; могут применяться местные налоги. Enterprise: свяжитесь с нами. <a href="mailto:subumysore@gmail.com">свяжитесь с нами</a>.</p>
+  <p class="note">Начните бесплатно на 30 дней. Персональные уровни — это разовые лицензии Ed25519 на устройство, проверяемые локально — без сервера активации, без подписки. Коммерческая — $29 за место в год с централизованной выдачей. Цены в USD, скорректированы для вашего региона; могут применяться местные налоги. Enterprise (20+ мест): <a href="mailto:subumysore@gmail.com">свяжитесь с нами</a>.</p>
 </section>
 
 <section id="get" class="wrap">
