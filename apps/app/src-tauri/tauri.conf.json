@@ -50,6 +50,12 @@
           "%1"
         ]
       }
+    },
+    "category": "Productivity",
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "entitlements": "entitlements.plist",
+      "exceptionDomain": ""
     }
   }
 }
