@@ -2,6 +2,22 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Done (docs/assets) — 2026-07-25: launch strategy locked, guide video + landing page refreshed
+- **ADR-0023** (code signing & platform distribution strategy, zero-cost first) and **ADR-0024**
+  (launch distribution & platform roadmap, entity-triggered) written and Accepted. 0024 extends 0023.
+- **Owner decisions captured (0024):** all three niches equal (immigration/relocation · freelancers/SMBs
+  · privacy/crypto); no per-pair language rollout — packs pre-staged/QA'd by global speaker volume
+  (Spanish, Chinese, Arabic, Portuguese, French, Russian, Bengali, …) since NLLB is on-device any-to-any
+  and the UI is 26-language already (ADR-0018); desktop + extension presented equally; paid platform work
+  deferred + sequenced around registering a business entity (EV cert → Azure Trusted Signing org
+  re-check → macOS via Apple Developer Program + build Mac + notarization → Microsoft Store/MSIX).
+  Triggers = revenue + entity registered; no dates.
+- **Guide video rebuilt** (ADR-0022 pipeline): dynamic animated cards, before/after hero, real
+  in-browser extension + live-translation demos, neural narration; stable URL unchanged.
+- **Landing page:** hero + three niche sections added (equal-weight positioning).
+- Governance: CHANGELOG entry added; REQ-05.2 traceability row extended; activeContext synced. No code,
+  video re-publish, or site deploy performed in this closure task.
+
 ## Working (verified) — 2026-07-23 (later): fill/OCR/delete fixes + guide video (LOCAL ONLY)
 - **Name composition on fill (REQ-02.1):** flat-PDF fill now composes a "Full name" from
   `first_name`+`last_name` via the resolver instead of an exact-key lookup; resolver falls back to a

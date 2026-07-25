@@ -1,5 +1,27 @@
 # Active Context
 
+## Launch strategy locked + assets refreshed (2026-07-25) — JUST SHIPPED (docs/assets)
+Owner's 2026-07-25 launch-planning session produced two ADRs plus refreshed launch assets:
+- **ADR-0023** — code signing & platform distribution strategy (zero-cost first): ordered Windows trust
+  plan (unsigned public builds + SHA-256 + "expect the warning" copy + extension/winget front doors +
+  passive SmartScreen reputation) and the honest **macOS** picture (needs a build Mac + Apple Developer
+  Program US$99/yr + notarization; deferred). Paid-signing order Azure Trusted Signing → OV → EV.
+- **ADR-0024** — launch distribution & platform roadmap (entity-triggered), EXTENDS 0023:
+  - Positioning leads with **all three niches equally** (immigration/relocation · cross-border
+    freelancers/SMBs · privacy/crypto).
+  - **No per-pair language rollout** — NLLB is on-device any-to-any, UI already in 26 languages; packs
+    are **pre-staged/QA'd by global speaker volume** (Spanish, Chinese, Arabic, Portuguese, French,
+    Russian, Bengali, …). Priority is testing/asset-warming order, never a capability gate (ADR-0018).
+  - **Desktop + extension presented EQUALLY** (revises the earlier extension-first *presentation*).
+  - Paid platform work **deferred + sequenced around registering a business entity** ("planning one
+    soon"): when it exists → EV cert → re-check Azure Trusted Signing ORG eligibility → macOS desktop →
+    Microsoft Store/MSIX. Triggers = "revenue" and "entity registered"; NO dates promised.
+- **Guide video rebuilt** (ADR-0022 pipeline): dynamic animated cards, before/after hero, real
+  in-browser extension + live-translation demos, neural narration. Stable URL unchanged
+  (`…/download/guide.{mp4,en.srt}`).
+- **Landing page:** added a hero + three niche sections matching the equal-weight positioning.
+- Governance closed per §7: CHANGELOG entry added, traceability REQ-05.2 row updated. DOC/ASSET-only.
+
 ## OPEN RELEASE ACTIONS (2026-07-24) — the owner's next-step menu
 The website installer serves 1.0.0 and the Chrome Web Store extension are BOTH behind this session's
 fixes; the guide video on the site is current. The owner's standing menu (full detail +

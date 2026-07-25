@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — launch strategy: signing/platform decisions, roadmap, rebuilt guide video, landing page (2026-07-25)
+- **ADR-0023 — code signing & platform distribution strategy (zero-cost first).** Consolidates the
+  ordered Windows trust plan (keep public builds honestly unsigned; publish per-artifact SHA-256;
+  "expect this warning" install copy; lead with extension + `winget`; let SmartScreen reputation
+  accrue) and adds the **macOS feasibility** picture (Tauri needs a build Mac; a clean "double-click to
+  open" needs Apple Developer Program at US$99/yr + notarization) — deferred. Records the paid-signing
+  order (Azure Trusted Signing → OV → EV), each with its gating condition. Extends ADR-0020, does not
+  supersede it.
+- **ADR-0024 — launch distribution & platform roadmap (entity-triggered).** Captures the owner's
+  2026-07-25 planning decisions: (1) positioning leads with **all three niches equally** —
+  immigration/relocation, cross-border freelancers/SMBs, privacy/crypto; (2) **no per-pair language
+  rollout** — translation is on-device NLLB any-to-any and the UI is already in 26 languages, so packs
+  are **pre-staged/QA'd by global speaker volume** (Spanish, Chinese, Arabic, Portuguese, French,
+  Russian, Bengali, …) rather than gated; (3) **desktop and extension presented equally** (not
+  extension-first); (4) paid platform work **deferred and sequenced around registering a business
+  entity** — when it exists, in order: EV code-signing cert (instant SmartScreen trust) → re-check
+  Azure Trusted Signing org eligibility → macOS desktop (Apple Developer Program + build Mac +
+  notarization) → Microsoft Store / MSIX. Triggers are "revenue" and "entity registered" — no dates.
+  Extends ADR-0023.
+- **Guide video rebuilt** via the ADR-0022 pipeline: **dynamic animated cards**, a **before/after
+  hero**, **real in-browser extension + live translation demos**, and **neural narration**. Served at
+  the stable `https://polyglotformfill.mooo.com/download/guide.{mp4,en.srt}` (URL unchanged on rebuild).
+- **Landing page:** added a **hero section** and dedicated **niche sections** (immigration/relocation,
+  cross-border freelancers/SMBs, privacy/crypto), matching the equal-weight three-niche positioning.
+
 ### Added — guide video: automated pipeline + self-hosted at a stable URL (2026-07-24)
 - **One-command rebuild:** `node scripts/build-guide.mjs` (`make guide`) assembles the narrated video +
   captions from `docs/guide/guide-manifest.json` + per-segment clips/narration. Deterministic; the caption
