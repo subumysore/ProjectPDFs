@@ -229,19 +229,19 @@ ${switcher(lang, "landing")}
   <div class="tiers">
     <div class="tier">
       <h3>${esc(tr("price.free"))}</h3>
-      <div class="price">$0</div>
+      <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.freeDuration"))}</span></div>
       <ul>${li(tr("price.freeList"))}</ul>
     </div>
     <div class="tier pop">
       <h3>${esc(tr("price.pro"))}</h3>
       <div class="price"><span class="ppp" data-usd="19">$19</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTimeDevice"))}</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("price.oneDevice"))} · or <span class="ppp" data-usd="9">$9</span>${esc(tr("price.perYear"))}</div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("price.oneDevice"))}</div>
       <ul>${li(tr("price.proList"))}</ul>
     </div>
     <div class="tier">
       <h3>${esc(tr("price.family"))}</h3>
       <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.oneTime"))}</span></div>
-      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${tr("price.familyDevices", { each: '<span class="ppp" data-usd="6">$6</span>' })} · or <span class="ppp" data-usd="15">$15</span>${esc(tr("price.perYear"))}</div>
+      <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${tr("price.familyDevices", { each: '<span class="ppp" data-usd="15">$15</span>' })}</div>
       <ul>${li(tr("price.familyList"))}</ul>
     </div>
   </div>
@@ -255,22 +255,10 @@ ${switcher(lang, "landing")}
     <p class="sub">${esc(tr("team.sub"))}</p>
     <div class="tiers">
       <div class="tier">
-        <h3>${esc(tr("team.tTeam"))}</h3>
-        <div class="price">$29 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tTeamRange"))}</div>
-        <ul>${li(tr("team.tTeamList"))}</ul>
-      </div>
-      <div class="tier">
         <h3>${esc(tr("team.tBiz"))}</h3>
-        <div class="price">$24 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
+        <div class="price"><span class="ppp" data-usd="29">$29</span> <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
         <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tBizRange"))}</div>
         <ul>${li(tr("team.tBizList"))}</ul>
-      </div>
-      <div class="tier">
-        <h3>${esc(tr("team.tScale"))}</h3>
-        <div class="price">$19 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("team.perSeat"))}</span></div>
-        <div style="font-size:13px;color:var(--muted);margin:-6px 0 8px">${esc(tr("team.tScaleRange"))}</div>
-        <ul>${li(tr("team.tScaleList"))}</ul>
       </div>
       <div class="tier">
         <h3>${esc(tr("team.tEnt"))}</h3>

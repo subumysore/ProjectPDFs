@@ -1,7 +1,6 @@
 {
   "meta.landingTitle": "Read & write any form, in any language.",
   "meta.landingDesc": "PolyglotFormFill reads a form in one language and fills it from your data in another — on your device, privately. We never see your data.",
-
   "nav.features": "Features",
   "nav.who": "Who it's for",
   "nav.languages": "Languages",
@@ -9,7 +8,6 @@
   "nav.tutorials": "Tutorials",
   "nav.privacy": "Privacy",
   "nav.getit": "Get it",
-
   "hero.badge": "Polyglot · on-device · zero telemetry",
   "hero.h1a": "Read & write any form —",
   "hero.h1b": "in any language.",
@@ -18,7 +16,6 @@
   "hero.cta2": "▶ Watch the tutorials",
   "hero.cta3": "Get it (beta)",
   "hero.trust": "AES-256 vault · passkey unlock · no cloud · no tracking · open & auditable",
-
   "flow.deviceTitle": "On your device — where all the processing happens",
   "flow.chip1": "Read & render PDF",
   "flow.chip2": "OCR field detection",
@@ -29,7 +26,6 @@
   "flow.chip7": "AES-256 vault",
   "flow.egressLabel": "What leaves — only what you send, to whom you send it:",
   "flow.egressBody": "a form you submit goes device → the recipient you picked, directly · a web search you type sends just those terms. Both are your choice, and neither passes through us. We never receive your documents, your vault, or any identifier — there is no cloud middleman.",
-
   "feat.eyebrow": "The headline feature",
   "feat.h2": "Turn a non-fillable PDF into a form you can actually fill",
   "feat.sub": "A flat PDF with no form fields — or even a photo or scan of one — becomes a real, fillable form in seconds. No “print, hand-write, re-scan.” No uploading it to some website to do it.",
@@ -50,7 +46,6 @@
   "feat.c6b": "Unlock with a passphrase or a hardware passkey (WebAuthn). The key is never stored — not even by us.",
   "feat.c7t": "Desktop + browser",
   "feat.c7b": "The extension fills web forms; the desktop app holds your keys as a hardened trust anchor.",
-
   "who.eyebrow": "Who it's for",
   "who.h2": "Built for anyone who fills forms across languages and borders",
   "who.sub": "Three groups get the most out of it — and every one of them keeps their data on their own device.",
@@ -60,49 +55,67 @@
   "who.c2b": "Tax, banking, and onboarding forms often arrive in a language that isn't yours. Fill them from your own details — held in an AES-256 vault on your device — and export a clean PDF, with nothing routed through us or any third party.",
   "who.c3t": "Privacy-first & crypto communities",
   "who.c3b": "Every step runs locally with zero telemetry, and the vault unlocks with a hardware passkey (WebAuthn) whose key is never stored. No account, no cloud, no tracking — your data stays on the device you control.",
-
   "band.eyebrow": "Built for a multilingual world",
   "band.h2": "Your data in your language. The form in theirs.",
   "band.sub": "Governments and institutions publish forms in one language; people hold their details in another. PolyglotFormFill bridges that gap on-device — starting with English ↔ Hindi, with more to come.",
   "band.chip2": "more languages coming",
   "band.chip3": "on-device NMT · no cloud",
-
   "price.eyebrow": "Pricing",
   "price.h2": "Buy once. Own it. No subscription.",
-  "price.sub": "A one-time, per-device license — verified offline on your device, so there's no activation server and not a single network call. Free during the public beta; the prices below take effect at launch.",
+  "price.sub": "Start with a 30-day free trial — every feature, on your device. Keep it with a one-time, per-device license, verified offline: no activation server, no subscription, no account.",
   "price.mostPopular": "Most popular",
-  "price.free": "Free",
-  "price.freeList": ["Core web-form autofill", "One profile", "Basic PDF fill", "Encrypted on-device vault", "Fully on-device, always"],
+  "price.free": "Free trial",
+  "price.freeList": [
+    "Every feature, free for 30 days",
+    "On this device",
+    "No account · fully on-device",
+    "Then a one-time purchase to keep it"
+  ],
   "price.pro": "Pro",
   "price.oneTimeDevice": "one-time / device",
   "price.oneDevice": "1 device",
-  "price.perYear": "/year",
-  "price.proList": ["Everything in Free", "1 device", "Up to 3 profiles", "Make any PDF fillable (OCR)", "Word & Excel forms", "Translated fill (language packs)", "Signature & photo placement", "Encrypted backup & transfer"],
-  "price.family": "Family",
+  "price.proList": [
+    "Every feature, unlocked",
+    "1 device",
+    "Up to 3 profiles",
+    "Make any PDF fillable (OCR)",
+    "Word & Excel forms",
+    "Translated fill (all languages)",
+    "Signature & photo placement",
+    "Encrypted backup & transfer"
+  ],
+  "price.family": "Duo",
   "price.oneTime": "one-time",
-  "price.familyDevices": "up to 5 devices (~{each} each)",
-  "price.familyList": ["Everything in Pro, on up to 5 devices", "Up to 5 profiles", "Manage the household's profiles from any device", "Priority support"],
-
+  "price.familyDevices": "2 devices (~{each} each)",
+  "price.familyList": [
+    "Everything in Pro, on 2 devices",
+    "Up to 5 profiles",
+    "Shared across both your devices",
+    "Priority support"
+  ],
   "team.eyebrow": "For teams & business",
   "team.h2": "Commercial — seat licenses, unlimited profiles",
-  "team.sub": "Per-seat annual licensing with volume pricing. Every seat gets all Pro features and unlimited profiles — and, like every tier, runs entirely on each device with zero data sent back to us. Licenses are issued centrally to your admin and verified offline on each device.",
+  "team.sub": "Per-seat annual licensing — one simple price, any team size. Every seat gets all Pro features and unlimited profiles, runs entirely on each device with zero data sent back to us, and is issued centrally to your admin and verified offline.",
   "team.perSeat": "/ seat / yr",
-  "team.tTeam": "Team",
-  "team.tTeamRange": "5–50 seats",
-  "team.tTeamList": ["All Pro features", "Unlimited profiles / seat", "Email support & updates"],
   "team.tBiz": "Business",
-  "team.tBizRange": "51–100 seats",
-  "team.tBizList": ["Everything in Team", "Volume discount", "Priority support"],
-  "team.tScale": "Scale",
-  "team.tScaleRange": "101–500 seats",
-  "team.tScaleList": ["Everything in Business", "Best per-seat rate", "Onboarding help"],
+  "team.tBizRange": "1–19 seats",
+  "team.tBizList": [
+    "All Pro features",
+    "Unlimited profiles per seat",
+    "Central issuance to your admin",
+    "Priority support & updates"
+  ],
   "team.tEnt": "Enterprise",
-  "team.tEntPrice": "Let's talk",
-  "team.tEntRange": "500+ seats",
-  "team.tEntList": ["Custom pricing & terms", "SSO-verified provisioning", "SLA & dedicated support", "Deployment assistance"],
-  "price.note": "Free while in beta. Personal tiers are one-time, per-device Ed25519 licenses verified locally — no activation server. Commercial is annual per seat with central issuance. Prices in USD; local taxes may apply. Enterprise: contact us.",
+  "team.tEntPrice": "Let’s talk",
+  "team.tEntRange": "20+ seats",
+  "team.tEntList": [
+    "Custom pricing & terms",
+    "SSO-verified provisioning",
+    "SLA & dedicated support",
+    "Deployment assistance"
+  ],
+  "price.note": "Start free for 30 days. Personal tiers are one-time, per-device Ed25519 licenses verified locally — no activation server, no subscription. Commercial is $29 per seat per year with central issuance. Prices in USD, adjusted for your region; local taxes may apply. Enterprise (20+ seats):",
   "price.contactUs": "contact us",
-
   "get.eyebrow": "Get PolyglotFormFill",
   "get.h2": "Install in a minute",
   "get.sub": "Add the browser extension for web-form autofill, or install the desktop app for the full, hardened experience. They work together.",
@@ -110,15 +123,12 @@
   "get.ext": "Get the browser extension (beta)",
   "get.soon": "Chrome Web Store — soon",
   "get.note": "Beta downloads (hosted on Oracle Cloud). The Windows build is unsigned — Windows warns “unknown publisher” (More info → Run anyway). The extension installs via developer mode for now; store listings are in progress. macOS & Linux next.",
-
   "privS.eyebrow": "Privacy",
   "privS.h2": "The promise, in one line",
   "privS.sub": "Your data is processed on your device and is never sent to us. The only things that leave are actions you take — submitting a finished form (straight to its recipient) or a web search you type. Those go directly to their destination, never through us. That's the whole list.",
   "privS.readFull": "Read the full privacy policy",
-
   "foot.left": "© PolyglotFormFill · Privacy-first form autofill",
   "foot.right": "On-device · Zero telemetry · Open & auditable",
-
   "install.title": "Install PolyglotFormFill (beta)",
   "install.back": "← PolyglotFormFill",
   "install.h1": "Install",
@@ -156,7 +166,6 @@
   "install.verifyThisRelease": "this release",
   "install.privacyNote": "Your data stays on your device; we never see it. See the",
   "install.privacyLink": "privacy policy",
-
   "privP.title": "Privacy Policy",
   "privP.effective": "Effective date:",
   "privP.version": "Version 1.0",
@@ -199,5 +208,6 @@
   "privP.h11": "Changes",
   "privP.b11": "We may update this Policy; material changes update the Effective date and, where required, include additional notice.",
   "privP.footer": "Subramanya Mysore (sole proprietor) · Grievance Officer/Contact: Subramanya Mysore · subumysore@gmail.com · DPO/EU Representative if appointed. PolyglotFormFill — privacy-first, on-device form autofill.",
-  "privP.backHome": "← Back to PolyglotFormFill"
+  "privP.backHome": "← Back to PolyglotFormFill",
+  "price.freeDuration": "for 30 days"
 }
