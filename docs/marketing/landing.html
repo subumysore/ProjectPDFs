@@ -102,7 +102,21 @@
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   .note{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
   @media (max-width:560px){.navlinks{display:none}}
+  /* Multilingual "Hello" background — the same motif as the guide video. A fixed layer BEHIND all
+     content (z-index:-1) with low opacity so copy stays perfectly readable; each word drifts up and
+     fades, from its own random spot. */
+  .hellobg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .hellobg .h{position:absolute;font-weight:800;white-space:nowrap;color:var(--teal-ink);opacity:0;
+    will-change:transform,opacity;letter-spacing:-.5px;}
+  @keyframes hdrift{
+    0%{transform:translateY(26px) scale(.92);opacity:0;}
+    18%{opacity:.11;} 50%{transform:translateY(-6px) scale(1);opacity:.14;} 82%{opacity:.06;}
+    100%{transform:translateY(-42px) scale(1.06);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
 </style>
+
+<div class="hellobg" id="hellobg" aria-hidden="true"></div>
 
 <div class="wrap">
   <nav>
@@ -266,6 +280,26 @@
       });
       note("Prices adjusted for your region ("+(NAMES[cc]||cc)+") based on local purchasing power — indicative; final regional price applied at checkout.");
     }).catch(function(){ note("Prices shown in USD."); });
+  })();
+  </script>
+  <script>
+  // Fill the page background with "Hello" in many languages, each drifting up and fading — the same
+  // multilingual motif as the guide video. Purely decorative (aria-hidden), behind all content.
+  (function(){
+    var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
+      "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+      "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
+    var bg=document.getElementById("hellobg"); if(!bg) return;
+    var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
+    for(var i=0;i<N;i++){
+      var el=document.createElement("div"); el.className="h"; el.textContent=HELLO[i%HELLO.length];
+      el.style.left=(Math.random()*96)+"vw";
+      el.style.top=(Math.random()*100)+"vh";
+      el.style.fontSize=(15+Math.random()*30)+"px";
+      var dur=(9+Math.random()*9).toFixed(2);
+      el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
+      bg.appendChild(el);
+    }
   })();
   </script>
 

@@ -59,7 +59,8 @@
       [lang,hh,...ls].forEach(e=>e.style.opacity=1);
     },360);
   }
-  show(0);
-  setInterval(()=>{ i=(i+1)%L.length; show(i); }, 2000);
+  const stat=new URLSearchParams(location.search).get("static");
+  if(stat!==null){ show(parseInt(stat)||1); }  // steady single language for a store screenshot
+  else { show(0); setInterval(()=>{ i=(i+1)%L.length; show(i); }, 2000); }
 </script>
 </body></html>

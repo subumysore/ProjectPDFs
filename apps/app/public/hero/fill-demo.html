@@ -124,7 +124,14 @@
     else { await animText(); await animControls(); await animPhotoSig(); }
     await wait(1600);
   }
-  // LOOP continuously so the recording always has motion (never freezes on a static frame).
-  (async()=>{ while(true){ reset(); await wait(700); await run(); await wait(1200); } })();
+  if(q.get("static")){ // fully-filled still, for a store screenshot
+    document.querySelectorAll("#sec-text .box").forEach(b=>b.classList.add("on"));
+    dd().classList.add("on"); rM().classList.add("sel"); const c=chk(); c.classList.add("sel"); c.textContent="✓";
+    ph().classList.add("on"); sig().classList.add("on"); badge.classList.add("on"); cur.style.display="none";
+    document.querySelectorAll(".sec.dim").forEach(e=>e.classList.remove("dim"));
+  } else {
+    // LOOP continuously so the recording always has motion (never freezes on a static frame).
+    (async()=>{ while(true){ reset(); await wait(700); await run(); await wait(1200); } })();
+  }
 </script>
 </body></html>
