@@ -49,17 +49,18 @@ for (const seg of M.segments) {
   const v = resolve(OUT, "raw", `${seg.id}.mp4`);
   const a = resolve(OUT, "audio", `${seg.id}.wav`);
   if (!existsSync(v) || !existsSync(a)) { missing.push(seg.id); continue; }
-  const d = dur(a);
+  // Add T seconds of TRAILING SILENCE to each segment: the crossfade then overlaps this silence with
+  // the next segment's start, so narration NEVER bleeds/echoes across the cut. Timing stays in sync.
+  const d = dur(a) + T;
   const outf = resolve(tmp, `${seg.id}.mux.mp4`);
   // CRISP: keep near-source resolution and encode with a low CRF (visually lossless for screen text),
-  // slow preset for efficiency. lanczos scaler preserves fine text edges. This replaces the old
-  // 1280-wide / ~70 kbps encode that made the text blurry.
+  // slow preset for efficiency. lanczos scaler preserves fine text edges.
   // Force EXACT 1920x1080 (cover + centre-crop) so every segment matches — required for the xfade
   // crossfades (mismatched sizes make xfade fail). setsar=1 keeps pixel aspect uniform too.
   const H = Math.round((W * 9) / 16);
   ff(["-i", v, "-i", a,
-    "-filter_complex", `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=${FPS},tpad=stop_mode=clone:stop_duration=600[v]`,
-    "-map", "[v]", "-map", "1:a", "-t", String(d),
+    "-filter_complex", `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},setsar=1,fps=${FPS},tpad=stop_mode=clone:stop_duration=600[v];[1:a]apad=pad_dur=${T + 0.2}[aud]`,
+    "-map", "[v]", "-map", "[aud]", "-t", String(d),
     "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-ar", "44100", "-b:a", "160k", outf]);
   concat.push(`file '${outf.replace(/\\/g, "/")}'`);
@@ -84,6 +85,9 @@ const video = resolve(OUT, "video/PolyglotFormFill-guide.mp4");
 // SMOOTH: chain every segment with a crossfade DISSOLVE (video xfade + audio acrossfade), so the
 // cut between clips is a calm fade-through rather than a jarring jump. Both streams overlap by T,
 // keeping audio and video in sync; the total shortens by (n-1)*T.
+// A calm ENDING: hold the last frame ~2s after the narration ends, and fade both picture and sound
+// out over the final 1.6s, so the video never stops abruptly. TAIL = extra seconds; FADE = out dur.
+const TAIL = 2.0, FADE = 1.6;
 if (files.length > 1) {
   const inputs = [];
   for (const f of files) inputs.push("-i", f);
@@ -96,11 +100,18 @@ if (files.length > 1) {
     vp = `[v${i}]`; ap = `[a${i}]`;
     acc += durs[i] - T;
   }
-  ff([...inputs, "-filter_complex", fc.join(";"), "-map", vp, "-map", ap,
+  const fadeAt = (acc + TAIL - FADE).toFixed(3);
+  fc.push(`${vp}tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE}[vout]`);
+  fc.push(`${ap}apad=pad_dur=${TAIL},afade=t=out:st=${fadeAt}:d=${FADE}[aout]`);
+  ff([...inputs, "-filter_complex", fc.join(";"), "-map", "[vout]", "-map", "[aout]",
     "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-ar", "44100", "-b:a", "160k", video]);
 } else if (files.length === 1) {
-  ff(["-i", files[0], "-c", "copy", video]);
+  const fadeAt = (durs[0] + TAIL - FADE).toFixed(3);
+  ff(["-i", files[0], "-filter_complex",
+    `[0:v]tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE}[vout];[0:a]apad=pad_dur=${TAIL},afade=t=out:st=${fadeAt}:d=${FADE}[aout]`,
+    "-map", "[vout]", "-map", "[aout]", "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+    "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-b:a", "160k", video]);
 }
 writeFileSync(resolve(OUT, "captions/PolyglotFormFill-guide.en.srt"), cues.join("\n"));
 

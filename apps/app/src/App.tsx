@@ -1268,7 +1268,7 @@ export function App() {
               </div>
             )}
             {ocrPct !== null && <span style={{ marginLeft: 8, fontSize: 12 }}>reading… {ocrPct}%</span>}
-            {extracted.length > 0 && (
+            {(extracted.length > 0 || docImage) && (
               <div style={{ marginTop: 8 }}>
                 <ul style={{ margin: "6px 0" }}>
                   {extracted.map((f) => (
