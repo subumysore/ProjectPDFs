@@ -838,60 +838,88 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       pacific: /hawaiian|pacific islander/, other: /other race|other ethnic/, decline: /prefer not|decline/ } },
   ];
   const qaMatch = (q) => { const n = norm(q); for (const e of QA_LIBRARY) if (e.q.test(n)) return e; return null; };
-  // The visible label for a radio/checkbox/option element.
+  // The visible label of an option control — a real <input> OR an ARIA role widget.
   const ctrlLabel = (c) => {
-    let t = "";
-    if (c.id) { const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`); if (l) t = l.textContent; }
-    if (!t) t = (c.closest("label") && c.closest("label").textContent) || c.getAttribute("aria-label") || "";
+    let t = c.getAttribute("aria-label") || "";
+    if (!t && c.id) { const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`); if (l) t = l.textContent; }
+    if (!t) { const l = c.closest("label"); if (l) t = l.textContent; }
+    if (!t && c.tagName !== "INPUT") t = c.textContent || "";     // role widget: its own text is the label
     if (!t && c.parentElement) t = c.parentElement.textContent || "";
     return t.replace(/\s+/g, " ").trim();
   };
-  // The question a radio/checkbox belongs to: the nearest ancestor legend/heading/label text that is
-  // NOT just an option caption. Read own attributes first (name/aria), then climb.
+  // The QUESTION a control belongs to. Custom widgets rarely use <fieldset><legend>, and the heading is
+  // often a plain <div>/<span> that is a SIBLING of the option rows — so we climb and collect every
+  // DIRECT-CHILD element that is NOT itself a control container (those hold an input) and whose text is
+  // short. Joining them lets the library regex find "veteran"/"race"/etc. wherever it sits, without
+  // mistaking an option caption ("White") for the question (option rows are skipped — they contain inputs).
   const ctrlQuestion = (c) => {
-    const own = [c.name, c.getAttribute("aria-label"), c.getAttribute("data-question")].filter(Boolean).join(" ");
+    const parts = [c.name, c.getAttribute("aria-label"), c.getAttribute("data-question")].filter(Boolean);
     let node = c;
-    for (let i = 0; i < 6 && node; i++) {
+    for (let i = 0; i < 5 && node; i++) {
       node = node.parentElement; if (!node) break;
-      const grp = node.getAttribute && (node.getAttribute("aria-labelledby") || node.getAttribute("role"));
-      if (grp && node.getAttribute("aria-labelledby")) { const lab = document.getElementById(node.getAttribute("aria-labelledby")); if (lab) { const t = (lab.textContent || "").trim(); if (t.length >= 3) return own + " " + t; } }
-      const head = node.querySelector("legend, h1, h2, h3, h4, h5, h6, [class*='label'], [class*='question'], [class*='title'], strong");
-      if (head) { const t = (head.textContent || "").replace(/\s+/g, " ").trim(); if (t.length >= 3 && t.length <= 200) return own + " " + t; }
+      const lb = node.getAttribute && node.getAttribute("aria-labelledby");
+      if (lb) { const el = document.getElementById(lb); if (el) parts.push(el.textContent || ""); }
+      for (const ch of node.children || []) {
+        if (ch === c || ["INPUT", "SELECT", "TEXTAREA", "SCRIPT", "STYLE"].includes(ch.tagName)) continue;
+        if (ch.querySelector && ch.querySelector('input, select, textarea, [role="radio"], [role="checkbox"], [role="switch"]')) continue; // an option row / control
+        const t = (ch.textContent || "").replace(/\s+/g, " ").trim();
+        if (t && t.length <= 160) parts.push(t);
+      }
     }
-    return own;
+    return parts.join(" · ");
   };
-  const checkCtrl = (c) => {
+  const isChk = (c) => (c.tagName === "INPUT") ? !!c.checked : c.getAttribute("aria-checked") === "true";
+  const setChk = (c) => {
     try {
       const box = c.closest("label") || c;
-      if (!c.checked) {
-        // click() TOGGLES a checkbox — never pre-set `checked` first or it flips back off. Let click
-        // do the checking; if a framework preventDefaults it, force the state + fire input/change.
+      if (c.tagName === "INPUT") {
+        if (!c.checked) { // click() TOGGLES a checkbox — let click do it; force + fire if a framework blocks it
+          c.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          if (c.click) c.click(); else c.checked = true;
+          if (!c.checked) { c.checked = true; c.dispatchEvent(new Event("input", { bubbles: true })); c.dispatchEvent(new Event("change", { bubbles: true })); }
+        }
+      } else { // ARIA widget with no real input: click it and reflect the state
         c.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        if (c.click) c.click(); else c.checked = true;
-        if (!c.checked) { c.checked = true; c.dispatchEvent(new Event("input", { bubbles: true })); c.dispatchEvent(new Event("change", { bubbles: true })); }
+        c.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        if (c.click) c.click();
+        c.setAttribute("aria-checked", "true");
       }
       markFilled(box);
       return true;
     } catch (_) { return false; }
   };
+  // Rendered? A custom control HIDES the real <input> (sr-only / opacity) behind a styled element, so
+  // check the label/wrapper too — never require the input ITSELF to be visible or we'd skip it.
+  const shownCtrl = (c) => {
+    if (c.offsetParent !== null) return true;
+    const b = c.closest("label") || c.parentElement;
+    return !!(b && (b.offsetParent !== null || (b.getClientRects && b.getClientRects().length)));
+  };
   if (Object.keys(SAVED).length) {
-    const controls = [...document.querySelectorAll('input[type="radio"], input[type="checkbox"]')]
-      .filter((c) => !c.disabled && c.offsetParent !== null);
-    // Group by their question text so each screening question is answered once.
+    const controls = [...document.querySelectorAll('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"], [role="switch"]')]
+      .filter((c) => !(c.disabled || c.getAttribute("aria-disabled") === "true") && shownCtrl(c));
+    // Group by (radio-group name / group id) + question so each question is answered once.
     const groups = new Map();
-    for (const c of controls) { const q = ctrlQuestion(c); const k = (c.name || "") + "|" + q; if (!groups.has(k)) groups.set(k, { q, list: [] }); groups.get(k).list.push(c); }
+    for (const c of controls) {
+      const q = ctrlQuestion(c);
+      const rg = c.closest && c.closest('[role="radiogroup"], fieldset');
+      const grp = c.name || (rg && (rg.id || rg.getAttribute("aria-labelledby"))) || "";
+      const k = grp + "|" + q;
+      if (!groups.has(k)) groups.set(k, { q, list: [] });
+      groups.get(k).list.push(c);
+    }
     for (const { q, list } of groups.values()) {
       const entry = qaMatch(q);
       if (!entry) continue;
       const ans = SAVED[entry.key];
       if (ans == null || ans === "") continue;
-      if (!entry.multi && list.some((c) => c.checked)) continue; // user already answered — leave it
+      if (!entry.multi && list.some(isChk)) continue; // user already answered — leave it
       const tokens = entry.multi ? String(ans).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(ans)];
       for (const tok of tokens) {
         const re = entry.opts[tok];
         if (!re) continue;
         const hit = list.find((c) => re.test(ctrlLabel(c).toLowerCase()));
-        if (hit && !hit.checked) { if (checkCtrl(hit)) filled++; }
+        if (hit && !isChk(hit)) { if (setChk(hit)) filled++; }
         if (!entry.multi) break; // radios: one answer only
       }
     }

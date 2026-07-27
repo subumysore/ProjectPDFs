@@ -312,6 +312,32 @@ test("saved answers: EEO self-ID (veteran radio + race checkboxes) from saved ch
   assert.equal($(dom, "#r_black").checked, false);
 });
 
+test("saved answers: custom ARIA-radio widgets + a plain-div heading (Ashby/Greenhouse style)", async () => {
+  const dom = mount(`
+    <div class="q">
+      <div class="q-title">Disability Status</div>
+      <div role="radiogroup">
+        <div role="radio" aria-checked="false" id="d1">I have a disability</div>
+        <div role="radio" aria-checked="false" id="d2">I do not have a disability</div>
+        <div role="radio" aria-checked="false" id="d3">Decline to specify</div>
+      </div>
+    </div>`);
+  await fillPage({}, null, [], { savedAnswers: { disability: "no" } });
+  assert.equal($(dom, "#d2").getAttribute("aria-checked"), "true"); // "I do not have a disability"
+  assert.equal($(dom, "#d1").getAttribute("aria-checked"), "false");
+});
+
+test("saved answers: a visually-hidden real radio (styled control) is still selected", async () => {
+  const dom = mount(`
+    <div class="field">
+      <div class="field-label">Are you authorized to work in the United States?</div>
+      <label><input type="radio" name="wa" id="wy" style="position:absolute;opacity:0"> Yes</label>
+      <label><input type="radio" name="wa" id="wn" style="position:absolute;opacity:0"> No</label>
+    </div>`);
+  await fillPage({}, null, [], { savedAnswers: { work_auth_us: "yes" } });
+  assert.equal($(dom, "#wy").checked, true);
+});
+
 test("saved answers: a question with NO saved answer is left untouched (never guessed)", async () => {
   const dom = mount(`
     <fieldset><legend>Do you currently have a DoD security clearance?</legend>
