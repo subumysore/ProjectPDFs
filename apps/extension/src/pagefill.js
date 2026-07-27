@@ -396,6 +396,22 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return /\bdate\b|\bdob\b|birth|expiry|expiration|issued?\b/.test(hay);
   };
 
+  // Is this field inside an EDUCATION section? Such fields (Field of study, GPA, From/To year…) must be
+  // filled ONLY by the education router — never by generic concept/address/DOB matching, which was
+  // stuffing the street address into a GPA box and the birth year into "From". Detected by the field's
+  // own id/name or an ancestor headed "Education".
+  const inEduContext = (el) => {
+    if (/education|academic|schooling|educationdata/.test(norm((el.id || "") + " " + (el.name || "")))) return true;
+    let node = el;
+    for (let i = 0; i < 9 && node; i++) {
+      node = node.parentElement; if (!node) break;
+      if (node.querySelectorAll) for (const h of node.querySelectorAll(":scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6, :scope > legend, :scope > label, :scope > [class*='head'], :scope > [class*='title'], :scope > strong, :scope > b")) {
+        if (/^education\b|^education\s*:|education (history|background|details|information)/.test(norm(h.textContent))) return true;
+      }
+    }
+    return false;
+  };
+
   const fields = [];
   let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
   for (const el of document.querySelectorAll("input, textarea")) {
@@ -470,8 +486,16 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (ownHit != null) { fields.push({ el, label, pick: null, forced: ownHit }); continue; }
     // EDUCATION fields: a Degree/Field/School/Year/GPA field is filled from the qualification whose
     // level matches the field's section (Master's block → masters entry), else the highest one.
-    const eduV = eduValueFor(el, label);
+    const eduCtx = edu.length && inEduContext(el);
+    // In an education block, classify by the field's OWN label — NOT labelOf's ancestor fallback, which
+    // for a short caption like "To" grabs the whole block ("School or University …") and mis-files it.
+    const eduV = eduValueFor(el, eduCtx
+      ? (ariaLabelText(el) + " " + ((el.closest("label") && el.closest("label").textContent) || "") + " " + ownLabel(el))
+      : label);
     if (eduV != null) { fields.push({ el, label, pick: null, forced: eduV }); continue; }
+    // An education sub-field we hold no value for → leave it BLANK; never let generic matching guess it
+    // (that put the address in GPA and the birth year in From/To).
+    if (eduCtx) continue;
     let pick = null, top = 0;
     for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
     if (!pick || top < 1.5) {
@@ -696,6 +720,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     let pick = null;
     let value = eduValueFor(sel, label); // education dropdown (Degree, University) → the routed value
     if (value == null) {
+      if (edu.length && inEduContext(sel)) continue; // edu-context dropdown with no routed value → don't guess
       let top = 0;
       for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
       if (!pick || top < 1.5) continue;
@@ -1131,9 +1156,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       const q = ariaLabelText(sel) + " " + ctrlQuestion(sel) + " " + ownLabel(sel); // aria-labelledby holds the question on iCIMS
       const opts = [...sel.options].filter((o) => o.value && (o.textContent || "").trim());
       let opt = null;
+      const eduCtx = edu.length && inEduContext(sel); // education dropdowns: router only, never generic guessing
       const entry = qaMatch(q);
       // INTENT answer (Common answers OR the answer captured for this intent) → the option matching it.
-      if (entry) {
+      if (!eduCtx && entry) {
         const pick = (SAVED[entry.key] != null && SAVED[entry.key] !== "") ? SAVED[entry.key] : intentAnswer[entry.key];
         if (pick != null && pick !== "") {
           for (const tok of (entry.multi ? String(pick).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(pick)])) {
@@ -1143,7 +1169,8 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           }
         }
       }
-      if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = selectOption(opts, captured); }
+      if (!opt && !eduCtx) { const captured = vaultAnswerFor(q); if (captured) opt = selectOption(opts, captured); }
+      if (!opt && eduCtx) { const ev = eduValueFor(sel, q); if (ev != null && String(ev).trim()) opt = selectOption(opts, ev); } // Field of study etc. — only the routed education value
       // EDUCATION-LEVEL dropdown ("What is your highest completed education…" with degree/diploma
       // options): pick the option matching the user's HIGHEST stored qualification. Generic, no capture
       // needed — driven by the parsed education entries (edu[0] is the highest).

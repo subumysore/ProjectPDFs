@@ -277,6 +277,35 @@ test("select: acronym derivation needs no table (full value -> abbreviated optio
   assert.equal($(dom, "#st2").value, "NC"); // "North Carolina" -> initials "NC", purely derived
 });
 
+test("education fields never get address/DOB: empty edu sub-fields stay blank", async () => {
+  const dom = mount(`
+    <h3>Education:</h3>
+    <div class="row"><label>School or University <input id="edu-school"></label></div>
+    <div class="row"><label>Overall result (GPA) <input id="edu-gpa"></label></div>
+    <div class="row"><label>From <input id="edu-from"></label></div>
+    <div class="row"><label>To <input id="edu-to"></label></div>`);
+  const { parseEducation } = await import("./education.js");
+  // Only school stored — no GPA/year — so those must stay blank, NOT grab the address or birth year.
+  const vault = { masters: "Central Missouri State University", street_address: "4308 Albino Deer Way", date_of_birth: "11/30/1968" };
+  await fillPage(vault, null, parseEducation(vault));
+  assert.ok(/central missouri/i.test($(dom, "#edu-school").value), "school fills");
+  assert.equal($(dom, "#edu-gpa").value, "");  // NOT the address
+  assert.equal($(dom, "#edu-from").value, ""); // NOT the birth year
+  assert.equal($(dom, "#edu-to").value, "");
+});
+
+test("education comma-delimited value routes GPA + year when present", async () => {
+  const dom = mount(`
+    <h3>Education:</h3>
+    <div class="row"><label>Overall result (GPA) <input id="g2"></label></div>
+    <div class="row"><label>Graduation Year <input id="y2"></label></div>`);
+  const { parseEducation } = await import("./education.js");
+  const vault = { masters: "Central Missouri State University, Industrial Engineering, 2001, 3.8" };
+  await fillPage(vault, null, parseEducation(vault));
+  assert.equal($(dom, "#g2").value, "3.8");
+  assert.equal($(dom, "#y2").value, "2001");
+});
+
 test("repeated degree <select>s (Workday) route per block: block0=Master, block1=Bachelor", async () => {
   const deg = (i) => `
     <span id="educationData[${i}].degree-label">Degree</span>
