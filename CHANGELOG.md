@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — web autofill reaches forms inside cross-origin IFRAMES (Greenhouse/Lever) (2026-07-27)
+- Many ATS embed their application form in a cross-origin iframe (e.g. Greenhouse `boards.greenhouse.io`
+  via `#grnhse_app`), so a top-frame-only injection saw zero fields and reported "No fields matched" on a
+  clearly-fillable form. "Fill this page" now injects into ALL frames (via the existing `<all_urls>` host
+  permission) and sums what each filled. When a label translation is active it stays top-frame-only, since
+  translated labels are aligned to the top frame's field order.
+
 ### Fixed — web autofill: wrong data on real ATS forms (UltiPro/UKG) + fill confidence UI (2026-07-27)
 - **Alternate-name fields no longer receive the legal name.** "Preferred Name" / "Former Name" / "Maiden
   Name" / "Nickname" / "Alias" matched the generic full-name concept (the bare word "name") and were

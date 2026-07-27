@@ -519,12 +519,18 @@ async function fillActivePage(vault) {
       }
     }
   } catch (_) { /* translation unavailable → fill with original labels */ }
-  const [{ result } = {}] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
+  // Fill EVERY frame, not just the top one: many ATS forms (Greenhouse `boards.greenhouse.io`,
+  // Lever, some Workday) render the application form inside a cross-origin IFRAME, so a top-frame-only
+  // injection sees zero fields ("No fields matched"). With <all_urls> host permission we can inject
+  // into the sub-frames too and SUM what each filled.
+  // Caveat: translated labels (tLabels) are aligned to the TOP frame's field order only, so when a
+  // translation is in play we stay top-frame-only to avoid mis-mapping labels onto an iframe's fields.
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: !tLabels },
     func: fillPage,
     args: [vault, tLabels, parseEducation(vault)],
   });
-  return result || 0;
+  return (results || []).reduce((n, r) => n + (r && typeof r.result === "number" ? r.result : 0), 0);
 }
 
 // Fill a PDF open in the tab: read its bytes on-device, fill via AcroForm field names
