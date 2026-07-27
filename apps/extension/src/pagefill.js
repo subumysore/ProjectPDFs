@@ -580,13 +580,22 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // Set a value in a way FRAMEWORKS honour: React/Angular ignore a plain `el.value =`, and
   // date pickers are often readOnly. Use the native value setter, briefly clear readOnly,
   // and fire a full event sequence.
+  // React (Workday, etc.) caches each input's value in an internal `_valueTracker`; a programmatic set
+  // via the prototype setter bypasses it, so React's onChange never fires and the field stays "empty"
+  // for validation — the form fills visually but won't submit. Point the tracker at the OLD value so
+  // React sees a real change on the next input event, and its validation/enable-submit updates.
+  const syncReactTracker = (el, prev) => { try { if (el._valueTracker) el._valueTracker.setValue(prev); } catch (_) { /* not React */ } };
   const setFieldValue = (el, value) => {
     const ro = el.readOnly; if (ro) el.readOnly = false;
     try { el.focus(); } catch (_) { /* ignore */ }
+    const prev = el.value;
     const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const desc = Object.getOwnPropertyDescriptor(proto, "value");
     if (desc && desc.set) desc.set.call(el, value); else el.value = value;
-    for (const t of ["keydown", "keypress", "input", "keyup", "change", "blur"]) el.dispatchEvent(new Event(t, { bubbles: true }));
+    syncReactTracker(el, prev);
+    try { el.dispatchEvent(new InputEvent("input", { bubbles: true, data: String(value), inputType: "insertText" })); }
+    catch (_) { el.dispatchEvent(new Event("input", { bubbles: true })); }
+    for (const t of ["change", "blur"]) el.dispatchEvent(new Event(t, { bubbles: true }));
     if (ro) el.readOnly = ro;
     return true;
   };
@@ -622,6 +631,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       try { el.dispatchEvent(new InputEvent("input", { data: ch, inputType: "insertText", bubbles: true })); }
       catch (_) { el.dispatchEvent(new Event("input", { bubbles: true })); }
       el.dispatchEvent(new KeyboardEvent("keyup", k));
+      syncReactTracker(el, el.value.slice(0, -1)); // let React register each keystroke
       await wait(12);
     }
     el.dispatchEvent(new Event("change", { bubbles: true }));
