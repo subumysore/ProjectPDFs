@@ -895,28 +895,44 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return parts.join(" · ");
   };
   const isChk = (c) => (c.tagName === "INPUT") ? !!c.checked : c.getAttribute("aria-checked") === "true";
+  // Force a REAL <input>'s checked state in a way React notices: set via the prototype's native setter
+  // (updates React's value tracker) THEN fire input+change (React's onChange reads target.checked). A
+  // plain c.checked=true is silently reverted on the next React render — this is why a highlighted radio
+  // showed unselected.
+  const fireClick = (el) => {
+    if (!el) return;
+    el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    el.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    if (el.click) el.click();
+  };
+  const forceChecked = (input) => {
+    try {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "checked").set;
+      setter ? setter.call(input, true) : (input.checked = true);
+    } catch (_) { input.checked = true; }
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
   const setChk = (c) => {
     try {
       if (isChk(c)) return true;
-      // React-controlled radios/checkboxes bind their onClick to the visible LABEL / row, NOT the
-      // <input> (which may have no name/id and a sibling label carrying data-value). Clicking only the
-      // input leaves their state unselected. So CLICK THE LABEL/WRAPPER the site listens on — once, to
-      // avoid double-toggling a checkbox — then, only if a plain input still isn't checked, set it.
-      let target = null;
-      if (c.id) target = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`);
-      if (!target && c.parentElement && c.parentElement.querySelector) target = c.parentElement.querySelector("label");
-      if (!target) target = c.closest("label");
-      if (!target) target = c.closest('[class*="radio"], [class*="checkbox"], [class*="option"], [role="radio"], [role="checkbox"], li');
-      if (!target) target = c;
-      target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-      target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-      if (target.click) target.click();
-      if (c.tagName === "INPUT" && !c.checked) { // fallback for plain (non-React) inputs the label click didn't toggle
-        c.checked = true;
-        c.dispatchEvent(new Event("input", { bubbles: true }));
-        c.dispatchEvent(new Event("change", { bubbles: true }));
-      } else if (c.tagName !== "INPUT" && c.getAttribute("aria-checked") !== "true") {
-        c.setAttribute("aria-checked", "true");
+      const isCheckbox = c.type === "checkbox" || c.getAttribute("role") === "checkbox";
+      // Elements the site may bind its handler to: the associated/sibling/wrapping <label>, the row.
+      const label = (c.id && document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`))
+        || (c.parentElement && c.parentElement.querySelector && c.parentElement.querySelector("label"))
+        || c.closest("label");
+      const wrap = c.closest('[class*="radio"], [class*="checkbox"], [class*="option"], [role="radio"], [role="checkbox"], li');
+      if (isCheckbox) {
+        // A checkbox TOGGLES on each click — click exactly one target, then ensure the state stuck.
+        fireClick(label || wrap || c);
+        if (c.tagName === "INPUT" && !c.checked) forceChecked(c);
+        else if (c.tagName !== "INPUT") c.setAttribute("aria-checked", "true");
+      } else {
+        // A radio is idempotent — drive the INPUT itself (native selection + React onChange) AND the
+        // label/row the site may listen on, so it selects regardless of where the handler lives.
+        if (c.tagName === "INPUT") { fireClick(c); forceChecked(c); } else { fireClick(c); c.setAttribute("aria-checked", "true"); }
+        if (label && label !== c) fireClick(label);
+        if (wrap && wrap !== c && wrap !== label) fireClick(wrap);
       }
       markFilled(c.closest("label") || c.parentElement || c);
       return true;
