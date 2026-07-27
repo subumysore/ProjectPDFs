@@ -256,6 +256,15 @@ test("a screening question / prompt is not GUESSED, but IS filled when a capture
   assert.equal($(dom, "#yrs").value, "");   // stray "38" never lands here
 });
 
+test("Address 2 does not get the street address (secondary line only)", async () => {
+  const dom = mount(`
+    <label>Address <input id="a1"></label>
+    <label>Address 2 <input id="a2"></label>`);
+  await fillPage({ street_address: "4308 Albino Deer Way" });
+  assert.ok(/albino/i.test($(dom, "#a1").value), "street fills Address");
+  assert.equal($(dom, "#a2").value, ""); // NOT the duplicated street
+});
+
 test("a Year box only accepts a 4-digit year, never an address", async () => {
   const dom = mount(`<label>From Year (YYYY) <input id="fy" placeholder="YYYY" maxlength="4"></label>`);
   await fillPage({ street_address: "4308 ALBINO DEER WAY" });

@@ -438,6 +438,14 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (hit != null && String(hit).trim()) { fields.push({ el, label, pick: null, forced: String(hit) }); continue; }
       continue; // no captured answer → leave the prompt for the user
     }
+    // "Address 2 / Line 2 / Apt / Suite / Unit" is a SECONDARY address line (apartment, etc.), never the
+    // street — don't duplicate the street address into it. Fill only from a stored secondary-line value.
+    if (/\b(address 2|address line 2|addr 2|line 2|apartment|apt|suite|unit)\b/.test(norm(label)) &&
+        !/\b(city|state|province|zip|postal|country|phone)\b/.test(norm(label))) {
+      const v = rawVault["address 2"] || rawVault["address line 2"] || rawVault.apartment || rawVault.apt || rawVault.suite || rawVault.unit;
+      if (v != null && String(v).trim()) fields.push({ el, label, pick: null, forced: String(v) });
+      continue;
+    }
     // A repeated work-history entry beyond the first: we hold one current role, so leave the earlier
     // entries blank rather than stamping the same job/employer into every one.
     const hIdx = historyEntryIndex(el);
