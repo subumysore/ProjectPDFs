@@ -1106,9 +1106,16 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       const opts = [...sel.options].filter((o) => o.value && (o.textContent || "").trim());
       let opt = null;
       const entry = qaMatch(q);
-      if (entry && !entry.multi && SAVED[entry.key] != null && SAVED[entry.key] !== "") {
-        const re = entry.opts[String(SAVED[entry.key])];
-        if (re) opt = opts.find((o) => re.test((o.textContent || "").toLowerCase()));
+      // INTENT answer (Common answers OR the answer captured for this intent) → the option matching it.
+      if (entry) {
+        const pick = (SAVED[entry.key] != null && SAVED[entry.key] !== "") ? SAVED[entry.key] : intentAnswer[entry.key];
+        if (pick != null && pick !== "") {
+          for (const tok of (entry.multi ? String(pick).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(pick)])) {
+            const re = entry.opts[tok]; if (!re) continue;
+            const o = opts.find((oo) => re.test((oo.textContent || "").toLowerCase()));
+            if (o) { opt = o; break; } // a single <select> holds one answer
+          }
+        }
       }
       if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = bestByTokens(opts, (o) => o.textContent || "", captured); }
       // EDUCATION-LEVEL dropdown ("What is your highest completed education…" with degree/diploma

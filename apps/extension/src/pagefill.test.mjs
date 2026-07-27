@@ -256,6 +256,23 @@ test("a screening question / prompt is not GUESSED, but IS filled when a capture
   assert.equal($(dom, "#yrs").value, "");   // stray "38" never lands here
 });
 
+test("iCIMS EEO selects: race + disability fill from captured/intent answers (aria-labelledby)", async () => {
+  const dom = mount(`
+    <span id="label_r">Race</span>
+    <select id="rc" aria-labelledby="label_r">
+      <option value="">— Make a Selection —</option>
+      <option value="Hispanic or Latino">Hispanic or Latino</option>
+      <option value="Asian (Not Hispanic or Latino)">Asian (Not Hispanic or Latino)</option>
+      <option value="White (Not Hispanic or Latino)">White (Not Hispanic or Latino)</option></select>
+    <span id="label_d">Disability</span>
+    <select id="ds" aria-labelledby="label_d">
+      <option value="">— Make a Selection —</option>
+      <option value="No">No</option><option value="Yes">Yes</option><option value="Opt Out">Opt Out</option></select>`);
+  await fillPage({ race_ethhicity: "Asian", disability_status: "I do not have any disability" });
+  assert.equal($(dom, "#rc").value, "Asian (Not Hispanic or Latino)");
+  assert.equal($(dom, "#ds").value, "No");
+});
+
 test("iCIMS select: highest-education dropdown maps to the top degree (aria-labelledby question)", async () => {
   const dom = mount(`
     <span id="label_Q215">What is your highest COMPLETED education to be used for background checks?</span>
