@@ -1007,6 +1007,32 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return (best && bs > second && (bs >= 2 || (vt.size <= 2 && bs >= vt.size))) ? best : null;
   };
   const splitAns = (v) => String(v).split(/[,;/]|\bor\b|\band\b/i).map((s) => s.trim()).filter(Boolean);
+  // Match a stored value to one of a <select>'s options, GENERICALLY:
+  //   1) token overlap (bestByTokens);
+  //   2) ACRONYM/initials — derived, no table: value letters == an option's word-initials, and vice
+  //      versa ("NC" ⇄ "North Carolina", "USC/GC/PR" style codes);
+  //   3) a compact abbreviation REFERENCE for codes that spelling can't derive (CA=California). This is
+  //      reference data (like the app's synonym tables), a last-resort fallback — not per-form logic.
+  const US_STATES = { al: "alabama", ak: "alaska", az: "arizona", ar: "arkansas", ca: "california", co: "colorado", ct: "connecticut", de: "delaware", fl: "florida", ga: "georgia", hi: "hawaii", id: "idaho", il: "illinois", in: "indiana", ia: "iowa", ks: "kansas", ky: "kentucky", la: "louisiana", me: "maine", md: "maryland", ma: "massachusetts", mi: "michigan", mn: "minnesota", ms: "mississippi", mo: "missouri", mt: "montana", ne: "nebraska", nv: "nevada", nh: "new hampshire", nj: "new jersey", nm: "new mexico", ny: "new york", nc: "north carolina", nd: "north dakota", oh: "ohio", ok: "oklahoma", or: "oregon", pa: "pennsylvania", ri: "rhode island", sc: "south carolina", sd: "south dakota", tn: "tennessee", tx: "texas", ut: "utah", vt: "vermont", va: "virginia", wa: "washington", wv: "west virginia", wi: "wisconsin", wy: "wyoming", dc: "district of columbia" };
+  const acronymOf = (s) => norm(s).split(" ").filter(Boolean).map((w) => w[0]).join("");
+  const selectOption = (opts, value) => {
+    if (value == null || value === "") return null;
+    let o = bestByTokens(opts, (x) => x.textContent || "", value);
+    if (o) return o;
+    const nv = norm(value).trim();
+    const letters = nv.replace(/[^a-z]/g, "");
+    // acronym both directions
+    if (letters.length >= 2 && letters.length <= 5) {
+      for (const x of opts) if (acronymOf(x.textContent) === letters) return x;                 // "NC" -> "North Carolina"
+    }
+    if (nv.split(" ").filter(Boolean).length >= 2) {
+      const acr = acronymOf(nv);
+      for (const x of opts) if (norm(x.textContent).replace(/[^a-z]/g, "") === acr) return x;    // "North Carolina" -> option "NC"
+    }
+    const exp = US_STATES[letters] || US_STATES[nv];                                             // reference fallback (CA=California)
+    if (exp) { o = bestByTokens(opts, (x) => x.textContent || "", exp); if (o) return o; }
+    return null;
+  };
   // A stored VALUE that is (essentially) one of this option's caption — typo-proof direct match, used
   // when the question KEY is misspelt so key-matching misses it (e.g. "race_ethhicity" → value "Asian").
   const valueMatchesOption = (optLabel) => {
@@ -1117,7 +1143,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           }
         }
       }
-      if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = bestByTokens(opts, (o) => o.textContent || "", captured); }
+      if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = selectOption(opts, captured); }
       // EDUCATION-LEVEL dropdown ("What is your highest completed education…" with degree/diploma
       // options): pick the option matching the user's HIGHEST stored qualification. Generic, no capture
       // needed — driven by the parsed education entries (edu[0] is the highest).

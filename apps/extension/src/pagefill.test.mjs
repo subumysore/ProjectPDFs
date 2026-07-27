@@ -256,6 +256,27 @@ test("a screening question / prompt is not GUESSED, but IS filled when a capture
   assert.equal($(dom, "#yrs").value, "");   // stray "38" never lands here
 });
 
+test("select: state abbreviation matches the full-name option (NC -> North Carolina) + acronym both ways", async () => {
+  const dom = mount(`
+    <span id="l1">Which state do you live in?</span>
+    <select id="st" aria-labelledby="l1">
+      <option value="">— Make a Selection —</option>
+      <option value="South Carolina">South Carolina</option>
+      <option value="North Carolina">North Carolina</option>
+      <option value="Texas">Texas</option></select>`);
+  await fillPage({ state: "NC" });
+  assert.equal($(dom, "#st").value, "North Carolina"); // NC via reference, and acronym N+C also derives it
+});
+
+test("select: acronym derivation needs no table (full value -> abbreviated option)", async () => {
+  const dom = mount(`
+    <span id="l2">State</span>
+    <select id="st2" aria-labelledby="l2">
+      <option value="">—</option><option value="SC">SC</option><option value="NC">NC</option></select>`);
+  await fillPage({ state: "North Carolina" });
+  assert.equal($(dom, "#st2").value, "NC"); // "North Carolina" -> initials "NC", purely derived
+});
+
 test("iCIMS EEO selects: race + disability fill from captured/intent answers (aria-labelledby)", async () => {
   const dom = mount(`
     <span id="label_r">Race</span>
