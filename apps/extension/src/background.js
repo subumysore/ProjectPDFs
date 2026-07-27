@@ -329,10 +329,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     const r = await vaultForAutofill();
     if (!r.ok) return;                                    // locked / unavailable → silent no-op
     lastAutofill.set(tabId, { url, at: Date.now() });
+    const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
     await chrome.scripting.executeScript({
-      target: { tabId },
+      target: { tabId, allFrames: true },               // reach iframe-embedded ATS forms too
       func: fillPage,
-      args: [r.vault, null, parseEducation(r.vault), { skipPassword: true }],
+      args: [r.vault, null, parseEducation(r.vault), { skipPassword: true, savedAnswers: savedAnswers || {} }],
     });
   } catch (_) { /* auto-fill must never throw into the worker */ }
 });
