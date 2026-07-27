@@ -262,6 +262,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return best;
   };
 
+  // Text referenced by aria-labelledby (one or more element ids) — iCIMS/ARIA forms put the whole
+  // question in a separate element and point at it, so without this the field looks label-less.
+  const ariaLabelText = (el) => {
+    const ids = (el.getAttribute && el.getAttribute("aria-labelledby") || "").trim();
+    if (!ids) return "";
+    return ids.split(/\s+/).map((id) => { const e = document.getElementById(id); return e ? (e.textContent || "") : ""; }).join(" ").replace(/\s+/g, " ").trim();
+  };
   const labelOf = (el) => {
     // The visible caption is often a SIBLING (Angular/React forms rarely use <label for>),
     // and the id can be misspelt (e.g. "passportExpirtyDate"). Read the nearest ancestor's
@@ -271,7 +278,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       const t = (a.textContent || "").replace(/\s+/g, " ").trim();
       if (t.length >= 3 && t.length <= 200) { gt = t; break; }
     }
-    return [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
+    return [el.name, el.id, el.placeholder, el.getAttribute("aria-label"), ariaLabelText(el),
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
       (el.closest("label") && el.closest("label").textContent) || "", gt].join(" ");
   };
@@ -1092,10 +1099,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         }
       }
     }
-    // Native <select> versions (some forms use a dropdown for gender/veteran/etc.) — same generic logic.
+    // Native <select> versions (some forms use a dropdown for gender/veteran/eligibility/etc.).
     for (const sel of document.querySelectorAll("select")) {
       if (sel.disabled || sel.value) continue;
-      const q = ctrlQuestion(sel) + " " + ownLabel(sel);
+      const q = ariaLabelText(sel) + " " + ctrlQuestion(sel) + " " + ownLabel(sel); // aria-labelledby holds the question on iCIMS
       const opts = [...sel.options].filter((o) => o.value && (o.textContent || "").trim());
       let opt = null;
       const entry = qaMatch(q);
@@ -1104,6 +1111,17 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         if (re) opt = opts.find((o) => re.test((o.textContent || "").toLowerCase()));
       }
       if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = bestByTokens(opts, (o) => o.textContent || "", captured); }
+      // EDUCATION-LEVEL dropdown ("What is your highest completed education…" with degree/diploma
+      // options): pick the option matching the user's HIGHEST stored qualification. Generic, no capture
+      // needed — driven by the parsed education entries (edu[0] is the highest).
+      if (!opt && edu.length) {
+        const qn = norm(q);
+        const optIsEdu = opts.some((o) => /degree|diploma|high school|master|bachelor|doctorate|associate|phd/.test(norm(o.textContent)));
+        if (optIsEdu && /educat|degree|diploma|qualif|highest.*(complet|educ|degree)/.test(qn)) {
+          const lvlRe = { doctorate: /doctorate|phd/, master: /master/, bachelor: /bachelor/, diploma: /diploma/, associate: /associate/, highschool: /high school/ }[edu[0].level];
+          if (lvlRe) opt = opts.find((o) => lvlRe.test(norm(o.textContent)) && !/not|did not|no /.test(norm(o.textContent)));
+        }
+      }
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
     }
   }

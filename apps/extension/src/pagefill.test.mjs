@@ -256,6 +256,22 @@ test("a screening question / prompt is not GUESSED, but IS filled when a capture
   assert.equal($(dom, "#yrs").value, "");   // stray "38" never lands here
 });
 
+test("iCIMS select: highest-education dropdown maps to the top degree (aria-labelledby question)", async () => {
+  const dom = mount(`
+    <span id="label_Q215">What is your highest COMPLETED education to be used for background checks?</span>
+    <select id="Q215" aria-labelledby="label_Q215">
+      <option value="">— Make a Selection —</option>
+      <option value="Completed high school or equivalent">Completed high school or equivalent</option>
+      <option value="Completed bachelor's degree">Completed bachelor's degree</option>
+      <option value="Completed master's degree">Completed master's degree</option>
+      <option value="Completed PhD or Doctorate">Completed PhD or Doctorate</option>
+    </select>`);
+  const { parseEducation } = await import("./education.js");
+  const vault = { masters: "MS, Industrial Engineering, Central Missouri State University, 2001", bachelors: "BS, Mechanical, Bangalore University, 1996" };
+  await fillPage(vault, null, parseEducation(vault));
+  assert.equal($(dom, "#Q215").value, "Completed master's degree"); // highest degree, not bachelor/HS
+});
+
 test("Address 2 does not get the street address (secondary line only)", async () => {
   const dom = mount(`
     <label>Address <input id="a1"></label>
