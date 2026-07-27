@@ -13,7 +13,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   value→option match catches misspelt keys (e.g. `race_ethhicity` → the "Asian" box). Handles React
   widgets where the click handler is on the `<label>` (not the input). Strictly key-gated + stopword-aware
   so the US work-auth answer can't fill the Canada question and a stray "Yes" can't leak. The curated
-  "Common answers" panel remains as an explicit override layer. Tests +4; suite 330/330.
+  "Common answers" panel remains as an explicit override layer.
+- **Intent, not wording:** questions are matched to an INTENT via broad patterns (work-auth, sponsorship,
+  clearance, felony, age-18, relocation, restrictions, veteran, disability, gender, race/ethnicity…), and
+  a single captured answer fills EVERY phrasing of that question — "authorized to work in the US" answers
+  "do you have the legal right to be employed in the U.S.?" too. Disability matching is negation-aware
+  ("I do not have ANY disability" → the "no" option, never "yes").
+- **Grouping fix:** all options of one question are grouped by their shared container, so a radio picks
+  exactly ONE option (earlier every option could get ticked). Tests +5; suite 331/331.
 
 ### Added — "Common answers": auto-answer screening / eligibility / EEO questions (2026-07-27)
 - The extension can now fill **radio buttons, checkboxes, and dropdowns** for standard screening and

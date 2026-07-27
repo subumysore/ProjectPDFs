@@ -816,28 +816,52 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // that finds the matching OPTION by its visible label. `multi` = a checkbox set (e.g. race).
   const SAVED = OPTS.savedAnswers || {};
   const YESNO = { yes: /^\s*yes\b/, no: /^\s*no\b/ };
+  // Intent patterns are deliberately BROAD so the SAME question, worded many ways, maps to one intent —
+  // that is what lets a single captured answer fill every phrasing. `q` matches the on-page question (or
+  // a vault key); `opts` maps each answer token to the option-label regex.
   const QA_LIBRARY = [
-    { key: "work_auth_us", q: /authoriz.*(work|employ).*(united states|u s a?|us\b)|legally.*work.*(us|united states)/, opts: YESNO },
-    { key: "work_auth_ca", q: /authoriz.*(work|employ).*canada|legally.*work.*canada/, opts: YESNO },
-    { key: "sponsorship", q: /(require|need|sponsor).*(sponsor|visa)|visa sponsorship/, opts: YESNO },
+    { key: "work_auth_us", q: /(authoriz|eligib|legal|permitted|entitled|right)\w*\W+(to\W+)?(work|employ|be employed).*(united states|u s a|u s\b|\busa\b|\bus\b|america)|work authoriz\w*.*(u s|us|united states|america)/, opts: YESNO },
+    { key: "work_auth_ca", q: /(authoriz|eligib|legal|permitted|entitled|right)\w*\W+(to\W+)?(work|employ).*canada|work authoriz\w*.*canada/, opts: YESNO },
+    { key: "sponsorship", q: /(require|need|seek|request|now or.*future).{0,40}(sponsor|visa)|visa sponsorship|immigration sponsorship|sponsorship.{0,20}(work|employ|visa|status)/, opts: YESNO },
     { key: "clearance", q: /security clearance|dod clearance|\bclearance\b/, opts: YESNO },
-    { key: "gov_employee", q: /government employee/, opts: YESNO },
-    { key: "relocate", q: /relocat/, opts: YESNO },
-    { key: "proof_identity", q: /proof of.*(identity|authoriz)|present proof/, opts: YESNO },
-    { key: "restrictions", q: /restrictions limiting|non ?compete|non ?solicit|\bnda\b|agreements with.*employer/, opts: YESNO },
-    { key: "hispanic", q: /hispanic|latino/, opts: YESNO },
-    { key: "veteran", q: /veteran/, opts: {
-      yes: /\bi am a veteran\b|^\s*yes|protected veteran/, no: /not a veteran|^\s*no/, decline: /decline|prefer not|not.*identify|do not wish/ } },
-    { key: "disability", q: /disab(ility|led)/, opts: {
-      yes: /i have a disability|^\s*yes/, no: /do not have a disability|don.?t have a disability|^\s*no/, decline: /decline|prefer not|do not.*specify|do not wish/ } },
-    { key: "gender", q: /\bgender\b|\bsex\b/, opts: {
-      male: /^\s*male|^\s*man\b/, female: /^\s*female|^\s*woman\b/, nonbinary: /non ?binary/, decline: /decline|prefer not|not.*identify/ } },
-    { key: "race", multi: true, q: /race|ethnicit/, opts: {
-      white: /white/, hispanic: /hispanic|latino/, black: /black|african american/, asian: /\basian\b/,
-      native_american: /american indian|alaska native/, mena: /middle eastern|north african/,
-      pacific: /hawaiian|pacific islander/, other: /other race|other ethnic/, decline: /prefer not|decline/ } },
+    { key: "gov_employee", q: /government employee|federal employee|public sector employee/, opts: YESNO },
+    { key: "felony", q: /(convicted|conviction|felony|criminal (record|history|convict)|pleaded guilty)/, opts: YESNO },
+    { key: "over18", q: /(18 years|eighteen years|at least 18|over 18|age of 18|legal working age)/, opts: YESNO },
+    { key: "relocate", q: /relocat|willing to move|open to moving/, opts: YESNO },
+    { key: "proof_identity", q: /proof of.*(identity|authoriz|eligib)|present proof|form i.?9|right to work document/, opts: YESNO },
+    { key: "restrictions", q: /restrictions? limiting|restrictive covenant|non.?compete|non.?solicit|\bnda\b|confidentiality agreement|agreements? with.*(current|prior|former)? ?employer/, opts: YESNO },
+    { key: "hispanic", q: /hispanic|latino|latina|latinx/, opts: YESNO },
+    { key: "veteran", q: /veteran|armed forces|military service/, opts: {
+      yes: /\bi am a\b.*veteran|^\s*yes|protected veteran|is a veteran|identify as a veteran/, no: /not a\b.*veteran|am not|^\s*no|do not identify/, decline: /decline|prefer not|wish not|not.*(identify|answer|disclose)|do not wish/ } },
+    { key: "disability", q: /disab(ility|led|ilities)|self.?identif.*disab/, opts: {
+      // NEGATION-AWARE: "no" if any negation appears anywhere in the answer; "yes" only if a disability
+      // is asserted with NO negation anywhere (so "I do NOT have ANY disability" is 'no', not 'yes').
+      no: /\b(no|not|never|without|don'?t|doesn'?t|do not|does not)\b|not disabled/,
+      yes: /^(?!.*\b(no|not|never|without|don'?t|doesn'?t|decline)\b).*(have|has|am|is|a)\b.*disab|^\s*yes\b/,
+      decline: /decline|prefer not|do not.*(specify|answer|disclose)|do not wish|not to answer/ } },
+    { key: "gender", q: /\bgender\b|\bsex\b|gender identity/, opts: {
+      male: /^\s*male\b|^\s*man\b|\bhe\b/, female: /^\s*female\b|^\s*woman\b|\bshe\b/, nonbinary: /non.?binary|genderqueer|third gender/, decline: /decline|prefer not|not.*(identify|answer|disclose)/ } },
+    { key: "race", multi: true, q: /\brace\b|ethnicit|ethnic (group|origin)/, opts: {
+      white: /white|caucasian/, hispanic: /hispanic|latino|latina/, black: /black|african american|african.american/, asian: /\basian\b/,
+      native_american: /american indian|alaska(n)? native|native american/, mena: /middle eastern|north african/,
+      pacific: /hawaiian|pacific islander/, other: /other race|other ethnic|two or more|multiracial/, decline: /prefer not|decline|not.*(answer|disclose)/ } },
   ];
   const qaMatch = (q) => { const n = norm(q); for (const e of QA_LIBRARY) if (e.q.test(n)) return e; return null; };
+  // SMART LAYER: map each library INTENT to the user's answer, derived from ANY captured vault entry
+  // about that intent (its KEY matches the intent, its VALUE maps to an answer token). This is what lets
+  // a single captured answer fill EVERY phrasing of the same question — the on-page wording need not
+  // match the wording that was captured; only the shared intent matters.
+  const intentAnswer = {};
+  for (const key of Object.keys(rawVault)) {
+    const e = qaMatch(key); if (!e) continue;
+    const val = String(rawVault[key] == null ? "" : rawVault[key]).toLowerCase().trim();
+    if (!val) continue;
+    for (const tok of Object.keys(e.opts)) {
+      if (e.opts[tok].test(val)) intentAnswer[e.key] = e.multi ? ((intentAnswer[e.key] ? intentAnswer[e.key] + "," : "") + tok) : tok;
+      if (!e.multi && intentAnswer[e.key]) break;
+    }
+    // A bare Yes/No value under a YES/NO intent (opts are ^yes/^no) is already handled above.
+  }
   // The visible label of an option control — a real <input> OR an ARIA role widget.
   const ctrlLabel = (c) => {
     let t = c.getAttribute("aria-label") || c.getAttribute("data-value") || "";
@@ -948,28 +972,59 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       return sh >= 1 && (sh === ot.size || sh === st.size); // one caption fully contains the other
     });
   };
+  const CTRL_SEL = 'input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"], [role="switch"]';
+  // The container that holds a whole question's options: the nearest ancestor holding >=2 controls (a
+  // fieldset / radiogroup / the repeated option rows' common parent). ALL options of one question share
+  // it — so we group by it, NOT by per-option text (which made every option its own group and got them
+  // all ticked).
+  const groupContainerOf = (c) => {
+    let node = c.parentElement, container = c.closest('[role="radiogroup"], fieldset') || c.parentElement;
+    for (let i = 0; i < 6 && node; i++) {
+      if (node.querySelectorAll && node.querySelectorAll(CTRL_SEL).length >= 2) { container = node; break; }
+      node = node.parentElement;
+    }
+    return container || c.parentElement || c;
+  };
+  // The question for a GROUP container: heading text from its own direct-child headings (inside the
+  // group) and its ancestors' direct-child headings (a heading that is a sibling of the group) — never
+  // the option rows (they contain a control), so an option caption can't pollute the question.
+  const groupQuestion = (container, sample) => {
+    const parts = [sample && sample.name, sample && sample.getAttribute("aria-label")].filter(Boolean);
+    let node = container;
+    for (let i = 0; i < 5 && node; i++) {
+      const lb = node.getAttribute && node.getAttribute("aria-labelledby");
+      if (lb) { const el = document.getElementById(lb); if (el) parts.push(el.textContent || ""); }
+      for (const ch of node.children || []) {
+        if (["INPUT", "SELECT", "TEXTAREA", "SCRIPT", "STYLE"].includes(ch.tagName)) continue;
+        if (ch.querySelector && ch.querySelector(CTRL_SEL)) continue; // an option row / control container
+        const t = (ch.textContent || "").replace(/\s+/g, " ").trim();
+        if (t && t.length <= 160) parts.push(t);
+      }
+      node = node.parentElement;
+    }
+    return parts.join(" · ");
+  };
 
   if (Object.keys(SAVED).length || Object.keys(rawVault).length) {
-    const controls = [...document.querySelectorAll('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"], [role="switch"]')]
+    const controls = [...document.querySelectorAll(CTRL_SEL)]
       .filter((c) => !(c.disabled || c.getAttribute("aria-disabled") === "true") && shownCtrl(c));
-    // Group by (radio-group name / group id) + question so each question is answered once.
+    // Group all options of a question together by their shared container.
     const groups = new Map();
     for (const c of controls) {
-      const q = ctrlQuestion(c);
-      const rg = c.closest && c.closest('[role="radiogroup"], fieldset');
-      const grp = c.name || (rg && (rg.id || rg.getAttribute("aria-labelledby"))) || "";
-      const k = grp + "|" + q;
-      if (!groups.has(k)) groups.set(k, { q, list: [] });
-      groups.get(k).list.push(c);
+      const container = groupContainerOf(c);
+      if (!groups.has(container)) groups.set(container, { q: groupQuestion(container, c), list: [] });
+      groups.get(container).list.push(c);
     }
     for (const { q, list } of groups.values()) {
       const groupMulti = list.some((c) => c.type === "checkbox" || c.getAttribute("role") === "checkbox");
       if (!groupMulti && list.some(isChk)) continue; // a radio already answered — leave it
       let did = false;
       const entry = qaMatch(q);
-      // A) EXPLICIT "Common answers" pick (curated token → option regex) — the user's override layer.
-      if (entry && SAVED[entry.key] != null && SAVED[entry.key] !== "") {
-        const tokens = entry.multi ? String(SAVED[entry.key]).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(SAVED[entry.key])];
+      // A) INTENT answer: the user's explicit "Common answers" pick, else the answer captured for this
+      // intent from ANY vault entry — so it fills regardless of how THIS form worded the question.
+      const intentPick = entry && (SAVED[entry.key] != null && SAVED[entry.key] !== "" ? SAVED[entry.key] : intentAnswer[entry.key]);
+      if (entry && intentPick != null && intentPick !== "") {
+        const tokens = entry.multi ? String(intentPick).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(intentPick)];
         for (const tok of tokens) {
           const re = entry.opts[tok]; if (!re) continue;
           const hit = list.find((c) => re.test(ctrlLabel(c).toLowerCase()));

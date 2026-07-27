@@ -384,6 +384,24 @@ test("generic: captured VAULT answers drive radios/checkboxes (no Common answers
   assert.equal($(dom, "#gr1").checked, false);
 });
 
+test("smart: a DIFFERENTLY-worded question fills from a captured answer via shared intent", async () => {
+  // Captured under one wording; the form asks it another way — must still fill (same intent).
+  const dom = mount(`
+    <fieldset><legend>Do you have the legal right to be employed in the U.S.?</legend>
+      <label><input type="radio" name="w" id="s_y"> Yes</label>
+      <label><input type="radio" name="w" id="s_n"> No</label></fieldset>
+    <fieldset><legend>Will you now or in the future need immigration sponsorship?</legend>
+      <label><input type="radio" name="sp" id="sp_y"> Yes</label>
+      <label><input type="radio" name="sp" id="sp_n"> No</label></fieldset>`);
+  await fillPage({
+    are_you_authorized_to_work_in_the_united_states: "Yes",       // different wording than the form
+    do_you_require_visa_sponsorship_to_work_here: "No",
+  });
+  assert.equal($(dom, "#s_y").checked, true);   // matched by intent, not wording
+  assert.equal($(dom, "#sp_n").checked, true);
+  assert.equal($(dom, "#sp_y").checked, false);
+});
+
 test("generic: captured Yes/No answer keyed by the question fills; a stray value never leaks", async () => {
   const dom = mount(`
     <fieldset><legend>Are you authorized to work in the United States?</legend>
