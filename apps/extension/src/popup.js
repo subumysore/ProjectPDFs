@@ -55,6 +55,12 @@ function setMsg(text, ok = true) {
   el.textContent = text;
   el.className = "msg " + (ok ? "ok" : "err");
 }
+// Spinning loader while the vault decrypts / syncs on the first read after unlock.
+function setLoading(on, text) {
+  const el = $("loading"); if (!el) return;
+  if (on && text) { const t = $("loadingText"); if (t) t.textContent = text; }
+  el.classList.toggle("on", !!on);
+}
 // A confident, at-a-glance result after a fill: the COUNT big and bold, plus a reminder that the
 // filled fields are outlined on the page so the user can verify them. `n` and `suffix` are ours
 // (a number and a fixed string) — safe to place as innerHTML.
@@ -339,12 +345,16 @@ if ($("resetVault")) $("resetVault").onclick = async (e) => {
   setMsg("Vault reset — type a new passphrase and click Unlock to start fresh.");
 };
 $("unlock").onclick = async () => {
-  const r = await send({ type: "unlock", passphrase: $("pass").value });
-  $("pass").value = "";
-  if (r.ok) {
-    setMsg(`Unlocked. ${r.keys.length} field(s) remembered.`);
-    refresh();
-  } else setMsg(r.error || "Unlock failed (wrong passphrase?)", false);
+  setLoading(true, "Unlocking your vault…");
+  try {
+    const r = await send({ type: "unlock", passphrase: $("pass").value });
+    $("pass").value = "";
+    if (r.ok) {
+      setMsg(`Unlocked. ${r.keys.length} field(s) remembered.`);
+      setLoading(true, "Loading your details…");
+      await refresh();
+    } else setMsg(r.error || "Unlock failed (wrong passphrase?)", false);
+  } finally { setLoading(false); }
 };
 
 // WebAuthn PRF unlock: the passkey's PRF extension yields a per-credential secret
@@ -373,7 +383,8 @@ $("unlockPasskey").onclick = async () => {
     const r = await send({ type: "unlockWebAuthn", prfSecret: secretB64 });
     if (r.ok) {
       setMsg("Unlocked with passkey (hardware-backed).");
-      refresh();
+      setLoading(true, "Loading your details…");
+      try { await refresh(); } finally { setLoading(false); }
     } else setMsg(r.error || "Passkey unlock failed", false);
   } catch (e) {
     setMsg("Passkey unlock cancelled/failed: " + ((e && e.message) || e), false);
@@ -1145,4 +1156,6 @@ async function renderCommonAnswers() {
 
 initUiLang();
 renderCommonAnswers();
-refresh();
+// Initial load can also be slow (already-unlocked session re-reads + syncs the vault) — show the spinner.
+setLoading(true, "Loading…");
+Promise.resolve(refresh()).finally(() => setLoading(false));

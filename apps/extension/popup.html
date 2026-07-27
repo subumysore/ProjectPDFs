@@ -22,6 +22,11 @@
       .entry .vin::placeholder { color: #b7c2c2; }
       .entry .x { border: none; background: none; color: #9a2c2c; cursor: pointer; font-size: 14px; padding: 0 4px; }
       .empty { color: #55666f; font-size: 12px; margin-bottom: 6px; }
+      /* Loading spinner — the first vault read after unlock can take a moment (decrypt + desktop sync). */
+      #loading { display: none; align-items: center; gap: 9px; padding: 10px 2px; color: #0a6a60; font-size: 12px; }
+      #loading.on { display: flex; }
+      .spinner { width: 18px; height: 18px; flex: 0 0 auto; border: 2.5px solid #cfe9e5; border-top-color: #0d8f83; border-radius: 50%; animation: ppfspin .7s linear infinite; }
+      @keyframes ppfspin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
@@ -36,6 +41,7 @@
       <button id="popOut" title="Keep open in a window" style="white-space:nowrap">⤢</button>
     </div>
     <div class="msg" id="msg" style="position:sticky;top:0;z-index:20;background:#fff;padding:4px 0;font-weight:600"></div>
+    <div id="loading"><span class="spinner"></span><span id="loadingText">Unlocking your vault…</span></div>
 
     <div id="locked">
       <input id="pass" type="password" data-i18n-placeholder="unlock.placeholder" placeholder="Passphrase" />
