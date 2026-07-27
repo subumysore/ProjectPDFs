@@ -63,6 +63,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // it as one collapsed every block onto the bachelor entry ("Bachelors" filled twice).
   const eduValueFor = (el, label) => {
     if (!edu.length) return null;
+    if (historyEntryIndex(el) != null) return null; // a WORK-experience field, not education — never route edu here
     let kind = null, t = 0;
     for (const [k, syn] of Object.entries(EDU_FIELD_SYNS)) { const s = score(label, syn); if (s > t) { t = s; kind = k; } }
     if (!kind || t < 1.5) return null;
@@ -344,8 +345,15 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return toks.find((t) => ALT_NAME_QUALS.includes(t)) || null;
   };
   const altNameValue = (q) => {
-    for (const key of Object.keys(rawVault)) if (key.split(" ").includes(q)) return rawVault[key];
-    return rawVault[q] != null ? rawVault[q] : null;
+    // The vault key must name THIS alt-name specifically: the qualifier AND the word "name" (a
+    // "former name" key), else a standalone nickname/alias/aka key. Requiring "name" stops an
+    // unrelated "former …"/"other …" field (e.g. a "formerly employed here? → NO") from leaking in.
+    const standalone = ["nickname", "nick", "alias", "aka"].includes(q);
+    for (const key of Object.keys(rawVault)) {
+      const kt = key.split(" ");
+      if (kt.includes(q) && (standalone || kt.includes("name"))) return rawVault[key];
+    }
+    return standalone && rawVault[q] != null ? rawVault[q] : null;
   };
   const specialCase = (label) => {
     if (officeUse(label)) return { skip: true };
@@ -397,6 +405,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // Writing there can corrupt a submission or fail server-side validation. So: allow readOnly
     // only where it plausibly means "picker", not "locked".
     if (el.readOnly && !isDatePickerLike(el)) continue;
+    // Never clobber a field that already holds a value — a site default, a résumé-parser prefill, or
+    // the user's own typing. Autofill fills the BLANKS; it must not stamp over data an ATS already
+    // parsed from the résumé (Job Title, City, dates…), and this makes a second Fill idempotent.
+    if ((el.value || "").trim() !== "") { fi++; continue; }
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
     // Free-text catch-all fields (Description / Comments / Notes / Remarks / Cover letter / "additional
@@ -405,6 +417,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // password, the home address) on real ATS forms (UltiPro/Workday repeat a "Description" per section).
     // Never auto-fill them. Checked on the FULL label (these fields are often labelled only by a sibling).
     if (/\b(descriptions?|comments?|remarks?|notes?|cover ?letter|additional (information|details|comments)|anything else|other information|message)\b/.test(norm(label))) continue;
+    // Screening QUESTIONS / prompts — a "?", or an imperative/interrogative opener ("Please provide…",
+    // "How many…", "Are you…", "Do you…") — are not field captions. Scoring a concept against a whole
+    // sentence is unreliable and was stamping stray values (a number, an address) into them (e.g. "38"
+    // into "Please provide an active link to your LinkedIn profile"). Leave them for the user to answer.
+    if (label.includes("?") ||
+        /\b(please (provide|enter|describe|list|explain|tell|specify|share|state|attach|upload)|how (many|much|long|often)|do you|are you|have you|did you|were you|would you|will you|can you|is there)\b/.test(norm(label))) continue;
     // A repeated work-history entry beyond the first: we hold one current role, so leave the earlier
     // entries blank rather than stamping the same job/employer into every one.
     const hIdx = historyEntryIndex(el);
@@ -606,6 +624,16 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       value = atomVal(pick.key);
     }
     if (!value) continue;
+    // A YEAR box (labelled "year"/"YYYY") may only receive a 4-digit year — a street address or any
+    // other value must never land in a From/To Year field; pull the year out of a date, else skip.
+    const maxL = +el.getAttribute("maxlength") || 0;
+    if (/\byear\b|yyyy/.test(norm(label + " " + (el.placeholder || "")))) {
+      const y = String(value).match(/\b(1\d{3}|20\d{2})\b/);
+      if (!y) continue;      // not a year → leave the box blank rather than fill garbage
+      value = y[0];
+    } else if (maxL > 0 && String(value).length > maxL && /\D/.test(String(value))) {
+      continue;              // value with letters can't fit this short field → a wrong match, skip it
+    }
     if (pick && pick.name && wantsInitial(label, el)) value = initial(value);
     // Password fields: type the value key-by-key (sites that block paste / ignore a bulk set still
     // accept real typing). No date reformatting applies to a password.

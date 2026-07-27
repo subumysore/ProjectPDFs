@@ -219,6 +219,36 @@ test("education: UltiPro-style blocks (label 'Level of Education / Degree', id .
   assert.notEqual($(dom, "#NewEducation_DegreeId0").value, $(dom, "#NewEducation_DegreeId1").value); // NOT both the same
 });
 
+test("already-filled fields are never overwritten (résumé prefill is kept)", async () => {
+  const dom = mount(`
+    <label>First Name <input id="fn" value="Subramanya"></label>
+    <label>Preferred Name <input id="pref"></label>`);
+  await fillPage({ first_name: "OVERWRITE-ME", "preferred name": "Subu" });
+  assert.equal($(dom, "#fn").value, "Subramanya");  // kept, NOT clobbered
+  assert.equal($(dom, "#pref").value, "Subu");      // blank field still filled
+});
+
+test("'Former Name' does not pick up an unrelated 'former…' vault key (e.g. NO)", async () => {
+  const dom = mount(`<label>Former Name <input id="fmr"></label>`);
+  await fillPage({ first_name: "Subramanya", "formerly employed here": "NO" });
+  assert.equal($(dom, "#fmr").value, ""); // only a real "former name" would fill this
+});
+
+test("a screening question / prompt is never auto-filled", async () => {
+  const dom = mount(`
+    <label>Please provide an active link to your LinkedIn profile <textarea id="li"></textarea></label>
+    <label>How many years of experience do you have? <input id="yrs"></label>`);
+  await fillPage({ age: "38", years: "38", linkedin: "x" });
+  assert.equal($(dom, "#li").value, "");
+  assert.equal($(dom, "#yrs").value, "");
+});
+
+test("a Year box only accepts a 4-digit year, never an address", async () => {
+  const dom = mount(`<label>From Year (YYYY) <input id="fy" placeholder="YYYY" maxlength="4"></label>`);
+  await fillPage({ street_address: "4308 ALBINO DEER WAY" });
+  assert.equal($(dom, "#fy").value, ""); // address rejected from a year field
+});
+
 test("repeated work-experience: current job title fills only the FIRST entry, not every block", async () => {
   const dom = mount(`
     <div data-automation="work-experience-item"><label>Job Title <input id="NewWorkExperience_JobTitle0"></label></div>

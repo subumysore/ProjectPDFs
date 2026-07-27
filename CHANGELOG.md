@@ -21,6 +21,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   (UltiPro "Level of Education / Degree") was misread as a *bachelor's* level, collapsing every block onto
   the bachelor entry ("Bachelors" filled twice). Level is now read from the section heading only; blocks
   with no heading route by ORDER (block 0 → highest qualification, block 1 → next).
+- **Never overwrite an already-filled field.** Autofill now fills only the BLANKS — it no longer stamps
+  over data an ATS parsed from the résumé (Job Title, City, dates), and a second Fill is idempotent.
+- **Screening questions / prompts are left for the user.** A field whose label is a question ("?") or an
+  imperative/interrogative prompt ("Please provide an active link to your LinkedIn profile", "How many
+  years…", "Are you…") is never auto-filled — scoring a concept against a whole sentence was stamping
+  stray values (e.g. "38") into them.
+- **"Former Name" no longer picks up unrelated "former…" keys** (was showing "NO" from a "formerly
+  employed here?" answer) — alt-name fields require a key naming that alt-name specifically.
+- **Year boxes reject non-years.** A From/To Year field (YYYY / labelled "year") only accepts a 4-digit
+  year — a street address can no longer land in it — and education values never route into a
+  work-experience field.
 - **Fill confidence:** the popup now reports the field count **boldly** ("✅ **N** fields filled"), and
   every field the extension fills is **outlined in teal on the page** so the user can verify at a glance.
 - **Popup "Keep open" (⤢):** pops the popup out into a standalone window that stays open until the user
