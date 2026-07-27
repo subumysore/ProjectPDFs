@@ -526,10 +526,13 @@ async function fillActivePage(vault) {
   // into the sub-frames too and SUM what each filled.
   // Caveat: translated labels (tLabels) are aligned to the TOP frame's field order only, so when a
   // translation is in play we stay top-frame-only to avoid mis-mapping labels onto an iframe's fields.
+  // Saved answers to screening / eligibility / EEO questions (radios, checkboxes, selects) — set by the
+  // user in "Common answers", stored on-device only. The fill selects ONLY these, never a guessed one.
+  const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id, allFrames: !tLabels },
     func: fillPage,
-    args: [vault, tLabels, parseEducation(vault)],
+    args: [vault, tLabels, parseEducation(vault), { savedAnswers: savedAnswers || {} }],
   });
   return (results || []).reduce((n, r) => n + (r && typeof r.result === "number" ? r.result : 0), 0);
 }
@@ -1090,5 +1093,56 @@ async function initUiLang() {
   applyI18n();
 }
 
+// "Common answers": set standard screening / eligibility / self-ID answers ONCE. Stored on-device
+// (chrome.storage.local) and passed to the fill, which selects ONLY the option you chose — it never
+// guesses a legal or EEO declaration. Keys/tokens mirror QA_LIBRARY in pagefill.js.
+const YN = [["", "—"], ["yes", "Yes"], ["no", "No"]];
+const COMMON_ANSWERS = [
+  { key: "work_auth_us", label: "Authorized to work in the US?", opts: YN },
+  { key: "work_auth_ca", label: "Authorized to work in Canada?", opts: YN },
+  { key: "sponsorship", label: "Will you require visa sponsorship?", opts: YN },
+  { key: "clearance", label: "Have / can obtain a security clearance?", opts: YN },
+  { key: "gov_employee", label: "Current or former government employee?", opts: YN },
+  { key: "relocate", label: "Willing to relocate?", opts: YN },
+  { key: "proof_identity", label: "Can present proof of work authorization?", opts: YN },
+  { key: "restrictions", label: "Subject to NDAs / non-competes?", opts: YN },
+  { key: "hispanic", label: "Hispanic or Latino?", opts: YN },
+  { key: "veteran", label: "Protected veteran status", opts: [["", "—"], ["yes", "I am a veteran"], ["no", "I am not a veteran"], ["decline", "Decline to self-identify"]] },
+  { key: "disability", label: "Disability status", opts: [["", "—"], ["yes", "I have a disability"], ["no", "I do not have a disability"], ["decline", "Decline to specify"]] },
+  { key: "gender", label: "Gender", opts: [["", "—"], ["male", "Male"], ["female", "Female"], ["nonbinary", "Non-binary"], ["decline", "Decline to self-identify"]] },
+];
+const RACE_OPTS = [["white", "White"], ["hispanic", "Hispanic or Latino"], ["black", "Black or African American"], ["asian", "Asian"], ["native_american", "American Indian or Alaska Native"], ["mena", "Middle Eastern or North African"], ["pacific", "Native Hawaiian or Pacific Islander"], ["other", "Other"], ["decline", "Prefer not to say"]];
+async function renderCommonAnswers() {
+  const box = $("commonAnswers");
+  if (!box) return;
+  const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
+  const answers = savedAnswers || {};
+  const save = async () => { await chrome.storage.local.set({ savedAnswers: answers }); };
+  box.textContent = "";
+  for (const item of COMMON_ANSWERS) {
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0;font-size:12px";
+    const span = document.createElement("span"); span.textContent = item.label; span.style.flex = "1";
+    const sel = document.createElement("select"); sel.style.cssText = "flex:0 0 auto;max-width:150px";
+    for (const [val, text] of item.opts) { const o = document.createElement("option"); o.value = val; o.textContent = text; sel.appendChild(o); }
+    sel.value = answers[item.key] || "";
+    sel.onchange = () => { if (sel.value) answers[item.key] = sel.value; else delete answers[item.key]; save(); };
+    row.appendChild(span); row.appendChild(sel); box.appendChild(row);
+  }
+  // Race / ethnicity: multi-select (checkboxes) → stored as a comma list of tokens.
+  const rlab = document.createElement("div"); rlab.style.cssText = "font-size:12px;margin:6px 0 2px"; rlab.textContent = "Race / ethnicity (select all that apply)";
+  box.appendChild(rlab);
+  const chosen = new Set(String(answers.race || "").split(",").map((s) => s.trim()).filter(Boolean));
+  for (const [val, text] of RACE_OPTS) {
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex;align-items:center;gap:6px;margin:2px 0;font-size:12px;cursor:pointer";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = chosen.has(val);
+    cb.onchange = () => { if (cb.checked) chosen.add(val); else chosen.delete(val); if (chosen.size) answers.race = [...chosen].join(","); else delete answers.race; save(); };
+    const t = document.createElement("span"); t.textContent = text;
+    row.appendChild(cb); row.appendChild(t); box.appendChild(row);
+  }
+}
+
 initUiLang();
+renderCommonAnswers();
 refresh();

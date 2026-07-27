@@ -103,6 +103,16 @@
         <div class="sub" id="nativeLangMsg" style="margin-top: 4px; min-height: 14px"></div>
       </div>
 
+      <!-- Common answers to screening / eligibility / self-ID (EEO) questions. Set once here; the fill
+           selects ONLY the answer you chose (radio/checkbox/dropdown) and never guesses one. Stored
+           on-device only. Plain (non-localised) text for now — labels are English by design. -->
+      <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
+        <details>
+          <summary style="cursor:pointer;font-weight:600;font-size:13px">Common answers <span class="sub" style="font-weight:400">— Yes/No, eligibility &amp; self-ID. Only your choice is filled; never guessed.</span></summary>
+          <div id="commonAnswers" style="margin-top:8px"></div>
+        </details>
+      </div>
+
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b data-i18n="vault.title">Your details</b> <span data-i18n="vault.subtitle">Saved encrypted on this device.</span></div>
         <!-- Add-row kept ABOVE the saved list so it is always in view — no scrolling past a long

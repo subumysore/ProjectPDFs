@@ -808,5 +808,103 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       }
     } catch (_) { /* leave this widget alone on any error */ }
   }
+
+  // ---- SAVED ANSWERS: screening / eligibility / EEO questions (radio, checkbox, <select>) ----------
+  // These are legal/eligibility/self-ID declarations — we NEVER guess them. We ONLY select an option
+  // the user pre-set in "Common answers" (OPTS.savedAnswers, keyed by the canonical id below). Each
+  // library entry: a question matcher `q`, and `opts` mapping each canonical answer token to a regex
+  // that finds the matching OPTION by its visible label. `multi` = a checkbox set (e.g. race).
+  const SAVED = OPTS.savedAnswers || {};
+  const YESNO = { yes: /^\s*yes\b/, no: /^\s*no\b/ };
+  const QA_LIBRARY = [
+    { key: "work_auth_us", q: /authoriz.*(work|employ).*(united states|u s a?|us\b)|legally.*work.*(us|united states)/, opts: YESNO },
+    { key: "work_auth_ca", q: /authoriz.*(work|employ).*canada|legally.*work.*canada/, opts: YESNO },
+    { key: "sponsorship", q: /(require|need|sponsor).*(sponsor|visa)|visa sponsorship/, opts: YESNO },
+    { key: "clearance", q: /security clearance|dod clearance|\bclearance\b/, opts: YESNO },
+    { key: "gov_employee", q: /government employee/, opts: YESNO },
+    { key: "relocate", q: /relocat/, opts: YESNO },
+    { key: "proof_identity", q: /proof of.*(identity|authoriz)|present proof/, opts: YESNO },
+    { key: "restrictions", q: /restrictions limiting|non ?compete|non ?solicit|\bnda\b|agreements with.*employer/, opts: YESNO },
+    { key: "hispanic", q: /hispanic|latino/, opts: YESNO },
+    { key: "veteran", q: /veteran/, opts: {
+      yes: /\bi am a veteran\b|^\s*yes|protected veteran/, no: /not a veteran|^\s*no/, decline: /decline|prefer not|not.*identify|do not wish/ } },
+    { key: "disability", q: /disab(ility|led)/, opts: {
+      yes: /i have a disability|^\s*yes/, no: /do not have a disability|don.?t have a disability|^\s*no/, decline: /decline|prefer not|do not.*specify|do not wish/ } },
+    { key: "gender", q: /\bgender\b|\bsex\b/, opts: {
+      male: /^\s*male|^\s*man\b/, female: /^\s*female|^\s*woman\b/, nonbinary: /non ?binary/, decline: /decline|prefer not|not.*identify/ } },
+    { key: "race", multi: true, q: /race|ethnicit/, opts: {
+      white: /white/, hispanic: /hispanic|latino/, black: /black|african american/, asian: /\basian\b/,
+      native_american: /american indian|alaska native/, mena: /middle eastern|north african/,
+      pacific: /hawaiian|pacific islander/, other: /other race|other ethnic/, decline: /prefer not|decline/ } },
+  ];
+  const qaMatch = (q) => { const n = norm(q); for (const e of QA_LIBRARY) if (e.q.test(n)) return e; return null; };
+  // The visible label for a radio/checkbox/option element.
+  const ctrlLabel = (c) => {
+    let t = "";
+    if (c.id) { const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`); if (l) t = l.textContent; }
+    if (!t) t = (c.closest("label") && c.closest("label").textContent) || c.getAttribute("aria-label") || "";
+    if (!t && c.parentElement) t = c.parentElement.textContent || "";
+    return t.replace(/\s+/g, " ").trim();
+  };
+  // The question a radio/checkbox belongs to: the nearest ancestor legend/heading/label text that is
+  // NOT just an option caption. Read own attributes first (name/aria), then climb.
+  const ctrlQuestion = (c) => {
+    const own = [c.name, c.getAttribute("aria-label"), c.getAttribute("data-question")].filter(Boolean).join(" ");
+    let node = c;
+    for (let i = 0; i < 6 && node; i++) {
+      node = node.parentElement; if (!node) break;
+      const grp = node.getAttribute && (node.getAttribute("aria-labelledby") || node.getAttribute("role"));
+      if (grp && node.getAttribute("aria-labelledby")) { const lab = document.getElementById(node.getAttribute("aria-labelledby")); if (lab) { const t = (lab.textContent || "").trim(); if (t.length >= 3) return own + " " + t; } }
+      const head = node.querySelector("legend, h1, h2, h3, h4, h5, h6, [class*='label'], [class*='question'], [class*='title'], strong");
+      if (head) { const t = (head.textContent || "").replace(/\s+/g, " ").trim(); if (t.length >= 3 && t.length <= 200) return own + " " + t; }
+    }
+    return own;
+  };
+  const checkCtrl = (c) => {
+    try {
+      const box = c.closest("label") || c;
+      if (!c.checked) {
+        // click() TOGGLES a checkbox — never pre-set `checked` first or it flips back off. Let click
+        // do the checking; if a framework preventDefaults it, force the state + fire input/change.
+        c.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        if (c.click) c.click(); else c.checked = true;
+        if (!c.checked) { c.checked = true; c.dispatchEvent(new Event("input", { bubbles: true })); c.dispatchEvent(new Event("change", { bubbles: true })); }
+      }
+      markFilled(box);
+      return true;
+    } catch (_) { return false; }
+  };
+  if (Object.keys(SAVED).length) {
+    const controls = [...document.querySelectorAll('input[type="radio"], input[type="checkbox"]')]
+      .filter((c) => !c.disabled && c.offsetParent !== null);
+    // Group by their question text so each screening question is answered once.
+    const groups = new Map();
+    for (const c of controls) { const q = ctrlQuestion(c); const k = (c.name || "") + "|" + q; if (!groups.has(k)) groups.set(k, { q, list: [] }); groups.get(k).list.push(c); }
+    for (const { q, list } of groups.values()) {
+      const entry = qaMatch(q);
+      if (!entry) continue;
+      const ans = SAVED[entry.key];
+      if (ans == null || ans === "") continue;
+      if (!entry.multi && list.some((c) => c.checked)) continue; // user already answered — leave it
+      const tokens = entry.multi ? String(ans).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(ans)];
+      for (const tok of tokens) {
+        const re = entry.opts[tok];
+        if (!re) continue;
+        const hit = list.find((c) => re.test(ctrlLabel(c).toLowerCase()));
+        if (hit && !hit.checked) { if (checkCtrl(hit)) filled++; }
+        if (!entry.multi) break; // radios: one answer only
+      }
+    }
+    // Native <select> versions of the same questions (some forms use a dropdown for gender/veteran).
+    for (const sel of document.querySelectorAll("select")) {
+      if (sel.disabled || sel.value) continue;
+      const entry = qaMatch(ctrlQuestion(sel) + " " + ownLabel(sel));
+      if (!entry || entry.multi) continue;
+      const ans = SAVED[entry.key]; if (ans == null || ans === "") continue;
+      const re = entry.opts[String(ans)]; if (!re) continue;
+      const opt = [...sel.options].find((o) => re.test((o.textContent || "").toLowerCase()));
+      if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
+    }
+  }
   return filled;
 }

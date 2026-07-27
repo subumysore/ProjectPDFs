@@ -279,6 +279,49 @@ test("filled fields are marked for verification; untouched fields are not", asyn
   assert.equal($(dom, "#ref").getAttribute("data-ppf-filled"), null);     // never filled → not marked
 });
 
+test("saved answers: Yes/No eligibility radios are answered from the user's saved choice", async () => {
+  const dom = mount(`
+    <fieldset><legend>Are you authorized to work in the United States?</legend>
+      <label><input type="radio" name="us" id="us_y"> Yes</label>
+      <label><input type="radio" name="us" id="us_n"> No</label></fieldset>
+    <fieldset><legend>Are you authorized to work in Canada?</legend>
+      <label><input type="radio" name="ca" id="ca_y"> Yes</label>
+      <label><input type="radio" name="ca" id="ca_n"> No</label></fieldset>`);
+  await fillPage({}, null, [], { savedAnswers: { work_auth_us: "yes", work_auth_ca: "no" } });
+  assert.equal($(dom, "#us_y").checked, true);
+  assert.equal($(dom, "#us_n").checked, false);
+  assert.equal($(dom, "#ca_n").checked, true);
+  assert.equal($(dom, "#ca_y").checked, false);
+});
+
+test("saved answers: EEO self-ID (veteran radio + race checkboxes) from saved choices; nothing guessed", async () => {
+  const dom = mount(`
+    <fieldset><legend>Protected Veteran Status</legend>
+      <label><input type="radio" name="vet" id="v1"> I am a veteran</label>
+      <label><input type="radio" name="vet" id="v2"> I am not a veteran</label>
+      <label><input type="radio" name="vet" id="v3"> Decline to self-identify</label></fieldset>
+    <fieldset><legend>Race/Ethnicity</legend>
+      <label><input type="checkbox" id="r_white"> White</label>
+      <label><input type="checkbox" id="r_asian"> Asian</label>
+      <label><input type="checkbox" id="r_black"> Black or African American</label></fieldset>`);
+  await fillPage({}, null, [], { savedAnswers: { veteran: "no", race: "asian" } });
+  assert.equal($(dom, "#v2").checked, true);       // "I am not a veteran"
+  assert.equal($(dom, "#v1").checked, false);
+  assert.equal($(dom, "#r_asian").checked, true);  // only the chosen race
+  assert.equal($(dom, "#r_white").checked, false);
+  assert.equal($(dom, "#r_black").checked, false);
+});
+
+test("saved answers: a question with NO saved answer is left untouched (never guessed)", async () => {
+  const dom = mount(`
+    <fieldset><legend>Do you currently have a DoD security clearance?</legend>
+      <label><input type="radio" name="cl" id="cl_y"> Yes</label>
+      <label><input type="radio" name="cl" id="cl_n"> No</label></fieldset>`);
+  await fillPage({}, null, [], { savedAnswers: { work_auth_us: "yes" } }); // no clearance answer set
+  assert.equal($(dom, "#cl_y").checked, false);
+  assert.equal($(dom, "#cl_n").checked, false);
+});
+
 test("custom dropdown: a mis-guessed value never selects an option (Yes/No question stays empty)", async () => {
   const dom = mount(`
     <div class="form-group">

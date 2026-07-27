@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Added — "Common answers": auto-answer screening / eligibility / EEO questions (2026-07-27)
+- The extension can now fill **radio buttons, checkboxes, and dropdowns** for standard screening and
+  self-identification questions — work authorization (US/Canada), visa sponsorship, security clearance,
+  government-employment, relocation, NDA/non-compete restrictions, and the EEO self-ID fields (veteran,
+  disability, gender, Hispanic/Latino, and multi-select race/ethnicity). It selects **only the answer the
+  user pre-set** in a new **Common answers** panel in the popup; it NEVER guesses a legal or EEO
+  declaration (an unset question is left blank). Answers are stored on-device (`chrome.storage.local`),
+  passed to the fill via `opts.savedAnswers`, and matched by a curated question-pattern library
+  (`QA_LIBRARY` in `pagefill.js`). Already-answered questions are left untouched. Tests +3
+  (`pagefill.test.mjs`), suite 324/324.
+
 ### Fixed — web autofill reaches forms inside cross-origin IFRAMES (Greenhouse/Lever) (2026-07-27)
 - Many ATS embed their application form in a cross-origin iframe (e.g. Greenhouse `boards.greenhouse.io`
   via `#grnhse_app`), so a top-frame-only injection saw zero fields and reported "No fields matched" on a
