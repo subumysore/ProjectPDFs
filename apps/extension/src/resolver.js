@@ -298,12 +298,68 @@ export function resolveFields(vault, fields) {
     return null;
   };
 
+  // ---- PARITY with the web filler (pagefill.js): alt-name, screening prompts, Address 2, edu guard ----
+  // Alternate-name fields (Preferred/Former/Maiden/Other/Nick/Alias/AKA name) must NEVER take the legal
+  // name — only a value stored for THAT alt-name, else stay blank.
+  const ALT_NAME_QUALS = ["preferred", "former", "previous", "prior", "maiden", "other", "alternate", "alternative", "nickname", "nick", "alias", "aka"];
+  const altNameQual = (label) => {
+    const toks = norm(label).split(" ").filter(Boolean);
+    if (!toks.some((t) => ["name", "nickname", "alias", "aka"].includes(t))) return null;
+    return toks.find((t) => ALT_NAME_QUALS.includes(t)) || null;
+  };
+  const altNameValue = (q) => {
+    const standalone = ["nickname", "nick", "alias", "aka"].includes(q);
+    for (const key of Object.keys(rawVault)) { const kt = key.split(" "); if (kt.includes(q) && (standalone || kt.includes("name"))) return rawVault[key]; }
+    return standalone && rawVault[q] != null ? rawVault[q] : null;
+  };
+  // "Address 2 / Line 2 / Apt / Suite / Unit" is a SECONDARY line — never the street.
+  const isAddress2 = (label) => /\b(address 2|address line 2|addr 2|line 2|apartment|apt|suite|unit)\b/.test(norm(label)) && !/\b(city|state|province|zip|postal|country|phone)\b/.test(norm(label));
+  const address2Value = () => rawVault["address 2"] || rawVault["address line 2"] || rawVault.apartment || rawVault.apt || rawVault.suite || rawVault.unit || null;
+  // A screening PROMPT ("Please provide…", "?") / free-text catch-all (Description/Comments/…) is not a
+  // field caption — never concept-guess it. Fill ONLY from a vault key whose meaningful tokens all appear
+  // in the prompt (e.g. linkedin_profile ⊂ "…active link to your LinkedIn profile").
+  const isScreeningOrCatchall = (label) => {
+    const n = norm(label);
+    return /\b(descriptions?|comments?|remarks?|notes?|cover ?letter|additional (information|details|comments)|anything else|other information|message)\b/.test(n)
+      || (label || "").includes("?")
+      || /\b(please (provide|enter|describe|list|explain|tell|specify|share|state|attach|upload)|how (many|much|long|often)|do you|are you|have you|did you|were you|would you|will you|can you|is there)\b/.test(n);
+  };
+  const labelVaultValue = (label) => {
+    const lt = new Set(norm(label).split(" ").filter((w) => w.length > 1));
+    const joined = norm(label).replace(/\s+/g, "");
+    let hit = null, hitScore = 0;
+    for (const key of Object.keys(rawVault)) {
+      const km = key.split(" ").filter((w) => w.length > 2);
+      if (!km.length || !(km.length >= 2 || km.some((w) => w.length >= 6))) continue;
+      let s = 0; for (const w of km) if (lt.has(w) || joined.includes(w)) s++;
+      if (s === km.length && s > hitScore) { hitScore = s; hit = rawVault[key]; }
+    }
+    return hit == null ? null : String(hit);
+  };
+  // Is this an EDUCATION sub-field (Degree/Field/School/Year/GPA)? Leave it BLANK when we hold no
+  // matching education value rather than letting a generic concept (address, DOB) fill it.
+  const isEduField = (label) => {
+    let top = 0;
+    for (const syn of Object.values(EDU_FIELD_SYNS)) { const s = score(label, syn); if (s > top) top = s; }
+    return top >= 1.5;
+  };
+
   // Pass 1: pick a concept per field.
   const scriptOnly = new Array(fields.length).fill(null); // index -> resolved script-name value
   const addressOnly = new Array(fields.length).fill(null); // index -> resolved qualified address
+  const altNameOnly = new Array(fields.length).fill(null); // index -> resolved alternate-name value
+  const address2Only = new Array(fields.length).fill(null); // index -> resolved secondary address line
+  const screeningOnly = new Array(fields.length).fill(null); // index -> captured answer for a prompt
   const blocked = new Array(fields.length).fill(false);    // index -> never fill this box
   const picks = fields.map((f, i) => {
     if (officeUse(f)) { blocked[i] = true; return null; }
+    // Alternate-name field → only a stored alt-name, never the legal name.
+    const altq = altNameQual(f.label);
+    if (altq) { altNameOnly[i] = altNameValue(altq); blocked[i] = true; return null; }
+    // Address 2 / Apt / Suite → only a stored secondary line, never the street.
+    if (isAddress2(f.label)) { address2Only[i] = address2Value(); blocked[i] = true; return null; }
+    // Screening prompt / free-text catch-all → only a captured answer, never a concept guess.
+    if (isScreeningOrCatchall(f.label)) { screeningOnly[i] = labelVaultValue(f.label); blocked[i] = true; return null; }
     const addrQ = addressQualifier(f.label);
     if (addrQ && hasPlainAddress) {
       addressOnly[i] = qualifiedAddressValue(addrQ); // null -> intentionally left for the user
@@ -331,7 +387,10 @@ export function resolveFields(vault, fields) {
   return fields.map((f, i) => {
     if (scriptOnly[i]) return scriptOnly[i]; // script-qualified name resolved from the vault
     if (addressOnly[i]) return addressOnly[i]; // qualified address resolved from its own vault key
-    if (blocked[i]) return null; // office-use / derived box, or a qualified address we don't hold
+    if (altNameOnly[i]) return altNameOnly[i]; // alternate-name resolved from its own vault key
+    if (address2Only[i]) return address2Only[i]; // secondary address line from its own vault key
+    if (screeningOnly[i]) return screeningOnly[i]; // captured answer for a screening prompt
+    if (blocked[i]) return null; // office-use / derived box, or a qualified field we don't hold
     // The user's OWN key for exactly this label beats any inferred concept: they wrote it.
     const own = ownValue(f.label) ?? (f.name ? ownValue(f.name) : null);
     // Still honour a one-character "initial" box when the concept pass saw a name there.
@@ -339,6 +398,8 @@ export function resolveFields(vault, fields) {
     // Education field (Degree/Field/School/Year/GPA), routed to the matching qualification block.
     const eduV = eduValueFor(f);
     if (eduV != null) return eduV;
+    // An education sub-field we hold no value for → leave it BLANK; never let a generic concept fill it.
+    if (eduEntries.length && isEduField(f.label)) return null;
     const pick = picks[i];
     if (!pick) return null;
     let value;

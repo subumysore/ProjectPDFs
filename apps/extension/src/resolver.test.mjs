@@ -133,3 +133,33 @@ test("resolver: education fields fill from the routed qualification (PDF)", () =
   assert.equal(out[2], "Electronics");
   assert.equal(out[3], "BMS College");
 });
+
+// ---- PARITY with the web filler (pagefill.js): alt-name, screening prompts, Address 2, edu guard ----
+test("parity: alternate-name fields never take the legal name", () => {
+  const v = { first_name: "Subramanya", last_name: "Mysore", full_name: "John Doe" };
+  assert.equal(one(v, "First Name"), "Subramanya");
+  assert.equal(one(v, "Preferred Name"), null);      // not the legal/full name
+  assert.equal(one(v, "Former Name"), null);
+  assert.equal(one({ "preferred name": "Subbu" }, "Preferred Name"), "Subbu"); // fills from its own key
+});
+
+test("parity: Address 2 does not get the street address", () => {
+  const v = { street_address: "4308 Albino Deer Way" };
+  assert.ok(/albino/i.test(one(v, "Address")));
+  assert.equal(one(v, "Address 2"), null);
+});
+
+test("parity: screening prompt not guessed, but filled from a captured answer", () => {
+  const v = { linkedin_profile: "https://linkedin.com/in/subramanya", age: "38" };
+  assert.equal(one(v, "Please provide an active link to your LinkedIn profile"), "https://linkedin.com/in/subramanya");
+  assert.equal(one(v, "Please describe your ideal work environment"), null); // no matching key → blank
+});
+
+test("parity: education sub-field with no stored value stays blank (no address/DOB bleed)", () => {
+  const v = { masters: "Central Missouri State University", street_address: "4308 Albino Deer Way", date_of_birth: "11/30/1968" };
+  const fields = [{ label: "School or University", maxLength: -1 }, { label: "Overall result (GPA)", maxLength: -1 }, { label: "Field of study", maxLength: -1 }];
+  const out = resolveFields(v, fields);
+  assert.ok(/central missouri/i.test(out[0]));  // school fills
+  assert.equal(out[1], null);                   // GPA blank, NOT the address
+  assert.equal(out[2], null);                   // field blank, NOT bled
+});

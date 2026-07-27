@@ -11,6 +11,15 @@ value-tracker submit fix (Workday), the "Common answers" panel, and the loading 
 Suite 339/339 + engine-parity 6/6.
 
 ## [Unreleased]
+### Added — PDF resolver parity with the web filler (desktop + extension) (2026-07-27)
+- Ported the portable web-fill rules into the SHARED `resolver.js` (used by the desktop app's PDF fill
+  AND the extension's PDF path), so both engines now agree: **alternate-name** fields (Preferred/Former/
+  Maiden/Other/Nick/Alias) never take the legal name; **Address 2 / Apt / Suite** never gets the street;
+  **screening prompts** ("Please provide…", "?") and free-text catch-alls are never concept-guessed —
+  filled only from a matching captured value; and **education sub-fields** (Field/GPA/Year) stay blank
+  when no education value is held (no address/DOB bleed). Tests +4 (`resolver.test.mjs`); suite 343/343,
+  engine-parity 6/6. Ships to users on the next desktop build + extension release.
+
 ### Changed — screening/EEO answering is now GENERIC (driven by captured vault answers) (2026-07-27)
 - Radios, checkboxes and dropdowns for screening/eligibility/self-ID questions now fill from **any
   answer the user has captured into their vault** (key = the question, value = the answer) — not just a
