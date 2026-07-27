@@ -405,10 +405,11 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // Writing there can corrupt a submission or fail server-side validation. So: allow readOnly
     // only where it plausibly means "picker", not "locked".
     if (el.readOnly && !isDatePickerLike(el)) continue;
-    // Never clobber a field that already holds a value — a site default, a résumé-parser prefill, or
-    // the user's own typing. Autofill fills the BLANKS; it must not stamp over data an ATS already
-    // parsed from the résumé (Job Title, City, dates…), and this makes a second Fill idempotent.
-    if ((el.value || "").trim() !== "") { fi++; continue; }
+    // Never clobber a value the SITE / résumé-parser / user put there. Autofill fills the BLANKS.
+    // EXCEPTION: a field WE filled on a previous run (marked data-ppf-filled) may be re-filled — so a
+    // corrected vault value replaces an earlier wrong autofill on the SAME page (e.g. the user fixed a
+    // stale email in the vault and clicks Fill again). Only externally-provided values are protected.
+    if ((el.value || "").trim() !== "" && el.getAttribute("data-ppf-filled") !== "1") { fi++; continue; }
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
     // Free-text catch-all fields (Description / Comments / Notes / Remarks / Cover letter / "additional

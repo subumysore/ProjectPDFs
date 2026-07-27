@@ -23,6 +23,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   with no heading route by ORDER (block 0 → highest qualification, block 1 → next).
 - **Never overwrite an already-filled field.** Autofill now fills only the BLANKS — it no longer stamps
   over data an ATS parsed from the résumé (Job Title, City, dates), and a second Fill is idempotent.
+  EXCEPTION: a field the extension itself filled earlier (marked `data-ppf-filled`) can be re-filled, so
+  a corrected vault value replaces an earlier wrong autofill on the same page when the user clicks Fill again.
 - **Screening questions / prompts are left for the user.** A field whose label is a question ("?") or an
   imperative/interrogative prompt ("Please provide an active link to your LinkedIn profile", "How many
   years…", "Are you…") is never auto-filled — scoring a concept against a whole sentence was stamping

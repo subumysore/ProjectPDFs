@@ -228,6 +228,17 @@ test("already-filled fields are never overwritten (résumé prefill is kept)", a
   assert.equal($(dom, "#pref").value, "Subu");      // blank field still filled
 });
 
+test("a value WE filled can be corrected by a second fill; external values stay put", async () => {
+  const dom = mount(`
+    <label>Email <input id="e" type="email"></label>
+    <label>First Name <input id="fn" value="ResumePrefill"></label>`);
+  await fillPage({ email_address: "old@example.com" });
+  assert.equal($(dom, "#e").value, "old@example.com");
+  await fillPage({ email_address: "new@example.com", first_name: "X" });
+  assert.equal($(dom, "#e").value, "new@example.com");  // our own earlier fill got corrected
+  assert.equal($(dom, "#fn").value, "ResumePrefill");   // external prefill untouched
+});
+
 test("'Former Name' does not pick up an unrelated 'former…' vault key (e.g. NO)", async () => {
   const dom = mount(`<label>Former Name <input id="fmr"></label>`);
   await fillPage({ first_name: "Subramanya", "formerly employed here": "NO" });
