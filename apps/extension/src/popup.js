@@ -245,8 +245,11 @@ async function withLargeImages(r) {
 
 // Show every saved field with its value + a delete button.
 async function renderEntries() {
-  const r = await readVault();
   const box = $("entries");
+  // Show a spinner IN the list area during the (sometimes slow) vault read/sync — covers every path
+  // that loads the KV, not just the unlock button.
+  if (box) box.innerHTML = '<div style="display:flex;align-items:center;gap:9px;padding:10px 2px;color:#0a6a60;font-size:12px"><span class="spinner"></span><span>Loading your details…</span></div>';
+  const r = await readVault();
   box.textContent = "";
   if (!r.ok) {
     box.innerHTML = r.locked
