@@ -64,7 +64,8 @@ function setFillResult(n, suffix = "") {
   el.innerHTML = n > 0
     ? `✅ <span style="font-size:18px;font-weight:800">${n}</span> field${n === 1 ? "" : "s"} filled${suffix}`
       + ` <span style="font-weight:600">— outlined in teal on the page, please verify.</span>`
-    : `No fields matched your saved details on this page${suffix}.`;
+    : `Nothing to add${suffix} — the fields are already filled (autofill never overwrites what's there),`
+      + ` or none matched your saved details.`;
 }
 // When the vault can't be read, show a CLEAR, actionable message. In single-vault mode the vault
 // lives in the desktop app, so a "locked" answer means "unlock the desktop app", not an error.
