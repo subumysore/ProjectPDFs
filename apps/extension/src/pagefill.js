@@ -1151,8 +1151,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         const qn = norm(q);
         const optIsEdu = opts.some((o) => /degree|diploma|high school|master|bachelor|doctorate|associate|phd/.test(norm(o.textContent)));
         if (optIsEdu && /educat|degree|diploma|qualif|highest.*(complet|educ|degree)/.test(qn)) {
-          const lvlRe = { doctorate: /doctorate|phd/, master: /master/, bachelor: /bachelor/, diploma: /diploma/, associate: /associate/, highschool: /high school/ }[edu[0].level];
-          if (lvlRe) opt = opts.find((o) => lvlRe.test(norm(o.textContent)) && !/not|did not|no /.test(norm(o.textContent)));
+          // Repeated Education blocks (Workday `educationData[0].degree`, `[1]…`) route to the entry for
+          // THAT block; a lone block uses the highest qualification. Same block-index logic as text fields.
+          const bi = eduBlockIndex(sel);
+          const entry = (bi != null && bi < edu.length) ? edu[bi] : edu[0];
+          const lvlRe = { doctorate: /doctorate|phd/, master: /master/, bachelor: /bachelor|undergrad/, diploma: /diploma/, associate: /associate/, highschool: /high school|secondary/ }[entry.level];
+          if (lvlRe) opt = opts.find((o) => lvlRe.test(norm(o.textContent)) && !/\bnot\b|did not|\bno |primary|some /.test(norm(o.textContent)));
         }
       }
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }

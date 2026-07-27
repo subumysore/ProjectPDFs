@@ -277,6 +277,23 @@ test("select: acronym derivation needs no table (full value -> abbreviated optio
   assert.equal($(dom, "#st2").value, "NC"); // "North Carolina" -> initials "NC", purely derived
 });
 
+test("repeated degree <select>s (Workday) route per block: block0=Master, block1=Bachelor", async () => {
+  const deg = (i) => `
+    <span id="educationData[${i}].degree-label">Degree</span>
+    <select id="educationData[${i}].degree" aria-labelledby="educationData[${i}].degree-label">
+      <option value="">Please Select</option>
+      <option value="a">Associate Degree</option>
+      <option value="b">Bachelor / Undergraduate Degree</option>
+      <option value="m">Master / Graduate Degree</option>
+      <option value="d">Doctorate / PhD</option></select>`;
+  const dom = mount(deg(0) + deg(1));
+  const { parseEducation } = await import("./education.js");
+  const vault = { masters: "MS, Industrial Engineering, Central Missouri State University, 2001", bachelors: "BS, Mechanical, Bangalore University, 1996" };
+  await fillPage(vault, null, parseEducation(vault));
+  assert.equal($(dom, '[id="educationData[0].degree"]').value, "m"); // Master
+  assert.equal($(dom, '[id="educationData[1].degree"]').value, "b"); // Bachelor
+});
+
 test("iCIMS EEO selects: race + disability fill from captured/intent answers (aria-labelledby)", async () => {
   const dom = mount(`
     <span id="label_r">Race</span>
