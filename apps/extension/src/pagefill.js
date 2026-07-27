@@ -840,11 +840,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const qaMatch = (q) => { const n = norm(q); for (const e of QA_LIBRARY) if (e.q.test(n)) return e; return null; };
   // The visible label of an option control — a real <input> OR an ARIA role widget.
   const ctrlLabel = (c) => {
-    let t = c.getAttribute("aria-label") || "";
+    let t = c.getAttribute("aria-label") || c.getAttribute("data-value") || "";
     if (!t && c.id) { const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`); if (l) t = l.textContent; }
     if (!t) { const l = c.closest("label"); if (l) t = l.textContent; }
+    if (!t && c.parentElement && c.parentElement.querySelector) { const l = c.parentElement.querySelector("label"); if (l) t = l.textContent; } // SIBLING label (input + label side by side)
     if (!t && c.tagName !== "INPUT") t = c.textContent || "";     // role widget: its own text is the label
     if (!t && c.parentElement) t = c.parentElement.textContent || "";
+    if (!t && c.tagName === "INPUT" && (c.type === "radio" || c.type === "checkbox")) t = c.value || ""; // value often IS the option
     return t.replace(/\s+/g, " ").trim();
   };
   // The QUESTION a control belongs to. Custom widgets rarely use <fieldset><legend>, and the heading is
@@ -871,20 +873,28 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const isChk = (c) => (c.tagName === "INPUT") ? !!c.checked : c.getAttribute("aria-checked") === "true";
   const setChk = (c) => {
     try {
-      const box = c.closest("label") || c;
-      if (c.tagName === "INPUT") {
-        if (!c.checked) { // click() TOGGLES a checkbox — let click do it; force + fire if a framework blocks it
-          c.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-          if (c.click) c.click(); else c.checked = true;
-          if (!c.checked) { c.checked = true; c.dispatchEvent(new Event("input", { bubbles: true })); c.dispatchEvent(new Event("change", { bubbles: true })); }
-        }
-      } else { // ARIA widget with no real input: click it and reflect the state
-        c.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        c.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-        if (c.click) c.click();
+      if (isChk(c)) return true;
+      // React-controlled radios/checkboxes bind their onClick to the visible LABEL / row, NOT the
+      // <input> (which may have no name/id and a sibling label carrying data-value). Clicking only the
+      // input leaves their state unselected. So CLICK THE LABEL/WRAPPER the site listens on — once, to
+      // avoid double-toggling a checkbox — then, only if a plain input still isn't checked, set it.
+      let target = null;
+      if (c.id) target = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(c.id) : c.id}"]`);
+      if (!target && c.parentElement && c.parentElement.querySelector) target = c.parentElement.querySelector("label");
+      if (!target) target = c.closest("label");
+      if (!target) target = c.closest('[class*="radio"], [class*="checkbox"], [class*="option"], [role="radio"], [role="checkbox"], li');
+      if (!target) target = c;
+      target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      if (target.click) target.click();
+      if (c.tagName === "INPUT" && !c.checked) { // fallback for plain (non-React) inputs the label click didn't toggle
+        c.checked = true;
+        c.dispatchEvent(new Event("input", { bubbles: true }));
+        c.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (c.tagName !== "INPUT" && c.getAttribute("aria-checked") !== "true") {
         c.setAttribute("aria-checked", "true");
       }
-      markFilled(box);
+      markFilled(c.closest("label") || c.parentElement || c);
       return true;
     } catch (_) { return false; }
   };

@@ -338,6 +338,29 @@ test("saved answers: a visually-hidden real radio (styled control) is still sele
   assert.equal($(dom, "#wy").checked, true);
 });
 
+test("saved answers: React radios with a SIBLING label + data-value, no name/id (Ladders)", async () => {
+  // Real markup: <div><input type=radio value="…"><label data-value="…">…</label></div>
+  const dom = mount(`
+    <div class="field"><div class="field-title">Protected Veteran Status</div>
+      <div class="answers-edit_radio"><input type="radio" value="I am a veteran" id="rv1"><label data-value="I am a veteran">I am a veteran</label></div>
+      <div class="answers-edit_radio"><input type="radio" value="I am not a veteran" id="rv2"><label data-value="I am not a veteran">I am not a veteran</label></div>
+      <div class="answers-edit_radio"><input type="radio" value="Decline to self-identify" id="rv3"><label data-value="Decline to self-identify">Decline to self-identify</label></div>
+    </div>`);
+  await fillPage({}, null, [], { savedAnswers: { veteran: "no" } });
+  assert.equal($(dom, "#rv2").checked, true);   // "I am not a veteran"
+  assert.equal($(dom, "#rv1").checked, false);
+});
+
+test("saved answers: checkboxes with label[for] + data-value (race), only chosen ticked", async () => {
+  const dom = mount(`
+    <div class="field"><div class="field-title">Race/Ethnicity</div>
+      <div><input type="checkbox" id="PI-1-1"><label for="PI-1-1" data-value="White">White</label></div>
+      <div><input type="checkbox" id="PI-2-3"><label for="PI-2-3" data-value="Asian">Asian</label></div></div>`);
+  await fillPage({}, null, [], { savedAnswers: { race: "asian" } });
+  assert.equal($(dom, "#PI-2-3").checked, true);
+  assert.equal($(dom, "#PI-1-1").checked, false);
+});
+
 test("saved answers: a question with NO saved answer is left untouched (never guessed)", async () => {
   const dom = mount(`
     <fieldset><legend>Do you currently have a DoD security clearance?</legend>
