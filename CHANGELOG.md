@@ -3,6 +3,13 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Extension 1.0.3] - 2026-07-27
+Chrome Web Store release bundling all of today's web-autofill work (below): intent-based
+screening/EEO answering, iframe (Greenhouse) support, aria-labelledby questions, per-block
+education routing, general option matching (state abbreviations, acronyms), the React
+value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
+Suite 339/339 + engine-parity 6/6.
+
 ## [Unreleased]
 ### Changed — screening/EEO answering is now GENERIC (driven by captured vault answers) (2026-07-27)
 - Radios, checkboxes and dropdowns for screening/eligibility/self-ID questions now fill from **any
