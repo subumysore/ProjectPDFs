@@ -905,7 +905,51 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const b = c.closest("label") || c.parentElement;
     return !!(b && (b.offsetParent !== null || (b.getClientRects && b.getClientRects().length)));
   };
-  if (Object.keys(SAVED).length) {
+  // ---- GENERIC answer helpers (used by the radio/checkbox + <select> passes below) ----------------
+  const toks = (s) => new Set(norm(s).split(" ").filter((w) => w.length > 1));
+  const QA_STOP = new Set(("are you to the a an of in on at is be am do does did have has had will would " +
+    "can could should i my me your our we they it that this these those and or for with as by not no yes " +
+    "which most accurately describes please select any all if").split(" "));
+  const meaningful = (s) => [...toks(s)].filter((w) => !QA_STOP.has(w));
+  // The answer the user CAPTURED for a question: the value of the vault key whose DISTINCTIVE tokens
+  // (stopwords removed) are essentially all present in the question. Key-gated and disambiguating — the
+  // US work-auth key won't answer the Canada question (its "united states" is absent there), and a
+  // stray "Yes" value never leaks. Fully generic: works for ANY captured question, not a fixed list.
+  const vaultAnswerFor = (question) => {
+    const qt = toks(question); if (!qt.size) return null;
+    let best = null, bestScore = 0;
+    for (const key of Object.keys(rawVault)) {
+      const km = meaningful(key); if (km.length < 1) continue;
+      let s = 0; for (const w of km) if (qt.has(w)) s++;
+      const missing = km.length - s;
+      if (s >= 1 && missing <= Math.floor(km.length * 0.34) && s > bestScore) { bestScore = s; best = rawVault[key]; }
+    }
+    return best == null ? null : String(best);
+  };
+  // The option/element whose LABEL best matches a target answer (token overlap), or null if no
+  // confident winner. Tolerates wording differences ("I do not have ANY disability" vs "…A disability").
+  const bestByTokens = (items, labelOfItem, value) => {
+    const vt = toks(value); if (!vt.size) return null;
+    let best = null, bs = 0, second = 0;
+    for (const it of items) {
+      const ot = toks(labelOfItem(it)); let s = 0; for (const w of vt) if (ot.has(w)) s++;
+      if (s > bs) { second = bs; bs = s; best = it; } else if (s > second) second = s;
+    }
+    return (best && bs > second && (bs >= 2 || (vt.size <= 2 && bs >= vt.size))) ? best : null;
+  };
+  const splitAns = (v) => String(v).split(/[,;/]|\bor\b|\band\b/i).map((s) => s.trim()).filter(Boolean);
+  // A stored VALUE that is (essentially) one of this option's caption — typo-proof direct match, used
+  // when the question KEY is misspelt so key-matching misses it (e.g. "race_ethhicity" → value "Asian").
+  const valueMatchesOption = (optLabel) => {
+    const ot = toks(optLabel); if (!ot.size) return false;
+    return Object.values(rawVault).some((v) => {
+      const st = toks(String(v == null ? "" : v)); if (!st.size) return false;
+      let sh = 0; for (const w of ot) if (st.has(w)) sh++;
+      return sh >= 1 && (sh === ot.size || sh === st.size); // one caption fully contains the other
+    });
+  };
+
+  if (Object.keys(SAVED).length || Object.keys(rawVault).length) {
     const controls = [...document.querySelectorAll('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"], [role="switch"]')]
       .filter((c) => !(c.disabled || c.getAttribute("aria-disabled") === "true") && shownCtrl(c));
     // Group by (radio-group name / group id) + question so each question is answered once.
@@ -919,28 +963,54 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       groups.get(k).list.push(c);
     }
     for (const { q, list } of groups.values()) {
+      const groupMulti = list.some((c) => c.type === "checkbox" || c.getAttribute("role") === "checkbox");
+      if (!groupMulti && list.some(isChk)) continue; // a radio already answered — leave it
+      let did = false;
       const entry = qaMatch(q);
-      if (!entry) continue;
-      const ans = SAVED[entry.key];
-      if (ans == null || ans === "") continue;
-      if (!entry.multi && list.some(isChk)) continue; // user already answered — leave it
-      const tokens = entry.multi ? String(ans).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(ans)];
-      for (const tok of tokens) {
-        const re = entry.opts[tok];
-        if (!re) continue;
-        const hit = list.find((c) => re.test(ctrlLabel(c).toLowerCase()));
-        if (hit && !isChk(hit)) { if (setChk(hit)) filled++; }
-        if (!entry.multi) break; // radios: one answer only
+      // A) EXPLICIT "Common answers" pick (curated token → option regex) — the user's override layer.
+      if (entry && SAVED[entry.key] != null && SAVED[entry.key] !== "") {
+        const tokens = entry.multi ? String(SAVED[entry.key]).split(/[,;]+/).map((s) => s.trim()).filter(Boolean) : [String(SAVED[entry.key])];
+        for (const tok of tokens) {
+          const re = entry.opts[tok]; if (!re) continue;
+          const hit = list.find((c) => re.test(ctrlLabel(c).toLowerCase()));
+          if (hit && !isChk(hit) && setChk(hit)) { filled++; did = true; }
+          if (!entry.multi) break;
+        }
+      }
+      // B) GENERIC: the answer the user CAPTURED for THIS question (vault key ~ question) → the option
+      // whose label best matches that stored answer. Any question, any wording — no fixed list.
+      if (!did || groupMulti) {
+        const captured = vaultAnswerFor(q);
+        if (captured) {
+          for (const target of (groupMulti ? splitAns(captured) : [captured])) {
+            const opt = bestByTokens(list.filter((c) => !isChk(c)), ctrlLabel, target);
+            if (opt && setChk(opt)) { filled++; did = true; if (!groupMulti) break; }
+          }
+        }
+      }
+      // C) GENERIC (typo-proof): a specific option (>=4 chars, not bare Yes/No) whose caption a stored
+      // VALUE equals — catches questions whose captured KEY is misspelt so B missed them.
+      if (!did || groupMulti) {
+        for (const c of list) {
+          if (isChk(c)) continue;
+          const ol = ctrlLabel(c).toLowerCase().trim();
+          if (ol.length < 4 || /^(yes|no|n\/a|na)$/.test(ol)) continue;
+          if (valueMatchesOption(ol) && setChk(c)) { filled++; did = true; if (!groupMulti) break; }
+        }
       }
     }
-    // Native <select> versions of the same questions (some forms use a dropdown for gender/veteran).
+    // Native <select> versions (some forms use a dropdown for gender/veteran/etc.) — same generic logic.
     for (const sel of document.querySelectorAll("select")) {
       if (sel.disabled || sel.value) continue;
-      const entry = qaMatch(ctrlQuestion(sel) + " " + ownLabel(sel));
-      if (!entry || entry.multi) continue;
-      const ans = SAVED[entry.key]; if (ans == null || ans === "") continue;
-      const re = entry.opts[String(ans)]; if (!re) continue;
-      const opt = [...sel.options].find((o) => re.test((o.textContent || "").toLowerCase()));
+      const q = ctrlQuestion(sel) + " " + ownLabel(sel);
+      const opts = [...sel.options].filter((o) => o.value && (o.textContent || "").trim());
+      let opt = null;
+      const entry = qaMatch(q);
+      if (entry && !entry.multi && SAVED[entry.key] != null && SAVED[entry.key] !== "") {
+        const re = entry.opts[String(SAVED[entry.key])];
+        if (re) opt = opts.find((o) => re.test((o.textContent || "").toLowerCase()));
+      }
+      if (!opt) { const captured = vaultAnswerFor(q); if (captured) opt = bestByTokens(opts, (o) => o.textContent || "", captured); }
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
     }
   }

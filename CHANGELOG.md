@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed — screening/EEO answering is now GENERIC (driven by captured vault answers) (2026-07-27)
+- Radios, checkboxes and dropdowns for screening/eligibility/self-ID questions now fill from **any
+  answer the user has captured into their vault** (key = the question, value = the answer) — not just a
+  fixed library. For each on-page question the engine finds the vault key whose distinctive tokens match
+  the question, then selects the option whose label best matches the stored answer (token overlap, so
+  "I do not have **any** disability" still matches the form's "…**a** disability…"). A typo-proof direct
+  value→option match catches misspelt keys (e.g. `race_ethhicity` → the "Asian" box). Handles React
+  widgets where the click handler is on the `<label>` (not the input). Strictly key-gated + stopword-aware
+  so the US work-auth answer can't fill the Canada question and a stray "Yes" can't leak. The curated
+  "Common answers" panel remains as an explicit override layer. Tests +4; suite 330/330.
+
 ### Added — "Common answers": auto-answer screening / eligibility / EEO questions (2026-07-27)
 - The extension can now fill **radio buttons, checkboxes, and dropdowns** for standard screening and
   self-identification questions — work authorization (US/Canada), visa sponsorship, security clearance,

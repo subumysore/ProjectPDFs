@@ -361,6 +361,44 @@ test("saved answers: checkboxes with label[for] + data-value (race), only chosen
   assert.equal($(dom, "#PI-1-1").checked, false);
 });
 
+test("generic: captured VAULT answers drive radios/checkboxes (no Common answers set)", async () => {
+  // The user captured screening answers as vault key=question, value=answer. This must work generically.
+  const dom = mount(`
+    <div><div class="t">Protected Veteran Status</div>
+      <div class="r"><input type="radio" value="I am a veteran" id="gv1"><label data-value="I am a veteran">I am a veteran</label></div>
+      <div class="r"><input type="radio" value="I am not a veteran" id="gv2"><label data-value="I am not a veteran">I am not a veteran</label></div></div>
+    <div><div class="t">Disability Status</div>
+      <div class="r"><input type="radio" value="yes" id="gd1"><label>I have a disability and would like to be considered</label></div>
+      <div class="r"><input type="radio" value="no" id="gd2"><label>I do not have a disability or would not like to be considered under the affirmative action program</label></div></div>
+    <div><div class="t">Race/Ethnicity</div>
+      <div><input type="checkbox" id="gr1"><label for="gr1">White</label></div>
+      <div><input type="checkbox" id="gr2"><label for="gr2">Asian</label></div></div>`);
+  await fillPage({
+    veteran_status: "I am not a veteran",
+    disability_status: "I do not have any disability", // note "any" vs the form's "a" — must still match
+    race_ethhicity: "Asian",                            // misspelt KEY — matched via the value instead
+  });
+  assert.equal($(dom, "#gv2").checked, true);
+  assert.equal($(dom, "#gd2").checked, true);   // wording-tolerant match
+  assert.equal($(dom, "#gr2").checked, true);   // Asian
+  assert.equal($(dom, "#gr1").checked, false);
+});
+
+test("generic: captured Yes/No answer keyed by the question fills; a stray value never leaks", async () => {
+  const dom = mount(`
+    <fieldset><legend>Are you authorized to work in the United States?</legend>
+      <label><input type="radio" name="wus" id="au_y"> Yes</label>
+      <label><input type="radio" name="wus" id="au_n"> No</label></fieldset>
+    <fieldset><legend>Are you authorized to work in Canada?</legend>
+      <label><input type="radio" name="wca" id="ca_y"> Yes</label>
+      <label><input type="radio" name="wca" id="ca_n"> No</label></fieldset>`);
+  // Vault has an answer for the US question (keyed by it) and an UNRELATED "Yes" value.
+  await fillPage({ are_you_authorized_to_work_in_the_united_states: "Yes", newsletter_optin: "Yes" });
+  assert.equal($(dom, "#au_y").checked, true);   // US question answered from its captured key
+  assert.equal($(dom, "#ca_y").checked, false);  // Canada NOT ticked by the stray "Yes" (key-gated)
+  assert.equal($(dom, "#ca_n").checked, false);
+});
+
 test("saved answers: a question with NO saved answer is left untouched (never guessed)", async () => {
   const dom = mount(`
     <fieldset><legend>Do you currently have a DoD security clearance?</legend>
