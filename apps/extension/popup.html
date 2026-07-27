@@ -30,6 +30,10 @@
     <div class="row" style="margin:4px 0 8px;align-items:center;gap:6px">
       <label class="sub" for="uiLang" data-i18n="lang.ui" style="white-space:nowrap">Language</label>
       <select id="uiLang" style="flex:1"></select>
+      <!-- Pop the popup out into a standalone window that stays open until the user closes it — so it
+           no longer vanishes the moment you click the page you are filling. Hidden once already popped
+           out. Icon-only (a universal glyph) so it needs no per-language text. -->
+      <button id="popOut" title="Keep open in a window" style="white-space:nowrap">⤢</button>
     </div>
     <div class="msg" id="msg" style="position:sticky;top:0;z-index:20;background:#fff;padding:4px 0;font-weight:600"></div>
 
@@ -101,10 +105,12 @@
 
       <div style="border-top: 1px solid #e5e5e5; margin: 6px 0 8px; padding-top: 8px">
         <div class="sub" style="margin-bottom: 6px"><b data-i18n="vault.title">Your details</b> <span data-i18n="vault.subtitle">Saved encrypted on this device.</span></div>
-        <div id="entries"></div>
+        <!-- Add-row kept ABOVE the saved list so it is always in view — no scrolling past a long
+             list to add a new field. -->
         <input id="newKey" data-i18n-placeholder="vault.addField" placeholder="Field" />
         <input id="newVal" data-i18n-placeholder="vault.addValue" placeholder="Value" />
         <button id="add" data-i18n="vault.add">Add</button>
+        <div id="entries" style="margin-top: 8px"></div>
         <div class="sub" style="margin: 8px 0 4px" data-i18n="vault.imageHint">You can also add an image.</div>
         <div class="row" style="align-items: center; gap: 6px">
           <input id="imgKey" data-i18n-placeholder="vault.imageField" placeholder="Field, e.g. signature" style="flex: 1" />

@@ -4,6 +4,30 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Fixed — web autofill: wrong data on real ATS forms (UltiPro/UKG) + fill confidence UI (2026-07-27)
+- **Alternate-name fields no longer receive the legal name.** "Preferred Name" / "Former Name" / "Maiden
+  Name" / "Nickname" / "Alias" matched the generic full-name concept (the bare word "name") and were
+  filled with the wrong value — on a live LinkedIn/UltiPro application this surfaced leftover **"John Doe"**
+  test data. They now fill ONLY from a vault key stored for that specific alt-name, else are left blank.
+- **Free-text catch-all fields are never auto-filled.** UltiPro/Workday repeat a **Description** textarea
+  per Work-Experience / Education block; loose matching dumped vault data into them (a saved **password**,
+  the home **address**). Description / Comments / Notes / Remarks / Cover-letter / "additional information"
+  are now skipped.
+- **Repeated Work-Experience entries no longer get the same job everywhere.** Work history is a repeated
+  section (`NewWorkExperience_JobTitle0/1/…`); the single stored occupation was stamped into **every**
+  entry ("Job Title" = "Engineer" everywhere). We now fill only the first (most-recent) entry and leave
+  earlier ones blank — they are past jobs we hold no data for.
+- **Repeated Education blocks route to the right qualification.** The field label word **"degree"**
+  (UltiPro "Level of Education / Degree") was misread as a *bachelor's* level, collapsing every block onto
+  the bachelor entry ("Bachelors" filled twice). Level is now read from the section heading only; blocks
+  with no heading route by ORDER (block 0 → highest qualification, block 1 → next).
+- **Fill confidence:** the popup now reports the field count **boldly** ("✅ **N** fields filled"), and
+  every field the extension fills is **outlined in teal on the page** so the user can verify at a glance.
+- **Popup "Keep open" (⤢):** pops the popup out into a standalone window that stays open until the user
+  closes it (a toolbar popup is dismissed by the browser the instant focus leaves it); the Add-field row
+  moved to the TOP of the vault list so it's always in view. All fill actions resolve the real page tab in
+  both popup and detached-window modes. Tests +5 (`pagefill.test.mjs`), full extension suite 315/315.
+
 ### Fixed — sign/annotate no longer flattens overlays upside-down on rotated pages (2026-07-25)
 - The shared flatten engine (`apps/extension/src/signflatten.js`, used by desktop via @engine and by the extension) ignored the page’s `/Rotate`, so signatures/annotations came out upside-down on 180° scans and sideways on 90°/270°. New `overlayPlacement()` applies the INVERSE page rotation (y → pageHeight−y, w/h swapped for 90/270). Fixed in the shared engine → desktop + extension in parity. Tests +3 (`signflatten.test.mjs`, 6/6). This re-enables the guide’s “sign” segment.
 

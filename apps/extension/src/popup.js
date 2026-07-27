@@ -26,6 +26,27 @@ import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./compani
 import { chooseDataProfile } from "./profileMatch.js";
 import { parseEducation } from "./education.js";
 const $ = (id) => document.getElementById(id);
+// The web page we act on. In the normal toolbar popup, `currentWindow` IS the page's window, so the
+// active tab there is the page. But when the popup is "kept open" as a DETACHED window (see the
+// pop-out button), `currentWindow` is the tool window itself — so we must instead resolve the active
+// tab of the last-focused NORMAL browser window. One helper, used by every fill/scan action, keeps
+// both modes correct.
+async function targetTab() {
+  try {
+    const self = await chrome.windows.getCurrent();
+    if (self && self.type === "popup") {
+      // Detached tool window: pick the active tab of a NORMAL window (never our own), preferring the
+      // focused one, else the most recently seen — i.e. the page the user was just looking at.
+      const wins = (await chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }))
+        .filter((w) => w.id !== self.id);
+      const w = wins.find((x) => x.focused) || wins[wins.length - 1];
+      const t = w && (w.tabs || []).find((x) => x.active);
+      if (t) return t;
+    }
+  } catch (_) { /* fall through to the popup default */ }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
 // Show the loaded version in the header so it's always obvious which code is running.
 try { const v = $("ver"); if (v) v.textContent = "v" + chrome.runtime.getManifest().version; } catch (_) { /* non-extension context */ }
 const send = (msg) => chrome.runtime.sendMessage(msg);
@@ -33,6 +54,17 @@ function setMsg(text, ok = true) {
   const el = $("msg");
   el.textContent = text;
   el.className = "msg " + (ok ? "ok" : "err");
+}
+// A confident, at-a-glance result after a fill: the COUNT big and bold, plus a reminder that the
+// filled fields are outlined on the page so the user can verify them. `n` and `suffix` are ours
+// (a number and a fixed string) — safe to place as innerHTML.
+function setFillResult(n, suffix = "") {
+  const el = $("msg");
+  el.className = "msg " + (n > 0 ? "ok" : "err");
+  el.innerHTML = n > 0
+    ? `✅ <span style="font-size:18px;font-weight:800">${n}</span> field${n === 1 ? "" : "s"} filled${suffix}`
+      + ` <span style="font-weight:600">— outlined in teal on the page, please verify.</span>`
+    : `No fields matched your saved details on this page${suffix}.`;
 }
 // When the vault can't be read, show a CLEAR, actionable message. In single-vault mode the vault
 // lives in the desktop app, so a "locked" answer means "unlock the desktop app", not an error.
@@ -464,7 +496,7 @@ function collectFillLabels() {
 }
 
 async function fillActivePage(vault) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   // LANGUAGE-AWARE FILL: if the form is in another language, translate its labels into
   // English (the ontology's language) so the resolver still matches — on-device. The
   // form's values are placed as-is, so the SUBMITTED form stays in its own language.
@@ -586,7 +618,7 @@ async function runPdfFlow(r, tab, url, view = false) {
 $("fill").onclick = async () => {
   const r = await readVault();
   if (vaultBlocked(r)) return;
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   const url = (tab && tab.url) || "";
   // A PDF open in the browser? Fill it on-device with pdf-lib and show the result.
   if (/\.pdf(\?|#|$)/i.test(url)) {
@@ -605,14 +637,14 @@ $("fill").onclick = async () => {
     )) return setMsg("Cancelled — nothing was changed.");
     return runPdfFlow(r, tab, url);
   }
-  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) on this page${COMP.on ? " (desktop vault)" : ""}.`);
+  setFillResult(await fillActivePage(r.vault), COMP.on ? " (desktop vault)" : "");
 };
 
 // ✍️ Sign / handwrite: open the current PDF in the annotate tool where the user can draw
 // or stamp their saved signature/photo anywhere, then flatten + download. Works on ANY
 // PDF (printed boxes, scanned forms) — no fillable field required.
 if ($("signPdf")) $("signPdf").onclick = async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   const url = (tab && tab.url) || "";
   const nameFrom = (u) => ((u || "form").split("?")[0].split("#")[0].split("/").pop() || "form").replace(/\.pdf$/i, "") || "form";
   const s = await chrome.storage.session.get(["ppf_sign_src", "ppf_filled", "ppf_orig", "ppf_name", "ppf_sign_name", "ppf_url"]);
@@ -776,7 +808,7 @@ $("viewLang").onclick = async () => {
   if (!(await ensurePro("Reading a form in your language"))) return; // Translation = Pro
   const r = await readVault();
   const nativeLang = (r.ok && r.vault && r.vault.native_language) || "en";
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   const url = (tab && tab.url) || "";
   // A PDF opens in Chrome's own plugin, whose fields an extension can't rewrite in
   // place — so "view it in my language" runs the SAME pipeline as Fill and opens the
@@ -808,7 +840,7 @@ $("viewLang").onclick = async () => {
   }
 };
 $("restoreLang").onclick = async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: restoreLabelsForView });
   $("restoreLang").classList.add("hidden");
   setMsg("Showing the original.");
@@ -895,12 +927,39 @@ $("scan").onclick = async () => {
   window.close();
 };
 
+// KEEP OPEN: re-open this same UI as a DETACHED window. A toolbar popup is dismissed by the browser
+// the instant focus leaves it (e.g. you click the form) — no extension can prevent that. A standalone
+// window stays open until the user closes it, which is what long form-filling sessions need. We mark
+// the URL (?win=1) so the detached copy hides its own "Keep open" button and remembers the preference,
+// and we focus an existing tool window instead of spawning duplicates.
+async function isDetached() {
+  try { return new URLSearchParams(location.search).get("win") === "1"; } catch (_) { return false; }
+}
+async function openAsWindow() {
+  // Reuse an already-open tool window if there is one, otherwise spawn it. On-demand only (no sticky
+  // preference) so a normal toolbar click still gives the quick popup — the user opts into persistence
+  // per session with one click, and closes the window themselves when done.
+  const existing = (await chrome.windows.getAll({ populate: true, windowTypes: ["popup"] }))
+    .find((w) => (w.tabs || []).some((t) => (t.url || "").includes("popup.html")));
+  if (existing) { await chrome.windows.update(existing.id, { focused: true }); window.close(); return; }
+  await chrome.windows.create({
+    url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: 400, height: 680,
+  });
+  window.close();
+}
+(async () => {
+  const btn = $("popOut");
+  if (!btn) return;
+  if (await isDetached()) { btn.classList.add("hidden"); return; } // already a window — nothing to pop out
+  btn.onclick = openAsWindow;
+})();
+
 // Companion: fetch the vault from the native app (keys never enter the extension).
 $("companionFill").onclick = async () => {
   setMsg("Contacting native app…");
   const r = await send({ type: "companionVault" });
   if (!r.ok) return setMsg(r.error || "Native app unavailable", false);
-  setMsg(`Filled ${await fillActivePage(r.vault)} field(s) from the native app.`);
+  setFillResult(await fillActivePage(r.vault), " from the native app");
 };
 
 // Injected into the page. Self-contained on-device resolver: understands what each
@@ -933,7 +992,7 @@ if ($("autofillOnLoad")) {
 }
 
 $("learnPage").onclick = async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await targetTab();
   const url = (tab && tab.url) || "";
   if (/\.pdf(\?|#|$)/i.test(url)) {
     return setMsg("This is a PDF — Chrome's own PDF plugin doesn't let an extension read what you typed there.", false);

@@ -166,6 +166,78 @@ test("education: routes Master's / Bachelor's blocks to the right stored qualifi
   assert.ok(result >= 6);
 });
 
+test("alternate-name fields never receive the legal/full name (Preferred/Former Name stay empty)", async () => {
+  // UltiPro/LinkedIn bug: "Preferred Name" / "Former Name" matched the generic full-name concept and
+  // got the wrong value (a leftover "John Doe" test entry). They must only fill from a stored alt-name.
+  const dom = mount(`
+    <label>First Name <input id="fn"></label>
+    <label>Last Name <input id="ln"></label>
+    <label>Preferred Name <input id="pref"></label>
+    <label>Former Name <input id="former"></label>`);
+  await fillPage({ first_name: "Subramanya", last_name: "Mysore", full_name: "John Doe" });
+  assert.equal($(dom, "#fn").value, "Subramanya");
+  assert.equal($(dom, "#ln").value, "Mysore");
+  assert.equal($(dom, "#pref").value, "");    // NOT "John Doe"
+  assert.equal($(dom, "#former").value, "");  // NOT "John Doe"
+});
+
+test("alternate-name field DOES fill when the user stored that specific alt-name", async () => {
+  const dom = mount(`<label>Preferred Name <input id="pref"></label>`);
+  await fillPage({ first_name: "Subramanya", "preferred name": "Subbu" });
+  assert.equal($(dom, "#pref").value, "Subbu");
+});
+
+test("free-text catch-all fields (Description) are never auto-filled (no password/address leak)", async () => {
+  // UltiPro repeats a "Description" textarea per Work-Experience / Education block. Its label resolves
+  // only via a sibling, so loose matching dumped vault data (a saved password, the home address) into it.
+  const dom = mount(`
+    <div class="form-group"><label id="d0">Description</label>
+      <textarea aria-labelledby="d0" id="desc0"></textarea></div>
+    <div class="form-group"><label id="d1">Description</label>
+      <textarea aria-labelledby="d1" id="desc1"></textarea></div>`);
+  await fillPage({ password: "TashkenT08!!", street_address: "4308 ALBINO DEER WAY" });
+  assert.equal($(dom, "#desc0").value, "");
+  assert.equal($(dom, "#desc1").value, "");
+});
+
+test("education: UltiPro-style blocks (label 'Level of Education / Degree', id ...0/1) route by order", async () => {
+  // Regression: the word "degree" in the field label was read as a *bachelor's* level, collapsing both
+  // blocks onto the bachelor entry ("Bachelors" twice). With no legend, blocks must route by index.
+  const dom = mount(`
+    <div class="row"><label>School Name <input id="NewEducation_SchoolId0"></label></div>
+    <div class="row"><label>Level of Education / Degree <input id="NewEducation_DegreeId0"></label></div>
+    <div class="row"><label>School Name <input id="NewEducation_SchoolId1"></label></div>
+    <div class="row"><label>Level of Education / Degree <input id="NewEducation_DegreeId1"></label></div>`);
+  const { parseEducation } = await import("./education.js");
+  const vault = {
+    masters: "MS, Computer Science, Stanford University, 2015",
+    bachelors: "BS, Electronics, BMS College, 2013",
+  };
+  await fillPage(vault, null, parseEducation(vault));
+  assert.equal($(dom, "#NewEducation_SchoolId0").value, "Stanford University"); // block 0 → masters
+  assert.equal($(dom, "#NewEducation_SchoolId1").value, "BMS College");         // block 1 → bachelors
+  assert.notEqual($(dom, "#NewEducation_DegreeId0").value, $(dom, "#NewEducation_DegreeId1").value); // NOT both the same
+});
+
+test("repeated work-experience: current job title fills only the FIRST entry, not every block", async () => {
+  const dom = mount(`
+    <div data-automation="work-experience-item"><label>Job Title <input id="NewWorkExperience_JobTitle0"></label></div>
+    <div data-automation="work-experience-item"><label>Job Title <input id="NewWorkExperience_JobTitle1"></label></div>`);
+  await fillPage({ occupation: "Engineer" });
+  assert.equal($(dom, "#NewWorkExperience_JobTitle0").value, "Engineer"); // most recent role only
+  assert.equal($(dom, "#NewWorkExperience_JobTitle1").value, "");         // NOT stamped into every block
+});
+
+test("filled fields are marked for verification; untouched fields are not", async () => {
+  const dom = mount(`
+    <label>First name <input id="a"></label>
+    <label>Reference Number <input id="ref" placeholder="0123456789" maxlength="12"></label>`);
+  await fillPage({ first_name: "Asha" });
+  assert.equal($(dom, "#a").getAttribute("data-ppf-filled"), "1");        // filled → highlighted
+  assert.ok(/outline/.test($(dom, "#a").getAttribute("style") || ""));    // has a visible box
+  assert.equal($(dom, "#ref").getAttribute("data-ppf-filled"), null);     // never filled → not marked
+});
+
 test("custom dropdown: a mis-guessed value never selects an option (Yes/No question stays empty)", async () => {
   const dom = mount(`
     <div class="form-group">

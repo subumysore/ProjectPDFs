@@ -40,23 +40,52 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     }
     return txt;
   };
-  const eduEntryFor = (contextText) => {
+  // The block index of a REPEATED education section: the trailing integer on the field's own id/name
+  // (UltiPro `NewEducation_DegreeId0`/`1`, Workday `--education-1`), which lets us route indistinguishable
+  // blocks by ORDER when there is no per-block level heading to match on.
+  const eduBlockIndex = (el) => {
+    const m = ((el.id || "") + " " + (el.name || "")).match(/(\d+)\D*$/);
+    return m ? +m[1] : null;
+  };
+  const eduEntryFor = (el, contextText) => {
     if (!edu.length) return null;
-    const lvl = eduLevelOf(contextText);
-    return (lvl && edu.find((e) => e.level === lvl)) || edu[0]; // highest by default
+    const lvl = eduLevelOf(contextText);                 // a real SECTION heading wins (Master's block → masters)
+    if (lvl) { const e = edu.find((x) => x.level === lvl); if (e) return e; }
+    const idx = eduBlockIndex(el);                        // else route repeated blocks by their order
+    if (idx != null && idx < edu.length) return edu[idx];
+    return edu[0];                                        // single/unknown block → highest by default
   };
   // The education value for a field (input OR dropdown): match its label to Degree/Field/School/
   // Year/GPA, then read that member from the block the field's section points at. null if not an
   // education field. (`score` is defined later but only READ at call time.)
+  // Level routing reads the SECTION heading only — NOT the field's own label: the generic label word
+  // "degree" (e.g. UltiPro "Level of Education / Degree") is not evidence of a *bachelor's*, and reading
+  // it as one collapsed every block onto the bachelor entry ("Bachelors" filled twice).
   const eduValueFor = (el, label) => {
     if (!edu.length) return null;
     let kind = null, t = 0;
     for (const [k, syn] of Object.entries(EDU_FIELD_SYNS)) { const s = score(label, syn); if (s > t) { t = s; kind = k; } }
     if (!kind || t < 1.5) return null;
-    const entry = eduEntryFor(sectionContext(el) + " " + label);
+    const entry = eduEntryFor(el, sectionContext(el));
     return (entry && entry[kind]) || null;
   };
   const initial = (s) => { const m = (s || "").trim().match(/\p{L}/u); return m ? m[0].toUpperCase() : ""; };
+
+  // A field inside a REPEATED work-experience / employment-history ENTRY, and WHICH entry (0-based).
+  // We hold ONE current role, so entries past the first are earlier jobs we have no data for — filling
+  // them all with the same value (every "Job Title" → "Engineer", every employer the same) is wrong.
+  // Returns the entry index for such a field (fill only entry 0), or null if it isn't one.
+  const HISTORY_RE = /work experience|employment history|work history|employment|prior employment|previous employment/;
+  const historyEntryIndex = (el) => {
+    const idName = (el.id || "") + " " + (el.name || "");
+    let inHistory = HISTORY_RE.test(norm(idName));
+    if (!inHistory && el.closest) {
+      inHistory = !!el.closest("[data-automation*='work-experience'], [class*='work-experience'], [class*='workExperience'], [id*='WorkExperience'], [id*='Employment']");
+    }
+    if (!inHistory) return null;
+    const m = idName.match(/(\d+)\D*$/);
+    return m ? +m[1] : 0;
+  };
 
   // 1) Canonical "atoms" <- the many ways a user might have named a key.
   const ALIASES = {
@@ -302,8 +331,26 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
    * { skip: true }  -> never fill (office use, or a qualified field we hold no value for)
    * { value }       -> fill with exactly this, bypassing concept matching
    */
+  // Alternate-name fields (Preferred / Former / Maiden / Other / Nick / Alias / AKA name) must NEVER
+  // receive the legal or full name — only a value the user actually stored for THAT alt-name, else be
+  // skipped. Without this, "Preferred Name" / "Former Name" matched the generic full-name concept
+  // (because "name" alone matched) and got the wrong value — e.g. a leftover "John Doe" test entry —
+  // on real job applications.
+  const ALT_NAME_QUALS = ["preferred", "former", "previous", "prior", "maiden", "other",
+    "alternate", "alternative", "nickname", "nick", "alias", "aka"];
+  const altNameQual = (label) => {
+    const toks = norm(label).split(" ").filter(Boolean);
+    if (!toks.some((t) => ["name", "nickname", "alias", "aka"].includes(t))) return null;
+    return toks.find((t) => ALT_NAME_QUALS.includes(t)) || null;
+  };
+  const altNameValue = (q) => {
+    for (const key of Object.keys(rawVault)) if (key.split(" ").includes(q)) return rawVault[key];
+    return rawVault[q] != null ? rawVault[q] : null;
+  };
   const specialCase = (label) => {
     if (officeUse(label)) return { skip: true };
+    const altq = altNameQual(label);
+    if (altq) { const v = altNameValue(altq); return v && String(v).trim() ? { value: v } : { skip: true }; }
     const script = qualifierIn(label, SCRIPT_WORDS, "name");
     if (script) {
       const v = qualifiedValue(script, "name");
@@ -352,6 +399,16 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (el.readOnly && !isDatePickerLike(el)) continue;
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
+    // Free-text catch-all fields (Description / Comments / Notes / Remarks / Cover letter / "additional
+    // information") are the applicant's own prose — a job or education "Description", a message box. We
+    // hold no value that belongs there, and matching them loosely dumped vault data into them (a saved
+    // password, the home address) on real ATS forms (UltiPro/Workday repeat a "Description" per section).
+    // Never auto-fill them. Checked on the FULL label (these fields are often labelled only by a sibling).
+    if (/\b(descriptions?|comments?|remarks?|notes?|cover ?letter|additional (information|details|comments)|anything else|other information|message)\b/.test(norm(label))) continue;
+    // A repeated work-history entry beyond the first: we hold one current role, so leave the earlier
+    // entries blank rather than stamping the same job/employer into every one.
+    const hIdx = historyEntryIndex(el);
+    if (hIdx != null && hIdx > 0) continue;
     const special = specialCase(ownLabel(el)); // own label only — see ownLabel
     if (special) {
       if (!special.skip) fields.push({ el, label, pick: null, forced: special.value });
@@ -461,6 +518,19 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (ro) el.readOnly = ro;
     return true;
   };
+  // Draw a clear box around a field we just filled, so the user can SEE and verify exactly what was
+  // entered (parity with the count we report). A teal outline + soft glow + faint tint, left in place
+  // (no auto-fade) so it survives while they review; the site's next real edit clears it naturally.
+  const markFilled = (el) => {
+    try {
+      const box = (el.type === "checkbox" || el.type === "radio") ? (el.closest("label") || el) : el;
+      box.style.setProperty("outline", "2px solid #0a9e8e", "important");
+      box.style.setProperty("outline-offset", "1px", "important");
+      box.style.setProperty("box-shadow", "0 0 0 3px rgba(10,158,142,0.20)", "important");
+      box.style.setProperty("background-color", "rgba(10,158,142,0.07)", "important");
+      box.setAttribute("data-ppf-filled", "1");
+    } catch (_) { /* styling is best-effort — never let it break a fill */ }
+  };
   // Fill a field by SIMULATING KEYSTROKES, one character at a time. Some sites (especially password
   // fields) block paste and ignore a bulk value-set, only accepting input that arrives as real typing
   // — per-character keydown/beforeinput/input/keyup with the value growing one char at a time. This
@@ -540,14 +610,14 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // Password fields: type the value key-by-key (sites that block paste / ignore a bulk set still
     // accept real typing). No date reformatting applies to a password.
     if (el.type === "password") {
-      if (await typeFieldValue(el, value)) filled++;
+      if (await typeFieldValue(el, value)) { filled++; markFilled(el); }
       continue;
     }
     const dt = parseVaultDate(value);
     if (dt && el.type !== "date") {
-      if (await setDateSmart(el, dt, formatDateForField(value, el, label))) filled++;
+      if (await setDateSmart(el, dt, formatDateForField(value, el, label))) { filled++; markFilled(el); }
     } else {
-      if (setFieldValue(el, formatDateForField(value, el, label))) filled++;
+      if (setFieldValue(el, formatDateForField(value, el, label))) { filled++; markFilled(el); }
     }
   }
 
@@ -592,7 +662,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       sel.value = match.value;
       sel.dispatchEvent(new Event("input", { bubbles: true }));
       sel.dispatchEvent(new Event("change", { bubbles: true }));
-      filled++;
+      filled++; markFilled(sel);
     }
   }
 
@@ -701,7 +771,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
         opt.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
         if (opt.click) opt.click();
-        filled++;
+        filled++; markFilled(h);
         await wait(80);
       } else {
         document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
