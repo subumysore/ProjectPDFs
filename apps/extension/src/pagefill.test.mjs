@@ -245,13 +245,15 @@ test("'Former Name' does not pick up an unrelated 'former…' vault key (e.g. NO
   assert.equal($(dom, "#fmr").value, ""); // only a real "former name" would fill this
 });
 
-test("a screening question / prompt is never auto-filled", async () => {
+test("a screening question / prompt is not GUESSED, but IS filled when a captured answer matches", async () => {
   const dom = mount(`
     <label>Please provide an active link to your LinkedIn profile <textarea id="li"></textarea></label>
+    <label>Please describe your ideal work environment <textarea id="env"></textarea></label>
     <label>How many years of experience do you have? <input id="yrs"></label>`);
-  await fillPage({ age: "38", years: "38", linkedin: "x" });
-  assert.equal($(dom, "#li").value, "");
-  assert.equal($(dom, "#yrs").value, "");
+  await fillPage({ linkedin_profile: "https://linkedin.com/in/subramanya", age: "38", years: "38" });
+  assert.equal($(dom, "#li").value, "https://linkedin.com/in/subramanya"); // captured answer fills the prompt
+  assert.equal($(dom, "#env").value, "");   // no matching vault key → left for the user (never guessed)
+  assert.equal($(dom, "#yrs").value, "");   // stray "38" never lands here
 });
 
 test("a Year box only accepts a 4-digit year, never an address", async () => {

@@ -417,13 +417,27 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // hold no value that belongs there, and matching them loosely dumped vault data into them (a saved
     // password, the home address) on real ATS forms (UltiPro/Workday repeat a "Description" per section).
     // Never auto-fill them. Checked on the FULL label (these fields are often labelled only by a sibling).
-    if (/\b(descriptions?|comments?|remarks?|notes?|cover ?letter|additional (information|details|comments)|anything else|other information|message)\b/.test(norm(label))) continue;
-    // Screening QUESTIONS / prompts — a "?", or an imperative/interrogative opener ("Please provide…",
-    // "How many…", "Are you…", "Do you…") — are not field captions. Scoring a concept against a whole
-    // sentence is unreliable and was stamping stray values (a number, an address) into them (e.g. "38"
-    // into "Please provide an active link to your LinkedIn profile"). Leave them for the user to answer.
-    if (label.includes("?") ||
-        /\b(please (provide|enter|describe|list|explain|tell|specify|share|state|attach|upload)|how (many|much|long|often)|do you|are you|have you|did you|were you|would you|will you|can you|is there)\b/.test(norm(label))) continue;
+    // Free-text catch-alls (Description/Comments/Notes/…) and screening PROMPTS ("Please provide…",
+    // "How many…", a "?") are not field captions — matching a concept to a whole sentence guessed stray
+    // values into them. So we DON'T concept-fill them… EXCEPT when the user actually has a captured
+    // answer for this exact prompt: if a vault key's meaningful tokens all appear in the label (e.g.
+    // "linkedin_profile" ⊂ "Please provide … your LinkedIn profile"), fill that stored value. Never a guess.
+    const catchAll = /\b(descriptions?|comments?|remarks?|notes?|cover ?letter|additional (information|details|comments)|anything else|other information|message)\b/.test(norm(label));
+    const screening = label.includes("?") ||
+      /\b(please (provide|enter|describe|list|explain|tell|specify|share|state|attach|upload)|how (many|much|long|often)|do you|are you|have you|did you|were you|would you|will you|can you|is there)\b/.test(norm(label));
+    if (catchAll || screening) {
+      const lt = new Set(norm(label).split(" ").filter((w) => w.length > 1));
+      const labelJoined = norm(label).replace(/\s+/g, ""); // "linkedin" matches even when the label split it to "linked in"
+      let hit = null, hitScore = 0;
+      for (const key of Object.keys(rawVault)) {
+        const km = key.split(" ").filter((w) => w.length > 2);
+        if (!km.length || !(km.length >= 2 || km.some((w) => w.length >= 6))) continue; // avoid a stray 1-token match
+        let s = 0; for (const w of km) if (lt.has(w) || labelJoined.includes(w)) s++;
+        if (s === km.length && s > hitScore) { hitScore = s; hit = rawVault[key]; } // ALL key tokens present in the prompt
+      }
+      if (hit != null && String(hit).trim()) { fields.push({ el, label, pick: null, forced: String(hit) }); continue; }
+      continue; // no captured answer → leave the prompt for the user
+    }
     // A repeated work-history entry beyond the first: we hold one current role, so leave the earlier
     // entries blank rather than stamping the same job/employer into every one.
     const hIdx = historyEntryIndex(el);
