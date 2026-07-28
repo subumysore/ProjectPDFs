@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { check as checkUpdate } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { extractFromImage, documentImageKey, type ExtractedField } from "./ocr";
 import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
 import { fillOfficeForm, officeToPdf } from "./office";
@@ -163,6 +165,10 @@ export function App() {
   const [deviceId, setDeviceId] = useState("");
   const [lic, setLic] = useState<Lic | null>(null);
   const [licKey, setLicKey] = useState("");
+  // Desktop auto-update (ADR-0028): check our signed feed on launch; offer a one-click install.
+  const [update, setUpdate] = useState<{ version: string; notes?: string } | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const updateRef = useRef<{ downloadAndInstall: () => Promise<void> } | null>(null);
   // Step-based tabs instead of one long scrolling page.
   const [tab, setTab] = useState<"license" | "setup" | "forms" | "history" | "docs">("license");
 
@@ -178,6 +184,13 @@ export function App() {
       .then(setLic)
       .catch(() => invoke<Lic>("license_status").then(setLic).catch(() => {}));
   }, [locked]);
+
+  // Check our signed update feed once on launch (independent of unlock). Silent on failure/offline.
+  useEffect(() => {
+    checkUpdate()
+      .then((u) => { if (u) { updateRef.current = u; setUpdate({ version: u.version, notes: (u as { body?: string }).body }); } })
+      .catch(() => {});
+  }, []);
 
   // Attach the live camera stream to the preview element when the camera turns on.
   useEffect(() => {
@@ -236,6 +249,19 @@ export function App() {
     if (!base) return;
     const url = deviceId ? `${base}?client_reference_id=${encodeURIComponent(deviceId)}` : base;
     invoke("open_submit_url", { url }).catch((e) => setBkMsg("Could not open checkout: " + String(e)));
+  }
+
+  // Download + install the pending update (verified against the embedded updater pubkey), then relaunch.
+  async function installUpdate() {
+    if (!updateRef.current) return;
+    setUpdating(true);
+    try {
+      await updateRef.current.downloadAndInstall();
+      await relaunch();
+    } catch (e) {
+      setErr("Update failed: " + String(e));
+      setUpdating(false);
+    }
   }
 
   async function doImport(file: File) {
@@ -986,6 +1012,22 @@ export function App() {
         color: "#101a20",
       }}
     >
+      {update && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          background: "#e2f2f0", border: "1px solid #b6e0da", borderRadius: 10,
+          padding: "10px 14px", marginBottom: 14, fontSize: 14,
+        }}>
+          <span style={{ fontWeight: 700, color: "#0a6a60" }}>Update available — v{update.version}</span>
+          <span style={{ color: "#5a6b6d", flex: 1, minWidth: 160 }}>
+            {updating ? "Downloading & installing… the app will restart." : "A newer version is ready. It installs in a few seconds and restarts."}
+          </span>
+          <button onClick={installUpdate} disabled={updating} style={{ padding: "7px 14px" }}>
+            {updating ? "Installing…" : "Update now"}
+          </button>
+          {!updating && <button onClick={() => setUpdate(null)} style={{ padding: "7px 10px", background: "transparent", color: "#5a6b6d", border: "1px solid #cfe9e5" }}>Later</button>}
+        </div>
+      )}
       {signing && pdfBytes && (
         <SignPad
           pdfBytes={pdfBytes}

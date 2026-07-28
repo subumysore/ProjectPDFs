@@ -58,6 +58,37 @@ function urlFor(lang, page) {
   return `${base}/`;
 }
 
+// Canonical origin + a share image (existing asset). Used for SEO + social cards.
+const SITE_ORIGIN = "https://polyglotformfill.mooo.com";
+const OG_IMAGE = `${SITE_ORIGIN}/download/before-after.jpg`;
+
+// SEO + social <head> block: canonical, Open Graph, Twitter card, and hreflang alternates for
+// every language (so Google serves the right localue and 26 pages aren't seen as duplicates).
+function headMeta(lang, page, tr) {
+  const canonical = `${SITE_ORIGIN}${urlFor(lang, page)}`;
+  const title = page === "install" ? tr("install.title")
+    : page === "privacy" ? `${tr("app.name")} — ${tr("privP.title")}`
+    : `${tr("app.name")} — ${tr("meta.landingTitle")}`;
+  const desc = page === "install" ? tr("install.intro") : tr("meta.landingDesc");
+  const alts = Object.keys(UI_LANGS)
+    .map((code) => `<link rel="alternate" hreflang="${code}" href="${SITE_ORIGIN}${urlFor(code, page)}">`)
+    .join("\n") + `\n<link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}${urlFor("en", page)}">`;
+  return `<link rel="canonical" href="${canonical}">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${esc(tr("app.name"))}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${canonical}">
+<meta property="og:image" content="${OG_IMAGE}">
+<meta property="og:locale" content="${esc(lang)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${OG_IMAGE}">
+${alts}`;
+}
+
 function switcher(current, page) {
   const opts = Object.entries(UI_LANGS)
     .map(([code, label]) =>
@@ -148,6 +179,7 @@ function landingPage(lang) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(tr("app.name"))} — ${esc(tr("meta.landingTitle"))}</title>
 <meta name="description" content="${esc(tr("meta.landingDesc"))}">
+${headMeta(lang, "landing", tr)}
 <style>${LANDING_CSS}${LANGBAR_CSS}
   .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
 </style>
@@ -341,6 +373,7 @@ function privacyPage(lang) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(tr("app.name"))} — ${esc(tr("privP.title"))}</title>
+${headMeta(lang, "privacy", tr)}
 <style>${PRIVACY_CSS}${LANGBAR_CSS}</style>
 </head>
 <body>
@@ -449,6 +482,7 @@ function installPage(lang) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(tr("install.title"))}</title>
+${headMeta(lang, "install", tr)}
 <style>${INSTALL_CSS}${LANGBAR_CSS}</style>
 </head>
 <body>
@@ -554,5 +588,25 @@ writeFileSync(
 <p><a href="/">Back to PolyglotFormFill</a></p></body></html>`,
 );
 
+// SEO: sitemap.xml (every page × every language, with hreflang alternates) + robots.txt.
+const SITEMAP_PAGES = ["landing", "install", "privacy"];
+const sitemapUrls = AVAILABLE.flatMap((lang) =>
+  SITEMAP_PAGES.map((page) => {
+    const loc = `${SITE_ORIGIN}${urlFor(lang, page)}`;
+    const alts = AVAILABLE
+      .map((code) => `    <xhtml:link rel="alternate" hreflang="${code}" href="${SITE_ORIGIN}${urlFor(code, page)}"/>`)
+      .join("\n");
+    return `  <url>\n    <loc>${loc}</loc>\n${alts}\n    <changefreq>weekly</changefreq>\n  </url>`;
+  }),
+).join("\n");
+writeFileSync(
+  join(site, "sitemap.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${sitemapUrls}\n</urlset>\n`,
+);
+writeFileSync(
+  join(site, "robots.txt"),
+  `User-agent: *\nAllow: /\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
+);
+
 console.log(`install page versions: extension v${EXT_VER}, desktop v${APP_VER}`);
-console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404`);
+console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404 + sitemap.xml + robots.txt`);

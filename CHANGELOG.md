@@ -10,6 +10,19 @@ education routing, general option matching (state abbreviations, acronyms), the 
 value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
 Suite 339/339 + engine-parity 6/6.
 
+## [Desktop 1.0.4] - 2026-07-28
+### Added — desktop auto-update + SEO/social surface (ADR-0028)
+- **Auto-update** (parity with the extension): `tauri-plugin-updater` + `tauri-plugin-process`; the app
+  checks a signed feed (`/download/latest.json`) on launch and offers a one-click **Update now** banner
+  (download → verify against the embedded minisign pubkey → install → relaunch). Cryptographically verified,
+  so a compromised host can't push a bad build. Only a version check leaves (privacy intact). Ships in
+  **1.0.4**; 1.0.3-and-earlier need one manual update to gain the updater.
+- **SEO/social**: every page × 26 languages now emits canonical + Open Graph + Twitter cards + **hreflang**
+  alternates (no duplicate-content penalty; correct locale in search); plus **sitemap.xml** (78 URLs) and
+  **robots.txt**. Ready-to-post **launch kit** at `docs/marketing/launch-kit.md`.
+- Update signing uses a dedicated minisign keypair (pubkey embedded; private key via `TAURI_SIGNING_PRIVATE_KEY`
+  env, never in git). tsc + cargo check clean.
+
 ## [Desktop 1.0.3] - 2026-07-28
 ### Added — 7-day free trial, then paid (no free-forever tier) — ADR-0027
 - Fixes a monetisation hole: shipped builds let anyone fill forms **free forever** (only translation/

@@ -1090,6 +1090,10 @@ fn percent_decode(s: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Auto-update: check our own signed update feed, download + install (ADR-0028). Serves
+        // only a version check to our asset host — no user content (privacy invariant holds).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         // Serve the on-device translation models to the WebView from the app-data `models/` dir
         // (NOT embedded in the binary — that bloated the build). transformers.js is pointed at
         // `ppfmodel://…` (see translate.ts); this reads the requested file and returns it. On
