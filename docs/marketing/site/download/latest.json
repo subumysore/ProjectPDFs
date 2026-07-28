@@ -1,0 +1,11 @@
+﻿{
+    "version":  "1.0.4",
+    "notes":  "Auto-update support, 7-day trial, and a Microsoft-trusted code signature.",
+    "pub_date":  "2026-07-28T23:21:59Z",
+    "platforms":  {
+                      "windows-x86_64":  {
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UG81UmZhbkUyRWpleFdVYURvc3BMQ0dRdVk4VGwvcGhqd05HZlY1LzdUcVFmT0hsKzFXRzZIZU9JZUpic3J1Z1VEeWtZR1l6MXhGeDNkemhXYTB4SHdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1MjgwODcyCWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuNF94NjQtc2V0dXAuZXhlCmt4K0JrYytjRGRiSmxzTUUzMGFQSXgzcFZWTnljZGlLeldqWklPMXN4R0xYb3NWZmlyLzZTUVlIb2Z2ZlYrdVRqMlFoc0tjU2ZqMXNCUzI0dkFZWEJRPT0K",
+                                             "url":  "https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe"
+                                         }
+                  }
+}
