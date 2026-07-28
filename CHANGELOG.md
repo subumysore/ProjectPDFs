@@ -10,6 +10,17 @@ education routing, general option matching (state abbreviations, acronyms), the 
 value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
 Suite 339/339 + engine-parity 6/6.
 
+## [Desktop 1.0.5] - 2026-07-28
+### Changed — machine-stable trial binding (anti-farming, privacy intact) — ADR-0029
+- Closes "wipe app data → farm a new trial" on desktop **without** any server-side tracking. The device
+  id now derives from the Windows install's MachineGuid, **one-way SHA-256 hashed** (falls back to random
+  off-Windows), so clearing app data keeps the same identity; and the "trial used" marker is written to the
+  **HKCU registry** (outside app data) as well as the file, checked file-OR-registry.
+- Only a one-way hash ever leaves the device (a stable pseudonym, not raw hardware/profile data) and the
+  issuer stays stateless — so "no tracking / zero telemetry" remains true; **no privacy-policy change**.
+  Bonus: paid licences now survive an app-data wipe (bind to a stable id). Extension can't be hardware-bound
+  (browser sandbox) — unchanged. `cargo check` clean.
+
 ## [Desktop 1.0.4] - 2026-07-28
 ### Added — desktop auto-update + SEO/social surface (ADR-0028)
 - **Auto-update** (parity with the extension): `tauri-plugin-updater` + `tauri-plugin-process`; the app

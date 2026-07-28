@@ -323,9 +323,17 @@ fn import_vault(
 }
 
 // ---- Per-device identity + offline license (ADR-0011) ----------------------------
-// A random per-install id (NOT hardware fingerprinting — privacy-preserving) used to
-// bind offline licenses to this device. Created once and reused.
+// A device id that is STABLE across app-data wipes on Windows: derived from the OS install's
+// MachineGuid, one-way SHA-256 hashed (ADR-0027-a). This stops "delete app data → farm a fresh
+// trial": clearing app data no longer yields a new identity. PRIVACY: only the HASH is ever used or
+// sent — a stable pseudonym that cannot be reversed to the machine, and the issuer stores NOTHING
+// (stateless), so "no tracking / no identifiers retained" stays true. Falls back to a random
+// per-install id where MachineGuid is unavailable (non-Windows / locked-down).
 fn device_id_for(dir: &std::path::Path) -> String {
+    #[cfg(windows)]
+    if let Some(guid) = machine_guid() {
+        return core_crypto::sha256_hex(format!("ppf-device-v1\u{0}{guid}").as_bytes());
+    }
     let path = dir.join("device.id");
     if let Ok(s) = std::fs::read_to_string(&path) {
         let t = s.trim();
@@ -337,6 +345,59 @@ fn device_id_for(dir: &std::path::Path) -> String {
     let id: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
     let _ = std::fs::write(&path, &id);
     id
+}
+
+// The per-Windows-install MachineGuid (HKLM\...\Cryptography). Stable across app reinstalls and
+// hardware upgrades; only resets on an OS reinstall. Read-only, no admin needed. Never leaves the
+// device raw — it is immediately hashed by device_id_for.
+#[cfg(windows)]
+fn machine_guid() -> Option<String> {
+    use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY};
+    use winreg::RegKey;
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let key = hklm
+        .open_subkey_with_flags(r"SOFTWARE\Microsoft\Cryptography", KEY_READ | KEY_WOW64_64KEY)
+        .ok()?;
+    let g: String = key.get_value("MachineGuid").ok()?;
+    let t = g.trim().to_string();
+    if t.is_empty() { None } else { Some(t) }
+}
+
+// Trial-used marker that SURVIVES an app-data wipe: stored in HKCU (per-user registry), not just the
+// app-data file, so clearing the app's data dir does not reset the trial. Checked as file-OR-registry;
+// set in both. Registry lives outside the app-data dir, so the two together resist casual farming.
+#[cfg(windows)]
+fn registry_trial_used() -> bool {
+    use winreg::enums::HKEY_CURRENT_USER;
+    use winreg::RegKey;
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    hkcu.open_subkey(r"Software\PolyglotFormFill")
+        .ok()
+        .and_then(|k| k.get_value::<String, _>("trial_used").ok())
+        .map(|v| v == "1")
+        .unwrap_or(false)
+}
+#[cfg(windows)]
+fn registry_set_trial_used() {
+    use winreg::enums::HKEY_CURRENT_USER;
+    use winreg::RegKey;
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok((k, _)) = hkcu.create_subkey(r"Software\PolyglotFormFill") {
+        let _ = k.set_value("trial_used", &"1");
+    }
+}
+
+fn trial_consumed(dir: &std::path::Path) -> bool {
+    #[cfg(windows)]
+    if registry_trial_used() {
+        return true;
+    }
+    trial_flag_path(dir).exists()
+}
+fn mark_trial_consumed(dir: &std::path::Path) {
+    let _ = std::fs::write(trial_flag_path(dir), b"1");
+    #[cfg(windows)]
+    registry_set_trial_used();
 }
 
 #[tauri::command]
@@ -387,8 +448,8 @@ fn check_license(dir: &std::path::Path) -> LicenseStatus {
     }
 }
 
-// The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send
-// only our random device id — never user content, so the privacy invariant holds).
+// The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send only a
+// one-way device-id HASH — never user content or raw hardware ids, so the privacy invariant holds).
 const ISSUER_TRIAL_URL: &str = "https://polyglotformfill.mooo.com/issuer/trial";
 
 /// Ensure this install has an entitlement: if already licensed (paid or an active trial), return
@@ -401,8 +462,8 @@ async fn ensure_trial(state: State<'_, AppState>) -> Result<LicenseStatus, Strin
     if cur.licensed {
         return Ok(cur);
     }
-    if trial_flag_path(&state.data_dir).exists() {
-        return Ok(cur); // trial already consumed on this install — do not re-mint
+    if trial_consumed(&state.data_dir) {
+        return Ok(cur); // trial already consumed (file OR registry) — do not re-mint
     }
     // device id is 64 hex chars (URL-safe) — no encoding needed.
     let dev = device_id_for(&state.data_dir);
@@ -420,7 +481,7 @@ async fn ensure_trial(state: State<'_, AppState>) -> Result<LicenseStatus, Strin
     core_license::verify_on_device(token.trim(), &VENDOR_PUBLIC, now_secs(), &dev)
         .map_err(|e| e.to_string())?;
     std::fs::write(license_path(&state.data_dir), token.trim()).map_err(|e| e.to_string())?;
-    let _ = std::fs::write(trial_flag_path(&state.data_dir), b"1");
+    mark_trial_consumed(&state.data_dir); // file + HKCU registry, so an app-data wipe can't re-mint
     Ok(check_license(&state.data_dir))
 }
 
