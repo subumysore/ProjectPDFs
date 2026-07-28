@@ -32,6 +32,9 @@ const STRIPE_LINKS: Record<string, string> = {
   business: "https://buy.stripe.com/dRmdR93L70e21JL6Lo3F602",
 };
 
+// Offline entitlement (paid license OR active trial). days_left: -1 = perpetual, >=0 = dated.
+type Lic = { licensed: boolean; tier: string; subject: string; reason: string; days_left: number };
+
 interface Profile {
   id: string;
   name: string;
@@ -158,20 +161,22 @@ export function App() {
   const [bkPass, setBkPass] = useState("");
   const [bkMsg, setBkMsg] = useState("");
   const [deviceId, setDeviceId] = useState("");
-  const [lic, setLic] = useState<{ licensed: boolean; tier: string; subject: string; reason: string } | null>(null);
+  const [lic, setLic] = useState<Lic | null>(null);
   const [licKey, setLicKey] = useState("");
   // Step-based tabs instead of one long scrolling page.
   const [tab, setTab] = useState<"license" | "setup" | "forms" | "history" | "docs">("license");
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
-  // Load per-device id + offline license status once unlocked.
+  // Load per-device id once unlocked, and ensure an entitlement: ensure_trial returns the paid
+  // license if present, an active trial, or — on first run — mints a 7-day device-bound trial.
+  // Falls back to license_status if the (network) mint can't run, so we never crash the UI.
   useEffect(() => {
     if (locked) return;
     invoke<string>("device_id").then(setDeviceId).catch(() => {});
-    invoke<{ licensed: boolean; tier: string; subject: string; reason: string }>("license_status")
+    invoke<Lic>("ensure_trial")
       .then(setLic)
-      .catch(() => {});
+      .catch(() => invoke<Lic>("license_status").then(setLic).catch(() => {}));
   }, [locked]);
 
   // Attach the live camera stream to the preview element when the camera turns on.
@@ -211,7 +216,7 @@ export function App() {
   async function activateLicense() {
     if (!licKey.trim()) return setBkMsg("Paste your license key first.");
     try {
-      const st = await invoke<{ licensed: boolean; tier: string; subject: string; reason: string }>(
+      const st = await invoke<Lic>(
         "set_license",
         { token: licKey.trim() },
       );
@@ -599,7 +604,21 @@ export function App() {
   }
 
   // Export the filled Word/Excel as a content PDF on-device (RFC-0003 Tier 1).
+  // Trial/license gate. Filling & exporting require an ACTIVE entitlement — a paid licence or a
+  // trial that hasn't expired. `lic.licensed` is true for both (a trial is a signed 7-day token);
+  // it flips false only when the trial lapses with no purchase. No free-forever tier.
+  function requireEntitlement(): boolean {
+    if (lic?.licensed) return true;
+    const expired = (lic?.reason || "").toLowerCase().includes("expire");
+    setErr(expired
+      ? "Your free trial has ended. Activate a licence to keep filling forms — open the License tab to buy."
+      : "Start your free trial or activate a licence (License tab) to fill forms.");
+    setTab("license");
+    return false;
+  }
+
   async function exportOfficePdf() {
+    if (!requireEntitlement()) return;
     if (!officeFilled) return;
     try {
       const { data, kind } = officeFilled;
@@ -794,6 +813,7 @@ export function App() {
   }
   // Re-apply the user's edits into the PDF, re-export, re-render, and update the saved version.
   async function applyReview() {
+    if (!requireEntitlement()) return;
     if (!pdfBytes || Object.keys(reviewEdits).length === 0) return;
     try {
       const data = await applyReviewEdits(pdfBytes, reviewEdits);
@@ -812,6 +832,7 @@ export function App() {
 
   // The automatic pipeline: fill existing fields, else detect + create + fill.
   async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean, formName: string) {
+    if (!requireEntitlement()) return;
     const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
     try {
       const existing = await fillAndExport(bytes, vault); // total = # AcroForm fields
@@ -853,6 +874,7 @@ export function App() {
     }
   }
   async function fillPdf() {
+    if (!requireEntitlement()) return;
     if (!pdfBytes) return;
     const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
     try {
@@ -876,6 +898,7 @@ export function App() {
     if (canvasRef.current) await renderFirstPage(ab, canvasRef.current).catch((e) => setErr(String(e)));
   }
   async function detectAndFill() {
+    if (!requireEntitlement()) return;
     if (!pdfBytes) {
       setPdfMsg("Open or generate a PDF first.");
       return;
@@ -1147,7 +1170,11 @@ export function App() {
               background: lic?.licensed ? "#e2f2f0" : "#fdf0d9",
               color: lic?.licensed ? "#0a6a60" : "#8a5a0a",
             }}>
-              {lic?.licensed ? `${lic.tier} — active` : "Free / beta"}
+              {lic?.licensed
+                ? (lic.tier === "trial"
+                    ? `Free trial — ${Math.max(0, lic.days_left)} day${lic.days_left === 1 ? "" : "s"} left`
+                    : `${lic.tier} — active${lic.days_left >= 0 ? ` (${lic.days_left}d left)` : ""}`)
+                : ((lic?.reason || "").toLowerCase().includes("expire") ? "Trial ended — buy to continue" : "Not activated")}
             </span>
             {lic && !lic.licensed && lic.reason && lic.reason !== "no license installed" && (
               <span style={{ fontSize: 12, color: "#8a5a0a" }}>{lic.reason}</span>

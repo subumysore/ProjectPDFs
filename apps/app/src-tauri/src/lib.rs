@@ -358,22 +358,70 @@ struct LicenseStatus {
     tier: String,
     subject: String,
     reason: String,
+    // Days remaining until expiry: -1 = perpetual (paid one-time), >=0 = a dated license/trial.
+    days_left: i64,
 }
 
 fn license_path(dir: &std::path::Path) -> std::path::PathBuf {
     dir.join("license.token")
 }
+// Marker that a free trial was already minted on this install, so an EXPIRED trial is not
+// silently re-minted into a fresh one. Cleared only by wiping app data (accepted per the
+// privacy model — we never hardware-fingerprint; ADR-0011).
+fn trial_flag_path(dir: &std::path::Path) -> std::path::PathBuf {
+    dir.join("trial.used")
+}
 
 fn check_license(dir: &std::path::Path) -> LicenseStatus {
     let token = std::fs::read_to_string(license_path(dir)).unwrap_or_default();
     if token.trim().is_empty() {
-        return LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: "no license installed".into() };
+        return LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: "no license installed".into(), days_left: 0 };
     }
     let dev = device_id_for(dir);
     match core_license::verify_on_device(token.trim(), &VENDOR_PUBLIC, now_secs(), &dev) {
-        Ok(lic) => LicenseStatus { licensed: true, tier: lic.tier, subject: lic.subject, reason: String::new() },
-        Err(e) => LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: e.to_string() },
+        Ok(lic) => {
+            let days_left = if lic.expires_at == 0 { -1 } else { ((lic.expires_at - now_secs()).max(0)) / 86400 };
+            LicenseStatus { licensed: true, tier: lic.tier, subject: lic.subject, reason: String::new(), days_left }
+        }
+        Err(e) => LicenseStatus { licensed: false, tier: "free".into(), subject: String::new(), reason: e.to_string(), days_left: 0 },
     }
+}
+
+// The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send
+// only our random device id — never user content, so the privacy invariant holds).
+const ISSUER_TRIAL_URL: &str = "https://polyglotformfill.mooo.com/issuer/trial";
+
+/// Ensure this install has an entitlement: if already licensed (paid or an active trial), return
+/// it; otherwise, unless a trial was already consumed here, mint ONE 7-day device-bound trial
+/// from the issuer, verify it on-device, store it, and mark the trial used. Returns the resulting
+/// status. Locks (returns unlicensed) if the trial is spent or the mint fails.
+#[tauri::command]
+async fn ensure_trial(state: State<'_, AppState>) -> Result<LicenseStatus, String> {
+    let cur = check_license(&state.data_dir);
+    if cur.licensed {
+        return Ok(cur);
+    }
+    if trial_flag_path(&state.data_dir).exists() {
+        return Ok(cur); // trial already consumed on this install — do not re-mint
+    }
+    // device id is 64 hex chars (URL-safe) — no encoding needed.
+    let dev = device_id_for(&state.data_dir);
+    let url = format!("{ISSUER_TRIAL_URL}?device={dev}");
+    let bytes = core_fetch::fetch_form(&url).await.map_err(|e| e.to_string())?;
+    let body = String::from_utf8_lossy(&bytes);
+    // Minimal parse of {"token":"PPDF1..."} — the token value has no quote/backslash inside.
+    let token = body
+        .split("\"token\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .map(str::to_string)
+        .ok_or("issuer returned no trial token")?;
+    // Verify (signature, expiry, device) BEFORE storing — never trust the wire.
+    core_license::verify_on_device(token.trim(), &VENDOR_PUBLIC, now_secs(), &dev)
+        .map_err(|e| e.to_string())?;
+    std::fs::write(license_path(&state.data_dir), token.trim()).map_err(|e| e.to_string())?;
+    let _ = std::fs::write(trial_flag_path(&state.data_dir), b"1");
+    Ok(check_license(&state.data_dir))
 }
 
 #[tauri::command]
@@ -1142,7 +1190,8 @@ pub fn run() {
             import_vault,
             device_id,
             license_status,
-            set_license
+            set_license,
+            ensure_trial
         ])
         .run(tauri::generate_context!())
         .expect("error while running PolyglotFormFill");

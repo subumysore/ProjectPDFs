@@ -13,7 +13,7 @@ const dir = mkdtempSync(join(tmpdir(), "ppdf-issuer-"));
 writeFileSync(join(dir, "vendor-key.json"), JSON.stringify({ publicHex: Buffer.from(publicKey.export({ format: "jwk" }).x, "base64url").toString("hex"), jwk: privateKey.export({ format: "jwk" }) }));
 process.env.LS_VENDOR_KEY_FILE = join(dir, "vendor-key.json");
 
-const { handleClaim } = await import("./issuer-server.mjs");
+const { handleClaim, handleTrial } = await import("./issuer-server.mjs");
 
 // Fake Stripe: session "cs_100" is a PAID Pro purchase by Buyer@Example.com, device "dev-abc".
 const fakeFetch = async (id) => id === "cs_100"
@@ -46,6 +46,21 @@ test("optional email must match when supplied; unpaid/unknown session refused", 
   assert.equal((await handleClaim("cs_100", "buyer@example.com", fakeFetch)).status, 200); // case-insensitive match
   assert.equal((await handleClaim("cs_unpaid", "", fakeFetch)).status, 404);
   assert.equal((await handleClaim("cs_999", "", fakeFetch)).status, 404);
+});
+
+test("trial mint: device-bound 7-day token with full features; empty device → 400", async () => {
+  assert.equal(handleTrial("").status, 400);
+  const r = handleTrial("dev-xyz", 1750000000000);
+  assert.equal(r.status, 200);
+  const body = JSON.parse(r.body);
+  assert.equal(body.tier, "trial");
+  assert.equal(body.days, 7);
+  const { ok, license } = openToken(body.token);
+  assert.equal(ok, true);                                  // signs against our vendor key
+  assert.equal(license.tier, "trial");
+  assert.equal(license.device_id, "dev-xyz");              // device-bound
+  assert.equal(license.expires_at, Math.floor(1750000000000 / 1000) + 7 * 86400); // 7-day expiry
+  assert.ok(license.features.includes("translate"));       // full features during trial
 });
 
 test("no session id → the claim form (not an error)", async () => {

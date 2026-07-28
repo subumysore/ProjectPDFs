@@ -328,6 +328,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     if (prev && prev.url === url && Date.now() - prev.at < 4000) return; // debounce repeat 'complete's
     const r = await vaultForAutofill();
     if (!r.ok) return;                                    // locked / unavailable → silent no-op
+    // Trial/licence gate: only auto-fill with an ACTIVE entitlement (paid or unexpired trial).
+    // Lazily mint the trial on first eligible page; if it's spent/unavailable, silently skip.
+    const { ensureTrial, getEntitlement } = await import("./license.js");
+    let ent = await getEntitlement();
+    if (!ent.active && !ent.expired) { await ensureTrial(); ent = await getEntitlement(); }
+    if (!ent.active) return;
     lastAutofill.set(tabId, { url, at: Date.now() });
     const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
     await chrome.scripting.executeScript({

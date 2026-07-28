@@ -640,6 +640,7 @@ async function runPdfFlow(r, tab, url, view = false) {
 }
 
 $("fill").onclick = async () => {
+  if (!(await ensureActive())) return;   // trial/licence gate — no free-forever fill
   const r = await readVault();
   if (vaultBlocked(r)) return;
   const tab = await targetTab();
@@ -878,6 +879,19 @@ async function ensurePro(feature) {
   return false;
 }
 
+// Gate for CORE actions (filling): require an ACTIVE entitlement — a paid licence or an unexpired
+// trial. On first use it lazily mints the 7-day trial (unless it was already used). No free tier.
+async function ensureActive() {
+  const { ensureTrial, getEntitlement } = await import("./license.js");
+  let ent = await getEntitlement();
+  if (!ent.active && !ent.expired) { await ensureTrial(); ent = await getEntitlement(); }
+  if (ent.active) return true;
+  setMsg(ent.expired
+    ? "🔒 Your 7-day free trial has ended. Activate a licence below to keep filling — or Get Pro → polyglotformfill.mooo.com/#pricing"
+    : "🔒 Activate a licence below to fill forms (couldn't start your free trial — check your connection).", false);
+  return false;
+}
+
 // ---- Licensing (offline, ADR-0015/0011): paste the signed token from a Lemon Squeezy
 // purchase; verify it on-device against the embedded vendor public key. No phone-home.
 const TIER_LABEL = { free: "Free plan", pro: "Pro ✓", family: "Family ✓" };
@@ -890,10 +904,16 @@ async function refreshLicenseUI() {
   const buy = $("licBuy");
   if (buy && dev) buy.href = "https://buy.stripe.com/5kQdR9gxTd0OfAB7Ps3F600?client_reference_id=" + encodeURIComponent(dev);
   const ent = await getEntitlement();
-  const st = $("licStatus"); if (st) st.textContent = TIER_LABEL[ent.tier] || (ent.licensed ? "Licensed ✓" : "Free plan");
-  $("licRemove").classList.toggle("hidden", !ent.licensed);
-  $("licBuy").classList.toggle("hidden", !!ent.licensed);
-  if (!ent.licensed && ent.reason) { const m = $("licMsg"); m.className = "sub err"; m.textContent = ent.reason; }
+  const paid = ent.active && !ent.trial;
+  const st = $("licStatus");
+  if (st) st.textContent = ent.trial && ent.active
+    ? `Free trial — ${ent.daysLeft} day${ent.daysLeft === 1 ? "" : "s"} left`
+    : ent.expired ? "Trial ended — activate to continue"
+    : paid ? (TIER_LABEL[ent.tier] || "Licensed ✓")
+    : "Not activated";
+  $("licRemove").classList.toggle("hidden", !paid);   // "remove" only for a pasted paid licence
+  $("licBuy").classList.toggle("hidden", paid);       // hide Buy once paid; show during trial/expired
+  if (!ent.active && ent.reason) { const m = $("licMsg"); m.className = "sub err"; m.textContent = ent.reason; }
 }
 if ($("licActivate")) {
   $("licActivate").onclick = async () => {
@@ -929,7 +949,8 @@ if ($("licActivate")) {
   $("licToken").addEventListener("input", () => {
     if (/^PPDF1\.[\w-]+\.[\w-]+$/.test(($("licToken").value || "").replace(/\s+/g, ""))) $("licActivate").click();
   });
-  refreshLicenseUI();
+  // Start the 7-day trial on first open (best-effort), then reflect status in the UI.
+  import("./license.js").then(({ ensureTrial }) => ensureTrial().finally(refreshLicenseUI));
 }
 
 // Native language — a PROFILE field in the vault (spec: language-aware filling).

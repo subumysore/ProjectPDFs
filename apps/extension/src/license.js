@@ -100,25 +100,68 @@ export async function clearLicense() {
   await chrome.storage.local.remove("ppf_license");
 }
 
-// The current entitlement: load the stored token (if any) and verify it against THIS
-// device, right now. Returns FREE if none / invalid / expired.
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+// The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send only
+// our random device id — never user content). This is the ONE sanctioned network call at trial start.
+const ISSUER_TRIAL_URL = "https://polyglotformfill.mooo.com/issuer/trial";
+
+/**
+ * Ensure this install has a trial: if there's no paid license and no trial has EVER been minted
+ * here (a stored trial token — valid or expired — blocks a re-mint so an expired trial can't be
+ * silently renewed), mint one 7-day device-bound trial and store it. Best-effort: if offline, it
+ * simply retries next time. Call at startup (popup + background).
+ */
+export async function ensureTrial() {
+  const { ppf_license, ppf_trial } = await chrome.storage.local.get(["ppf_license", "ppf_trial"]);
+  if (ppf_license || ppf_trial) return;
+  const device = await getDeviceId();
+  try {
+    const r = await fetch(`${ISSUER_TRIAL_URL}?device=${encodeURIComponent(device)}`);
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j && j.token) await chrome.storage.local.set({ ppf_trial: j.token });
+  } catch { /* offline — no trial yet; try again next launch */ }
+}
+
+// The current entitlement. A paid license wins; else an unexpired trial; else locked (no free tier).
+// `.active` is the single gate for fill/features. `.trial`/`.daysLeft`/`.expired` drive the UI.
 export async function getEntitlement() {
-  const { ppf_license } = await chrome.storage.local.get("ppf_license");
-  if (!ppf_license) return { ...FREE };
   const deviceId = await getDeviceId();
-  return verifyLicense(ppf_license, { deviceId });
+  const { ppf_license, ppf_trial } = await chrome.storage.local.get(["ppf_license", "ppf_trial"]);
+  if (ppf_license) {
+    const e = await verifyLicense(ppf_license, { deviceId });
+    if (e.licensed) {
+      const daysLeft = e.expires_at ? Math.max(0, Math.ceil((e.expires_at - nowSec()) / 86400)) : -1;
+      return { ...e, active: true, trial: false, daysLeft };
+    }
+  }
+  if (ppf_trial) {
+    const e = await verifyLicense(ppf_trial, { deviceId });
+    if (e.licensed) {
+      return { ...e, tier: "trial", active: true, trial: true, daysLeft: Math.max(0, Math.ceil((e.expires_at - nowSec()) / 86400)) };
+    }
+    return { ...FREE, active: false, trial: true, expired: true, reason: "Your 7-day free trial has ended." };
+  }
+  return { ...FREE, active: false };
 }
 
 export function hasFeature(entitlement, feature) {
-  return !!entitlement && entitlement.licensed && entitlement.features.includes(feature);
+  return !!entitlement && entitlement.active && (entitlement.features || []).includes(feature);
 }
 
-// Tier gating (gating matrix: Translation & image fields = Pro; profiles/sync = Family).
-export const TIER_RANK = { free: 0, pro: 1, family: 2 };
+// Tier gating. `trial` ranks with `pro` — a trial unlocks everything for 7 days; then it drops to
+// `free` (rank 0 = locked, no free-forever tier).
+export const TIER_RANK = { free: 0, trial: 1, pro: 1, family: 2 };
 export function tierAtLeast(entitlement, minTier) {
+  if (entitlement && entitlement.active === false) return false;
   return (TIER_RANK[entitlement && entitlement.tier] || 0) >= (TIER_RANK[minTier] || 0);
 }
-/** True if the current stored license is Pro or higher (verified on-device). */
+/** True if there's an ACTIVE entitlement (paid Pro+ or an unexpired trial). */
+export async function isActive() {
+  return !!(await getEntitlement()).active;
+}
+/** Back-comat alias: Pro-or-trial-active gates historically called isPro(). */
 export async function isPro() {
   return tierAtLeast(await getEntitlement(), "pro");
 }

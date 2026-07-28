@@ -10,6 +10,22 @@ education routing, general option matching (state abbreviations, acronyms), the 
 value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
 Suite 339/339 + engine-parity 6/6.
 
+## [Desktop 1.0.3] - 2026-07-28
+### Added — 7-day free trial, then paid (no free-forever tier) — ADR-0027
+- Fixes a monetisation hole: shipped builds let anyone fill forms **free forever** (only translation/
+  images/signature were gated). Now **all fill/export requires an active entitlement** — a paid licence
+  OR a 7-day trial — on both surfaces.
+- **Issuer**: new `GET /issuer/trial?device=<id>` mints a device-bound 7-day token (full features),
+  stateless + CORS-open; receives only a random device id (privacy invariant intact). Deployed + live.
+- **Desktop (1.0.3, signed)**: `ensure_trial` Tauri command mints/stores the trial via `core-fetch` on
+  first unlock (one network call; `trial.used` marker prevents re-mint of an expired trial); the five
+  React fill/export handlers gate through `requireEntitlement()`; License panel shows the day countdown
+  (`LicenseStatus.days_left`).
+- **Extension**: `license.js` gains `ensureTrial()`/`getEntitlement().active`/`isActive()`; the popup
+  **Fill** button and background auto-fill-on-load are gated; the License panel shows trial days left.
+  Ships in the next store release (**1.0.4**) — manifest stays 1.0.3 until the in-review build clears.
+- Tests: issuer trial mint (7/7 license suite). Rust `cargo check` + frontend `tsc` clean.
+
 ## [Unreleased]
 ### Added — full localisation of the in-app Buy strings + one-click "signed" install swap (2026-07-28)
 - The four `license.buy*` strings are now translated into **all 25 non-English UI languages** (shared

@@ -78,6 +78,18 @@ const claimResult = (rec) => PAGE(`<h1 class="ok">✓ License ready (${esc(rec.t
   ${rec.tokens.map((t) => `<textarea class="tok" rows="3" readonly onclick="this.select()">${esc(t)}</textarea>`).join("")}
   <p class="sub">Keep it safe — you can return here with your Checkout session id any time.</p>`);
 
+// Mint a 7-day, DEVICE-BOUND trial token (full features). Called once per device at first run —
+// the ONE sanctioned network call in the trial flow (pricing-model-locked). PRIVACY: receives only a
+// client-generated device id (a random UUID, NOT a hardware fingerprint) — never any user content.
+export const TRIAL_DAYS = 7;
+export function handleTrial(device, nowMs = Date.now()) {
+  const dev = String(device || "").trim();
+  if (!dev) return { status: 400, type: "application/json", body: JSON.stringify({ error: "device required" }) };
+  const issued_at = Math.floor(nowMs / 1000);
+  const token = signLicense({ subject: "trial", tier: "trial", features: FEATURES, device: dev, issued_at, days: TRIAL_DAYS });
+  return { status: 200, type: "application/json", body: JSON.stringify({ token, tier: "trial", days: TRIAL_DAYS }) };
+}
+
 export async function handleClaim(session, email, fetchSession = fetchSessionStripe) {
   const id = String(session || "").trim();
   const em = String(email || "").trim().toLowerCase();
@@ -99,7 +111,15 @@ if (process.argv[1] && process.argv[1].endsWith("issuer-server.mjs") && process.
   createServer((req, res) => {
     const url = new URL(req.url, "http://x");
     const path = url.pathname.replace(/^\/issuer/, "") || "/"; // tolerate an /issuer/ ingress prefix
+    // The trial mint is fetched cross-origin from the extension (chrome-extension://) and the
+    // desktop app, so it needs permissive CORS. It returns only a signed token — no user data.
+    const cors = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, OPTIONS" };
+    if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
     if (req.method === "GET" && path === "/healthz") { res.writeHead(200); return res.end("ok"); }
+    if (req.method === "GET" && path === "/trial") {
+      const { status, type, body } = handleTrial(url.searchParams.get("device") || "");
+      res.writeHead(status, { "content-type": type, ...cors }); return res.end(body);
+    }
     if (req.method === "GET" && (path === "/claim" || path === "/")) {
       handleClaim(url.searchParams.get("session") || "", url.searchParams.get("email") || "")
         .then(({ status, type, body }) => { res.writeHead(status, { "content-type": type }); res.end(body); })
