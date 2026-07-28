@@ -57,8 +57,11 @@ Set these **secrets** yourself as **User** env vars (same method as `STRIPE_API_
    `powershell -File apps/app/src-tauri/sign-windows.ps1 docs/marketing/site/download/PolyglotFormFill-Setup.exe`
    (and the `.msi` if published), then verify: `signtool verify /pa /v <file>` must chain + timestamp OK.
    — or simply re-run `pnpm tauri build` with the env set (Tauri calls the hook per artifact).
-3. Regenerate the SHA-256 manifest: `node scripts/release-manifest.mjs generate --dir docs/marketing/site/download --version <ver>`.
-4. Soften the install-page "expect an Unknown-publisher warning" copy (now signed); keep the hash-verify block.
+3. Regenerate the SHA-256 manifest **with `--signed`** (this is the one flag that flips the whole site):
+   `node scripts/release-manifest.mjs generate --dir docs/marketing/site/download --version <ver> --signed`.
+4. Rebuild the site: `node docs/marketing/build-site.mjs`. The install page **auto-swaps** the
+   "expect a SmartScreen warning" heads-up for a "Digitally signed" note (driven off the manifest's
+   `signed` field); the SHA-256 verify block stays. No manual copy edit needed. (Round-trip verified.)
 5. Owner runs `deploy/k8s/publish-site.ps1 -WithBinaries` to publish the signed installer.
 
 ## Notes

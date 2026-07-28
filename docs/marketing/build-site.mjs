@@ -417,8 +417,12 @@ ${switcher(lang, "privacy")}
 }
 
 // ---- install template -----------------------------------------------------------------------
+// NOTE: INSTALL_CSS is read back from the previously-built install page, then LANGBAR_CSS is
+// re-appended below (`<style>${INSTALL_CSS}${LANGBAR_CSS}</style>`). Strip any LANGBAR_CSS already
+// present so repeated builds don't accumulate duplicate copies (they did — up to 14 stale blocks).
 const INSTALL_CSS = readFileSync(join(site, "install", "index.html"), "utf8")
-  .match(/<style>([\s\S]*?)<\/style>/)[1];
+  .match(/<style>([\s\S]*?)<\/style>/)[1]
+  .split(LANGBAR_CSS).join("");
 // version badges from the ACTUAL builds (no manual drift per release)
 let EXT_VER = "1.0.1", APP_VER = "1.0.0";
 try {
@@ -427,6 +431,12 @@ try {
   const tauri = JSON.parse(readFileSync(join(root, "apps", "app", "src-tauri", "tauri.conf.json"), "utf8"));
   APP_VER = tauri.version || (tauri.package && tauri.package.version) || APP_VER;
 } catch (e) { console.warn("install version read skipped:", e.message); }
+
+// Is the published Windows installer CA-signed? Driven off the release manifest's `signed` field
+// (set by `release-manifest.mjs --signed` only when actually signed — ADR-0026). When true the
+// install page drops the "expect a SmartScreen warning" heads-up for a "digitally signed" note.
+let SIGNED = false;
+try { SIGNED = !!JSON.parse(readFileSync(join(site, "download", "release-manifest.json"), "utf8")).signed; } catch { /* no manifest yet */ }
 
 const INSTALL_SCRIPT = readFileSync(join(site, "install", "index.html"), "utf8")
   .match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
@@ -477,7 +487,9 @@ ${switcher(lang, "install")}
     <h2 style="margin-top:0">${esc(tr("install.deskH2"))}
       <span class="ver" data-ver="app">v${APP_VER}</span></h2>
 
-    <div class="heads">
+    ${SIGNED ? `<div class="heads">
+      <b>${esc(tr("install.signedTitle"))}</b> ${esc(tr("install.signedBody"))}
+    </div>` : `<div class="heads">
       <b>${esc(tr("install.headsTitle"))}</b> ${esc(tr("install.headsBody"))}
       <div class="screen">
         <span class="t">${esc(tr("install.screenTitle"))}</span>
@@ -489,7 +501,7 @@ ${switcher(lang, "install")}
         <li>${esc(tr("install.headsStep2"))}</li>
       </ol>
       ${esc(tr("install.headsAfter"))}
-    </div>
+    </div>`}
 
     <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("install.deskDownload"))}</a>
     <p class="muted">${esc(tr("install.deskNote"))}</p>

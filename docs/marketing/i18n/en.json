@@ -158,6 +158,8 @@
   "install.headsStep1": "Click More info (small link inside the blue box).",
   "install.headsStep2": "Click Run anyway.",
   "install.headsAfter": "It appears once, on first install. Prefer to avoid it entirely? Use winget above, or the browser extension, which is unaffected.",
+  "install.signedTitle": "Digitally signed.",
+  "install.signedBody": "This installer is code-signed by a Microsoft-trusted certificate authority, so Windows recognises the publisher and installs it without a SmartScreen warning. You can still verify the exact file below with its published SHA-256.",
   "install.deskDownload": "Download installer (.exe)",
   "install.deskNote": "On first launch you’ll set a passphrase — the app is locked until you enter it.",
   "install.verifySummary": "Check the download is exactly what we published",

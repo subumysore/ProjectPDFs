@@ -11,6 +11,16 @@ value-tracker submit fix (Workday), the "Common answers" panel, and the loading 
 Suite 339/339 + engine-parity 6/6.
 
 ## [Unreleased]
+### Added — full localisation of the in-app Buy strings + one-click "signed" install swap (2026-07-28)
+- The four `license.buy*` strings are now translated into **all 25 non-English UI languages** (shared
+  catalogue `apps/extension/src/i18n.js`) — 26/26 parity. They ship in the extension with 1.0.4 and in
+  the desktop with the next (signed) rebuild; both already work in English via fallback until then.
+- The install page's SmartScreen copy is now driven by the release manifest's `signed` flag:
+  `release-manifest.mjs` gained `--signed`, and `build-site.mjs` renders a **"Digitally signed"** note
+  (new `install.signedTitle/Body`) instead of the "expect a warning" heads-up when signed. So the
+  moment the Trusted-Signing build ships, `--signed` + a site rebuild flips every language's install
+  page automatically — no copy edits. Round-trip verified; release-manifest tests 12/12.
+
 ### Added — Azure Trusted Signing readiness (Windows installer) (2026-07-28)
 - Owner approved the first paid service (revenue-backed) to remove the SmartScreen "Unknown publisher"
   wall: **Azure Trusted Signing** (~US$9.99/mo). See ADR-0026.

@@ -4,7 +4,7 @@
 // integrity guarantee we offer. It must therefore be trustworthy: deterministic, complete,
 // and loud when anything is wrong. Spec: docs/specs/release-integrity.md
 //
-//   node scripts/release-manifest.mjs generate --dir <artifacts> --version 1.0.0 [--out <file>]
+//   node scripts/release-manifest.mjs generate --dir <artifacts> --version 1.0.0 [--out <file>] [--signed]
 //   node scripts/release-manifest.mjs verify   --dir <artifacts> [--manifest <file>]
 //
 // Hashing runs locally over OUR OWN build outputs and sends nothing anywhere — no download
@@ -35,7 +35,7 @@ export function listArtifacts(dir) {
  * Build the manifest for `dir`. Throws on an empty directory rather than emitting a manifest
  * with zero artifacts — an empty manifest would silently advertise "nothing to verify".
  */
-export function buildManifest({ dir, version }) {
+export function buildManifest({ dir, version, signed = false }) {
   if (!version) throw new Error("release-manifest: --version is required (it is never inferred).");
   const names = listArtifacts(dir);
   if (names.length === 0) {
@@ -47,9 +47,10 @@ export function buildManifest({ dir, version }) {
   return {
     schema: SCHEMA,
     version,
-    // CA-chained Authenticode only. A self-signed build is NOT signed for this purpose and must
-    // never flip this to true (ADR-0020).
-    signed: false,
+    // CA-chained Authenticode only (Azure Trusted Signing / OV / EV — ADR-0026). Set via `--signed`
+    // ONLY when the artifacts were actually signed by a trusted CA. A self-signed dev build is NOT
+    // signed for this purpose and must never flip this to true (ADR-0020).
+    signed: !!signed,
     artifacts: names.map((name) => {
       const bytes = readFileSync(join(dir, name));
       return { name, bytes: bytes.length, sha256: sha256(bytes) };
@@ -91,7 +92,7 @@ function main(argv) {
   if (!dir) throw new Error("release-manifest: --dir <artifacts directory> is required.");
 
   if (cmd === "generate") {
-    const manifest = buildManifest({ dir, version: arg(argv, "--version") });
+    const manifest = buildManifest({ dir, version: arg(argv, "--version"), signed: argv.includes("--signed") });
     const out = arg(argv, "--out") || join(dir, MANIFEST_NAME);
     writeFileSync(out, serializeManifest(manifest));
     console.log(`release-manifest: wrote ${out} (${manifest.artifacts.length} artifacts)`);
