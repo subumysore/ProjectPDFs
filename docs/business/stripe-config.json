@@ -4,12 +4,45 @@
   "currency": "USD",
   "note": "non-secret; safe to commit. Payment Links + PPP promo codes provisioned via the live Stripe account. Secret key + webhook secret live only in the K8s issuer-secrets and the build machine's STRIPE_API_KEY env var — never here.",
   "tiers": {
-    "pro":      { "product": "prod_UyAXwUb3nFRjge", "price": "price_1TyEBxFWVcXPDpjxagVrPS3c", "amount": 1900, "link": "https://buy.stripe.com/5kQdR9gxTd0OfAB7Ps3F600" },
-    "duo":      { "product": "prod_UyAXBfzzjPV1rP", "price": "price_1TyEBxFWVcXPDpjxzOpBMbiu", "amount": 2900, "link": "https://buy.stripe.com/5kQ3cv3L70e29cd8Tw3F601" },
-    "business": { "product": "prod_UyAX9XyTHGwexc", "price": "price_1TyEBxFWVcXPDpjxFfSZ3Qey", "amount": 2900, "recurring": "year", "perSeat": true, "link": "https://buy.stripe.com/dRmdR93L70e21JL6Lo3F602" }
+    "pro": {
+      "product": "prod_UyAXwUb3nFRjge",
+      "price": "price_1TyEBxFWVcXPDpjxagVrPS3c",
+      "amount": 1900,
+      "link": "https://buy.stripe.com/5kQdR9gxTd0OfAB7Ps3F600"
+    },
+    "duo": {
+      "product": "prod_UyAXBfzzjPV1rP",
+      "price": "price_1TyEBxFWVcXPDpjxzOpBMbiu",
+      "amount": 2900,
+      "link": "https://buy.stripe.com/5kQ3cv3L70e29cd8Tw3F601"
+    },
+    "business": {
+      "product": "prod_UyAX9XyTHGwexc",
+      "price": "price_1TyEBxFWVcXPDpjxFfSZ3Qey",
+      "amount": 2900,
+      "recurring": "year",
+      "perSeat": true,
+      "link": "https://buy.stripe.com/dRmdR93L70e21JL6Lo3F602"
+    }
   },
-  "pppBands": [10, 20, 30, 40, 50, 60, 65],
+  "pppBands": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    65
+  ],
   "pppPromoPrefix": "PPP",
   "automaticTax": true,
-  "live": true
+  "live": true,
+  "checkoutFields": {
+    "pro": [],
+    "duo": [],
+    "business": [
+      "company"
+    ],
+    "note": "device_id field removed from web checkout (buyers have no app yet); in-app Buy binds device via client_reference_id"
+  }
 }
