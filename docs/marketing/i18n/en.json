@@ -62,11 +62,11 @@
   "band.chip3": "on-device NMT · no cloud",
   "price.eyebrow": "Pricing",
   "price.h2": "Buy once. Own it. No subscription.",
-  "price.sub": "Start with a 30-day free trial — every feature, on your device. Keep it with a one-time, per-device license, verified offline: no activation server, no subscription, no account.",
+  "price.sub": "Start with a 7-day free trial — every feature, on your device. Keep it with a one-time, per-device license, verified offline: no activation server, no subscription, no account.",
   "price.mostPopular": "Most popular",
   "price.free": "Free trial",
   "price.freeList": [
-    "Every feature, free for 30 days",
+    "Every feature, free for 7 days",
     "On this device",
     "No account · fully on-device",
     "Then a one-time purchase to keep it"
@@ -114,7 +114,7 @@
     "SLA & dedicated support",
     "Deployment assistance"
   ],
-  "price.note": "Start free for 30 days. Personal tiers are one-time, per-device Ed25519 licenses verified locally — no activation server, no subscription. Commercial is $29 per seat per year with central issuance. Prices in USD, adjusted for your region; local taxes may apply. Enterprise (20+ seats):",
+  "price.note": "Start free for 7 days. Personal tiers are one-time, per-device Ed25519 licenses verified locally — no activation server, no subscription. Commercial is $29 per seat per year with central issuance. Prices in USD, adjusted for your region; local taxes may apply. Enterprise (20+ seats):",
   "price.contactUs": "contact us",
   "get.eyebrow": "Get PolyglotFormFill",
   "get.h2": "Install in a minute",
@@ -211,7 +211,7 @@
   "privP.b11": "We may update this Policy; material changes update the Effective date and, where required, include additional notice.",
   "privP.footer": "Subramanya Mysore (sole proprietor) · Grievance Officer/Contact: Subramanya Mysore · subumysore@gmail.com · DPO/EU Representative if appointed. PolyglotFormFill — privacy-first, on-device form autofill.",
   "privP.backHome": "← Back to PolyglotFormFill",
-  "price.freeDuration": "for 30 days",
+  "price.freeDuration": "for 7 days",
   "price.startTrial": "Start free trial",
   "price.buy": "Buy",
   "price.getBusiness": "Get Business",

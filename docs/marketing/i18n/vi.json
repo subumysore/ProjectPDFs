@@ -62,11 +62,11 @@
   "band.chip3": "NMT trên thiết bị · không đám mây",
   "price.eyebrow": "Giá",
   "price.h2": "Mua một lần. Sở hữu trọn đời. Không thuê bao.",
-  "price.sub": "Bắt đầu với bản dùng thử miễn phí 30 ngày — mọi tính năng, trên thiết bị của bạn. Giữ lại bằng một giấy phép trả một lần, cho mỗi thiết bị, được xác minh ngoại tuyến: không máy chủ kích hoạt, không thuê bao, không tài khoản.",
+  "price.sub": "Bắt đầu với bản dùng thử miễn phí 7 ngày — mọi tính năng, trên thiết bị của bạn. Giữ lại bằng một giấy phép trả một lần, cho mỗi thiết bị, được xác minh ngoại tuyến: không máy chủ kích hoạt, không thuê bao, không tài khoản.",
   "price.mostPopular": "Phổ biến nhất",
   "price.free": "Dùng thử miễn phí",
   "price.freeList": [
-    "Mọi tính năng, miễn phí trong 30 ngày",
+    "Mọi tính năng, miễn phí trong 7 ngày",
     "Trên thiết bị này",
     "Không tài khoản · hoàn toàn trên thiết bị",
     "Sau đó mua một lần để giữ lại"
@@ -114,8 +114,8 @@
     "SLA và hỗ trợ chuyên trách",
     "Hỗ trợ triển khai"
   ],
-  "price.note": "Bắt đầu miễn phí trong 30 ngày. Các bậc cá nhân là giấy phép Ed25519 trả một lần, theo thiết bị, xác minh cục bộ — không máy chủ kích hoạt, không thuê bao. Thương mại là $29 mỗi ghế mỗi năm với cấp phát tập trung. Giá tính bằng USD, điều chỉnh theo khu vực của bạn; có thể áp dụng thuế địa phương. Tập đoàn (20+ ghế):",
-  "price.freeDuration": "trong 30 ngày",
+  "price.note": "Bắt đầu miễn phí trong 7 ngày. Các bậc cá nhân là giấy phép Ed25519 trả một lần, theo thiết bị, xác minh cục bộ — không máy chủ kích hoạt, không thuê bao. Thương mại là $29 mỗi ghế mỗi năm với cấp phát tập trung. Giá tính bằng USD, điều chỉnh theo khu vực của bạn; có thể áp dụng thuế địa phương. Tập đoàn (20+ ghế):",
+  "price.freeDuration": "trong 7 ngày",
   "price.contactUs": "liên hệ chúng tôi",
   "get.eyebrow": "Tải PolyglotFormFill",
   "get.h2": "Cài đặt trong một phút",

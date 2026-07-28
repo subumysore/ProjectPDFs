@@ -62,11 +62,11 @@
   "band.chip3": "cihazda NMT · bulut yok",
   "price.eyebrow": "Fiyatlandırma",
   "price.h2": "Bir kez satın alın. Sizin olsun. Abonelik yok.",
-  "price.sub": "30 günlük ücretsiz denemeyle başlayın — tüm özellikler, cihazınızda. Cihaz başına tek seferlik, çevrimdışı doğrulanan bir lisansla elinizde tutun: etkinleştirme sunucusu yok, abonelik yok, hesap yok.",
+  "price.sub": "7 günlük ücretsiz denemeyle başlayın — tüm özellikler, cihazınızda. Cihaz başına tek seferlik, çevrimdışı doğrulanan bir lisansla elinizde tutun: etkinleştirme sunucusu yok, abonelik yok, hesap yok.",
   "price.mostPopular": "En popüler",
   "price.free": "Ücretsiz deneme",
   "price.freeList": [
-    "Tüm özellikler, 30 gün boyunca ücretsiz",
+    "Tüm özellikler, 7 gün boyunca ücretsiz",
     "Bu cihazda",
     "Hesap yok · tamamen cihazda",
     "Ardından elinizde tutmak için tek seferlik satın alma"
@@ -114,8 +114,8 @@
     "SLA ve özel destek",
     "Dağıtım yardımı"
   ],
-  "price.note": "30 gün boyunca ücretsiz başlayın. Kişisel kademeler, yerel olarak doğrulanan, cihaz başına tek seferlik Ed25519 lisanslarıdır — etkinleştirme sunucusu yok, abonelik yok. Ticari, merkezî düzenlemeyle koltuk başına yılda $29'dur. Fiyatlar USD cinsindendir, bölgenize göre ayarlanır; yerel vergiler uygulanabilir. Kurumsal (20+ koltuk):",
-  "price.freeDuration": "30 gün boyunca",
+  "price.note": "7 gün boyunca ücretsiz başlayın. Kişisel kademeler, yerel olarak doğrulanan, cihaz başına tek seferlik Ed25519 lisanslarıdır — etkinleştirme sunucusu yok, abonelik yok. Ticari, merkezî düzenlemeyle koltuk başına yılda $29'dur. Fiyatlar USD cinsindendir, bölgenize göre ayarlanır; yerel vergiler uygulanabilir. Kurumsal (20+ koltuk):",
+  "price.freeDuration": "7 gün boyunca",
   "price.contactUs": "bize ulaşın",
   "get.eyebrow": "PolyglotFormFill'i edinin",
   "get.h2": "Bir dakikada kurun",

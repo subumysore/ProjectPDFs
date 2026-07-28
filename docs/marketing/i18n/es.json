@@ -62,11 +62,11 @@
   "band.chip3": "NMT en el dispositivo · sin nube",
   "price.eyebrow": "Precios",
   "price.h2": "Compra una vez. Es tuyo. Sin suscripción.",
-  "price.sub": "Empieza con una prueba gratuita de 30 días — todas las funciones, en tu dispositivo. Consérvalo con una licencia única, por dispositivo, verificada sin conexión: sin servidor de activación, sin suscripción, sin cuenta.",
+  "price.sub": "Empieza con una prueba gratuita de 7 días — todas las funciones, en tu dispositivo. Consérvalo con una licencia única, por dispositivo, verificada sin conexión: sin servidor de activación, sin suscripción, sin cuenta.",
   "price.mostPopular": "Más popular",
   "price.free": "Prueba gratuita",
   "price.freeList": [
-    "Todas las funciones, gratis durante 30 días",
+    "Todas las funciones, gratis durante 7 días",
     "En este dispositivo",
     "Sin cuenta · totalmente en el dispositivo",
     "Después, una compra única para conservarlo"
@@ -114,8 +114,8 @@
     "SLA y soporte dedicado",
     "Asistencia en el despliegue"
   ],
-  "price.note": "Empieza gratis durante 30 días. Los niveles personales son licencias Ed25519 únicas, por dispositivo, verificadas localmente — sin servidor de activación, sin suscripción. El comercial cuesta $29 por puesto al año con emisión centralizada. Precios en USD, ajustados a tu región; pueden aplicarse impuestos locales. Empresa (20+ puestos):",
-  "price.freeDuration": "durante 30 días",
+  "price.note": "Empieza gratis durante 7 días. Los niveles personales son licencias Ed25519 únicas, por dispositivo, verificadas localmente — sin servidor de activación, sin suscripción. El comercial cuesta $29 por puesto al año con emisión centralizada. Precios en USD, ajustados a tu región; pueden aplicarse impuestos locales. Empresa (20+ puestos):",
+  "price.freeDuration": "durante 7 días",
   "price.contactUs": "contáctanos",
   "get.eyebrow": "Obtén PolyglotFormFill",
   "get.h2": "Instálalo en un minuto",

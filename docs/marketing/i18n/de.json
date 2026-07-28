@@ -62,11 +62,11 @@
   "band.chip3": "NMT auf dem Gerät · keine Cloud",
   "price.eyebrow": "Preise",
   "price.h2": "Einmal kaufen. Es gehört Ihnen. Kein Abo.",
-  "price.sub": "Beginnen Sie mit einer 30-tägigen kostenlosen Testphase — alle Funktionen, auf Ihrem Gerät. Behalten Sie es mit einer einmaligen Lizenz pro Gerät, offline verifiziert: kein Aktivierungsserver, kein Abo, kein Konto.",
+  "price.sub": "Beginnen Sie mit einer 7-tägigen kostenlosen Testphase — alle Funktionen, auf Ihrem Gerät. Behalten Sie es mit einer einmaligen Lizenz pro Gerät, offline verifiziert: kein Aktivierungsserver, kein Abo, kein Konto.",
   "price.mostPopular": "Am beliebtesten",
   "price.free": "Kostenlose Testphase",
   "price.freeList": [
-    "Alle Funktionen, 30 Tage lang kostenlos",
+    "Alle Funktionen, 7 Tage lang kostenlos",
     "Auf diesem Gerät",
     "Kein Konto · vollständig auf dem Gerät",
     "Danach ein einmaliger Kauf, um es zu behalten"
@@ -114,8 +114,8 @@
     "SLA und dedizierter Support",
     "Unterstützung bei der Bereitstellung"
   ],
-  "price.note": "30 Tage lang kostenlos starten. Persönliche Stufen sind einmalige Ed25519-Lizenzen pro Gerät, lokal verifiziert — kein Aktivierungsserver, kein Abo. Kommerziell kostet $29 pro Platz und Jahr mit zentraler Ausstellung. Preise in USD, an Ihre Region angepasst; lokale Steuern können anfallen. Enterprise (20+ Plätze):",
-  "price.freeDuration": "für 30 Tage",
+  "price.note": "7 Tage lang kostenlos starten. Persönliche Stufen sind einmalige Ed25519-Lizenzen pro Gerät, lokal verifiziert — kein Aktivierungsserver, kein Abo. Kommerziell kostet $29 pro Platz und Jahr mit zentraler Ausstellung. Preise in USD, an Ihre Region angepasst; lokale Steuern können anfallen. Enterprise (20+ Plätze):",
+  "price.freeDuration": "für 7 Tage",
   "price.contactUs": "kontaktieren Sie uns",
   "get.eyebrow": "PolyglotFormFill holen",
   "get.h2": "In einer Minute installiert",

@@ -62,11 +62,11 @@
   "band.chip3": "NMT no dispositivo · sem nuvem",
   "price.eyebrow": "Preços",
   "price.h2": "Compre uma vez. É seu. Sem assinatura.",
-  "price.sub": "Comece com um teste gratuito de 30 dias — todos os recursos, no seu dispositivo. Mantenha-o com uma licença única, por dispositivo, verificada offline: sem servidor de ativação, sem assinatura, sem conta.",
+  "price.sub": "Comece com um teste gratuito de 7 dias — todos os recursos, no seu dispositivo. Mantenha-o com uma licença única, por dispositivo, verificada offline: sem servidor de ativação, sem assinatura, sem conta.",
   "price.mostPopular": "Mais popular",
   "price.free": "Teste gratuito",
   "price.freeList": [
-    "Todos os recursos, grátis por 30 dias",
+    "Todos os recursos, grátis por 7 dias",
     "Neste dispositivo",
     "Sem conta · totalmente no dispositivo",
     "Depois, uma compra única para mantê-lo"
@@ -114,8 +114,8 @@
     "SLA e suporte dedicado",
     "Assistência na implantação"
   ],
-  "price.note": "Comece grátis por 30 dias. Os níveis pessoais são licenças Ed25519 únicas, por dispositivo, verificadas localmente — sem servidor de ativação, sem assinatura. O comercial custa $29 por assento por ano com emissão centralizada. Preços em USD, ajustados à sua região; impostos locais podem se aplicar. Enterprise (20+ assentos):",
-  "price.freeDuration": "por 30 dias",
+  "price.note": "Comece grátis por 7 dias. Os níveis pessoais são licenças Ed25519 únicas, por dispositivo, verificadas localmente — sem servidor de ativação, sem assinatura. O comercial custa $29 por assento por ano com emissão centralizada. Preços em USD, ajustados à sua região; impostos locais podem se aplicar. Enterprise (20+ assentos):",
+  "price.freeDuration": "por 7 dias",
   "price.contactUs": "entre em contato",
   "get.eyebrow": "Obtenha o PolyglotFormFill",
   "get.h2": "Instale em um minuto",

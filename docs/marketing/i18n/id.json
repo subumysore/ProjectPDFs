@@ -62,11 +62,11 @@
   "band.chip3": "NMT di perangkat · tanpa cloud",
   "price.eyebrow": "Harga",
   "price.h2": "Beli sekali. Miliki. Tanpa langganan.",
-  "price.sub": "Mulai dengan uji coba gratis 30 hari — setiap fitur, di perangkat Anda. Simpan dengan lisensi sekali beli, per perangkat, diverifikasi secara luring: tanpa server aktivasi, tanpa langganan, tanpa akun.",
+  "price.sub": "Mulai dengan uji coba gratis 7 hari — setiap fitur, di perangkat Anda. Simpan dengan lisensi sekali beli, per perangkat, diverifikasi secara luring: tanpa server aktivasi, tanpa langganan, tanpa akun.",
   "price.mostPopular": "Paling populer",
   "price.free": "Uji coba gratis",
   "price.freeList": [
-    "Setiap fitur, gratis selama 30 hari",
+    "Setiap fitur, gratis selama 7 hari",
     "Di perangkat ini",
     "Tanpa akun · sepenuhnya di perangkat",
     "Lalu beli sekali untuk menyimpannya"
@@ -114,8 +114,8 @@
     "SLA & dukungan khusus",
     "Bantuan penerapan"
   ],
-  "price.note": "Mulai gratis selama 30 hari. Tingkat personal adalah lisensi Ed25519 sekali beli, per perangkat, diverifikasi secara lokal — tanpa server aktivasi, tanpa langganan. Komersial adalah $29 per kursi per tahun dengan penerbitan terpusat. Harga dalam USD, disesuaikan untuk wilayah Anda; pajak lokal mungkin berlaku. Enterprise (20+ kursi):",
-  "price.freeDuration": "selama 30 hari",
+  "price.note": "Mulai gratis selama 7 hari. Tingkat personal adalah lisensi Ed25519 sekali beli, per perangkat, diverifikasi secara lokal — tanpa server aktivasi, tanpa langganan. Komersial adalah $29 per kursi per tahun dengan penerbitan terpusat. Harga dalam USD, disesuaikan untuk wilayah Anda; pajak lokal mungkin berlaku. Enterprise (20+ kursi):",
+  "price.freeDuration": "selama 7 hari",
   "price.contactUs": "hubungi kami",
   "get.eyebrow": "Dapatkan PolyglotFormFill",
   "get.h2": "Pasang dalam semenit",

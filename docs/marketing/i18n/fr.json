@@ -62,11 +62,11 @@
   "band.chip3": "NMT sur l'appareil · sans cloud",
   "price.eyebrow": "Tarifs",
   "price.h2": "Achetez une fois. C'est à vous. Sans abonnement.",
-  "price.sub": "Commencez par un essai gratuit de 30 jours — toutes les fonctionnalités, sur votre appareil. Conservez-le avec une licence unique, par appareil, vérifiée hors ligne : pas de serveur d'activation, pas d'abonnement, pas de compte.",
+  "price.sub": "Commencez par un essai gratuit de 7 jours — toutes les fonctionnalités, sur votre appareil. Conservez-le avec une licence unique, par appareil, vérifiée hors ligne : pas de serveur d'activation, pas d'abonnement, pas de compte.",
   "price.mostPopular": "Le plus populaire",
   "price.free": "Essai gratuit",
   "price.freeList": [
-    "Toutes les fonctionnalités, gratuites pendant 30 jours",
+    "Toutes les fonctionnalités, gratuites pendant 7 jours",
     "Sur cet appareil",
     "Sans compte · entièrement sur l'appareil",
     "Puis un achat unique pour le conserver"
@@ -114,8 +114,8 @@
     "SLA et assistance dédiée",
     "Aide au déploiement"
   ],
-  "price.note": "Commencez gratuitement pendant 30 jours. Les formules personnelles sont des licences Ed25519 uniques, par appareil, vérifiées localement — sans serveur d'activation, sans abonnement. Le commercial coûte $29 par poste et par an avec délivrance centralisée. Prix en USD, ajustés à votre région ; des taxes locales peuvent s'appliquer. Grand compte (20+ postes) :",
-  "price.freeDuration": "pendant 30 jours",
+  "price.note": "Commencez gratuitement pendant 7 jours. Les formules personnelles sont des licences Ed25519 uniques, par appareil, vérifiées localement — sans serveur d'activation, sans abonnement. Le commercial coûte $29 par poste et par an avec délivrance centralisée. Prix en USD, ajustés à votre région ; des taxes locales peuvent s'appliquer. Grand compte (20+ postes) :",
+  "price.freeDuration": "pendant 7 jours",
   "price.contactUs": "contactez-nous",
   "get.eyebrow": "Obtenez PolyglotFormFill",
   "get.h2": "Installez en une minute",
