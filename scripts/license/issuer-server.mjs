@@ -45,12 +45,15 @@ async function fetchSessionStripe(sessionId) {
   const item = s?.line_items?.data?.[0];
   const product = item?.price?.product || {};
   const deviceField = (s?.custom_fields || []).find((f) => f.key === "device_id");
+  // Prefer client_reference_id (passed silently when the checkout is launched FROM the app, which
+  // knows its own device id) over the manually-typed fallback field.
+  const device = (s?.client_reference_id || deviceField?.text?.value || "").trim();
   return {
     paid: s.payment_status === "paid" || s.status === "complete",
     email: s?.customer_details?.email || s?.customer_email || "",
     ppf: product?.metadata?.ppf || "",
     productName: product?.name || item?.description || "",
-    device: (deviceField?.text?.value || "").trim(),
+    device,
     created: s.created ? Number(s.created) : null,
   };
 }
