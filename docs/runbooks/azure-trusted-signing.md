@@ -84,6 +84,28 @@ To sign a fresh build: export the six env vars (three `AZURE_*` from User scope 
 + `TRUSTED_SIGNING_DLIB`) and run `pnpm tauri build` (the hook signs each artifact), or re-sign a staged file
 directly with `apps/app/src-tauri/sign-windows.ps1 <file>`. Then `release-manifest.mjs … --signed` + rebuild site.
 
+## Desktop AUTO-UPDATE key + release chain (ADR-0028)
+The desktop uses the Tauri updater, which needs its OWN **minisign** keypair (separate from Authenticode
+and the license vendor key):
+- **Public key** is embedded in `apps/app/src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) — safe in git.
+- **Private key + password** back up at **`F:\ppf-secrets\tauri-updater.key`** + `tauri-updater.pw`
+  (also store in a password manager). If lost, you can't sign updates that existing 1.0.4+ installs will
+  accept — you'd have to ship a new pubkey and everyone re-installs manually. **Do NOT commit it.**
+
+**Cut a new desktop release (signed installer + auto-update feed), turnkey:**
+1. Bump the 4 version files (root+app `package.json`, `tauri.conf.json`, `Cargo.toml`).
+2. Build with BOTH signing envs set: the six Trusted-Signing vars (above) PLUS
+   `TAURI_SIGNING_PRIVATE_KEY = <contents of tauri-updater.key>` and
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD = <tauri-updater.pw>` → `pnpm tauri build`. The hook Authenticode-signs
+   each artifact; `createUpdaterArtifacts` emits a `.sig` next to the NSIS setup.
+3. Stage the NSIS `*_x64-setup.exe` → `docs/marketing/site/download/PolyglotFormFill-Setup.exe`.
+4. Write `docs/marketing/site/download/latest.json` (UTF-8 **no BOM** — a BOM breaks the updater's JSON parse):
+   `{version, notes, pub_date, platforms:{"windows-x86_64":{signature:<contents of the .sig>, url:".../download/PolyglotFormFill-Setup.exe"}}}`.
+5. `release-manifest.mjs … --signed` + rebuild site + `publish-site.ps1 -WithBinaries`.
+6. Verify live: installer Authenticode=Valid, `GET /download/latest.json` returns the new version + a 400+ char signature.
+
+Note: the updater only works from the version that SHIPS it (1.0.4+); 1.0.3-and-earlier need one manual update.
+
 ## Notes
 - Secrets NEVER go in git. The signing certificate's private key is held by the Azure CA (no PFX on
   disk) — a security improvement over a local cert.
