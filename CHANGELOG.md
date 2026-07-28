@@ -10,6 +10,19 @@ education routing, general option matching (state abbreviations, acronyms), the 
 value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
 Suite 339/339 + engine-parity 6/6.
 
+## [Unreleased]
+### Added — Azure Trusted Signing readiness (Windows installer) (2026-07-28)
+- Owner approved the first paid service (revenue-backed) to remove the SmartScreen "Unknown publisher"
+  wall: **Azure Trusted Signing** (~US$9.99/mo). See ADR-0026.
+- `apps/app/src-tauri/sign-windows.ps1` gains a **Trusted-Signing mode** (takes precedence over the
+  classic thumbprint/PFX paths): engaged by `TRUSTED_SIGNING_ENDPOINT/ACCOUNT/PROFILE`, signs via
+  `signtool /dlib Azure.CodeSigning.Dlib.dll /dmdf` with the account's own RFC-3161 timestamp server;
+  auth via `AZURE_*` service principal or `az login`. No signing env → build stays unsigned (unchanged).
+  Parses cleanly; no-credential skip verified.
+- Owner onboarding documented in `docs/runbooks/azure-trusted-signing.md` (account → identity
+  validation → profile → RBAC → the six env vars). Once creds exist, Claude re-signs the staged
+  installer, regenerates the SHA-256 manifest, softens the install-page warning copy, and republishes.
+
 ## [Desktop 1.0.2] - 2026-07-28
 ### Added — in-app "Buy" buttons with automatic device binding
 - The License panel (desktop) and the popup License section (extension) now show **Buy Pro / Duo /
