@@ -1,7 +1,6 @@
 {
   "meta.landingTitle": "Đọc và điền mọi biểu mẫu, bằng mọi ngôn ngữ.",
   "meta.landingDesc": "PolyglotFormFill đọc một biểu mẫu bằng ngôn ngữ này và điền nó từ dữ liệu của bạn bằng ngôn ngữ khác — ngay trên thiết bị của bạn, một cách riêng tư. Chúng tôi không bao giờ nhìn thấy dữ liệu của bạn.",
-
   "nav.features": "Tính năng",
   "nav.who": "Dành cho ai",
   "nav.languages": "Ngôn ngữ",
@@ -9,7 +8,6 @@
   "nav.tutorials": "Hướng dẫn",
   "nav.privacy": "Quyền riêng tư",
   "nav.getit": "Tải về",
-
   "hero.badge": "Đa ngữ · trên thiết bị · không thu thập dữ liệu",
   "hero.h1a": "Đọc và điền mọi biểu mẫu —",
   "hero.h1b": "bằng mọi ngôn ngữ.",
@@ -18,7 +16,6 @@
   "hero.cta2": "▶ Xem hướng dẫn",
   "hero.cta3": "Tải về (bản beta)",
   "hero.trust": "Két AES-256 · mở khóa bằng passkey · không đám mây · không theo dõi · công khai và có thể kiểm toán",
-
   "flow.deviceTitle": "Trên thiết bị của bạn — nơi mọi xử lý diễn ra",
   "flow.chip1": "Đọc và hiển thị PDF",
   "flow.chip2": "Phát hiện trường bằng OCR",
@@ -29,7 +26,6 @@
   "flow.chip7": "Két AES-256",
   "flow.egressLabel": "Những gì rời đi — chỉ những gì bạn gửi, đến người bạn gửi:",
   "flow.egressBody": "biểu mẫu bạn gửi đi từ thiết bị → thẳng đến người nhận bạn chọn · một tìm kiếm web bạn gõ chỉ gửi đúng những từ khóa đó. Cả hai đều là lựa chọn của bạn, và không có cái nào qua chúng tôi. Chúng tôi không bao giờ nhận tài liệu, két, hay bất kỳ định danh nào của bạn — không có trung gian đám mây nào cả.",
-
   "feat.eyebrow": "Tính năng nổi bật",
   "feat.h2": "Biến một PDF không thể điền thành biểu mẫu bạn thực sự điền được",
   "feat.sub": "Một PDF phẳng không có trường biểu mẫu — hay thậm chí một tấm ảnh hoặc bản quét của nó — trở thành biểu mẫu điền được thật sự trong vài giây. Không cần “in ra, viết tay, quét lại.” Không cần tải nó lên một trang web nào đó để làm việc này.",
@@ -50,7 +46,6 @@
   "feat.c6b": "Mở khóa bằng cụm mật khẩu hoặc passkey phần cứng (WebAuthn). Khóa không bao giờ được lưu — kể cả chúng tôi.",
   "feat.c7t": "Máy tính + trình duyệt",
   "feat.c7b": "Tiện ích mở rộng điền biểu mẫu web; ứng dụng máy tính giữ khóa của bạn như một điểm neo tin cậy được gia cố.",
-
   "who.eyebrow": "Dành cho ai",
   "who.h2": "Được tạo cho bất kỳ ai điền biểu mẫu vượt qua ngôn ngữ và biên giới",
   "who.sub": "Ba nhóm hưởng lợi nhiều nhất — và mỗi nhóm đều giữ dữ liệu trên thiết bị của chính mình.",
@@ -60,59 +55,80 @@
   "who.c2b": "Biểu mẫu thuế, ngân hàng và tiếp nhận thường đến bằng ngôn ngữ không phải của bạn. Điền chúng từ thông tin của chính bạn — được giữ trong két AES-256 trên thiết bị của bạn — và xuất một PDF sạch sẽ, không có gì đi qua chúng tôi hay bất kỳ bên thứ ba nào.",
   "who.c3t": "Cộng đồng ưu tiên quyền riêng tư và tiền mã hóa",
   "who.c3b": "Mọi bước chạy cục bộ với không thu thập dữ liệu, và két được mở khóa bằng passkey phần cứng (WebAuthn) mà khóa của nó không bao giờ được lưu. Không tài khoản, không đám mây, không theo dõi — dữ liệu của bạn ở lại trên thiết bị bạn kiểm soát.",
-
   "band.eyebrow": "Được tạo cho một thế giới đa ngữ",
   "band.h2": "Dữ liệu của bạn bằng ngôn ngữ của bạn. Biểu mẫu bằng ngôn ngữ của họ.",
   "band.sub": "Chính phủ và các tổ chức phát hành biểu mẫu bằng một ngôn ngữ; người dân giữ thông tin của họ bằng một ngôn ngữ khác. PolyglotFormFill bắc cầu khoảng cách đó ngay trên thiết bị — bắt đầu với tiếng Anh ↔ tiếng Hindi, và sẽ có thêm nữa.",
   "band.chip2": "sắp có thêm ngôn ngữ",
   "band.chip3": "NMT trên thiết bị · không đám mây",
-
   "price.eyebrow": "Giá",
   "price.h2": "Mua một lần. Sở hữu trọn đời. Không thuê bao.",
   "price.sub": "Bắt đầu với bản dùng thử miễn phí 30 ngày — mọi tính năng, trên thiết bị của bạn. Giữ lại bằng một giấy phép trả một lần, cho mỗi thiết bị, được xác minh ngoại tuyến: không máy chủ kích hoạt, không thuê bao, không tài khoản.",
   "price.mostPopular": "Phổ biến nhất",
   "price.free": "Dùng thử miễn phí",
-  "price.freeList": ["Mọi tính năng, miễn phí trong 30 ngày", "Trên thiết bị này", "Không tài khoản · hoàn toàn trên thiết bị", "Sau đó mua một lần để giữ lại"],
+  "price.freeList": [
+    "Mọi tính năng, miễn phí trong 30 ngày",
+    "Trên thiết bị này",
+    "Không tài khoản · hoàn toàn trên thiết bị",
+    "Sau đó mua một lần để giữ lại"
+  ],
   "price.pro": "Pro",
   "price.oneTimeDevice": "một lần / thiết bị",
   "price.oneDevice": "1 thiết bị",
-  "price.proList": ["Mọi tính năng, được mở khóa", "1 thiết bị", "Tối đa 3 hồ sơ", "Biến mọi PDF thành điền được (OCR)", "Biểu mẫu Word và Excel", "Điền có dịch (mọi ngôn ngữ)", "Đặt chữ ký và ảnh", "Sao lưu và chuyển giao mã hóa"],
+  "price.proList": [
+    "Mọi tính năng, được mở khóa",
+    "1 thiết bị",
+    "Tối đa 3 hồ sơ",
+    "Biến mọi PDF thành điền được (OCR)",
+    "Biểu mẫu Word và Excel",
+    "Điền có dịch (mọi ngôn ngữ)",
+    "Đặt chữ ký và ảnh",
+    "Sao lưu và chuyển giao mã hóa"
+  ],
   "price.family": "Duo",
   "price.oneTime": "một lần",
   "price.familyDevices": "2 thiết bị (~{each} mỗi thiết bị)",
-  "price.familyList": ["Mọi thứ trong Pro, trên 2 thiết bị", "Tối đa 5 hồ sơ", "Chia sẻ giữa cả hai thiết bị của bạn", "Hỗ trợ ưu tiên"],
-
+  "price.familyList": [
+    "Mọi thứ trong Pro, trên 2 thiết bị",
+    "Tối đa 5 hồ sơ",
+    "Chia sẻ giữa cả hai thiết bị của bạn",
+    "Hỗ trợ ưu tiên"
+  ],
   "team.eyebrow": "Dành cho nhóm và doanh nghiệp",
   "team.h2": "Thương mại — giấy phép theo ghế, hồ sơ không giới hạn",
   "team.sub": "Cấp phép hằng năm theo từng ghế — một mức giá đơn giản, cho mọi quy mô nhóm. Mỗi ghế có tất cả tính năng Pro và hồ sơ không giới hạn, chạy hoàn toàn trên từng thiết bị mà không gửi dữ liệu nào về chúng tôi, và được cấp tập trung cho quản trị viên của bạn cùng xác minh ngoại tuyến.",
   "team.perSeat": "/ ghế / năm",
   "team.tBiz": "Doanh nghiệp",
   "team.tBizRange": "1–19 ghế",
-  "team.tBizList": ["Tất cả tính năng Pro", "Hồ sơ không giới hạn mỗi ghế", "Cấp phát tập trung cho quản trị viên của bạn", "Hỗ trợ và cập nhật ưu tiên"],
+  "team.tBizList": [
+    "Tất cả tính năng Pro",
+    "Hồ sơ không giới hạn mỗi ghế",
+    "Cấp phát tập trung cho quản trị viên của bạn",
+    "Hỗ trợ và cập nhật ưu tiên"
+  ],
   "team.tEnt": "Tập đoàn",
   "team.tEntPrice": "Hãy trao đổi",
   "team.tEntRange": "20+ ghế",
-  "team.tEntList": ["Giá và điều khoản tùy chỉnh", "Cấp phép xác minh bằng SSO", "SLA và hỗ trợ chuyên trách", "Hỗ trợ triển khai"],
+  "team.tEntList": [
+    "Giá và điều khoản tùy chỉnh",
+    "Cấp phép xác minh bằng SSO",
+    "SLA và hỗ trợ chuyên trách",
+    "Hỗ trợ triển khai"
+  ],
   "price.note": "Bắt đầu miễn phí trong 30 ngày. Các bậc cá nhân là giấy phép Ed25519 trả một lần, theo thiết bị, xác minh cục bộ — không máy chủ kích hoạt, không thuê bao. Thương mại là $29 mỗi ghế mỗi năm với cấp phát tập trung. Giá tính bằng USD, điều chỉnh theo khu vực của bạn; có thể áp dụng thuế địa phương. Tập đoàn (20+ ghế):",
   "price.freeDuration": "trong 30 ngày",
   "price.contactUs": "liên hệ chúng tôi",
-
   "get.eyebrow": "Tải PolyglotFormFill",
   "get.h2": "Cài đặt trong một phút",
   "get.sub": "Thêm tiện ích mở rộng trình duyệt để tự điền biểu mẫu web, hoặc cài ứng dụng máy tính để có trải nghiệm đầy đủ, được gia cố. Chúng hoạt động cùng nhau.",
   "get.win": "Tải cho Windows",
   "get.ext": "Lấy tiện ích mở rộng trình duyệt (beta)",
   "get.soon": "Chrome Web Store — sắp có",
-  "get.note": "Bản tải beta (lưu trữ trên Oracle Cloud). Bản Windows chưa được ký — Windows cảnh báo “nhà phát hành không xác định” (Thông tin thêm → Vẫn chạy). Tiện ích hiện cài qua chế độ nhà phát triển; danh sách trên cửa hàng đang được thực hiện. macOS và Linux sẽ có tiếp theo.",
-
   "privS.eyebrow": "Quyền riêng tư",
   "privS.h2": "Lời hứa, trong một dòng",
   "privS.sub": "Dữ liệu của bạn được xử lý trên thiết bị của bạn và không bao giờ được gửi đến chúng tôi. Điều duy nhất rời đi là những hành động bạn thực hiện — gửi một biểu mẫu đã hoàn thành (thẳng đến người nhận của nó) hoặc một tìm kiếm web bạn gõ. Chúng đi thẳng đến đích, không bao giờ qua chúng tôi. Đó là toàn bộ danh sách.",
   "privS.readFull": "Đọc toàn văn chính sách quyền riêng tư",
-
   "foot.left": "© PolyglotFormFill · Tự điền biểu mẫu ưu tiên quyền riêng tư",
   "foot.right": "Trên thiết bị · Không thu thập dữ liệu · Công khai và có thể kiểm toán",
-
   "install.title": "Cài đặt PolyglotFormFill (beta)",
   "install.back": "← PolyglotFormFill",
   "install.h1": "Cài đặt",
@@ -150,7 +166,6 @@
   "install.verifyThisRelease": "bản phát hành này",
   "install.privacyNote": "Dữ liệu của bạn ở lại trên thiết bị của bạn; chúng tôi không bao giờ nhìn thấy. Xem",
   "install.privacyLink": "chính sách quyền riêng tư",
-
   "privP.title": "Chính sách Quyền riêng tư",
   "privP.effective": "Ngày có hiệu lực:",
   "privP.version": "Phiên bản 1.0",

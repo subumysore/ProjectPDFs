@@ -1,7 +1,6 @@
 {
   "meta.landingTitle": "Lesen und Ausfüllen jedes Formulars, in jeder Sprache.",
   "meta.landingDesc": "PolyglotFormFill liest ein Formular in einer Sprache und füllt es aus Ihren Daten in einer anderen aus — auf Ihrem Gerät, privat. Wir sehen Ihre Daten niemals.",
-
   "nav.features": "Funktionen",
   "nav.who": "Für wen es ist",
   "nav.languages": "Sprachen",
@@ -9,7 +8,6 @@
   "nav.tutorials": "Tutorials",
   "nav.privacy": "Datenschutz",
   "nav.getit": "Herunterladen",
-
   "hero.badge": "Mehrsprachig · auf dem Gerät · null Telemetrie",
   "hero.h1a": "Lesen und Ausfüllen jedes Formulars —",
   "hero.h1b": "in jeder Sprache.",
@@ -18,7 +16,6 @@
   "hero.cta2": "▶ Die Tutorials ansehen",
   "hero.cta3": "Herunterladen (Beta)",
   "hero.trust": "AES-256-Tresor · Entsperren per Passkey · keine Cloud · kein Tracking · offen und prüfbar",
-
   "flow.deviceTitle": "Auf Ihrem Gerät — wo die gesamte Verarbeitung stattfindet",
   "flow.chip1": "PDF lesen und darstellen",
   "flow.chip2": "OCR-Felderkennung",
@@ -29,7 +26,6 @@
   "flow.chip7": "AES-256-Tresor",
   "flow.egressLabel": "Was das Gerät verlässt — nur das, was Sie senden, an wen Sie es senden:",
   "flow.egressBody": "ein Formular, das Sie absenden, geht vom Gerät → direkt an den von Ihnen gewählten Empfänger · eine Websuche, die Sie eingeben, sendet nur diese Suchbegriffe. Beides ist Ihre Entscheidung, und keines läuft über uns. Wir erhalten niemals Ihre Dokumente, Ihren Tresor oder irgendeinen Bezeichner — es gibt keinen Cloud-Mittelsmann.",
-
   "feat.eyebrow": "Die zentrale Funktion",
   "feat.h2": "Machen Sie aus einem nicht ausfüllbaren PDF ein Formular, das Sie tatsächlich ausfüllen können",
   "feat.sub": "Ein flaches PDF ohne Formularfelder — oder sogar ein Foto oder Scan davon — wird in Sekunden zu einem echten, ausfüllbaren Formular. Kein „Drucken, handschriftlich ausfüllen, neu einscannen“. Kein Hochladen auf irgendeine Website, um das zu erledigen.",
@@ -50,7 +46,6 @@
   "feat.c6b": "Entsperren Sie mit einer Passphrase oder einem Hardware-Passkey (WebAuthn). Der Schlüssel wird niemals gespeichert — auch nicht von uns.",
   "feat.c7t": "Desktop + Browser",
   "feat.c7b": "Die Erweiterung füllt Web-Formulare aus; die Desktop-App verwahrt Ihre Schlüssel als gehärteten Vertrauensanker.",
-
   "who.eyebrow": "Für wen es ist",
   "who.h2": "Gemacht für alle, die Formulare über Sprachen und Grenzen hinweg ausfüllen",
   "who.sub": "Drei Gruppen ziehen den größten Nutzen daraus — und jede von ihnen behält ihre Daten auf dem eigenen Gerät.",
@@ -60,59 +55,80 @@
   "who.c2b": "Steuer-, Bank- und Onboarding-Formulare kommen oft in einer Sprache an, die nicht Ihre ist. Füllen Sie sie aus Ihren eigenen Angaben aus — verwahrt in einem AES-256-Tresor auf Ihrem Gerät — und exportieren Sie ein sauberes PDF, ohne dass etwas über uns oder Dritte läuft.",
   "who.c3t": "Datenschutz- und Krypto-Communitys",
   "who.c3b": "Jeder Schritt läuft lokal mit null Telemetrie, und der Tresor wird mit einem Hardware-Passkey (WebAuthn) entsperrt, dessen Schlüssel niemals gespeichert wird. Kein Konto, keine Cloud, kein Tracking — Ihre Daten bleiben auf dem Gerät, das Sie kontrollieren.",
-
   "band.eyebrow": "Für eine mehrsprachige Welt gemacht",
   "band.h2": "Ihre Daten in Ihrer Sprache. Das Formular in ihrer.",
   "band.sub": "Behörden und Institutionen veröffentlichen Formulare in einer Sprache; Menschen halten ihre Angaben in einer anderen. PolyglotFormFill überbrückt diese Lücke auf dem Gerät — beginnend mit Englisch ↔ Hindi, weitere folgen.",
   "band.chip2": "weitere Sprachen folgen",
   "band.chip3": "NMT auf dem Gerät · keine Cloud",
-
   "price.eyebrow": "Preise",
   "price.h2": "Einmal kaufen. Es gehört Ihnen. Kein Abo.",
   "price.sub": "Beginnen Sie mit einer 30-tägigen kostenlosen Testphase — alle Funktionen, auf Ihrem Gerät. Behalten Sie es mit einer einmaligen Lizenz pro Gerät, offline verifiziert: kein Aktivierungsserver, kein Abo, kein Konto.",
   "price.mostPopular": "Am beliebtesten",
   "price.free": "Kostenlose Testphase",
-  "price.freeList": ["Alle Funktionen, 30 Tage lang kostenlos", "Auf diesem Gerät", "Kein Konto · vollständig auf dem Gerät", "Danach ein einmaliger Kauf, um es zu behalten"],
+  "price.freeList": [
+    "Alle Funktionen, 30 Tage lang kostenlos",
+    "Auf diesem Gerät",
+    "Kein Konto · vollständig auf dem Gerät",
+    "Danach ein einmaliger Kauf, um es zu behalten"
+  ],
   "price.pro": "Pro",
   "price.oneTimeDevice": "einmalig / Gerät",
   "price.oneDevice": "1 Gerät",
-  "price.proList": ["Alle Funktionen, freigeschaltet", "1 Gerät", "Bis zu 3 Profile", "Jedes PDF ausfüllbar machen (OCR)", "Word- und Excel-Formulare", "Übersetztes Ausfüllen (alle Sprachen)", "Platzierung von Unterschrift und Foto", "Verschlüsseltes Backup und Übertragung"],
+  "price.proList": [
+    "Alle Funktionen, freigeschaltet",
+    "1 Gerät",
+    "Bis zu 3 Profile",
+    "Jedes PDF ausfüllbar machen (OCR)",
+    "Word- und Excel-Formulare",
+    "Übersetztes Ausfüllen (alle Sprachen)",
+    "Platzierung von Unterschrift und Foto",
+    "Verschlüsseltes Backup und Übertragung"
+  ],
   "price.family": "Duo",
   "price.oneTime": "einmalig",
   "price.familyDevices": "2 Geräte (~{each} je)",
-  "price.familyList": ["Alles aus Pro, auf 2 Geräten", "Bis zu 5 Profile", "Geteilt zwischen Ihren beiden Geräten", "Priorisierter Support"],
-
+  "price.familyList": [
+    "Alles aus Pro, auf 2 Geräten",
+    "Bis zu 5 Profile",
+    "Geteilt zwischen Ihren beiden Geräten",
+    "Priorisierter Support"
+  ],
   "team.eyebrow": "Für Teams und Unternehmen",
   "team.h2": "Kommerziell — Platzlizenzen, unbegrenzte Profile",
   "team.sub": "Jährliche Lizenzierung pro Platz — ein einfacher Preis, für jede Teamgröße. Jeder Platz erhält alle Pro-Funktionen und unbegrenzte Profile, läuft vollständig auf jedem Gerät, ohne dass Daten an uns zurückgesendet werden, und wird zentral an Ihren Administrator ausgestellt und offline verifiziert.",
   "team.perSeat": "/ Platz / Jahr",
   "team.tBiz": "Business",
   "team.tBizRange": "1–19 Plätze",
-  "team.tBizList": ["Alle Pro-Funktionen", "Unbegrenzte Profile pro Platz", "Zentrale Ausstellung an Ihren Administrator", "Priorisierter Support und Updates"],
+  "team.tBizList": [
+    "Alle Pro-Funktionen",
+    "Unbegrenzte Profile pro Platz",
+    "Zentrale Ausstellung an Ihren Administrator",
+    "Priorisierter Support und Updates"
+  ],
   "team.tEnt": "Enterprise",
   "team.tEntPrice": "Sprechen wir",
   "team.tEntRange": "20+ Plätze",
-  "team.tEntList": ["Individuelle Preise und Konditionen", "SSO-verifizierte Bereitstellung", "SLA und dedizierter Support", "Unterstützung bei der Bereitstellung"],
+  "team.tEntList": [
+    "Individuelle Preise und Konditionen",
+    "SSO-verifizierte Bereitstellung",
+    "SLA und dedizierter Support",
+    "Unterstützung bei der Bereitstellung"
+  ],
   "price.note": "30 Tage lang kostenlos starten. Persönliche Stufen sind einmalige Ed25519-Lizenzen pro Gerät, lokal verifiziert — kein Aktivierungsserver, kein Abo. Kommerziell kostet $29 pro Platz und Jahr mit zentraler Ausstellung. Preise in USD, an Ihre Region angepasst; lokale Steuern können anfallen. Enterprise (20+ Plätze):",
   "price.freeDuration": "für 30 Tage",
   "price.contactUs": "kontaktieren Sie uns",
-
   "get.eyebrow": "PolyglotFormFill holen",
   "get.h2": "In einer Minute installiert",
   "get.sub": "Fügen Sie die Browser-Erweiterung für das automatische Ausfüllen von Web-Formularen hinzu oder installieren Sie die Desktop-App für das volle, gehärtete Erlebnis. Sie arbeiten zusammen.",
   "get.win": "Für Windows herunterladen",
   "get.ext": "Browser-Erweiterung holen (Beta)",
   "get.soon": "Chrome Web Store — bald",
-  "get.note": "Beta-Downloads (gehostet auf Oracle Cloud). Der Windows-Build ist unsigniert — Windows warnt „unbekannter Herausgeber“ (Weitere Informationen → Trotzdem ausführen). Die Erweiterung wird vorerst über den Entwicklermodus installiert; Store-Einträge sind in Arbeit. macOS und Linux als Nächstes.",
-
   "privS.eyebrow": "Datenschutz",
   "privS.h2": "Das Versprechen, in einer Zeile",
   "privS.sub": "Ihre Daten werden auf Ihrem Gerät verarbeitet und niemals an uns gesendet. Das Einzige, was das Gerät verlässt, sind Aktionen, die Sie durchführen — das Absenden eines fertigen Formulars (direkt an seinen Empfänger) oder eine Websuche, die Sie eingeben. Diese gehen direkt an ihr Ziel, niemals über uns. Das ist die gesamte Liste.",
   "privS.readFull": "Vollständige Datenschutzerklärung lesen",
-
   "foot.left": "© PolyglotFormFill · Datenschutzorientiertes automatisches Ausfüllen von Formularen",
   "foot.right": "Auf dem Gerät · Null Telemetrie · Offen und prüfbar",
-
   "install.title": "PolyglotFormFill installieren (Beta)",
   "install.back": "← PolyglotFormFill",
   "install.h1": "Installieren",
@@ -150,7 +166,6 @@
   "install.verifyThisRelease": "diese Version",
   "install.privacyNote": "Ihre Daten bleiben auf Ihrem Gerät; wir sehen sie niemals. Siehe die",
   "install.privacyLink": "Datenschutzerklärung",
-
   "privP.title": "Datenschutzerklärung",
   "privP.effective": "Datum des Inkrafttretens:",
   "privP.version": "Version 1.0",

@@ -123,7 +123,6 @@
   "get.win": "Windows için indir",
   "get.ext": "Tarayıcı uzantısını edinin (beta)",
   "get.soon": "Chrome Web Store — yakında",
-  "get.note": "Beta indirmeleri (Oracle Cloud üzerinde barındırılır). Windows derlemesi imzasızdır — Windows \"bilinmeyen yayımcı\" uyarısı verir (Daha fazla bilgi → Yine de çalıştır). Uzantı şimdilik geliştirici modu üzerinden kurulur; mağaza girişleri hazırlanıyor. Sırada macOS ve Linux var.",
   "privS.eyebrow": "Gizlilik",
   "privS.h2": "Söz, tek satırda",
   "privS.sub": "Verileriniz cihazınızda işlenir ve asla bize gönderilmez. Cihazdan çıkan tek şey sizin gerçekleştirdiğiniz eylemlerdir — tamamlanmış bir formu göndermek (doğrudan alıcısına) veya yazdığınız bir web araması. Bunlar doğrudan hedeflerine gider, asla bizim üzerimizden değil. Listenin tamamı bu.",

@@ -1,7 +1,6 @@
 {
   "meta.landingTitle": "Baca & isi formulir apa pun, dalam bahasa apa pun.",
   "meta.landingDesc": "PolyglotFormFill membaca formulir dalam satu bahasa dan mengisinya dari data Anda dalam bahasa lain — di perangkat Anda, secara pribadi. Kami tidak pernah melihat data Anda.",
-
   "nav.features": "Fitur",
   "nav.who": "Untuk siapa",
   "nav.languages": "Bahasa",
@@ -9,7 +8,6 @@
   "nav.tutorials": "Tutorial",
   "nav.privacy": "Privasi",
   "nav.getit": "Dapatkan",
-
   "hero.badge": "Multibahasa · di perangkat · nol telemetri",
   "hero.h1a": "Baca & isi formulir apa pun —",
   "hero.h1b": "dalam bahasa apa pun.",
@@ -18,7 +16,6 @@
   "hero.cta2": "▶ Tonton tutorialnya",
   "hero.cta3": "Dapatkan (beta)",
   "hero.trust": "Brankas AES-256 · buka kunci dengan passkey · tanpa cloud · tanpa pelacakan · terbuka & dapat diaudit",
-
   "flow.deviceTitle": "Di perangkat Anda — tempat semua pemrosesan terjadi",
   "flow.chip1": "Baca & tampilkan PDF",
   "flow.chip2": "Deteksi bidang dengan OCR",
@@ -29,7 +26,6 @@
   "flow.chip7": "Brankas AES-256",
   "flow.egressLabel": "Apa yang keluar — hanya yang Anda kirim, kepada siapa Anda mengirimnya:",
   "flow.egressBody": "formulir yang Anda kirim menuju dari perangkat → langsung ke penerima yang Anda pilih · pencarian web yang Anda ketik hanya mengirim istilah tersebut. Keduanya adalah pilihan Anda, dan tidak ada yang melewati kami. Kami tidak pernah menerima dokumen Anda, brankas Anda, atau pengenal apa pun — tidak ada perantara cloud.",
-
   "feat.eyebrow": "Fitur unggulan",
   "feat.h2": "Ubah PDF yang tidak dapat diisi menjadi formulir yang benar-benar bisa Anda isi",
   "feat.sub": "PDF datar tanpa bidang formulir — atau bahkan foto atau pindaiannya — menjadi formulir nyata yang dapat diisi dalam hitungan detik. Tidak perlu \"cetak, tulis tangan, pindai ulang\". Tanpa mengunggahnya ke situs web mana pun untuk melakukannya.",
@@ -50,7 +46,6 @@
   "feat.c6b": "Buka kunci dengan frasa sandi atau passkey perangkat keras (WebAuthn). Kunci tidak pernah disimpan — bahkan oleh kami.",
   "feat.c7t": "Desktop + peramban",
   "feat.c7b": "Ekstensi mengisi formulir web; aplikasi desktop menyimpan kunci Anda sebagai jangkar kepercayaan yang diperkuat.",
-
   "who.eyebrow": "Untuk siapa",
   "who.h2": "Dibuat untuk siapa pun yang mengisi formulir lintas bahasa dan lintas negara",
   "who.sub": "Tiga kelompok memperoleh manfaat paling besar — dan masing-masing menyimpan datanya di perangkatnya sendiri.",
@@ -60,59 +55,80 @@
   "who.c2b": "Formulir pajak, perbankan, dan pendaftaran sering datang dalam bahasa yang bukan bahasa Anda. Isi dari data Anda sendiri — disimpan dalam brankas AES-256 di perangkat Anda — dan ekspor PDF yang bersih, tanpa apa pun yang diarahkan melalui kami atau pihak ketiga mana pun.",
   "who.c3t": "Komunitas mengutamakan privasi & kripto",
   "who.c3b": "Setiap langkah berjalan secara lokal dengan nol telemetri, dan brankas dibuka dengan passkey perangkat keras (WebAuthn) yang kuncinya tidak pernah disimpan. Tanpa akun, tanpa cloud, tanpa pelacakan — data Anda tetap di perangkat yang Anda kendalikan.",
-
   "band.eyebrow": "Dibuat untuk dunia multibahasa",
   "band.h2": "Data Anda dalam bahasa Anda. Formulirnya dalam bahasa mereka.",
   "band.sub": "Pemerintah dan lembaga menerbitkan formulir dalam satu bahasa; orang menyimpan datanya dalam bahasa lain. PolyglotFormFill menjembatani kesenjangan itu di perangkat — dimulai dengan Inggris ↔ Hindi, dengan lebih banyak lagi menyusul.",
   "band.chip2": "lebih banyak bahasa segera hadir",
   "band.chip3": "NMT di perangkat · tanpa cloud",
-
   "price.eyebrow": "Harga",
   "price.h2": "Beli sekali. Miliki. Tanpa langganan.",
   "price.sub": "Mulai dengan uji coba gratis 30 hari — setiap fitur, di perangkat Anda. Simpan dengan lisensi sekali beli, per perangkat, diverifikasi secara luring: tanpa server aktivasi, tanpa langganan, tanpa akun.",
   "price.mostPopular": "Paling populer",
   "price.free": "Uji coba gratis",
-  "price.freeList": ["Setiap fitur, gratis selama 30 hari", "Di perangkat ini", "Tanpa akun · sepenuhnya di perangkat", "Lalu beli sekali untuk menyimpannya"],
+  "price.freeList": [
+    "Setiap fitur, gratis selama 30 hari",
+    "Di perangkat ini",
+    "Tanpa akun · sepenuhnya di perangkat",
+    "Lalu beli sekali untuk menyimpannya"
+  ],
   "price.pro": "Pro",
   "price.oneTimeDevice": "sekali beli / perangkat",
   "price.oneDevice": "1 perangkat",
-  "price.proList": ["Setiap fitur, terbuka", "1 perangkat", "Hingga 3 profil", "Jadikan PDF apa pun dapat diisi (OCR)", "Formulir Word & Excel", "Pengisian terjemahan (semua bahasa)", "Penempatan tanda tangan & foto", "Cadangan & transfer terenkripsi"],
+  "price.proList": [
+    "Setiap fitur, terbuka",
+    "1 perangkat",
+    "Hingga 3 profil",
+    "Jadikan PDF apa pun dapat diisi (OCR)",
+    "Formulir Word & Excel",
+    "Pengisian terjemahan (semua bahasa)",
+    "Penempatan tanda tangan & foto",
+    "Cadangan & transfer terenkripsi"
+  ],
   "price.family": "Duo",
   "price.oneTime": "sekali beli",
   "price.familyDevices": "2 perangkat (~{each} masing-masing)",
-  "price.familyList": ["Semua yang ada di Pro, pada 2 perangkat", "Hingga 5 profil", "Dibagikan di kedua perangkat Anda", "Dukungan prioritas"],
-
+  "price.familyList": [
+    "Semua yang ada di Pro, pada 2 perangkat",
+    "Hingga 5 profil",
+    "Dibagikan di kedua perangkat Anda",
+    "Dukungan prioritas"
+  ],
   "team.eyebrow": "Untuk tim & bisnis",
   "team.h2": "Komersial — lisensi per kursi, profil tanpa batas",
   "team.sub": "Lisensi tahunan per kursi — satu harga sederhana, untuk tim ukuran berapa pun. Setiap kursi memperoleh semua fitur Pro dan profil tanpa batas, berjalan sepenuhnya di setiap perangkat tanpa data yang dikirim kembali ke kami, dan diterbitkan secara terpusat kepada admin Anda serta diverifikasi secara luring.",
   "team.perSeat": "/ kursi / thn",
   "team.tBiz": "Bisnis",
   "team.tBizRange": "1–19 kursi",
-  "team.tBizList": ["Semua fitur Pro", "Profil tanpa batas per kursi", "Penerbitan terpusat kepada admin Anda", "Dukungan & pembaruan prioritas"],
+  "team.tBizList": [
+    "Semua fitur Pro",
+    "Profil tanpa batas per kursi",
+    "Penerbitan terpusat kepada admin Anda",
+    "Dukungan & pembaruan prioritas"
+  ],
   "team.tEnt": "Enterprise",
   "team.tEntPrice": "Mari berbicara",
   "team.tEntRange": "20+ kursi",
-  "team.tEntList": ["Harga & ketentuan khusus", "Penyediaan terverifikasi SSO", "SLA & dukungan khusus", "Bantuan penerapan"],
+  "team.tEntList": [
+    "Harga & ketentuan khusus",
+    "Penyediaan terverifikasi SSO",
+    "SLA & dukungan khusus",
+    "Bantuan penerapan"
+  ],
   "price.note": "Mulai gratis selama 30 hari. Tingkat personal adalah lisensi Ed25519 sekali beli, per perangkat, diverifikasi secara lokal — tanpa server aktivasi, tanpa langganan. Komersial adalah $29 per kursi per tahun dengan penerbitan terpusat. Harga dalam USD, disesuaikan untuk wilayah Anda; pajak lokal mungkin berlaku. Enterprise (20+ kursi):",
   "price.freeDuration": "selama 30 hari",
   "price.contactUs": "hubungi kami",
-
   "get.eyebrow": "Dapatkan PolyglotFormFill",
   "get.h2": "Pasang dalam semenit",
   "get.sub": "Tambahkan ekstensi peramban untuk isi otomatis formulir web, atau pasang aplikasi desktop untuk pengalaman penuh yang diperkuat. Keduanya bekerja bersama.",
   "get.win": "Unduh untuk Windows",
   "get.ext": "Dapatkan ekstensi peramban (beta)",
   "get.soon": "Chrome Web Store — segera",
-  "get.note": "Unduhan beta (dihosting di Oracle Cloud). Build Windows tidak ditandatangani — Windows memperingatkan \"penerbit tidak dikenal\" (Info selengkapnya → Tetap jalankan). Ekstensi dipasang melalui mode pengembang untuk saat ini; pencantuman di toko sedang berlangsung. macOS & Linux menyusul.",
-
   "privS.eyebrow": "Privasi",
   "privS.h2": "Janji itu, dalam satu baris",
   "privS.sub": "Data Anda diproses di perangkat Anda dan tidak pernah dikirim ke kami. Satu-satunya hal yang keluar adalah tindakan yang Anda lakukan — mengirim formulir yang telah selesai (langsung ke penerimanya) atau pencarian web yang Anda ketik. Itu langsung menuju tujuannya, tidak pernah melalui kami. Itulah seluruh daftarnya.",
   "privS.readFull": "Baca kebijakan privasi selengkapnya",
-
   "foot.left": "© PolyglotFormFill · Isi otomatis formulir yang mengutamakan privasi",
   "foot.right": "Di perangkat · Nol telemetri · Terbuka & dapat diaudit",
-
   "install.title": "Pasang PolyglotFormFill (beta)",
   "install.back": "← PolyglotFormFill",
   "install.h1": "Pasang",
@@ -150,7 +166,6 @@
   "install.verifyThisRelease": "rilis ini",
   "install.privacyNote": "Data Anda tetap di perangkat Anda; kami tidak pernah melihatnya. Lihat",
   "install.privacyLink": "kebijakan privasi",
-
   "privP.title": "Kebijakan Privasi",
   "privP.effective": "Tanggal berlaku:",
   "privP.version": "Versi 1.0",

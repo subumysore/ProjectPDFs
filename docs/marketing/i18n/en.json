@@ -122,7 +122,7 @@
   "get.win": "Download for Windows",
   "get.ext": "Get the browser extension (beta)",
   "get.soon": "Chrome Web Store — soon",
-  "get.note": "Beta downloads (hosted on Oracle Cloud). The Windows build is unsigned — Windows warns “unknown publisher” (More info → Run anyway). The extension installs via developer mode for now; store listings are in progress. macOS & Linux next.",
+  "get.note": "Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore) — no “unknown publisher” warning. The browser extension is in Chrome Web Store review; for now it installs via developer mode. macOS & Linux next.",
   "privS.eyebrow": "Privacy",
   "privS.h2": "The promise, in one line",
   "privS.sub": "Your data is processed on your device and is never sent to us. The only things that leave are actions you take — submitting a finished form (straight to its recipient) or a web search you type. Those go directly to their destination, never through us. That's the whole list.",

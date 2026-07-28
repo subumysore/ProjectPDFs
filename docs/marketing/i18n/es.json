@@ -123,7 +123,6 @@
   "get.win": "Descargar para Windows",
   "get.ext": "Obtén la extensión del navegador (beta)",
   "get.soon": "Chrome Web Store — próximamente",
-  "get.note": "Descargas beta (alojadas en Oracle Cloud). La versión de Windows no está firmada — Windows advierte «editor desconocido» (Más información → Ejecutar de todos modos). La extensión se instala por ahora en modo de desarrollador; las publicaciones en las tiendas están en curso. macOS y Linux a continuación.",
   "privS.eyebrow": "Privacidad",
   "privS.h2": "La promesa, en una línea",
   "privS.sub": "Tus datos se procesan en tu dispositivo y nunca se nos envían. Lo único que sale son las acciones que tú realizas — enviar un formulario terminado (directamente a su destinatario) o una búsqueda web que escribes. Esas van directamente a su destino, nunca a través de nosotros. Esa es toda la lista.",

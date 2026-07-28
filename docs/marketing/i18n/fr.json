@@ -1,7 +1,6 @@
 {
   "meta.landingTitle": "Lisez et remplissez n'importe quel formulaire, dans n'importe quelle langue.",
   "meta.landingDesc": "PolyglotFormFill lit un formulaire dans une langue et le remplit à partir de vos données dans une autre — sur votre appareil, en toute confidentialité. Nous ne voyons jamais vos données.",
-
   "nav.features": "Fonctionnalités",
   "nav.who": "À qui ça s'adresse",
   "nav.languages": "Langues",
@@ -9,7 +8,6 @@
   "nav.tutorials": "Tutoriels",
   "nav.privacy": "Confidentialité",
   "nav.getit": "Télécharger",
-
   "hero.badge": "Polyglotte · sur l'appareil · zéro télémétrie",
   "hero.h1a": "Lisez et remplissez n'importe quel formulaire —",
   "hero.h1b": "dans n'importe quelle langue.",
@@ -18,7 +16,6 @@
   "hero.cta2": "▶ Voir les tutoriels",
   "hero.cta3": "Télécharger (bêta)",
   "hero.trust": "Coffre AES-256 · déverrouillage par clé d'accès · sans cloud · sans suivi · ouvert et auditable",
-
   "flow.deviceTitle": "Sur votre appareil — là où se déroule tout le traitement",
   "flow.chip1": "Lire et afficher le PDF",
   "flow.chip2": "Détection des champs par OCR",
@@ -29,7 +26,6 @@
   "flow.chip7": "Coffre AES-256",
   "flow.egressLabel": "Ce qui sort — uniquement ce que vous envoyez, à qui vous l'envoyez :",
   "flow.egressBody": "un formulaire que vous soumettez va de l'appareil → au destinataire que vous avez choisi, directement · une recherche web que vous saisissez n'envoie que ces termes. Les deux relèvent de votre choix, et ni l'une ni l'autre ne passe par nous. Nous ne recevons jamais vos documents, votre coffre ou le moindre identifiant — il n'y a aucun intermédiaire cloud.",
-
   "feat.eyebrow": "La fonctionnalité phare",
   "feat.h2": "Transformez un PDF non remplissable en un formulaire que vous pouvez vraiment remplir",
   "feat.sub": "Un PDF plat sans champs de formulaire — ou même une photo ou un scan de celui-ci — devient un vrai formulaire remplissable en quelques secondes. Fini le « imprimer, écrire à la main, re-scanner ». Sans avoir à le téléverser sur un site web pour le faire.",
@@ -50,7 +46,6 @@
   "feat.c6b": "Déverrouillez avec une phrase secrète ou une clé d'accès matérielle (WebAuthn). La clé n'est jamais stockée — même pas par nous.",
   "feat.c7t": "Bureau + navigateur",
   "feat.c7b": "L'extension remplit les formulaires web ; l'application de bureau conserve vos clés comme ancrage de confiance renforcé.",
-
   "who.eyebrow": "À qui ça s'adresse",
   "who.h2": "Conçu pour quiconque remplit des formulaires entre les langues et les frontières",
   "who.sub": "Trois groupes en tirent le meilleur parti — et chacun d'eux garde ses données sur son propre appareil.",
@@ -60,59 +55,80 @@
   "who.c2b": "Les formulaires fiscaux, bancaires et d'intégration arrivent souvent dans une langue qui n'est pas la vôtre. Remplissez-les à partir de vos propres données — conservées dans un coffre AES-256 sur votre appareil — et exportez un PDF propre, sans que rien ne transite par nous ni par un tiers.",
   "who.c3t": "Communautés axées sur la confidentialité et la crypto",
   "who.c3b": "Chaque étape s'exécute localement sans aucune télémétrie, et le coffre se déverrouille avec une clé d'accès matérielle (WebAuthn) dont la clé n'est jamais stockée. Pas de compte, pas de cloud, pas de suivi — vos données restent sur l'appareil que vous contrôlez.",
-
   "band.eyebrow": "Conçu pour un monde multilingue",
   "band.h2": "Vos données dans votre langue. Le formulaire dans la leur.",
   "band.sub": "Les gouvernements et les institutions publient des formulaires dans une langue ; les gens conservent leurs informations dans une autre. PolyglotFormFill comble cet écart sur l'appareil — en commençant par l'anglais ↔ l'hindi, et bien d'autres à venir.",
   "band.chip2": "d'autres langues à venir",
   "band.chip3": "NMT sur l'appareil · sans cloud",
-
   "price.eyebrow": "Tarifs",
   "price.h2": "Achetez une fois. C'est à vous. Sans abonnement.",
   "price.sub": "Commencez par un essai gratuit de 30 jours — toutes les fonctionnalités, sur votre appareil. Conservez-le avec une licence unique, par appareil, vérifiée hors ligne : pas de serveur d'activation, pas d'abonnement, pas de compte.",
   "price.mostPopular": "Le plus populaire",
   "price.free": "Essai gratuit",
-  "price.freeList": ["Toutes les fonctionnalités, gratuites pendant 30 jours", "Sur cet appareil", "Sans compte · entièrement sur l'appareil", "Puis un achat unique pour le conserver"],
+  "price.freeList": [
+    "Toutes les fonctionnalités, gratuites pendant 30 jours",
+    "Sur cet appareil",
+    "Sans compte · entièrement sur l'appareil",
+    "Puis un achat unique pour le conserver"
+  ],
   "price.pro": "Pro",
   "price.oneTimeDevice": "paiement unique / appareil",
   "price.oneDevice": "1 appareil",
-  "price.proList": ["Toutes les fonctionnalités, débloquées", "1 appareil", "Jusqu'à 3 profils", "Rendez n'importe quel PDF remplissable (OCR)", "Formulaires Word et Excel", "Remplissage traduit (toutes les langues)", "Placement de signature et de photo", "Sauvegarde et transfert chiffrés"],
+  "price.proList": [
+    "Toutes les fonctionnalités, débloquées",
+    "1 appareil",
+    "Jusqu'à 3 profils",
+    "Rendez n'importe quel PDF remplissable (OCR)",
+    "Formulaires Word et Excel",
+    "Remplissage traduit (toutes les langues)",
+    "Placement de signature et de photo",
+    "Sauvegarde et transfert chiffrés"
+  ],
   "price.family": "Duo",
   "price.oneTime": "paiement unique",
   "price.familyDevices": "2 appareils (~{each} chacun)",
-  "price.familyList": ["Tout ce qui est dans Pro, sur 2 appareils", "Jusqu'à 5 profils", "Partagé entre vos deux appareils", "Assistance prioritaire"],
-
+  "price.familyList": [
+    "Tout ce qui est dans Pro, sur 2 appareils",
+    "Jusqu'à 5 profils",
+    "Partagé entre vos deux appareils",
+    "Assistance prioritaire"
+  ],
   "team.eyebrow": "Pour les équipes et les entreprises",
   "team.h2": "Commercial — licences par poste, profils illimités",
   "team.sub": "Licences annuelles par poste — un prix simple, quelle que soit la taille de l'équipe. Chaque poste bénéficie de toutes les fonctionnalités Pro et de profils illimités, s'exécute entièrement sur chaque appareil sans qu'aucune donnée ne nous soit renvoyée, et est délivré de manière centralisée à votre administrateur et vérifié hors ligne.",
   "team.perSeat": "/ poste / an",
   "team.tBiz": "Entreprise",
   "team.tBizRange": "1–19 postes",
-  "team.tBizList": ["Toutes les fonctionnalités Pro", "Profils illimités par poste", "Délivrance centralisée à votre administrateur", "Assistance et mises à jour prioritaires"],
+  "team.tBizList": [
+    "Toutes les fonctionnalités Pro",
+    "Profils illimités par poste",
+    "Délivrance centralisée à votre administrateur",
+    "Assistance et mises à jour prioritaires"
+  ],
   "team.tEnt": "Grand compte",
   "team.tEntPrice": "Parlons-en",
   "team.tEntRange": "20+ postes",
-  "team.tEntList": ["Tarifs et conditions sur mesure", "Provisionnement vérifié par SSO", "SLA et assistance dédiée", "Aide au déploiement"],
+  "team.tEntList": [
+    "Tarifs et conditions sur mesure",
+    "Provisionnement vérifié par SSO",
+    "SLA et assistance dédiée",
+    "Aide au déploiement"
+  ],
   "price.note": "Commencez gratuitement pendant 30 jours. Les formules personnelles sont des licences Ed25519 uniques, par appareil, vérifiées localement — sans serveur d'activation, sans abonnement. Le commercial coûte $29 par poste et par an avec délivrance centralisée. Prix en USD, ajustés à votre région ; des taxes locales peuvent s'appliquer. Grand compte (20+ postes) :",
   "price.freeDuration": "pendant 30 jours",
   "price.contactUs": "contactez-nous",
-
   "get.eyebrow": "Obtenez PolyglotFormFill",
   "get.h2": "Installez en une minute",
   "get.sub": "Ajoutez l'extension de navigateur pour le remplissage auto des formulaires web, ou installez l'application de bureau pour l'expérience complète et renforcée. Elles fonctionnent ensemble.",
   "get.win": "Télécharger pour Windows",
   "get.ext": "Obtenir l'extension de navigateur (bêta)",
   "get.soon": "Chrome Web Store — bientôt",
-  "get.note": "Téléchargements bêta (hébergés sur Oracle Cloud). La version Windows n'est pas signée — Windows avertit « éditeur inconnu » (Informations complémentaires → Exécuter quand même). L'extension s'installe pour l'instant via le mode développeur ; les publications sur les stores sont en cours. macOS et Linux ensuite.",
-
   "privS.eyebrow": "Confidentialité",
   "privS.h2": "La promesse, en une ligne",
   "privS.sub": "Vos données sont traitées sur votre appareil et ne nous sont jamais envoyées. Les seules choses qui sortent sont les actions que vous effectuez — soumettre un formulaire terminé (directement à son destinataire) ou une recherche web que vous saisissez. Elles vont directement à leur destination, jamais par notre intermédiaire. C'est toute la liste.",
   "privS.readFull": "Lire la politique de confidentialité complète",
-
   "foot.left": "© PolyglotFormFill · Remplissage de formulaires axé sur la confidentialité",
   "foot.right": "Sur l'appareil · Zéro télémétrie · Ouvert et auditable",
-
   "install.title": "Installer PolyglotFormFill (bêta)",
   "install.back": "← PolyglotFormFill",
   "install.h1": "Installer",
@@ -150,7 +166,6 @@
   "install.verifyThisRelease": "cette version",
   "install.privacyNote": "Vos données restent sur votre appareil ; nous ne les voyons jamais. Consultez la",
   "install.privacyLink": "politique de confidentialité",
-
   "privP.title": "Politique de confidentialité",
   "privP.effective": "Date d'entrée en vigueur :",
   "privP.version": "Version 1.0",
