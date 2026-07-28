@@ -1,5 +1,6 @@
-// Tests for the zero-storage claim issuer: a claim re-mints the token from the paid order (fetched
-// via an injected LS fetcher), verifies the email, and refuses a mismatch — no persistence involved.
+// Tests for the zero-storage claim issuer (STRIPE): a claim re-mints the token from the paid
+// Checkout Session (fetched via an injected fetcher), optionally checks the email, binds to the
+// device id if the buyer supplied one — no persistence involved.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, verify as edVerify } from "node:crypto";
@@ -14,9 +15,11 @@ process.env.LS_VENDOR_KEY_FILE = join(dir, "vendor-key.json");
 
 const { handleClaim } = await import("./issuer-server.mjs");
 
-// Fake LS: order "100" belongs to buyer@example.com, a Pro purchase.
-const fakeFetch = async (id) => id === "100"
-  ? { user_email: "Buyer@Example.com", first_order_item: { variant_name: "PolyglotFormFill PRO" }, created_at: "2026-07-20T00:00:00Z" }
+// Fake Stripe: session "cs_100" is a PAID Pro purchase by Buyer@Example.com, device "dev-abc".
+const fakeFetch = async (id) => id === "cs_100"
+  ? { paid: true, email: "Buyer@Example.com", ppf: "pro", productName: "PolyglotFormFill Pro", device: "dev-abc", created: 1750000000 }
+  : id === "cs_unpaid"
+  ? { paid: false, email: "x@y.com", ppf: "pro", productName: "Pro", device: "", created: 1750000000 }
   : null;
 
 function openToken(token) {
@@ -26,8 +29,8 @@ function openToken(token) {
   return { ok: edVerify(null, json, publicKey, Buffer.from(s, "base64url")), license: JSON.parse(json.toString("utf8")) };
 }
 
-test("claim re-mints a valid token for the right order + email (case-insensitive)", async () => {
-  const r = await handleClaim("100", "buyer@example.com", fakeFetch);
+test("claim re-mints a valid device-bound token for the paid session", async () => {
+  const r = await handleClaim("cs_100", "", fakeFetch);
   assert.equal(r.status, 200);
   const m = r.body.match(/PPDF1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
   assert.ok(m, "token present in the page");
@@ -35,14 +38,17 @@ test("claim re-mints a valid token for the right order + email (case-insensitive
   assert.equal(ok, true);                        // signs against our vendor key
   assert.equal(license.tier, "pro");
   assert.equal(license.subject, "Buyer@Example.com");
+  assert.equal(license.device_id, "dev-abc");    // bound to the device field
 });
 
-test("claim refuses a wrong email or unknown order", async () => {
-  assert.equal((await handleClaim("100", "someone@else.com", fakeFetch)).status, 404);
-  assert.equal((await handleClaim("999", "buyer@example.com", fakeFetch)).status, 404);
+test("optional email must match when supplied; unpaid/unknown session refused", async () => {
+  assert.equal((await handleClaim("cs_100", "someone@else.com", fakeFetch)).status, 404);
+  assert.equal((await handleClaim("cs_100", "buyer@example.com", fakeFetch)).status, 200); // case-insensitive match
+  assert.equal((await handleClaim("cs_unpaid", "", fakeFetch)).status, 404);
+  assert.equal((await handleClaim("cs_999", "", fakeFetch)).status, 404);
 });
 
-test("no order/email → the claim form (not an error)", async () => {
+test("no session id → the claim form (not an error)", async () => {
   const r = await handleClaim("", "", fakeFetch);
   assert.equal(r.status, 200);
   assert.match(r.body, /Claim your PolyglotFormFill license/);

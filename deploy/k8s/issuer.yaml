@@ -6,11 +6,11 @@
 # private key or secret ever lands in git. See docs/runbooks/license-issuer.md.
 #
 #   kubectl -n polyglotformfill create configmap ppf-issuer-code \
-#     --from-file=scripts/license/issuer-server.mjs --from-file=scripts/license/webhook.mjs \
+#     --from-file=scripts/license/issuer-server.mjs --from-file=scripts/license/stripe-webhook.mjs \
 #     --from-file=scripts/license/sign.mjs --dry-run=client -o yaml | kubectl apply -f -
 #   kubectl -n polyglotformfill create secret generic issuer-secrets \
 #     --from-file=vendor-key.json=scripts/license/vendor-key.json \
-#     --from-literal=LS_WEBHOOK_SECRET=<random> --from-literal=LS_API_KEY=<ls key> \
+#     --from-literal=STRIPE_API_KEY=<sk_live_...> --from-literal=STRIPE_WEBHOOK_SECRET=<whsec_...> \
 #     --dry-run=client -o yaml | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -26,7 +26,7 @@ spec:
       labels: { app: ppf-issuer }
       annotations:
         # bump to force a rollout when the ConfigMap code changes
-        ppf/code-rev: "1"
+        ppf/code-rev: "2"
     spec:
       containers:
         - name: issuer
@@ -36,8 +36,8 @@ spec:
           env:
             - { name: PORT, value: "8787" }
             - { name: LS_VENDOR_KEY_FILE, value: /keys/vendor-key.json }
-            - { name: LS_WEBHOOK_SECRET, valueFrom: { secretKeyRef: { name: issuer-secrets, key: LS_WEBHOOK_SECRET } } }
-            - { name: LS_API_KEY, valueFrom: { secretKeyRef: { name: issuer-secrets, key: LS_API_KEY } } }
+            - { name: STRIPE_API_KEY, valueFrom: { secretKeyRef: { name: issuer-secrets, key: STRIPE_API_KEY } } }
+            - { name: STRIPE_WEBHOOK_SECRET, valueFrom: { secretKeyRef: { name: issuer-secrets, key: STRIPE_WEBHOOK_SECRET } } }
           ports: [{ containerPort: 8787 }]
           readinessProbe: { httpGet: { path: /healthz, port: 8787 }, initialDelaySeconds: 3, periodSeconds: 10 }
           resources:

@@ -19,7 +19,39 @@ signed for the public key that shipped in v1.0.1 / v1.0.3 — you'd have to rebu
 with a new key. Back it up to a password manager / encrypted vault you control. Do **not** commit it, email
 it, or upload it anywhere. (I deliberately did not move or copy it — a private key must not be distributed.)
 
-## Issuer (webhook) — deploy plan (execute when LS is approved / to test)
+## PAYMENTS ARE ON STRIPE (current — 2026-07-28, ADR-0025)
+Lemon Squeezy stayed in pending-merchant-approval (Test mode) with no timeline, so payments went live on
+**Stripe** instead (owner = merchant of record; **Stripe Tax active**). The LS sections below are
+**superseded/dormant** (kept for reference only).
+
+- **Account:** `acct_1KoDEkFWVcXPDpjx` (US/USD, charges+payouts enabled).
+- **Products/prices/PPP/links:** all NON-secret ids in `docs/business/stripe-config.json`. Provisioned via the
+  Stripe API against the live account: Pro $19 / Duo $29 one-time, Business $29/seat/yr (adjustable 1–19),
+  PPP coupons `ppf-ppp-{10..65}` + promo codes `PPP{band}`, three hosted **Payment Links** with a `device_id`
+  custom field + automatic tax + redirect to `…/issuer/claim?session={CHECKOUT_SESSION_ID}`.
+- **Issuer (Stripe):** `scripts/license/issuer-server.mjs` (fetches the paid Checkout Session, re-mints from
+  the product's `ppf` metadata) + `scripts/license/stripe-webhook.mjs` (verifies `Stripe-Signature`). Same
+  production signing key — no app/extension change needed. Deployed to OKE (`deploy/k8s/issuer.yaml`,
+  code-rev 2). Secret `issuer-secrets` carries `vendor-key.json` + `STRIPE_API_KEY` + `STRIPE_WEBHOOK_SECRET`.
+- **Webhook:** endpoint `we_1TyEIMFWVcXPDpjxlJJjlOR5` → `…/issuer/webhook`
+  (checkout.session.completed, charge.refunded, charge.dispute.created, customer.subscription.deleted,
+  invoice.paid). Signing secret is in the K8s secret only.
+- **Secrets live ONLY in:** the build machine's `STRIPE_API_KEY` user env var + the K8s `issuer-secrets`.
+  Never in git. `STRIPE_WEBHOOK_SECRET` was captured at endpoint-creation to the session scratchpad and applied.
+- **Redeploy the issuer after a code change:**
+  `kubectl -n polyglotformfill create configmap ppf-issuer-code --from-file=scripts/license/issuer-server.mjs
+   --from-file=scripts/license/stripe-webhook.mjs --from-file=scripts/license/sign.mjs --dry-run=client -o yaml
+   | kubectl apply -f -` then bump `ppf/code-rev` in `issuer.yaml`, `kubectl apply -f deploy/k8s/issuer.yaml`,
+  `kubectl -n polyglotformfill rollout restart deploy/ppf-issuer`.
+- **Live-endpoint smoke test:** `/issuer/healthz`→ok, `/issuer/claim`→form 200, `?session=cs_bogus`→404,
+  POST `/issuer/webhook` bad sig→400. (All verified 2026-07-28.)
+- **Go-live wiring done:** `stripe-config.json` `live:true`; site rebuilt (26 langs) with Buy buttons →
+  Payment Links + auto-PPP. **Deploy step (owner-run, outward-facing):** `deploy/k8s/publish-site.ps1`.
+- **End-to-end validation still to do (owner):** make one real (or a $19 low-risk) purchase → land on the
+  claim page → token appears → paste into the app → activates. Then Stripe Dashboard shows the payment + tax.
+
+---
+## [SUPERSEDED — Lemon Squeezy] Issuer (webhook) — deploy plan
 Code: `scripts/license/webhook.mjs` (HMAC-verify the LS webhook → `signLicense` from `sign.mjs` → return
 device-bound token). Pure Node, no Rust dependency. Runs standalone with `--serve` on :8787.
 

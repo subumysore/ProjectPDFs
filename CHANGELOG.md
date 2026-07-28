@@ -11,6 +11,21 @@ value-tracker submit fix (Workday), the "Common answers" panel, and the loading 
 Suite 339/339 + engine-parity 6/6.
 
 ## [Unreleased]
+### Changed — payments go live on Stripe (superseding Lemon Squeezy) (2026-07-28)
+- **Stripe is now the payment processor** (owner is merchant of record; **Stripe Tax active**). Lemon
+  Squeezy stayed in pending-merchant-approval (Test mode) with no timeline and is set aside — see ADR-0025.
+- Provisioned on the live account: **Pro $19 / Duo $29 one-time, Business $29/seat/yr** (adjustable
+  1–19 seats); **PPP** coupons + `PPP{band}` promo codes so region pricing auto-applies (shown == charged);
+  hosted **Payment Links** with a `device_id` field, automatic tax, and a redirect to the claim page.
+- **Issuer switched to Stripe** (`scripts/license/issuer-server.mjs` + `stripe-webhook.mjs`): the
+  zero-storage `/claim` re-mints the Ed25519 token from the **paid Checkout Session** (same production
+  signing key — every shipped app/extension keeps verifying); `/webhook` verifies `Stripe-Signature`.
+  Deployed to OKE (code-rev 2, secret carries `STRIPE_API_KEY`/`STRIPE_WEBHOOK_SECRET`); live endpoints
+  verified (`/healthz` ok, `/claim` form 200, bogus session 404, bad-signature 400). Tests: issuer 3/3 +
+  stripe-webhook 3/3 (license suite 12/12).
+- Site rebuilt (26 langs): Buy buttons now point at the Stripe Payment Links with auto-PPP; `stripe-config.json`
+  `live:true`. Privacy invariant unaffected — the issuer never sees user form content; no card data touches us.
+
 ### Added — PDF resolver parity with the web filler (desktop + extension) (2026-07-27)
 - Ported the portable web-fill rules into the SHARED `resolver.js` (used by the desktop app's PDF fill
   AND the extension's PDF path), so both engines now agree: **alternate-name** fields (Preferred/Former/

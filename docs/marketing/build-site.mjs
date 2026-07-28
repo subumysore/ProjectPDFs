@@ -84,17 +84,18 @@ const HELLO_JS = `
   }
 })();`;
 
-// Lemon Squeezy store config (variant IDs + slug) captured by scripts/license/ls-provision.mjs.
-// Injected at build time so the Buy buttons point at the right checkout. Absent → buttons stay "#".
-let LS_CFG = { slug: "", variants: {} };
-try { LS_CFG = JSON.parse(readFileSync(join(dir, "../business/ls-config.json"), "utf8")); } catch { /* not provisioned yet */ }
-const LS_VARIANTS = Object.fromEntries(Object.entries(LS_CFG.variants || {}).map(([k, v]) => [k, v.variantId]));
-const LS_LIVE = !!LS_CFG.live;   // false until LS approves the store → buy buttons fall back to the trial
+// Stripe payment config (Payment Link URLs + PPP promo prefix) provisioned into docs/business/
+// stripe-config.json. Injected at build time so the Buy buttons point at the right Checkout.
+// Absent → buttons stay on the free-trial CTA. Only NON-secret data lives here (public link URLs).
+let PAY_CFG = { tiers: {}, pppBands: [10, 20, 30, 40, 50, 60, 65], pppPromoPrefix: "PPP", live: false };
+try { PAY_CFG = { ...PAY_CFG, ...JSON.parse(readFileSync(join(dir, "../business/stripe-config.json"), "utf8")) }; } catch { /* not provisioned yet */ }
+const PAY_LINKS = Object.fromEntries(Object.entries(PAY_CFG.tiers || {}).map(([k, v]) => [k, v.link]));
+const PAY_LIVE = !!PAY_CFG.live;   // false until we flip live → buy buttons fall back to the trial
 
 // A tier's CTA: a real Buy button once payments are LIVE; the free-trial download until then (so we
 // never ship a button that leads to a checkout that can't complete).
 function payBtn(tr, tier, labelKey) {
-  if (LS_LIVE) return `<a class="btn buy" data-tier="${tier}" style="margin-top:16px" rel="nofollow" href="#">${esc(tr(labelKey))}</a>`;
+  if (PAY_LIVE) return `<a class="btn buy" data-tier="${tier}" style="margin-top:16px" rel="nofollow" href="#">${esc(tr(labelKey))}</a>`;
   return `<a class="btn" style="margin-top:16px" href="#get">${esc(tr("price.startTrial"))}</a>`;
 }
 
@@ -102,10 +103,10 @@ const PPP_JS = `
 (function(){
   var PPP={US:1,CA:0.95,GB:0.95,AU:0.95,NZ:0.9,IE:0.95,DE:0.9,FR:0.9,NL:0.95,SE:0.95,NO:1,CH:1.1,DK:1,FI:0.95,AT:0.9,BE:0.9,IT:0.8,ES:0.75,PT:0.7,GR:0.65,PL:0.55,CZ:0.6,HU:0.5,RO:0.5,BG:0.45,IN:0.3,PK:0.28,BD:0.28,LK:0.3,NP:0.28,ID:0.4,PH:0.35,VN:0.35,TH:0.45,MY:0.5,CN:0.55,JP:0.8,KR:0.8,TW:0.75,SG:1,HK:0.95,AE:0.9,SA:0.7,QA:0.9,KW:0.8,IL:0.85,TR:0.4,EG:0.3,ZA:0.45,NG:0.3,KE:0.3,GH:0.3,MA:0.4,BR:0.45,MX:0.5,AR:0.4,CO:0.4,CL:0.55,PE:0.4,RU:0.5,UA:0.35,KZ:0.45};
   var NAMES={IN:"India",BR:"Brazil",MX:"Mexico",GB:"the UK",DE:"Germany",FR:"France",ES:"Spain",JP:"Japan",CN:"China",ZA:"South Africa",NG:"Nigeria",PH:"the Philippines",ID:"Indonesia",PK:"Pakistan",BD:"Bangladesh",TR:"Turkey",RU:"Russia",AE:"the UAE",CA:"Canada",AU:"Australia"};
-  var LS_SLUG=${JSON.stringify(LS_CFG.slug || "")}, LS_VARIANTS=${JSON.stringify(LS_VARIANTS)}, BANDS=[10,20,30,40,50,60,65];
+  var PAY_LINKS=${JSON.stringify(PAY_LINKS)}, PROMO=${JSON.stringify(PAY_CFG.pppPromoPrefix || "PPP")}, BANDS=${JSON.stringify(PAY_CFG.pppBands || [10,20,30,40,50,60,65])};
   function nearestBand(off){ if(off<5) return 0; var b=BANDS[0],best=1e9; for(var i=0;i<BANDS.length;i++){var d=Math.abs(BANDS[i]-off); if(d<best){best=d;b=BANDS[i];}} return b; }
-  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var v=LS_VARIANTS[t]; if(!v||!LS_SLUG) return;
-    var u="https://"+LS_SLUG+".lemonsqueezy.com/checkout/buy/"+v; if(band) u+="?checkout[discount_code]=PPP"+band;
+  function setBuys(band){ ["pro","duo","business"].forEach(function(t){ var base=PAY_LINKS[t]; if(!base) return;
+    var u=base; if(band) u+=(base.indexOf("?")<0?"?":"&")+"prefilled_promo_code="+PROMO+band; // Stripe auto-applies the region discount
     document.querySelectorAll('.buy[data-tier="'+t+'"]').forEach(function(a){a.setAttribute("href",u);}); }); }
   function note(t){var n=document.getElementById("ppp-note");if(n)n.textContent=t;}
   setBuys(0); // full USD by default (works before the region lookup resolves)
