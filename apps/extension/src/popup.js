@@ -885,6 +885,10 @@ async function refreshLicenseUI() {
   const { getEntitlement, getDeviceId } = await import("./license.js");
   const dev = await getDeviceId();
   const d = $("licDevice"); if (d) d.textContent = dev;
+  // Point the Buy link at Stripe checkout with THIS device id as client_reference_id, so the issued
+  // licence auto-binds to this device (no manual entry). SSOT for the link: docs/business/stripe-config.json.
+  const buy = $("licBuy");
+  if (buy && dev) buy.href = "https://buy.stripe.com/5kQdR9gxTd0OfAB7Ps3F600?client_reference_id=" + encodeURIComponent(dev);
   const ent = await getEntitlement();
   const st = $("licStatus"); if (st) st.textContent = TIER_LABEL[ent.tier] || (ent.licensed ? "Licensed ✓" : "Free plan");
   $("licRemove").classList.toggle("hidden", !ent.licensed);

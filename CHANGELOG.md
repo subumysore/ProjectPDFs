@@ -10,6 +10,20 @@ education routing, general option matching (state abbreviations, acronyms), the 
 value-tracker submit fix (Workday), the "Common answers" panel, and the loading spinner.
 Suite 339/339 + engine-parity 6/6.
 
+## [Desktop 1.0.2] - 2026-07-28
+### Added — in-app "Buy" buttons with automatic device binding
+- The License panel (desktop) and the popup License section (extension) now show **Buy Pro / Duo /
+  Business** buttons that open Stripe Checkout with this install's **device id passed as
+  `client_reference_id`** — so the issued licence auto-binds to THIS device and the buyer never has to
+  copy a device id. Desktop opens the link in the default browser via the existing https-validating
+  Rust command; nothing but the checkout request leaves the machine (privacy invariant intact).
+- Desktop bumped **1.0.1 → 1.0.2** (installer re-published with a fresh SHA-256 release manifest).
+- Extension carries the same popup change but the **manifest stays 1.0.3** until the in-review 1.0.3
+  clears the Chrome Web Store; it then republishes as **1.0.4** (the site keeps advertising the store
+  version, never the un-shipped local bump).
+- New UI strings `license.buyPrompt/buyPro/buyDuo/buyBusiness` (English; other languages fall back to
+  English via the shared catalogue until translated).
+
 ## [Unreleased]
 ### Changed — payments go live on Stripe (superseding Lemon Squeezy) (2026-07-28)
 - **Stripe is now the payment processor** (owner is merchant of record; **Stripe Tax active**). Lemon

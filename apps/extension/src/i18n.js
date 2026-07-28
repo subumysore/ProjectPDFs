@@ -167,6 +167,10 @@ const en = {
   "backup.passphrase": "Backup passphrase",
   "vault.imageField": "Field, e.g. signature",
   "license.thisDevice": "This device",
+  "license.buyPrompt": "Buy a licence (this device is filled in automatically):",
+  "license.buyPro": "Buy Pro — $19",
+  "license.buyDuo": "Buy Duo — $29",
+  "license.buyBusiness": "Business — $29/seat/yr",
   "lang.fillHint": "Saved with your profile, so entries can be written in the form's language.",
 };
 

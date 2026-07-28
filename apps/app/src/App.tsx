@@ -21,6 +21,17 @@ const LANGS: Record<string, string> = Object.fromEntries(
 );
 type Lang = string;
 
+// Stripe checkout links (SSOT: docs/business/stripe-config.json). The in-app Buy buttons open these
+// with the current device id as `client_reference_id`, so the issued licence binds to THIS device
+// automatically — the buyer never has to copy a device id. USD pricing in-app; regional PPP is
+// applied on the website. Opening the URL sends nothing but the checkout request (no user content),
+// so the privacy invariant is unaffected.
+const STRIPE_LINKS: Record<string, string> = {
+  pro: "https://buy.stripe.com/5kQdR9gxTd0OfAB7Ps3F600",
+  duo: "https://buy.stripe.com/5kQ3cv3L70e29cd8Tw3F601",
+  business: "https://buy.stripe.com/dRmdR93L70e21JL6Lo3F602",
+};
+
 interface Profile {
   id: string;
   name: string;
@@ -210,6 +221,16 @@ export function App() {
     } catch (e) {
       setBkMsg("Activation failed: " + String(e));
     }
+  }
+
+  // Open Stripe checkout for a tier, attaching THIS device's id as client_reference_id so the
+  // issued licence binds to this device — no manual device-id entry. Opened in the default browser
+  // via the existing https-validating Rust command; nothing but the checkout request leaves.
+  function buyLicense(tier: "pro" | "duo" | "business") {
+    const base = STRIPE_LINKS[tier];
+    if (!base) return;
+    const url = deviceId ? `${base}?client_reference_id=${encodeURIComponent(deviceId)}` : base;
+    invoke("open_submit_url", { url }).catch((e) => setBkMsg("Could not open checkout: " + String(e)));
   }
 
   async function doImport(file: File) {
@@ -1144,6 +1165,14 @@ export function App() {
             />
             <button onClick={activateLicense}>{tr("license.activate")}</button>
           </div>
+          {!lic?.licensed && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 12, color: "#5a6b6d", width: "100%" }}>{tr("license.buyPrompt")}</span>
+              <button onClick={() => buyLicense("pro")}>{tr("license.buyPro")}</button>
+              <button onClick={() => buyLicense("duo")}>{tr("license.buyDuo")}</button>
+              <button onClick={() => buyLicense("business")}>{tr("license.buyBusiness")}</button>
+            </div>
+          )}
           <p style={{ color: "#5a6b6d", fontSize: 12, marginTop: 8 }}>
             {tr("license.beta")}
           </p>
