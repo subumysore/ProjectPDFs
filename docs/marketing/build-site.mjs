@@ -303,7 +303,7 @@ ${switcher(lang, "landing")}
   <h2 class="h2">${esc(tr("get.h2"))}</h2>
   <p class="sub">${esc(tr("get.sub"))}</p>
   <div class="cta">
-    <a class="btn" href="https://objectstorage.us-ashburn-1.oraclecloud.com/p/fMfaM0h91eOO33q4FArpRqv5KEnKRNF1Dv9ObCUKCibbWrgCbhqY9sUjcOU8lZIm/n/idlqdkwlstnb/b/polyglotformfill-dl/o/PolyglotFormFill_0.1.0_x64-setup.exe">${esc(tr("get.win"))}</a>
+    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("get.win"))}</a>
     <a class="btn ghost" href="${urlFor(lang, "install")}">${esc(tr("get.ext"))}</a>
     <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
   </div>
