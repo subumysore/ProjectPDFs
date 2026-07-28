@@ -1,0 +1,87 @@
+# License issuer — a tiny Node pod on the OKE cluster serving the LS webhook + zero-cost claim page.
+# ZERO paid storage: the claim re-mints the token from the paid LS order (no PVC/block volume).
+#
+# The code (ConfigMap ppf-issuer-code) and the SECRETS (issuer-secrets: the private vendor-key.json,
+# LS_WEBHOOK_SECRET, LS_API_KEY) are created IMPERATIVELY at deploy time — never committed here, so no
+# private key or secret ever lands in git. See docs/runbooks/license-issuer.md.
+#
+#   kubectl -n polyglotformfill create configmap ppf-issuer-code \
+#     --from-file=scripts/license/issuer-server.mjs --from-file=scripts/license/webhook.mjs \
+#     --from-file=scripts/license/sign.mjs --dry-run=client -o yaml | kubectl apply -f -
+#   kubectl -n polyglotformfill create secret generic issuer-secrets \
+#     --from-file=vendor-key.json=scripts/license/vendor-key.json \
+#     --from-literal=LS_WEBHOOK_SECRET=<random> --from-literal=LS_API_KEY=<ls key> \
+#     --dry-run=client -o yaml | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppf-issuer
+  namespace: polyglotformfill
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ppf-issuer }
+  template:
+    metadata:
+      labels: { app: ppf-issuer }
+      annotations:
+        # bump to force a rollout when the ConfigMap code changes
+        ppf/code-rev: "1"
+    spec:
+      containers:
+        - name: issuer
+          image: docker.io/library/node:20-slim
+          workingDir: /app
+          command: ["node", "/app/issuer-server.mjs", "--serve"]
+          env:
+            - { name: PORT, value: "8787" }
+            - { name: LS_VENDOR_KEY_FILE, value: /keys/vendor-key.json }
+            - { name: LS_WEBHOOK_SECRET, valueFrom: { secretKeyRef: { name: issuer-secrets, key: LS_WEBHOOK_SECRET } } }
+            - { name: LS_API_KEY, valueFrom: { secretKeyRef: { name: issuer-secrets, key: LS_API_KEY } } }
+          ports: [{ containerPort: 8787 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8787 }, initialDelaySeconds: 3, periodSeconds: 10 }
+          resources:
+            requests: { cpu: "10m", memory: "48Mi" }
+            limits: { cpu: "250m", memory: "128Mi" }
+          volumeMounts:
+            - { name: code, mountPath: /app }
+            - { name: keys, mountPath: /keys, readOnly: true }
+      volumes:
+        - name: code
+          configMap: { name: ppf-issuer-code }
+        - name: keys
+          secret:
+            secretName: issuer-secrets
+            items: [{ key: vendor-key.json, path: vendor-key.json }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppf-issuer
+  namespace: polyglotformfill
+spec:
+  selector: { app: ppf-issuer }
+  ports: [{ port: 80, targetPort: 8787 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ppf-issuer
+  namespace: polyglotformfill
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [polyglotformfill.mooo.com]
+      secretName: ppf-site-tls
+  rules:
+    - host: polyglotformfill.mooo.com
+      http:
+        paths:
+          - path: /issuer
+            pathType: Prefix
+            backend:
+              service:
+                name: ppf-issuer
+                port: { number: 80 }

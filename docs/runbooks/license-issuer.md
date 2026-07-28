@@ -39,9 +39,22 @@ device-bound token). Pure Node, no Rust dependency. Runs standalone with `--serv
 5. Paste the real checkout URLs (with `checkout[custom][device_id]`) into the pricing-page Buy buttons and
    flip `docs/business/ls-config.json` `live: true`, then republish the site.
 
-## Status (2026-07-28)
-- Production key: ✅ settled (existing key, consistent across app + extension + issuer). No rebuild needed.
-- Store: ⏳ LemonSqueezy is **reviewing the merchant application** (Test mode still on). Payouts + live
-  checkout turn on only when LS approves — external, not code.
-- Issuer: not yet deployed (awaits the delivery decision above + the LS webhook secret, which needs the
-  endpoint URL registered — doable in LS test mode to validate end-to-end before go-live).
+## Deployed state (2026-07-28)
+- **Issuer is LIVE** on the OKE cluster: `deploy/k8s/issuer.yaml` (Deployment/Service/Ingress) +
+  ConfigMap `ppf-issuer-code` (the 3 runtime files) + Secret `issuer-secrets` (private `vendor-key.json`,
+  `LS_WEBHOOK_SECRET`, `LS_API_KEY`). Reachable at `https://polyglotformfill.mooo.com/issuer/{healthz,claim,webhook}`.
+- **Zero-cost claim delivery**: `scripts/license/issuer-server.mjs` re-mints the token from the paid LS
+  order (verified via LS API + email match) — NO database / PVC / block-volume cost. Tests 9/9.
+- **LS webhook registered**: id `122362`, 6 events, secret matches the K8s secret. (Test mode for now.)
+
+## Remaining to actually SELL (go-live)
+1. **LS approves the merchant application** — external; Test mode still on. Until then real cards aren't
+   charged and payouts don't run.
+2. Wire the pricing-page **Buy buttons → LS checkout URLs** (inject `checkout[custom][device_id]`) and set
+   each product's **confirmation redirect** to `…/issuer/claim?order={order_id}` so buyers land on the claim
+   page automatically. Flip `docs/business/ls-config.json` `live:true`; republish the site.
+3. Validate end-to-end with an **LS test purchase** → confirmation → claim → paste token → app activates.
+
+## Status
+- Production key: ✅ settled (no rebuild). Issuer: ✅ deployed + webhook registered. Delivery: ✅ built + hosted.
+- Blocker to revenue: ⏳ LemonSqueezy merchant-application review (Test mode on) — not code.
