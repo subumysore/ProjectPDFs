@@ -21,6 +21,16 @@ Suite 339/339 + engine-parity 6/6.
   moment the Trusted-Signing build ships, `--signed` + a site rebuild flips every language's install
   page automatically — no copy edits. Round-trip verified; release-manifest tests 12/12.
 
+### Changed — Windows installer is now CODE-SIGNED (SmartScreen wall gone) (2026-07-28)
+- Azure Trusted Signing is **live**: the 1.0.2 installer is Authenticode-signed, chain
+  `Subramanya Mysore → Microsoft ID Verified CS AOC CA 03 → … → Microsoft Identity Verification Root CA 2020`,
+  timestamped. Publisher now shows as **Subramanya Mysore** and SmartScreen no longer warns.
+- Release manifest regenerated with the signed hash + `signed: true`; the install page (26 langs) auto-swapped
+  from the "expect a warning" heads-up to the **"Digitally signed"** note.
+- Fixed `sign-windows.ps1` to write the Trusted Signing `/dmdf` metadata as UTF-8 **without BOM** (a BOM made
+  the dlib throw `'0xEF' is an invalid start of a value`). Proven end-to-end.
+- Concrete provisioned coordinates + the client-secret renewal date recorded in the runbook.
+
 ### Added — Azure Trusted Signing readiness (Windows installer) (2026-07-28)
 - Owner approved the first paid service (revenue-backed) to remove the SmartScreen "Unknown publisher"
   wall: **Azure Trusted Signing** (~US$9.99/mo). See ADR-0026.

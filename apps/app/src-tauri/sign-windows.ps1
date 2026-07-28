@@ -101,7 +101,9 @@ if ($trustedMode) {
     CertificateProfileName = $tsProfile
   }
   $tmpMeta = [System.IO.Path]::GetTempFileName() + '.json'
-  ($meta | ConvertTo-Json) | Set-Content -Path $tmpMeta -Encoding utf8
+  # Write UTF-8 WITHOUT a BOM — the Trusted Signing dlib's JSON parser rejects a leading 0xEF BOM
+  # (Set-Content -Encoding utf8 emits one on Windows PowerShell 5.1).
+  [System.IO.File]::WriteAllText($tmpMeta, ($meta | ConvertTo-Json), (New-Object System.Text.UTF8Encoding($false)))
   Write-Host "[sign-windows] Trusted Signing: account '$tsAccount', profile '$tsProfile', endpoint '$tsEndpoint'"
   $sargs += @('/dlib', $dlib, '/dmdf', $tmpMeta)
 } elseif (-not [string]::IsNullOrWhiteSpace($thumb)) {

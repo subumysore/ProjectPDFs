@@ -64,6 +64,26 @@ Set these **secrets** yourself as **User** env vars (same method as `STRIPE_API_
    `signed` field); the SHA-256 verify block stays. No manual copy edit needed. (Round-trip verified.)
 5. Owner runs `deploy/k8s/publish-site.ps1 -WithBinaries` to publish the signed installer.
 
+## PROVISIONED + PROVEN (2026-07-28)
+Signing is live and verified. Non-secret coordinates (secrets are in the build machine's User env only):
+- **Endpoint** `https://eus.codesigning.azure.net/` · **Account** `polyglotformfill` (East US, Basic) ·
+  **Profile** `ppf-release` (Public Trust, Program type **None**, street/postal EXCLUDED for privacy).
+- **Identity validation**: Individual/Public, **Completed** (valid to 2027-07-28), CN=O=`Subramanya Mysore`.
+- **Signer app**: `ppf-signer` (client `e14c9acf-e83a-44e5-bdb0-d70f9308d5b4`, tenant
+  `6879cedd-2589-418f-af6a-5f8c7b6a5dde`), granted **Artifact Signing Certificate Profile Signer** on the account.
+- **Env vars** on the build machine (User scope): `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
+  (client secret **expires ~2027-01-24** — renew in `ppf-signer` → Certificates & secrets before then).
+- **Dlib**: `Microsoft.Trusted.Signing.Client` NuGet (v1.0.95), `Azure.CodeSigning.Dlib.dll` → `TRUSTED_SIGNING_DLIB`.
+- **Gotcha fixed**: the `/dmdf` metadata JSON must be UTF-8 **without BOM** — a BOM makes the dlib throw
+  `'0xEF' is an invalid start of a value`. `sign-windows.ps1` now writes it BOM-free.
+- **Proof**: 1.0.2 installer signed 2026-07-28, chain `Subramanya Mysore → Microsoft ID Verified CS AOC CA 03
+  → … → Microsoft Identity Verification Root CA 2020`, timestamped. Note the leaf cert is short-lived (~days) —
+  the RFC-3161 **timestamp** keeps the signature valid after it expires, so no re-signing is needed.
+
+To sign a fresh build: export the six env vars (three `AZURE_*` from User scope + the three `TRUSTED_SIGNING_*`
++ `TRUSTED_SIGNING_DLIB`) and run `pnpm tauri build` (the hook signs each artifact), or re-sign a staged file
+directly with `apps/app/src-tauri/sign-windows.ps1 <file>`. Then `release-manifest.mjs … --signed` + rebuild site.
+
 ## Notes
 - Secrets NEVER go in git. The signing certificate's private key is held by the Azure CA (no PFX on
   disk) — a security improvement over a local cert.

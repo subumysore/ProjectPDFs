@@ -1,12 +1,12 @@
 {
   "schema": "ppf.release-manifest/1",
   "version": "1.0.2",
-  "signed": false,
+  "signed": true,
   "artifacts": [
     {
       "name": "PolyglotFormFill-Setup.exe",
-      "bytes": 27514840,
-      "sha256": "e5fa66dfecd26ebb047bed6590ea72973c7b8b668eba477df8bac0a9d8f41d36"
+      "bytes": 27530496,
+      "sha256": "7b8bffffbfffda532feee3520140aced62324de129af62147c1a7368988d207a"
     },
     {
       "name": "polyglotformfill-extension.zip",
