@@ -69,6 +69,17 @@ test("documentImageKey aligns with the extension's shared ontology", () => {
   assert.equal(documentImageKey([]).key, "document_image");
 });
 
+// REGRESSION: a licence FRONT whose name/DOB OCR is weak, leaving only the banner + a bare licence
+// number (e.g. 000026610696). The number must be captured as license_no (NOT cell_phone), which in
+// turn makes the card classify as driver_license_front — not "back". Before the fix the number went
+// to cell_phone, so there was no identity and the front fell through to driver_license_back.
+test("licence front: bare id number → license_no (not cell_phone) → classifies as front", () => {
+  const m = asMap("DRIVER LICENSE\n000026610696\nSAMPLE STATE\nDONOR");
+  assert.equal(m.license_no, "000026610696", "leading-zero number on a DL is the licence number");
+  assert.equal(m.cell_phone, undefined, "must NOT be mislabelled as a phone");
+  assert.equal(documentImageKey(parseFields("DRIVER LICENSE\n000026610696"), { text: "DRIVER LICENSE\n000026610696" }).key, "driver_license_front");
+});
+
 // The BACK of a licence has NO identity fields but DOES carry class/restriction/endorsement text —
 // OCR (no barcode) must still classify it as driver_license_back, so its image saves as a KV pair.
 test("documentImageKey: OCR'd licence back (no barcode) → driver_license_back from text markers", () => {

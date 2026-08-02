@@ -26,6 +26,9 @@ export function documentImageKey(
   const text = opts.text || "";
   if (opts.isBarcodeBack) return { key: "driver_license_back", label: "Driver’s licence — back (barcode)" };
   if (keys.has("passport_no") || PASSPORT_MARKERS.test(text)) return { key: "passport_image", label: "Passport" };
+  // The number-vs-ID-number fix in parseFields now captures a bare licence number as license_no, so a
+  // front whose name/DOB OCR is weak still lands here as identity -> front (that was the real bug: a
+  // licence number was going to cell_phone, leaving NO identity, so the front fell through to "back").
   const hasIdentity = ["first_name", "last_name", "date_of_birth", "address_1"].some((k) => keys.has(k)) || keys.has("license_no");
   if (hasIdentity) return { key: "driver_license_front", label: "Driver’s licence — front" };
   if (BACK_MARKERS.test(text)) return { key: "driver_license_back", label: "Driver’s licence — back" };
@@ -139,8 +142,24 @@ export function parseFields(text: string): ExtractedField[] {
   const email = text.match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
   if (!out["cell_phone"] && !out["license_no"] && !out["id_no"] && !out["passport_no"]) {
-    const phone = text.match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
-    if (phone) put("cell_phone", (phone[0] ?? "").replace(/\s+/g, " ").trim());
+    const numMatch = text.match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
+    if (numMatch) {
+      const raw = (numMatch[0] ?? "").replace(/\s+/g, " ").trim();
+      const digits = raw.replace(/\D/g, "");
+      // On an ID document a bare number is the DOCUMENT number, not a phone — and phone numbers never
+      // begin with several zeros. Route it to the right ID field instead of mislabelling a licence or
+      // passport number as "cell_phone" (the exact misread this guard is meant to prevent: a licence
+      // number like 000026610696 was landing in cell_phone).
+      const idContext = DL_MARKERS.test(text) || PASSPORT_MARKERS.test(text);
+      const looksLikeIdNumber = /^0{2,}/.test(digits);
+      if (idContext || looksLikeIdNumber) {
+        if (PASSPORT_MARKERS.test(text)) put("passport_no", raw);
+        else if (DL_MARKERS.test(text)) put("license_no", raw);
+        else put("id_no", raw);
+      } else {
+        put("cell_phone", raw);
+      }
+    }
   }
 
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
