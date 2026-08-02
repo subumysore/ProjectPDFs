@@ -68,12 +68,23 @@ spec:
             # Keep in step with $BINARIES in publish-site.ps1.
             - name: BINARIES
               value: "PolyglotFormFill-Setup.exe polyglotformfill-extension.zip"
-            # Guide video + captions: served at the STABLE URLs /download/guide.mp4 and
-            # /download/guide.en.srt so the link never changes when the video content is rebuilt
-            # (unlike YouTube). Fetched best-effort - a not-yet-published guide never breaks the pod.
-            # Upload with:  .\deploy\k8s\publish-site.ps1 -WithGuide
+            # Guide video + captions: served at STABLE /download/ URLs so links never change when the
+            # video content is rebuilt (unlike YouTube). English is guide.mp4 / guide.en.{srt,vtt};
+            # each DUBBED language adds guide.<lang>.{mp4,srt,vtt}. VTT is what the site's <track> uses.
+            # Fetched best-effort - a not-yet-published dub never breaks the pod (curl skips 404s).
+            # Keep this list in step with $GUIDE_SRC/$GUIDE_LANGS in publish-site.ps1 and GUIDE_DUBBED
+            # in build-site.mjs. Upload with:  .\deploy\k8s\publish-site.ps1 -WithGuide
             - name: GUIDE
-              value: "guide.mp4 guide.en.srt"
+              value: >-
+                guide.mp4 guide.en.srt guide.en.vtt
+                guide.kn.mp4 guide.kn.srt guide.kn.vtt
+                guide.hi.mp4 guide.hi.srt guide.hi.vtt
+                guide.ta.mp4 guide.ta.srt guide.ta.vtt
+                guide.te.mp4 guide.te.srt guide.te.vtt
+                guide.es.mp4 guide.es.srt guide.es.vtt
+                guide.zh.mp4 guide.zh.srt guide.zh.vtt
+                guide.ko.mp4 guide.ko.srt guide.ko.vtt
+                guide.ja.mp4 guide.ja.srt guide.ja.vtt
           volumeMounts:
             - { name: web, mountPath: /web }
       containers:

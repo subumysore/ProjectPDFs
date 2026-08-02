@@ -215,5 +215,8 @@
   "price.startTrial": "Start free trial",
   "price.buy": "Buy",
   "price.getBusiness": "Get Business",
-  "price.seatsNote": "Choose seats at checkout · 20+ → contact us"
+  "price.seatsNote": "Choose seats at checkout · 20+ → contact us",
+  "guide.title": "See it in two minutes",
+  "guide.sub": "A short, narrated walkthrough. Everything happens on your device.",
+  "guide.ccNote": "Captions available. Shown in your language where a dub exists, otherwise in English."
 }

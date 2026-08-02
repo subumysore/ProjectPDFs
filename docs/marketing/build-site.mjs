@@ -47,6 +47,24 @@ function translator(lang) {
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+// Narrated guide video: which languages have a real dub (video + captions). Any other UI language
+// falls back to the English guide. English keeps its historical stable names (guide.mp4 / guide.en.srt)
+// so the desktop app's pinned /download/guide.mp4 URL never breaks; dubs are guide.<lang>.{mp4,srt}.
+// Keep this set in lockstep with the langs built by `node scripts/build-guide.mjs --lang <lang>` and
+// uploaded by deploy/k8s/publish-site.ps1 (GUIDE_LANGS there is the single source of truth for upload).
+const GUIDE_DUBBED = new Set(["en", "kn", "hi", "ta", "te", "es", "zh", "ko", "ja"]);
+function guideAssets(lang) {
+  const l = GUIDE_DUBBED.has(lang) ? lang : "en";
+  return {
+    lang: l,
+    mp4: l === "en" ? "/download/guide.mp4" : `/download/guide.${l}.mp4`,
+    // HTML <track> needs WebVTT, not SRT — the build/publish step emits a .vtt beside each .srt.
+    vtt: `/download/guide.${l}.vtt`,
+    // the caption track's human label — UI_LANGS maps a code to its native language name string
+    label: UI_LANGS[l] || l,
+  };
+}
+
 // ---- URLs + switcher (language-preserving navigation) ---------------------------------------
 // Each page type has ONE canonical URL per language; the switcher options carry the full localised
 // URL for the SAME page type, so choosing a language keeps you on the page you were reading.
@@ -168,6 +186,16 @@ const LANGBAR_CSS = `
   [dir=rtl] .langbar{justify-content:flex-start}
 `;
 
+// Narrated-guide embed shown in the hero. Language-aware <video> with a caption <track>.
+const GUIDEVID_CSS = `
+  .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
+  .guidevid h2{margin:0 0 6px;font-size:26px}
+  .guidevid .lede{margin:0 0 18px}
+  .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);background:#000}
+  .guidevid .cc-note{margin:10px 0 0;font-size:13px;opacity:.65}
+`;
+
 // ---- landing template -----------------------------------------------------------------------
 function landingPage(lang) {
   const tr = translator(lang);
@@ -183,7 +211,7 @@ function landingPage(lang) {
 <title>${esc(tr("app.name"))} — ${esc(tr("meta.landingTitle"))}</title>
 <meta name="description" content="${esc(tr("meta.landingDesc"))}">
 ${headMeta(lang, "landing", tr)}
-<style>${LANDING_CSS}${LANGBAR_CSS}
+<style>${LANDING_CSS}${LANGBAR_CSS}${GUIDEVID_CSS}
   .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
 </style>
 
@@ -215,6 +243,16 @@ ${switcher(lang, "landing")}
     <a class="btn ghost" href="#get">${esc(tr("hero.cta3"))}</a>
   </div>
   <div class="trustline">${esc(tr("hero.trust"))}</div>
+
+  ${(() => { const g = guideAssets(lang); return `<section class="guidevid" aria-label="${esc(tr("guide.title"))}">
+    <h2>${esc(tr("guide.title"))}</h2>
+    <p class="lede">${esc(tr("guide.sub"))}</p>
+    <video controls preload="none" playsinline poster="${OG_IMAGE}" crossorigin="anonymous">
+      <source src="${g.mp4}" type="video/mp4">
+      <track kind="subtitles" src="${g.vtt}" srclang="${g.lang}" label="${esc(g.label)}" default>
+    </video>
+    <p class="cc-note">${esc(tr("guide.ccNote"))}</p>
+  </section>` })()}
 
   <div class="flow">
     <div class="device">

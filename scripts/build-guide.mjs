@@ -143,7 +143,13 @@ if (files.length > 1) {
     "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-b:a", "160k", video]);
 }
 writeFileSync(resolve(OUT, "captions", SRT_NAME), cues.join("\n"));
+// Also emit WebVTT: the HTML <video><track> element (used on the site's guide embed) requires .vtt,
+// not .srt. VTT is SRT with a "WEBVTT" header and '.' (not ',') as the millisecond separator.
+const VTT_NAME = SRT_NAME.replace(/\.srt$/, ".vtt");
+const vtt = "WEBVTT\n\n" + cues.join("\n").replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, "$1.$2");
+writeFileSync(resolve(OUT, "captions", VTT_NAME), vtt);
 
 console.log(`\n✔ ${dur(video).toFixed(1)}s / ${n - 1} cues`);
 console.log(`  video    ${video}`);
 console.log(`  captions ${resolve(OUT, "captions", SRT_NAME)}`);
+console.log(`  vtt      ${resolve(OUT, "captions", VTT_NAME)}`);
