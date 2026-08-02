@@ -1346,9 +1346,9 @@ export function App() {
             <button onClick={addPoint}>{tr("action.save")}</button>
           </div>
           <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
-            <label style={{ color: "#55666f" }}>Add image (photo / signature):</label>
+            <label style={{ color: "#55666f" }}>Signature or profile photo — attach a single image (no OCR):</label>
             <input
-              placeholder="key (e.g. profile_photo, signature)"
+              placeholder="key (e.g. signature, profile_photo)"
               value={imgKey}
               onChange={(e) => setImgKey(e.currentTarget.value)}
               style={{ padding: 6, ...mono, width: "35%" }}
