@@ -30,6 +30,20 @@ const OUT = resolve(ROOT, "docs/guide/output");
 const M = JSON.parse(readFileSync(resolve(ROOT, "docs/guide/guide-manifest.json"), "utf8"));
 const W = M.width || 1280, FPS = M.fps || 24;
 
+// Optional localisation: `--lang kn` uses output/audio-<lang>/ for the dub and the translated captions
+// from docs/guide/narration-i18n.json; visuals are shared. Outputs *.<lang>.mp4 / *.<lang>.srt.
+const LANG = (() => { const i = process.argv.indexOf("--lang"); return i >= 0 ? process.argv[i + 1] : null; })();
+let LOC = null;
+if (LANG) {
+  const I18N = JSON.parse(readFileSync(resolve(ROOT, "docs/guide/narration-i18n.json"), "utf8"));
+  const segs = I18N.languages?.[LANG]?.segments;
+  if (!segs) { console.error(`No narration for '${LANG}' in narration-i18n.json`); process.exit(1); }
+  LOC = Object.fromEntries(segs.map((s) => [s.img.replace(/\.[a-z0-9]+$/i, ""), s.text]));
+}
+const AUDIO_DIR = LANG ? `audio-${LANG}` : "audio";
+const VID_NAME = LANG ? `PolyglotFormFill-guide.${LANG}.mp4` : "PolyglotFormFill-guide.mp4";
+const SRT_NAME = LANG ? `PolyglotFormFill-guide.${LANG}.srt` : "PolyglotFormFill-guide.en.srt";
+
 const ff = (args) => execFileSync("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...args], { stdio: ["ignore", "ignore", "inherit"] });
 const dur = (f) => parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString().trim());
 const fmt = (t) => {
@@ -60,7 +74,7 @@ let start = 0, n = 1, missing = [];
 
 for (const seg of M.segments) {
   const v = resolve(OUT, "raw", `${seg.id}.mp4`);
-  const a = resolve(OUT, "audio", `${seg.id}.wav`);
+  const a = resolve(OUT, AUDIO_DIR, `${seg.id}.wav`);
   if (!existsSync(v) || !existsSync(a)) { missing.push(seg.id); continue; }
   // Add T seconds of TRAILING SILENCE to each segment: the crossfade then overlaps this silence with
   // the next segment's start, so narration NEVER bleeds/echoes across the cut. Timing stays in sync.
@@ -78,8 +92,10 @@ for (const seg of M.segments) {
     "-c:a", "aac", "-ar", "44100", "-b:a", "160k", outf]);
   concat.push(`file '${outf.replace(/\\/g, "/")}'`);
   durs.push(d); files.push(outf);
-  // captions: split on sentence-ending punctuation FOLLOWED by whitespace/end (keeps URLs whole)
-  const sents = seg.caption.match(/.+?[.!?]+(?=\s|$)/gs) || [seg.caption];
+  // captions: split on sentence-ending punctuation FOLLOWED by whitespace/end (keeps URLs whole).
+  // For a localised build, use the translated caption text (verbatim from narration-i18n.json).
+  const capText = LOC ? (LOC[seg.id] || seg.caption) : seg.caption;
+  const sents = capText.match(/.+?[.!?。！？]+(?=\s|$)/gs) || [capText];
   const totalWords = sents.reduce((x, s) => x + s.trim().split(/\s+/).length, 0);
   let cur = start;
   for (const s of sents) {
@@ -94,7 +110,7 @@ for (const seg of M.segments) {
 
 if (missing.length) console.warn(`\n! Skipped (missing raw/audio): ${missing.join(", ")}`);
 
-const video = resolve(OUT, "video/PolyglotFormFill-guide.mp4");
+const video = resolve(OUT, "video", VID_NAME);
 // SMOOTH: chain every segment with a crossfade DISSOLVE (video xfade + audio acrossfade), so the
 // cut between clips is a calm fade-through rather than a jarring jump. Both streams overlap by T,
 // keeping audio and video in sync; the total shortens by (n-1)*T.
@@ -126,8 +142,8 @@ if (files.length > 1) {
     "-map", "[vout]", "-map", "[aout]", "-c:v", "libx264", "-preset", "slow", "-crf", "18",
     "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-b:a", "160k", video]);
 }
-writeFileSync(resolve(OUT, "captions/PolyglotFormFill-guide.en.srt"), cues.join("\n"));
+writeFileSync(resolve(OUT, "captions", SRT_NAME), cues.join("\n"));
 
 console.log(`\n✔ ${dur(video).toFixed(1)}s / ${n - 1} cues`);
 console.log(`  video    ${video}`);
-console.log(`  captions ${resolve(OUT, "captions/PolyglotFormFill-guide.en.srt")}`);
+console.log(`  captions ${resolve(OUT, "captions", SRT_NAME)}`);
