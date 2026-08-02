@@ -11,7 +11,13 @@ reproducible process to clear it and keep it clear.
 - **2026-08-02** — False-positive report **submitted successfully** to Google Safe Browsing
   (report_error, "This page is safe") for
   `https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe` with the justification below.
-- **TODO** — upload the .exe to VirusTotal + Microsoft WDSI; paste the report URLs here.
+- **2026-08-02** — VirusTotal multi-engine scan: **1/71** — confirmed false positive. Only hit: Sophos
+  "Generic ML PUA" (ML heuristic PUA guess, not a signature). Microsoft, Kaspersky, McAfee's engine, and
+  68 others: Undetected. VT tags: peexe / signed / overlay. Report:
+  https://www.virustotal.com/gui/file/82f98d8afa4cbeabef8c27f3c682b53309a7718ecf9d05b868065d1ac4d14d7c
+  (McAfee's on-device "threat" popup + Chrome "Virus detected" are prevalence/reputation heuristics, NOT
+  the vendors' actual scan engines, both of which return clean on VT.)
+- **TODO** — submit Sophos FP (samples.sophos.com) + McAfee URL dispute (sitelookup.mcafee.com) + MS WDSI.
 - **Re-check cadence:** verify the download in a clean Chrome profile ~weekly; expect the warning to age
   out within days-to-2-weeks as the signed cert accrues download history. If it persists past 2 weeks,
   re-submit report_error and add the VirusTotal link.
