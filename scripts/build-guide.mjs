@@ -18,11 +18,14 @@
 // sentence-ending punctuation (a URL like polyglotformfill.com stays intact) and timed by the
 // running total. Deterministic: same inputs -> same output.
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// Run from ROOT so a colon-free RELATIVE font path works (ffmpeg's drawtext filter can't parse the
+// "C:" drive-letter colon inside a filter argument).
+process.chdir(ROOT);
 const OUT = resolve(ROOT, "docs/guide/output");
 const M = JSON.parse(readFileSync(resolve(ROOT, "docs/guide/guide-manifest.json"), "utf8"));
 const W = M.width || 1280, FPS = M.fps || 24;
@@ -36,6 +39,15 @@ const fmt = (t) => {
 
 const tmp = resolve(OUT, ".build");
 if (!existsSync(tmp)) mkdirSync(tmp, { recursive: true });
+
+// Persistent brand banner shown throughout the whole video (bottom-right teal pill with the site
+// URL). The font is copied from the system to a colon-free RELATIVE path so ffmpeg's drawtext can
+// load it (a "C:" path breaks the filter parser). Not committed — Segoe UI isn't redistributable.
+const bannerFontRel = "docs/guide/output/.build/banner.ttf";
+for (const src of ["C:/Windows/Fonts/seguisb.ttf", "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/arialbd.ttf"]) {
+  try { copyFileSync(src, resolve(ROOT, bannerFontRel)); break; } catch { /* try next */ }
+}
+const BANNER = `drawtext=fontfile=${bannerFontRel}:text=polyglotformfill.com:fontcolor=white:fontsize=30:box=1:boxcolor=0x0D8F83@0.92:boxborderw=16:x=w-tw-44:y=h-th-40`;
 for (const d of ["video", "captions"]) { const p = resolve(OUT, d); if (!existsSync(p)) mkdirSync(p, { recursive: true }); }
 
 const concat = [];
@@ -101,7 +113,7 @@ if (files.length > 1) {
     acc += durs[i] - T;
   }
   const fadeAt = (acc + TAIL - FADE).toFixed(3);
-  fc.push(`${vp}tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE}[vout]`);
+  fc.push(`${vp}tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE},${BANNER}[vout]`);
   fc.push(`${ap}apad=pad_dur=${TAIL},afade=t=out:st=${fadeAt}:d=${FADE}[aout]`);
   ff([...inputs, "-filter_complex", fc.join(";"), "-map", "[vout]", "-map", "[aout]",
     "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
@@ -109,7 +121,7 @@ if (files.length > 1) {
 } else if (files.length === 1) {
   const fadeAt = (durs[0] + TAIL - FADE).toFixed(3);
   ff(["-i", files[0], "-filter_complex",
-    `[0:v]tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE}[vout];[0:a]apad=pad_dur=${TAIL},afade=t=out:st=${fadeAt}:d=${FADE}[aout]`,
+    `[0:v]tpad=stop_mode=clone:stop_duration=${TAIL},fade=t=out:st=${fadeAt}:d=${FADE},${BANNER}[vout];[0:a]apad=pad_dur=${TAIL},afade=t=out:st=${fadeAt}:d=${FADE}[aout]`,
     "-map", "[vout]", "-map", "[aout]", "-c:v", "libx264", "-preset", "slow", "-crf", "18",
     "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-b:a", "160k", video]);
 }
