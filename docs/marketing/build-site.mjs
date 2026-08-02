@@ -100,8 +100,10 @@ function switcher(current, page) {
 
 const HELLO_JS = `
 (function(){
-  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
-    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+  // Every greeting EXCEPT Kannada drifts. Kannada (ನಮಸ್ಕಾರ) is pinned on the right, always visible,
+  // gently swaying in place (the maker's language).
+  var HELLO=["Hello","नमस्ते","Hola","Bonjour","你好","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
     "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
   var bg=document.getElementById("hellobg"); if(!bg) return;
   var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
@@ -113,6 +115,7 @@ const HELLO_JS = `
     el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
     bg.appendChild(el);
   }
+  var k=document.createElement("div"); k.className="kfix"; k.textContent="ನಮಸ್ಕಾರ"; bg.appendChild(k);
 })();`;
 
 // Stripe payment config (Payment Link URLs + PPP promo prefix) provisioned into docs/business/

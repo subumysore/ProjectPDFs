@@ -114,6 +114,17 @@
     100%{transform:translateY(-42px) scale(1.06);opacity:0;}
   }
   @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
+  /* Kannada greeting: pinned on the right, always visible, gently swaying back-and-forth in place
+     (the maker's language) while every other greeting drifts. */
+  .hellobg .kfix{position:absolute;right:4vw;top:50%;font-weight:800;white-space:nowrap;
+    color:var(--teal-ink);opacity:.2;font-size:42px;letter-spacing:-.5px;will-change:transform;
+    animation:kdance 4.6s ease-in-out infinite;}
+  @keyframes kdance{
+    0%{transform:translateY(-50%) translateX(0);}
+    50%{transform:translateY(-50%) translateX(-24px);}
+    100%{transform:translateY(-50%) translateX(0);}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .kfix{animation:none!important;} }
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>

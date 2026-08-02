@@ -160,6 +160,17 @@
     100%{transform:translateY(-42px) scale(1.06);opacity:0;}
   }
   @media (prefers-reduced-motion: reduce){ .hellobg .h{animation:none!important;opacity:.09;} }
+  /* Kannada greeting: pinned on the right, always visible, gently swaying back-and-forth in place
+     (the maker's language) while every other greeting drifts. */
+  .hellobg .kfix{position:absolute;right:4vw;top:50%;font-weight:800;white-space:nowrap;
+    color:var(--teal-ink);opacity:.2;font-size:42px;letter-spacing:-.5px;will-change:transform;
+    animation:kdance 4.6s ease-in-out infinite;}
+  @keyframes kdance{
+    0%{transform:translateY(-50%) translateX(0);}
+    50%{transform:translateY(-50%) translateX(-24px);}
+    100%{transform:translateY(-50%) translateX(0);}
+  }
+  @media (prefers-reduced-motion: reduce){ .hellobg .kfix{animation:none!important;} }
 
   .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
@@ -316,8 +327,10 @@
 })();</script>
   <script>
 (function(){
-  var HELLO=["Hello","ನಮಸ್ಕಾರ","नमस्ते","Hola","Bonjour","你好","ಹಲೋ","こんにちは","مرحبا","Olá","Ciao",
-    "Hallo","Привет","안녕하세요","வணக்கம்","ಸ್ವಾಗತ","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
+  // Every greeting EXCEPT Kannada drifts. Kannada (ನಮಸ್ಕಾರ) is pinned on the right, always visible,
+  // gently swaying in place (the maker's language).
+  var HELLO=["Hello","नमस्ते","Hola","Bonjour","你好","こんにちは","مرحبا","Olá","Ciao",
+    "Hallo","Привет","안녕하세요","வணக்கம்","สวัสดี","Xin chào","হ্যালো","Salam","Merhaba",
     "Habari","Shalom","Γεια","Namaste","Sawubona","Aloha"];
   var bg=document.getElementById("hellobg"); if(!bg) return;
   var N=Math.min(30, Math.max(14, Math.round(window.innerWidth/60)));
@@ -329,6 +342,7 @@
     el.style.animation="hdrift "+dur+"s ease-in-out "+(-Math.random()*dur).toFixed(2)+"s infinite";
     bg.appendChild(el);
   }
+  var k=document.createElement("div"); k.className="kfix"; k.textContent="ನಮಸ್ಕಾರ"; bg.appendChild(k);
 })();</script>
 
   <div style="margin-top:40px">

@@ -47,7 +47,8 @@ const bannerFontRel = "docs/guide/output/.build/banner.ttf";
 for (const src of ["C:/Windows/Fonts/seguisb.ttf", "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/arialbd.ttf"]) {
   try { copyFileSync(src, resolve(ROOT, bannerFontRel)); break; } catch { /* try next */ }
 }
-const BANNER = `drawtext=fontfile=${bannerFontRel}:text=polyglotformfill.com:fontcolor=white:fontsize=30:box=1:boxcolor=0x0D8F83@0.92:boxborderw=16:x=w-tw-44:y=h-th-40`;
+// Banner label includes the scheme; the ':' in "https:" is escaped for the drawtext filter parser.
+const BANNER = `drawtext=fontfile=${bannerFontRel}:text=https\\\\://polyglotformfill.com:fontcolor=white:fontsize=30:box=1:boxcolor=0x0D8F83@0.92:boxborderw=16:x=w-tw-44:y=h-th-40`;
 for (const d of ["video", "captions"]) { const p = resolve(OUT, d); if (!existsSync(p)) mkdirSync(p, { recursive: true }); }
 
 const concat = [];

@@ -15,7 +15,7 @@ mkdirSync(OUT, { recursive: true });
 const nar = JSON.parse(readFileSync(resolve(ROOT, "docs/guide/narration.json"), "utf8"));
 
 const VOICE = "en-US-AndrewNeural";
-const RATE = "-6%";   // calm, unhurried
+const RATE = "+0%";   // natural pace (was -6%; the slow-down read as hesitation)
 for (const s of nar.segments) {
   const stem = s.img.replace(/\.[a-z0-9]+$/i, "");
   const mp3 = resolve(OUT, `${stem}.neural.mp3`);
