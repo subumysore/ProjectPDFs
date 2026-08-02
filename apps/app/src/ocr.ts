@@ -78,6 +78,57 @@ const PREFIX_ALIASES: ReadonlyArray<readonly [string, string]> = LABELS
   .flatMap(([aliases, key]) => aliases.map((a) => [a, key] as const))
   .sort((a, b) => b[0].length - a[0].length);
 
+/** Parse an ICAO-9303 MRZ (TD3 passport 2×44, TD1 ID 3×30, TD2 2×36) — exact, checksummed, OCR-B,
+ *  language-independent. Desktop port of the extension's parse.js parseMrz (shared-vault parity). */
+export function parseMrz(text: string): ExtractedField[] {
+  const out: Record<string, string> = {};
+  const setName = (field: string) => {
+    const p = field.split("<<");
+    const sur = (p[0] || "").replace(/</g, " ").trim();
+    if (sur) out.last_name = sur;
+    const g = (p[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
+    if (g.length) { out.first_name = g[0] ?? ""; if (g.length > 1) out.middle_name = g.slice(1).join(" "); }
+  };
+  const setDob = (s: string) => { const m = (s || "").match(/^(\d{2})(\d{2})(\d{2})$/); if (m) { const yy = +(m[1] ?? "0"); out.date_of_birth = `${m[2]}/${m[3]}/${yy > 30 ? 1900 + yy : 2000 + yy}`; } };
+  const setExp = (s: string) => { const m = (s || "").match(/^(\d{2})(\d{2})(\d{2})$/); if (m) { const yy = +(m[1] ?? "0"); out.passport_expiry_date = `${m[2]}/${m[3]}/${yy < 70 ? 2000 + yy : 1900 + yy}`; } };
+  const setNat = (s: string) => { const n = (s || "").replace(/</g, ""); if (/^[A-Z]{3}$/.test(n)) out.nationality = n; };
+  const setSex = (s: string) => { if (s === "M" || s === "F") out.gender = s; };
+  const lines = (text || "").toUpperCase().split(/\r?\n/)
+    .map((l) => l.replace(/[^A-Z0-9<]/g, ""))
+    .filter((l) => l.length >= 28 && l.length <= 46 && l.includes("<"));
+  const fin = (): ExtractedField[] => Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
+  // TD3 — passport (2×44): line 1 = "P<" + name; line 2 = number + nationality + dob + sex + expiry.
+  const p1 = lines.find((l) => l.length >= 40 && /^P[A-Z<]/.test(l) && l.includes("<<"));
+  const p2 = lines.find((l) => l.length >= 40 && l !== p1 && /^[A-Z0-9<]{9}\d?[A-Z<]{3}\d{6}/.test(l));
+  if (p1 && p2) {
+    setName(p1.slice(5));
+    out.passport_no = p2.slice(0, 9).replace(/</g, "");
+    setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20] ?? ""); setExp(p2.slice(21, 27));
+    return fin();
+  }
+  // TD1 — ID card (3×30): name on line 3, numbers on lines 1–2.
+  const t1 = lines.filter((l) => l.length >= 28 && l.length <= 32);
+  if (t1.length >= 3) {
+    const nameLine = t1.find((l) => l.includes("<<") && !/\d/.test(l)) || t1[2] || "";
+    const l1 = t1.find((l) => /^[A-Z<]{2}[A-Z]{3}\d/.test(l)) || t1[0];
+    const l2 = t1.find((l) => /^\d{6}\d[MF<]/.test(l));
+    setName(nameLine);
+    if (l1) out.id_no = l1.slice(5, 14).replace(/</g, "");
+    if (l2) { setDob(l2.slice(0, 6)); setSex(l2[7] ?? ""); setExp(l2.slice(8, 14)); setNat(l2.slice(15, 18)); }
+    return fin();
+  }
+  // TD2 — 2×36: name on line 1, numbers on line 2.
+  const t2 = lines.filter((l) => l.length >= 34 && l.length <= 38);
+  if (t2.length >= 2) {
+    const l1 = t2.find((l) => l.includes("<<") && !/\d/.test(l)) || t2[0] || "";
+    const l2 = t2.find((l) => l !== l1 && /^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}/.test(l)) || t2[1] || "";
+    setName(l1.slice(5));
+    if (l2) { out.id_no = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20] ?? ""); setExp(l2.slice(21, 27)); }
+    return fin();
+  }
+  return [];
+}
+
 /** Pure text → vault fields. Exported for unit testing (no OCR needed). */
 export function parseFields(text: string): ExtractedField[] {
   const out: Record<string, string> = {};
@@ -100,6 +151,13 @@ export function parseFields(text: string): ExtractedField[] {
     if (key === "__full") putName(value);
     else put(key, value);
   };
+
+  // ICAO-9303 MRZ (the "<<<<" strip on passports and most national IDs) is EXACT, checksummed,
+  // language-independent structured data. Read it FIRST and treat it as authoritative — the printed
+  // visual zone OCRs to garbage (labels like "Prénoms/Nombres" landing in first_name). Seeding out[]
+  // here means the label loop below (put-guarded) can only fill gaps, never overwrite the MRZ. This is
+  // the desktop port of the extension's parse.js parseMrz — the real "works regardless of the image".
+  for (const { ontology_key, value } of parseMrz(text)) out[ontology_key] = value;
 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
