@@ -993,6 +993,30 @@ export function App() {
           {hasPass ? tr("unlock.button") : "Set passphrase & continue"}
         </button>
         {lockMsg && <p style={{ color: "#9a2c2c", fontSize: 13 }}>{lockMsg}</p>}
+        {hasPass && (
+          <p style={{ marginTop: 14 }}>
+            <a
+              href="#"
+              style={{ color: "#9a2c2c", fontSize: 12 }}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (
+                  confirm(
+                    "Forgot your passphrase?\n\nResetting erases your saved vault permanently and starts fresh. This cannot be undone. Continue?",
+                  )
+                ) {
+                  try {
+                    await invoke("reset_vault");
+                  } catch (err) {
+                    setLockMsg(String(err));
+                  }
+                }
+              }}
+            >
+              Forgotten your passphrase? Reset the vault (erases saved data)
+            </a>
+          </p>
+        )}
         <p style={{ color: "#8a8f92", fontSize: 12, marginTop: 20 }}>
           {tr("unlock.note")}
         </p>

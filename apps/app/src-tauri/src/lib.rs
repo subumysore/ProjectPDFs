@@ -134,6 +134,22 @@ fn lock_app(state: State<AppState>) {
     clear_session(&state.data_dir);
 }
 
+/// Forgot-passphrase recovery (parity with the extension's resetVault). Erases the passphrase
+/// verifier + the encrypted vault, then relaunches to a clean first-run "create a passphrase" screen.
+/// This is the ONLY acceptable way out of a forgotten passphrase — a real user must never be asked to
+/// hand-delete files. Destructive by design: the old vault is unrecoverable after this.
+#[tauri::command]
+fn reset_vault(app: tauri::AppHandle, state: State<AppState>) -> Result<(), String> {
+    let dir = state.data_dir.clone();
+    let _ = std::fs::remove_file(lock_path(&dir)); // app-lock.json (passphrase verifier)
+    let _ = std::fs::remove_file(dir.join("vault.db")); // encrypted data
+    let _ = std::fs::remove_file(dir.join("vault.db.v2bak")); // prior-format backup
+    clear_session(&dir);
+    *state.unlocked.lock().unwrap() = false;
+    // Relaunch so the store re-opens empty and the UI returns to first-run setup.
+    app.restart();
+}
+
 /// Guard used by every command that exposes user data.
 fn require_unlocked(state: &State<AppState>) -> Result<(), String> {
     if *state.unlocked.lock().unwrap() {
@@ -1222,6 +1238,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             greet,
+            reset_vault,
             core_modules,
             demo_autofill,
             create_profile,

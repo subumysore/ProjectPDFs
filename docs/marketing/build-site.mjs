@@ -376,8 +376,8 @@ ${switcher(lang, "landing")}
   <h2 class="h2">${esc(tr("get.h2"))}</h2>
   <p class="sub">${esc(tr("get.sub"))}</p>
   <div class="cta">
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("get.win"))}</a>
-    <a class="btn ghost" href="${urlFor(lang, "install")}">${esc(tr("get.ext"))}</a>
+    <a class="btn" href="${urlFor(lang, "install")}#extension">${esc(tr("get.extPrimary"))}</a>
+    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("get.win"))}</a>
     <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
   </div>
   <p class="note">${esc(tr("get.note"))}</p>
@@ -533,7 +533,7 @@ ${switcher(lang, "install")}
   <h1>${esc(tr("install.h1"))}</h1>
   <p class="muted">${esc(tr("install.intro"))}</p>
 
-  <div class="card">
+  <div class="card" id="extension">
     <span class="tag">${esc(tr("install.extTag"))}</span>
     <h2 style="margin-top:0">${esc(tr("install.extH2"))} <span class="ver" data-ver="ext">v${EXT_VER}</span></h2>
     <a class="btn" href="/download/polyglotformfill-extension.zip">${esc(tr("install.extDownload"))}</a>
@@ -564,6 +564,7 @@ ${switcher(lang, "install")}
 
     ${SIGNED ? `<div class="heads">
       <b>${esc(tr("install.signedTitle"))}</b> ${esc(tr("install.signedBody"))}
+      <div style="margin-top:8px">${esc(tr("install.smartscreenTip"))}</div>
     </div>` : `<div class="heads">
       <b>${esc(tr("install.headsTitle"))}</b> ${esc(tr("install.headsBody"))}
       <div class="screen">
