@@ -140,6 +140,7 @@ export function App() {
   const [docImage, setDocImage] = useState<{ url: string; key: string; label: string } | null>(null);
   const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
+  const [scanned, setScanned] = useState(false);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -491,6 +492,7 @@ export function App() {
   async function onDataSource(file: File) {
     setExtracted([]);
     setDocImage(null);
+    setScanned(false);
     setOcrPct(0);
     // Keep the source image as an on-device data URL so the picture itself can be saved too.
     const url = await new Promise<string>((res, rej) => {
@@ -526,6 +528,7 @@ export function App() {
       setErr(String(e));
     }
     setOcrPct(null);
+    setScanned(true);
   }
   async function saveExtracted() {
     if (!selected) return;
@@ -1389,9 +1392,23 @@ export function App() {
                 </div>
               </div>
             )}
-            {ocrPct !== null && <span style={{ marginLeft: 8, fontSize: 12 }}>reading… {ocrPct}%</span>}
+            <style>{`@keyframes ppfspin{to{transform:rotate(360deg)}}`}</style>
+            {ocrPct !== null && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 0", padding: "14px 16px", background: "#eef7f5", border: "1px solid #bfe0d8", borderRadius: 10 }}>
+                <span style={{ width: 22, height: 22, borderRadius: "50%", border: "3px solid #bfe0d8", borderTopColor: "#0a6a60", display: "inline-block", animation: "ppfspin 0.8s linear infinite" }} />
+                <b style={{ fontSize: 14, color: "#0a6a60" }}>Reading your document on-device… {ocrPct}%</b>
+              </div>
+            )}
+            {/* After a scan finishes with no readable text fields, say so explicitly — never leave the
+                user staring at silence wondering whether anything happened. */}
+            {ocrPct === null && scanned && extracted.length === 0 && (
+              <p style={{ margin: "10px 0", padding: "10px 12px", background: "#fff7ed", border: "1px solid #f0d9b8", borderRadius: 8, fontSize: 13 }}>
+                Read the image, but found no text fields to extract{docImage ? " — you can still save the picture itself below." : ". Try the BACK (barcode) of a licence, or a sharper, well-lit photo."}
+              </p>
+            )}
             {(extracted.length > 0 || docImage) && (
               <div style={{ marginTop: 8 }}>
+                {extracted.length > 0 && <div style={{ fontSize: 13, color: "#0a6a60", fontWeight: 600, margin: "4px 0" }}>Found {extracted.length} field{extracted.length > 1 ? "s" : ""} — review before saving:</div>}
                 <ul style={{ margin: "6px 0" }}>
                   {extracted.map((f) => (
                     <li key={f.ontology_key} style={mono}>
