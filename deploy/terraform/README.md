@@ -9,7 +9,7 @@ the console clicking. FreeDNS is the only manual step (no Terraform provider exi
 - Security list: ingress **22, 80, 443**; egress all
 - One compute instance (Ubuntu 22.04, image auto-selected for the shape/arch), public IP
 - cloud-init runs [`docs/marketing/site/install-on-vm.sh`](../../docs/marketing/site/install-on-vm.sh)
-  on first boot → Caddy serves `polyglotformfill.mooo.com` with a Let's Encrypt cert.
+  on first boot → Caddy serves `polyglotformfill.com` with a Let's Encrypt cert.
 
 ## Prereqs
 - **Terraform** installed.
@@ -32,11 +32,11 @@ terraform apply     # type 'yes'
 `apply` prints the **public IP** and next steps.
 
 ## The one manual step (DNS)
-In FreeDNS, set the **A record** for `polyglotformfill.mooo.com` → the **public IP** from
+In FreeDNS, set the **A record** for `polyglotformfill.com` → the **public IP** from
 the output. Within a few minutes of it resolving, HTTPS comes up automatically. Verify:
 ```bash
-curl -I https://polyglotformfill.mooo.com/
-curl -I https://polyglotformfill.mooo.com/privacy/
+curl -I https://polyglotformfill.com/
+curl -I https://polyglotformfill.com/privacy/
 ```
 
 ## Notes

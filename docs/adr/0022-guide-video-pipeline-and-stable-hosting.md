@@ -39,7 +39,7 @@ byte-for-byte.
 **4. The canonical guide is self-hosted for a permanent URL.** `publish-site.ps1 -WithGuide` uploads
 `guide.mp4` + `guide.en.srt` as their own Object Storage objects (excluded from the site tarball,
 exactly like the installers under ADR-0019), served forever at
-`https://polyglotformfill.mooo.com/download/guide.{mp4,en.srt}`. `deploy/k8s/site.yaml` fetches them
+`https://polyglotformfill.com/download/guide.{mp4,en.srt}`. `deploy/k8s/site.yaml` fetches them
 **best-effort** (`curl` without `-f`, `|| skip`) so a not-yet-published guide never breaks the pod,
 unlike the required installers. Rebuilding the content never changes the URL.
 

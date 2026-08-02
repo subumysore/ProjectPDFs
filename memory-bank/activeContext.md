@@ -68,7 +68,7 @@ video whose content matches the current .srt). CWS promo field left blank on pur
 The guide/sales video is now a repeatable pipeline, and it is PUBLISHED (owner said "run the publish").
 - **Build:** `node scripts/build-guide.mjs` (`make guide`) — data-driven from `docs/guide/guide-manifest.json`,
   muxes `output/raw/<id>.mp4` + `output/audio/<id>.wav`, concatenates, writes video + `.srt`. Amy (Piper) voice.
-- **Hosted (LIVE, verified 200):** `https://polyglotformfill.mooo.com/download/guide.mp4` +
+- **Hosted (LIVE, verified 200):** `https://polyglotformfill.com/download/guide.mp4` +
   `/download/guide.en.srt` — via `publish-site.ps1 -WithGuide` (own Object Storage objects, excluded from
   the tarball like installers; `site.yaml` fetches them best-effort). URL never changes on rebuild.
   See ADR-0022 and [[guide-video-pipeline]].
@@ -141,7 +141,7 @@ the executable. Checked in, not translated at runtime (deterministic, reviewable
 ## DEPLOYED AND VERIFIED LIVE (2026-07-23, later session)
 Fill now works in every script the engine lists (16), on both apps, and it is live.
 - **Published** via `publish-site.ps1 -WithBinaries`; downloaded back from
-  polyglotformfill.mooo.com as a user would: both artifacts **hash-match the manifest**,
+  polyglotformfill.com as a user would: both artifacts **hash-match the manifest**,
   installer runs silent (exit 0), registers **1.0.0**, app launches, unlocks the real vault,
   all five tabs render. Screenshots in `%TMP%\ppf-live\`.
 - **Installer 29.9 MB → 23.7 MB** — desktop fonts are no longer bundled; `script_font` (Rust)
@@ -277,7 +277,7 @@ Artefacts on the user's Desktop: `PPF-Test-2026-07-23/` (before/after PDFs, BUGS
   `forms`/`lang` `.test.mjs` + a `test` script in the extension package (`pnpm -r test`),
   **42 tests green**. Goal: convert the manual per-change testing into fast regression tests.
 - **Live product-iteration session against the running extension** (user testing each change;
-  published via `deploy/publish-extension.ps1` to polyglotformfill.mooo.com; local dev = Load
+  published via `deploy/publish-extension.ps1` to polyglotformfill.com; local dev = Load
   unpacked `apps/extension`, then Reload). Everything on `master`, committed locally, **not pushed**
   (20-day hold).
 - **Shipped this session:** on-device ID capture (camera/image OCR + **PDF417 back-of-licence

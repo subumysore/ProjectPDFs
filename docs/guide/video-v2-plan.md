@@ -38,7 +38,7 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 ## Segment table (order = final cut)
 | # | TELL (narration) | SHOW (visual) |
 |---|---|---|
-| 1 | Brand + "polyglotformfill.mooo.com" | URL title card |
+| 1 | Brand + "polyglotformfill.com" | URL title card |
 | 2 | Passport, school, job, medical — the SAME name/address/DOB over and over; one profile fills them all | John Doe's saved data, then it filling a **Passport**, **School**, **Job** form (same data) |
 | 3 | Build your profile in seconds — snap an ID | ID capture → 7 fields land in the vault |
 | 4 | A dead scan with no boxes becomes a live form | Flat PDF → Detect fields → fillable boxes appear |
@@ -52,7 +52,7 @@ something, the screen demonstrates that exact thing on a real form. Built from t
 | 10 | Any online form fills in one click too | The browser **extension** on a real web form: click "Fill this page" → **THE WEB FORM's fields populate on screen** (empty → filled). NEVER the desktop app / home page. CLEAN CUTOVER: browser appears only when the voice starts on the extension |
 | 11 | Read any form in your language — 26 of them | Website language switch to **Kannada** |
 | 12 | Everything on your device; we never see it | The privacy panel |
-| 13 | Get it free at polyglotformfill.mooo.com | URL title card |
+| 13 | Get it free at polyglotformfill.com | URL title card |
 
 ## Scenario forms to build (AcroForm PDFs, all fill from ONE John Doe profile)
 Each includes the controls its narration needs, so nothing is claimed-but-not-shown:

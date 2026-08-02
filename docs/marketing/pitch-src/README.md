@@ -3,8 +3,8 @@
 Everything is generated on-device — no external services, nothing uploaded.
 
 ## Assets produced
-- **Pitch video:** https://polyglotformfill.mooo.com/pitch/ (embed) ·
-  https://polyglotformfill.mooo.com/pitch/PolyglotFormFill-pitch.mp4 (direct, ~1:48)
+- **Pitch video:** https://polyglotformfill.com/pitch/ (embed) ·
+  https://polyglotformfill.com/pitch/PolyglotFormFill-pitch.mp4 (direct, ~1:48)
 - **Store screenshots (1280×800, 24-bit no-alpha):** `dist/store-assets/screenshot-1..5.png`
 
 ## How to rebuild

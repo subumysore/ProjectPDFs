@@ -1,7 +1,7 @@
 # Host PolyglotFormFill on your Oracle Cloud Free Tier VM
 
-End result: `https://polyglotformfill.mooo.com` serving the landing page, with
-`https://polyglotformfill.mooo.com/privacy/` for the privacy policy — automatic HTTPS.
+End result: `https://polyglotformfill.com` serving the landing page, with
+`https://polyglotformfill.com/privacy/` for the privacy policy — automatic HTTPS.
 
 You have an Oracle VM already (the one behind `hospital-nexus.mooo.com → 129.80.176.230`).
 You can reuse it (add a second site) or spin up another Always-Free VM. Below assumes an
@@ -10,9 +10,9 @@ You can reuse it (add a second site) or spin up another Always-Free VM. Below as
 ---
 
 ## Step 1 — Point the subdomain at your Oracle VM (FreeDNS)
-In FreeDNS → **Subdomains**, edit `polyglotformfill.mooo.com`:
+In FreeDNS → **Subdomains**, edit `polyglotformfill.com`:
 - Change the **A** record from `45.37.194.118` to **`<VM_IP>`** (your Oracle VM's public IP).
-- Save. (Propagation: minutes.) Verify from your PC: `nslookup polyglotformfill.mooo.com`.
+- Save. (Propagation: minutes.) Verify from your PC: `nslookup polyglotformfill.com`.
 
 ## Step 2 — Open ports 80 and 443 (Oracle has TWO firewalls — do both)
 **(a) Cloud firewall — Security List / NSG:** Oracle Console → Networking → your VCN →
@@ -59,14 +59,14 @@ sudo chown -R caddy:caddy /var/www/polyglotformfill
 sudo systemctl restart caddy
 sudo systemctl status caddy --no-pager
 ```
-Caddy will automatically obtain a Let's Encrypt certificate for `polyglotformfill.mooo.com`
+Caddy will automatically obtain a Let's Encrypt certificate for `polyglotformfill.com`
 (this needs Steps 1–2 done first, so port 80/443 reach the VM and DNS resolves).
 
 ## Step 5 — Verify
 From your PC:
 ```bash
-curl -I https://polyglotformfill.mooo.com/
-curl -I https://polyglotformfill.mooo.com/privacy/
+curl -I https://polyglotformfill.com/
+curl -I https://polyglotformfill.com/privacy/
 ```
 Both should return `HTTP/2 200`. Open the site in a browser — HTTPS padlock, landing page,
 and the privacy link working. That privacy URL is what you give the Chrome Web Store.

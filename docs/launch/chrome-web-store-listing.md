@@ -29,12 +29,12 @@ field into the matching box. Keep the manifest `key` handling in mind (see botto
   device. Our servers only serve downloadable assets (fonts, language models); they never receive
   your content. No analytics, no tracking, no content telemetry.
 
-  ▶ Watch the 5-minute walkthrough: https://polyglotformfill.mooo.com/download/guide.mp4
+  ▶ Watch the 5-minute walkthrough: https://polyglotformfill.com/download/guide.mp4
 
 - **Promotional video (LEAVE BLANK — deliberately):** The field only accepts a YouTube URL, and
   Google locks API-uploaded videos to private on an unverified project — so we do NOT maintain a
   YouTube copy. The walkthrough is self-hosted (link in the description above, and a permanent URL:
-  `https://polyglotformfill.mooo.com/download/guide.mp4`). Leaving this optional field empty is
+  `https://polyglotformfill.com/download/guide.mp4`). Leaving this optional field empty is
   normal and expected; the screenshots below carry the visual story. If a public YouTube presence is
   ever wanted, upload manually in YouTube Studio and paste the long `https://www.youtube.com/watch?v=<id>`
   form here (it rejects `youtu.be/…`).
@@ -83,7 +83,7 @@ field into the matching box. Keep the manifest `key` handling in mind (see botto
   - Key honest framing: all personal data stays on the user's device (client-side only); we operate
     no server that receives it.
 
-- **Privacy policy URL (required):** https://polyglotformfill.mooo.com/privacy
+- **Privacy policy URL (required):** https://polyglotformfill.com/privacy
   (A privacy policy page must be live at this URL before submitting — see docs/launch task.)
 
 ## Remote-code / MV3 compliance note (for the reviewer, if asked)

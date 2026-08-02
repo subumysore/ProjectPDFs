@@ -62,8 +62,8 @@ The only check that counts is downloading what the public downloads:
 
 ```powershell
 # hashes must match the manifest the site serves
-Invoke-WebRequest https://polyglotformfill.mooo.com/download/release-manifest.json -OutFile m.json
-Invoke-WebRequest https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe -OutFile s.exe
+Invoke-WebRequest https://polyglotformfill.com/download/release-manifest.json -OutFile m.json
+Invoke-WebRequest https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe -OutFile s.exe
 (Get-FileHash s.exe -Algorithm SHA256).Hash
 ```
 

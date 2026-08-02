@@ -24,7 +24,7 @@ profiles + encrypted device sync.
 
 ## 3. Webhook (order → token)
 1. Lemon Squeezy → **Settings → Webhooks → +**.
-2. **Callback URL:** the deployed `webhook.mjs` endpoint (see §5). e.g. `https://lic.polyglotformfill.mooo.com/ls`
+2. **Callback URL:** the deployed `webhook.mjs` endpoint (see §5). e.g. `https://lic.polyglotformfill.com/ls`
 3. **Events:** check **`order_created`**.
 4. Copy the **Signing secret** → this is `LS_WEBHOOK_SECRET` (send it to me / set it in the deploy env).
 

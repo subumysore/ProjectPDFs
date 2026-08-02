@@ -104,7 +104,7 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 
 // The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send only
 // our random device id — never user content). This is the ONE sanctioned network call at trial start.
-const ISSUER_TRIAL_URL = "https://polyglotformfill.mooo.com/issuer/trial";
+const ISSUER_TRIAL_URL = "https://polyglotformfill.com/issuer/trial";
 
 /**
  * Ensure this install has a trial: if there's no paid license and no trial has EVER been minted

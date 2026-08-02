@@ -34,7 +34,11 @@ public class Rec{
 "@
 [Rec]::SetProcessDPIAware() | Out-Null
 
-$p = Get-Process -Name app -ErrorAction SilentlyContinue | Where-Object MainWindowTitle -eq 'PolyglotFormFill' | Select-Object -First 1
+$cands = Get-Process -Name app -ErrorAction SilentlyContinue | Where-Object MainWindowTitle -eq 'PolyglotFormFill'
+# SAFETY: when an ISOLATED demo instance is running (built into a temp target dir), record ONLY that
+# one — never the user's real-data instance. Match by the executable path.
+$iso = $cands | Where-Object { $_.Path -like '*ppf-video-target*' } | Select-Object -First 1
+$p = if ($iso) { $iso } else { $cands | Select-Object -First 1 }
 if (-not $p) { throw "The app is not running. Launch it (maximised) first." }
 [Rec]::ShowWindow($p.MainWindowHandle, 3) | Out-Null   # maximise
 [Rec]::SetForegroundWindow($p.MainWindowHandle) | Out-Null

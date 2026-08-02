@@ -260,16 +260,16 @@ Suite 339/339 + engine-parity 6/6.
   Extends ADR-0023.
 - **Guide video rebuilt** via the ADR-0022 pipeline: **dynamic animated cards**, a **before/after
   hero**, **real in-browser extension + live translation demos**, and **neural narration**. Served at
-  the stable `https://polyglotformfill.mooo.com/download/guide.{mp4,en.srt}` (URL unchanged on rebuild).
+  the stable `https://polyglotformfill.com/download/guide.{mp4,en.srt}` (URL unchanged on rebuild).
 - **Landing page:** added a **hero section** and dedicated **niche sections** (immigration/relocation,
   cross-border freelancers/SMBs, privacy/crypto), matching the equal-weight three-niche positioning.
 
 ### Added — guide video: automated pipeline + self-hosted at a stable URL (2026-07-24)
 - **One-command rebuild:** `node scripts/build-guide.mjs` (`make guide`) assembles the narrated video +
   captions from `docs/guide/guide-manifest.json` + per-segment clips/narration. Deterministic; the caption
-  splitter keeps URLs (polyglotformfill.mooo.com) intact.
+  splitter keeps URLs (polyglotformfill.com) intact.
 - **Self-hosted at a permanent URL:** `publish-site.ps1 -WithGuide` serves the video + captions at
-  `https://polyglotformfill.mooo.com/download/guide.{mp4,en.srt}` (own Object Storage objects, excluded from
+  `https://polyglotformfill.com/download/guide.{mp4,en.srt}` (own Object Storage objects, excluded from
   the site tarball like installers; `site.yaml` fetches them best-effort so a missing guide never breaks the
   pod). The link never changes when the content is rebuilt — the fix for YouTube minting a new URL each time.
   **Published and verified live (HTTP 200).** See ADR-0022.
@@ -484,7 +484,7 @@ harness rather than the product, and are recorded as such rather than "fixed".
   and the correct order of operations.
 
 ### Verified — 1.0.0 downloaded from the live site, scanned, installed and run
-- Downloaded from `polyglotformfill.mooo.com` as a user would; SHA-256 matched the published
+- Downloaded from `polyglotformfill.com` as a user would; SHA-256 matched the published
   manifest. One attempt arrived truncated (17.7 MB of 29.9 MB, connection reset) and **the hash
   check caught it** — the integrity story doing exactly its job.
 - Windows Defender scan: **no threats** (exit 0). Authenticode: `NotSigned`, as designed.

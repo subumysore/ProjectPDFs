@@ -15,7 +15,7 @@ Adopt the **Tauri v2 updater** with our **own signed update feed**.
 
 - **Plugins**: `tauri-plugin-updater` + `tauri-plugin-process` (for relaunch); capabilities add
   `updater:default` + `process:allow-restart`.
-- **Feed**: `plugins.updater.endpoints = ["https://polyglotformfill.mooo.com/download/latest.json"]`,
+- **Feed**: `plugins.updater.endpoints = ["https://polyglotformfill.com/download/latest.json"]`,
   a static JSON served DOWNWARD from our asset host (inbound download only — no user content leaves; the
   update check sends just the current version, which is not user data). `bundle.createUpdaterArtifacts`
   makes the build emit a per-installer `.sig`; `latest.json` carries `{version, notes, platforms:

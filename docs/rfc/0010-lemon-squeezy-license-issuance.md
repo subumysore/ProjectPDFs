@@ -84,7 +84,7 @@ framework-agnostic `handleWebhook(raw, signature, opts)` core in `scripts/licens
 
 ### Recommended issuer hosting
 **Recommended: a tiny pod on the existing OKE cluster** that already hosts the site
-(`polyglotformfill.mooo.com`, `publish-site.ps1`). Rationale for *no-budget-until-revenue*: zero new
+(`polyglotformfill.com`, `publish-site.ps1`). Rationale for *no-budget-until-revenue*: zero new
 account/vendor, the cluster is already paid for, and secret handling (the private key + `LS_WEBHOOK_SECRET`)
 uses Kubernetes Secrets we already operate. The issuer is stateless and trivially small.
 **Fallback: a Cloudflare Worker or Vercel function** (both free-tier, no fixed cost) if we'd rather keep

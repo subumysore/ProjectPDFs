@@ -59,7 +59,7 @@ function urlFor(lang, page) {
 }
 
 // Canonical origin + a share image (existing asset). Used for SEO + social cards.
-const SITE_ORIGIN = "https://polyglotformfill.mooo.com";
+const SITE_ORIGIN = "https://polyglotformfill.com";
 const OG_IMAGE = `${SITE_ORIGIN}/download/before-after.jpg`;
 
 // SEO + social <head> block: canonical, Open Graph, Twitter card, and hreflang alternates for

@@ -112,7 +112,7 @@ if (has("--captions")) {
   const file = resolve(argv.find((a) => !a.startsWith("--") && a.endsWith(".mp4")) || "docs/guide/output/video/PolyglotFormFill-guide.mp4");
   if (!existsSync(file)) { console.error("video not found: " + file + " — run `node scripts/build-guide.mjs` first."); process.exit(1); }
   const title = opt("--title", "PolyglotFormFill — read & write any form, in any language, privately");
-  const desc = opt("--description", "PolyglotFormFill fills any form — PDF, Word, Excel, or web — from your encrypted on-device vault, in 26 languages. Nothing leaves your device. Free during the beta at polyglotformfill.mooo.com");
+  const desc = opt("--description", "PolyglotFormFill fills any form — PDF, Word, Excel, or web — from your encrypted on-device vault, in 26 languages. Nothing leaves your device. Free during the beta at polyglotformfill.com");
   const privacy = opt("--privacy", "public");
   const id = await uploadVideo(access, file, title, desc, privacy);
   // Auto-attach the matching captions (this cut's .srt) — same command, no second step.

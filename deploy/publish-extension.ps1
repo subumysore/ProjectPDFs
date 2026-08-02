@@ -1,5 +1,5 @@
 # One command: rebuild the browser-extension .zip from apps/extension and publish it
-# to https://polyglotformfill.mooo.com/download/ (rebuilds the site tarball, uploads to
+# to https://polyglotformfill.com/download/ (rebuilds the site tarball, uploads to
 # Object Storage, restarts the OKE pods).
 #
 # Usage (PowerShell):  .\deploy\publish-extension.ps1
@@ -46,7 +46,7 @@ Write-Host "2/4  Publishing the site (tar -> Object Storage -> restart pods)..."
 Write-Host "3/4  Chrome Web Store..." -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot "publish-webstore.ps1")
 
-Write-Host "4/4  Done. Public download: https://polyglotformfill.mooo.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
+Write-Host "4/4  Done. Public download: https://polyglotformfill.com/download/polyglotformfill-extension.zip" -ForegroundColor Green
 Write-Host ""
 Write-Host "NOTE: this publishes the DOWNLOADABLE zip to the website. It does NOT load the" -ForegroundColor Yellow
 Write-Host "      extension into your Chrome (Chrome has no CLI for that)." -ForegroundColor Yellow

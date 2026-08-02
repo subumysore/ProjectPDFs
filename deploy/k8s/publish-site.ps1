@@ -1,4 +1,4 @@
-# Publish the marketing site to the OKE-hosted polyglotformfill.mooo.com.
+# Publish the marketing site to the OKE-hosted polyglotformfill.com.
 # One command: rebuild -> repackage -> upload to Object Storage -> restart pods
 # (the init container re-downloads the fresh tarball on restart).
 #
@@ -108,7 +108,7 @@ if ($WithGuide) {
     $ErrorActionPreference = "Stop"
     if ($code -ne 0) { throw "oci upload of '$name' failed (exit $code)" }
   }
-  Write-Host "     Guide published: https://polyglotformfill.mooo.com/download/guide.mp4 (same URL every rebuild)." -ForegroundColor Green
+  Write-Host "     Guide published: https://polyglotformfill.com/download/guide.mp4 (same URL every rebuild)." -ForegroundColor Green
 } else {
   Write-Host "3c/4 Skipping the guide video. Use -WithGuide after 'node scripts/build-guide.mjs'." -ForegroundColor Yellow
 }
@@ -117,4 +117,4 @@ Write-Host "4/4  Restarting pods to pull the new content..." -ForegroundColor Cy
 kubectl -n $K8S_NS rollout restart "deploy/$DEPLOY"
 kubectl -n $K8S_NS rollout status  "deploy/$DEPLOY"
 
-Write-Host "`nPublished. https://polyglotformfill.mooo.com is now serving the latest build." -ForegroundColor Green
+Write-Host "`nPublished. https://polyglotformfill.com is now serving the latest build." -ForegroundColor Green

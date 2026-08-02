@@ -21,7 +21,7 @@ variable "ssh_public_key" {
 variable "domain" {
   description = "The hostname to serve (must be pointed at the instance's public IP in DNS)"
   type        = string
-  default     = "polyglotformfill.mooo.com"
+  default     = "polyglotformfill.com"
 }
 
 variable "ad_index" {

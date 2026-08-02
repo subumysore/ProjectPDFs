@@ -27,7 +27,7 @@ identifier** to the request (that would create a tracking record).
 ## Decision
 
 Host the guide video (and future rich docs) on the existing OKE asset host
-(`polyglotformfill.mooo.com`). Apps fetch it **downward**, gated by an **app-level** capability —
+(`polyglotformfill.com`). Apps fetch it **downward**, gated by an **app-level** capability —
 not a user-level one:
 
 - **Edge gate:** the asset is served only when the request carries a per-release signed capability

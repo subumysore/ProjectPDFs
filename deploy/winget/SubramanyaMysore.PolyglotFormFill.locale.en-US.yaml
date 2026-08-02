@@ -3,11 +3,11 @@ PackageIdentifier: SubramanyaMysore.PolyglotFormFill
 PackageVersion: 1.0.2
 PackageLocale: en-US
 Publisher: Subramanya Mysore
-PublisherUrl: https://polyglotformfill.mooo.com
-PublisherSupportUrl: https://polyglotformfill.mooo.com
-PrivacyUrl: https://polyglotformfill.mooo.com/privacy/
+PublisherUrl: https://polyglotformfill.com
+PublisherSupportUrl: https://polyglotformfill.com
+PrivacyUrl: https://polyglotformfill.com/privacy/
 PackageName: PolyglotFormFill
-PackageUrl: https://polyglotformfill.mooo.com
+PackageUrl: https://polyglotformfill.com
 License: Proprietary
 Copyright: Copyright (c) 2026 Subramanya Mysore
 ShortDescription: Fill any form in any language, entirely on your own device.
@@ -29,6 +29,6 @@ Tags:
 - translation
 - privacy
 - offline
-ReleaseNotesUrl: https://polyglotformfill.mooo.com
+ReleaseNotesUrl: https://polyglotformfill.com
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

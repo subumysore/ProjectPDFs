@@ -1,7 +1,7 @@
 # Caddy serves the static site AND auto-provisions HTTPS (Let's Encrypt).
-# Requires: DNS polyglotformfill.mooo.com -> this VM's public IP, and ports 80+443
+# Requires: DNS polyglotformfill.com -> this VM's public IP, and ports 80+443
 # open in BOTH the Oracle Security List and the VM's OS firewall.
-polyglotformfill.mooo.com {
+polyglotformfill.com {
 	root * /var/www/polyglotformfill
 	file_server
 	encode gzip

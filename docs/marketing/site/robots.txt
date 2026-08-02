@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://polyglotformfill.mooo.com/sitemap.xml
+Sitemap: https://polyglotformfill.com/sitemap.xml

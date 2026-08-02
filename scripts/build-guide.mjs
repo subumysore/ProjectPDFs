@@ -15,7 +15,7 @@
 // Each segment: video is scaled to the manifest width, run at the manifest fps, and its LAST FRAME
 // is frozen to cover the narration length (so a short clip never cuts the voice off), then trimmed
 // to exactly the audio duration. Segments are concatenated losslessly. Captions are split on
-// sentence-ending punctuation (a URL like polyglotformfill.mooo.com stays intact) and timed by the
+// sentence-ending punctuation (a URL like polyglotformfill.com stays intact) and timed by the
 // running total. Deterministic: same inputs -> same output.
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";

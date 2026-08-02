@@ -450,7 +450,7 @@ fn check_license(dir: &std::path::Path) -> LicenseStatus {
 
 // The issuer endpoint that mints a device-bound 7-day trial (served DOWNWARD to us; we send only a
 // one-way device-id HASH — never user content or raw hardware ids, so the privacy invariant holds).
-const ISSUER_TRIAL_URL: &str = "https://polyglotformfill.mooo.com/issuer/trial";
+const ISSUER_TRIAL_URL: &str = "https://polyglotformfill.com/issuer/trial";
 
 /// Ensure this install has an entitlement: if already licensed (paid or an active trial), return
 /// it; otherwise, unless a trial was already consumed here, mint ONE 7-day device-bound trial
@@ -941,7 +941,7 @@ async fn download_form(url: String) -> Result<tauri::ipc::Response, String> {
 // demand, verified against a pinned hash, and cached on-device for offline playback. The
 // request carries an APP-LEVEL capability (same for every install of a release) so the edge
 // can serve it only to genuine app builds — it identifies an app, never a user (no tracking).
-const GUIDE_URL: &str = "https://polyglotformfill.mooo.com/app-assets/guide.mp4";
+const GUIDE_URL: &str = "https://polyglotformfill.com/app-assets/guide.mp4";
 const GUIDE_SHA256: &str = "560411054e3d89316594d24c0e6be7ba1d83cc480b53eac1c4a68b236dbc6643";
 /// Per-release app capability. Rotated each release; NOT a user/device identifier.
 const APP_ASSET_TOKEN: &str = "ppf-app-2026-07-beta";

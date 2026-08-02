@@ -13,7 +13,7 @@
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
 # Output to the SITE asset-host staging dir (NOT the app bundle — ADR-0019). publish-site uploads
-# it to polyglotformfill.mooo.com/app-assets/guide.mp4, gated to app builds. It's *.mp4 → gitignored.
+# it to polyglotformfill.com/app-assets/guide.mp4, gated to app builds. It's *.mp4 → gitignored.
 $slides = Join-Path $root "docs\guide\slides"
 $work = Join-Path $env:TEMP "ppf-guide"
 $assetDir = Join-Path $root "docs\marketing\site\app-assets"

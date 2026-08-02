@@ -149,7 +149,7 @@ const s5 = page(`
     <p class="sub" style="max-width:640px">Stop retyping the same details. Stop guessing at forms in a language you don't read. PolyglotFormFill does it in one click — privately.</p>
     <div style="display:flex;gap:14px;align-items:center;margin-top:34px">
       <span class="btn" style="font-size:16px;padding:14px 22px">Add to Chrome — Free</span>
-      <span class="muted" style="color:#c7cdec;font-size:15px">polyglotformfill.mooo.com</span>
+      <span class="muted" style="color:#c7cdec;font-size:15px">polyglotformfill.com</span>
     </div>
     ${chips(["Chrome extension","Desktop app","Encrypted backup & sync"])}
   </div>`);

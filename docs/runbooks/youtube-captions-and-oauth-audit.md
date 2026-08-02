@@ -4,7 +4,7 @@ Everything the automation needs, pre-filled. The console/browser clicks can only
 owner (their Google account); the scripts and answers are ready so each step is trivial.
 
 Context: the guide video is self-hosted at the STABLE url
-`https://polyglotformfill.mooo.com/download/guide.mp4` (updated by `publish-site.ps1 -WithGuide`).
+`https://polyglotformfill.com/download/guide.mp4` (updated by `publish-site.ps1 -WithGuide`).
 YouTube is needed ONLY if you keep a public YouTube copy (e.g. for the Chrome Web Store promo field,
 which is otherwise best left blank — see `docs/launch/chrome-web-store-listing.md`).
 
@@ -53,9 +53,9 @@ Submit the Google Cloud project for OAuth verification to unlock PUBLIC API uplo
 pre-filled (Google's OAuth consent screen → "Publish app" → verification):
 
 - **App name:** PolyglotFormFill
-- **App homepage:** https://polyglotformfill.mooo.com
-- **Privacy policy:** https://polyglotformfill.mooo.com/privacy   (live, HTTP 200)
-- **Authorized domain:** polyglotformfill.mooo.com
+- **App homepage:** https://polyglotformfill.com
+- **Privacy policy:** https://polyglotformfill.com/privacy   (live, HTTP 200)
+- **Authorized domain:** polyglotformfill.com
 - **Scopes requested & justification:**
   - `.../auth/youtube.upload` — "Publish our own product's guide/marketing videos to our own YouTube
     channel from a release script. Used only by the developer, on our own videos; no access to any

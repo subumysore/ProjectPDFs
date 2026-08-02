@@ -2,7 +2,7 @@
 # PolyglotFormFill — one-shot installer for an Oracle Cloud VM.
 # Works on Ubuntu/Debian (apt) AND Oracle Linux / RHEL (dnf/yum), x86_64 and ARM64.
 # Usage:   sudo bash install-on-vm.sh [domain]
-# Default domain: polyglotformfill.mooo.com
+# Default domain: polyglotformfill.com
 #
 # Automates: open ports 80/443 (firewalld or iptables), install Caddy, deploy the
 # embedded site, configure Caddy, start it (Caddy auto-gets a Let's Encrypt cert).
@@ -12,7 +12,7 @@
 #   2) Oracle Console: VCN Security List -> Ingress rules for TCP 80 and 443 (0.0.0.0/0).
 set -euo pipefail
 
-DOMAIN="${1:-polyglotformfill.mooo.com}"
+DOMAIN="${1:-polyglotformfill.com}"
 WEBROOT="/var/www/polyglotformfill"
 
 if [ "$(id -u)" -ne 0 ]; then echo "Please run with sudo: sudo bash $0 [domain]"; exit 1; fi

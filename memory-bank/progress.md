@@ -75,7 +75,7 @@ _What works, what's left, known issues. The narrative complement to the traceabi
   `SubramanyaMysore.PolyglotFormFill` 1.0.0; `winget validate` passes against the real CLI; a
   5-test drift guard ties `InstallerSha256` to `release-manifest.json` and was proven to fail on a
   corrupted hash. The install page states honestly that winget is not live yet.
-- **BLOCKED on one step:** publishing to polyglotformfill.mooo.com. `publish-site.ps1` was attempted
+- **BLOCKED on one step:** publishing to polyglotformfill.com. `publish-site.ps1` was attempted
   and denied by the permission classifier (not worked around). The live site therefore still serves
   0.1.0, the page's runtime hash display is unverified against the live host, and the winget PR
   cannot be opened (winget downloads `InstallerUrl` during validation).

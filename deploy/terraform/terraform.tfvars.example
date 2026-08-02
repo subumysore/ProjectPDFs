@@ -6,7 +6,7 @@ compartment_ocid = "ocid1.tenancy.oc1..xxxxxxxx" # root compartment = your tenan
 # Paste the CONTENTS of your public key (cat ~/.ssh/id_ed25519.pub)
 ssh_public_key = "ssh-ed25519 AAAA... you@host"
 
-domain = "polyglotformfill.mooo.com"
+domain = "polyglotformfill.com"
 
 # x86 Always-Free micro (simplest). For ARM Ampere instead:
 #   instance_shape = "VM.Standard.A1.Flex"

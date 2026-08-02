@@ -34,7 +34,7 @@ You do **not** need `polyglotformfill.com` working to launch — any of these gi
 - **`polyglotformfill.com` is "Broken"** in FreeDNS because it isn't delegated yet — set the
   registrar's nameservers to your host's (Cloudflare's, if you use Option A) and it resolves once
   it propagates (minutes–24h for a new registration).
-- **`polyglotformfill.mooo.com → 45.37.194.118`** currently points at an IP with **no web server**
+- **`polyglotformfill.com → 45.37.194.118`** currently points at an IP with **no web server**
   (nothing responds). A DNS record alone hosts nothing — use one of the hosts above instead, or run
   a real web server at that IP.
 

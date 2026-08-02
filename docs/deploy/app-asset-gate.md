@@ -1,7 +1,7 @@
 # App-only asset gate (OKE) — guide video & rich docs
 
 Implements [ADR-0019](../adr/0019-app-only-hosted-assets.md): the guide video is served **downward**
-from `polyglotformfill.mooo.com/app-assets/…` **only** to genuine app builds, with **no user
+from `polyglotformfill.com/app-assets/…` **only** to genuine app builds, with **no user
 identifier** in the request (so no tracking).
 
 ## Contract the apps use

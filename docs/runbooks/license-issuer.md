@@ -57,7 +57,7 @@ device-bound token). Pure Node, no Rust dependency. Runs standalone with `--serv
 
 1. **Host** a tiny pod on the OKE cluster (mirrors `deploy/k8s/site.yaml`): a `node:20-slim` Deployment
    mounting `webhook.mjs`/`sign.mjs`/`vendor-key.json` via a Secret+ConfigMap, a Service, and an Ingress
-   with cert-manager TLS at e.g. `https://issuer.polyglotformfill.mooo.com/webhook`.
+   with cert-manager TLS at e.g. `https://issuer.polyglotformfill.com/webhook`.
 2. **Secrets:** `LS_WEBHOOK_SECRET` (from LS → Settings → Webhooks when you add the endpoint) and the
    private key (mount `vendor-key.json` as a K8s Secret — never in the image).
 3. **Register** the endpoint in LS → Settings → Webhooks; subscribe to `order_created` + subscription
@@ -74,7 +74,7 @@ device-bound token). Pure Node, no Rust dependency. Runs standalone with `--serv
 ## Deployed state (2026-07-28)
 - **Issuer is LIVE** on the OKE cluster: `deploy/k8s/issuer.yaml` (Deployment/Service/Ingress) +
   ConfigMap `ppf-issuer-code` (the 3 runtime files) + Secret `issuer-secrets` (private `vendor-key.json`,
-  `LS_WEBHOOK_SECRET`, `LS_API_KEY`). Reachable at `https://polyglotformfill.mooo.com/issuer/{healthz,claim,webhook}`.
+  `LS_WEBHOOK_SECRET`, `LS_API_KEY`). Reachable at `https://polyglotformfill.com/issuer/{healthz,claim,webhook}`.
 - **Zero-cost claim delivery**: `scripts/license/issuer-server.mjs` re-mints the token from the paid LS
   order (verified via LS API + email match) — NO database / PVC / block-volume cost. Tests 9/9.
 - **LS webhook registered**: id `122362`, 6 events, secret matches the K8s secret. (Test mode for now.)

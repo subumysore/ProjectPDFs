@@ -230,7 +230,7 @@ function setupLangPanel(res) {
         document.getElementById("lpNote").textContent =
           "🔒 Reading a form in your language is a Pro feature.";
         table.innerHTML = "";
-        status.innerHTML = 'Activate your license in the extension popup, or <a href="https://polyglotformfill.mooo.com/#pricing" target="_blank" style="color:#0a6a60">Get Pro →</a>';
+        status.innerHTML = 'Activate your license in the extension popup, or <a href="https://polyglotformfill.com/#pricing" target="_blank" style="color:#0a6a60">Get Pro →</a>';
         go.disabled = false; sel.disabled = false;
         return;
       }

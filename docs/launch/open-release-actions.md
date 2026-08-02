@@ -18,7 +18,7 @@ Ships this session's fixes to users via the stable installer link. What I run:
 3. stage the installer → `docs/marketing/site/download/PolyglotFormFill-Setup.exe`
 4. `node scripts/release-manifest.mjs`  (refresh SHA-256 hashes)
 5. `.\deploy\k8s\publish-site.ps1 -WithBinaries`  (upload → same stable link)
-→ `https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe` now serves the new build.
+→ `https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe` now serves the new build.
 Time: ~5–10 min (Rust build + 25 MB upload).
 
 ## #8/#9 — Release the EXTENSION   🔧  (trigger: **"release extension"**)

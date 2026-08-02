@@ -875,7 +875,7 @@ $("restoreLang").onclick = async () => {
 async function ensurePro(feature) {
   const { isPro } = await import("./license.js");
   if (await isPro()) return true;
-  setMsg(`🔒 ${feature} is a Pro feature. Activate your license below, or Get Pro → polyglotformfill.mooo.com/#pricing`, false);
+  setMsg(`🔒 ${feature} is a Pro feature. Activate your license below, or Get Pro → polyglotformfill.com/#pricing`, false);
   return false;
 }
 
@@ -887,7 +887,7 @@ async function ensureActive() {
   if (!ent.active && !ent.expired) { await ensureTrial(); ent = await getEntitlement(); }
   if (ent.active) return true;
   setMsg(ent.expired
-    ? "🔒 Your 7-day free trial has ended. Activate a licence below to keep filling — or Get Pro → polyglotformfill.mooo.com/#pricing"
+    ? "🔒 Your 7-day free trial has ended. Activate a licence below to keep filling — or Get Pro → polyglotformfill.com/#pricing"
     : "🔒 Activate a licence below to fill forms (couldn't start your free trial — check your connection).", false);
   return false;
 }

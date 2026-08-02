@@ -109,10 +109,19 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [polyglotformfill.mooo.com]
+    - hosts: [polyglotformfill.com, www.polyglotformfill.com]
       secretName: ppf-site-tls
   rules:
-    - host: polyglotformfill.mooo.com
+    - host: polyglotformfill.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ppf-site
+                port: { number: 80 }
+    - host: www.polyglotformfill.com
       http:
         paths:
           - path: /

@@ -1,7 +1,7 @@
 # PolyglotFormFill — Launch Kit (ready-to-post)
 
 Free channels only. Copy is written for you to paste; the "click submit" is yours (platforms ban
-automated/AI posting-as-you). Site is https://polyglotformfill.mooo.com. Trial: 7 days, then one-time.
+automated/AI posting-as-you). Site is https://polyglotformfill.com. Trial: 7 days, then one-time.
 
 > Posting etiquette: don't blast all at once. Product Hunt on a Tue–Thu 12:01am PT; Hacker News as
 > "Show HN"; Reddit only in threads/subs where it's genuinely on-topic and you participate honestly.
@@ -44,7 +44,7 @@ automated/AI posting-as-you). Site is https://polyglotformfill.mooo.com. Trial: 
 >
 > Desktop (Tauri/Rust) + a Chrome extension share one vault. Windows build is code-signed. 7-day trial.
 > Curious what this crowd thinks of the on-device approach and the offline licensing (Ed25519 tokens,
-> no activation server). Site: https://polyglotformfill.mooo.com
+> no activation server). Site: https://polyglotformfill.com
 
 (HN hates marketing speak — keep replies technical and honest.)
 
@@ -62,7 +62,7 @@ Tailor per sub. Example for r/immigration / r/expats:
 > to upload sensitive documents to some website to make them fillable. So I made PolyglotFormFill: it
 > reads the form, fills it from a saved profile (works across languages), and can turn a scanned/flat
 > PDF into a real fillable form — all on your own device, nothing uploaded. Free for 7 days if you want
-> to try it: https://polyglotformfill.mooo.com . Happy to answer questions — I'm the maker.
+> to try it: https://polyglotformfill.com . Happy to answer questions — I'm the maker.
 
 For r/privacy / r/degoogle, lead with the privacy model (on-device, zero telemetry, no account, open to
 audit) rather than the immigration use-case.
@@ -73,7 +73,7 @@ audit) rather than the immigration use-case.
 
 > Filling a form in a language that isn't yours — and *not* uploading it to some cloud — should be
 > normal. PolyglotFormFill does OCR, translation, fill & sign 100% on your device. PDFs, Word, Excel,
-> web forms. 7-day free trial, one-time purchase, no subscription. https://polyglotformfill.mooo.com
+> web forms. 7-day free trial, one-time purchase, no subscription. https://polyglotformfill.com
 
 ---
 
