@@ -177,6 +177,13 @@
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
 
+  .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
+  .guidevid h2{margin:0 0 6px;font-size:26px}
+  .guidevid .lede{margin:0 0 18px}
+  .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);background:#000}
+  .guidevid .cc-note{margin:10px 0 0;font-size:13px;opacity:.65}
+
   .tier.pop::after{content:"Phổ biến nhất"}
 </style>
 
@@ -208,6 +215,16 @@
     <a class="btn ghost" href="#get">Tải về (bản beta)</a>
   </div>
   <div class="trustline">Két AES-256 · mở khóa bằng passkey · không đám mây · không theo dõi · công khai và có thể kiểm toán</div>
+
+  <section class="guidevid" aria-label="See it in two minutes">
+    <h2>See it in two minutes</h2>
+    <p class="lede">A short, narrated walkthrough. Everything happens on your device.</p>
+    <video controls preload="none" playsinline poster="https://polyglotformfill.com/download/before-after.jpg" crossorigin="anonymous">
+      <source src="/download/guide.mp4" type="video/mp4">
+      <track kind="subtitles" src="/download/guide.en.vtt" srclang="en" label="English" default>
+    </video>
+    <p class="cc-note">Captions available. Shown in your language where a dub exists, otherwise in English.</p>
+  </section>
 
   <div class="flow">
     <div class="device">

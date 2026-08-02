@@ -1,0 +1,21 @@
+  v2-00-url  8.3s
+  v2-00b-usecases  21.8s
+  v2-01-open  23.2s
+  v2-02-id  34.6s
+  v2-03-flat  13.8s
+  v2-04-fill-text  18.0s
+  v2-05-fill-controls  11.5s
+  v2-06-photo-sig  11.2s
+  v2-07-learn  12.8s
+  v2-08-family  15.4s
+  v2-09-office  12.7s
+  v2-11-extension  12.2s
+  v2-12-languages  21.9s
+  v2-13-privacy  13.2s
+  v2-14-url  10.2s
+
+! Skipped (missing raw/audio): v2-div-profile, v2-div-work, v2-10-sign, v2-div-ext
+
+✔ 234.7s / 44 cues
+  video    C:\Users\Subramanya Mysore\MyProject\ProjectPDFs\docs\guide\output\video\PolyglotFormFill-guide.es.mp4
+  captions C:\Users\Subramanya Mysore\MyProject\ProjectPDFs\docs\guide\output\captions\PolyglotFormFill-guide.es.srt
