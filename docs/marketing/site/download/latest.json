@@ -1,10 +1,10 @@
 {
-  "version": "1.0.5",
-  "notes": "Anti-tamper trial binding, auto-update, and a Microsoft-trusted code signature.",
-  "pub_date": "2026-07-29T00:02:14Z",
+  "version": "1.0.6",
+  "notes": "Moved to polyglotformfill.com, plus auto-update, 7-day trial, and code signing.",
+  "pub_date": "2026-08-02T17:25:43Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHJNSllXY3J3UmszSXFUQmFXWWdZTkQ1dUZNMDUxbWhuWmtGOHZhNzFmRXFOcDQ2NmdYVVBFMmNFWU93Q0RFZlVEVUhRMEtNUXBYd1I3eE1TNDlMdXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1MjgzMzE0CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuNV94NjQtc2V0dXAuZXhlCml4VjQvdHhiWXZVcDA1MnpsOVVzdk9tZTJrN3M4dEs0Y0sxbzFZQ3Y0R2liYVd6MVB3TGx4Q0lPTm1peGdveDRIdExjUk4wTEpqU01CMHF3UVBOOUJnPT0K",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHI0UnN5V2VVTlFFaWk5d05rODFlcDd1am84ZnRKajk1Y2twL09nUlc5L0txQS9GNERPS2dyUWxBclVVci9mYnFVSlRnT1JSenUrVk5JUWg2VE1nL1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1NjkxNTIwCWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuNl94NjQtc2V0dXAuZXhlClUzUzZ0MVMwT2ZLWktqTHBNTmwwc3RUWG1Sc280UlZSUXNLZkZjZ2Y2ZzRzUXg2TGQyODI1UjJTTjdSaS84RExsWEhZMVdnR1BuYllUM0RtWStjVkFnPT0K",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }
