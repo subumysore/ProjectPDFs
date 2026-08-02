@@ -84,9 +84,10 @@ export function parseMrz(text: string): ExtractedField[] {
   const out: Record<string, string> = {};
   const setName = (field: string) => {
     const p = field.split("<<");
-    const sur = (p[0] || "").replace(/</g, " ").trim();
+    const sur = (p[0] || "").replace(/[<CLKX]{3,}[A-Z]*$/i, "").replace(/</g, " ").trim();
     if (sur) out.last_name = sur;
-    const g = (p[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
+    // Given names: cut a trailing MRZ-filler run that OCR misread as letters ("<<<" → "CCLLLLLS").
+    const g = (p[1] || "").replace(/[<CLKX]{3,}[A-Z]*$/i, "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
     if (g.length) { out.first_name = g[0] ?? ""; if (g.length > 1) out.middle_name = g.slice(1).join(" "); }
   };
   const setDob = (s: string) => { const m = (s || "").match(/^(\d{2})(\d{2})(\d{2})$/); if (m) { const yy = +(m[1] ?? "0"); out.date_of_birth = `${m[2]}/${m[3]}/${yy > 30 ? 1900 + yy : 2000 + yy}`; } };
@@ -126,7 +127,21 @@ export function parseMrz(text: string): ExtractedField[] {
     if (l2) { out.id_no = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20] ?? ""); setExp(l2.slice(21, 27)); }
     return fin();
   }
-  return [];
+  // LENIENT recovery: a real passport ALWAYS prints the MRZ, but OCR often misreads the leading 'P'
+  // (→ B/D/8) and the '<' filler, so the strict TD3 checks above miss it. Scan the raw text for the two
+  // MRZ signatures anywhere — this is exact, checksummed data and beats the noisy visual zone.
+  const J = (text || "").toUpperCase().replace(/[^A-Z0-9<\n]/g, "").split(/\n/).map((l) => l.replace(/\s+/g, ""));
+  for (const l of J) {
+    // Name line: <CCC SURNAME << GIVEN (the 3 letters after a '<' are the issuing-country code).
+    const m = l.match(/<([A-Z]{3})([A-Z]{2,})<<([A-Z][A-Z<]+)/);
+    if (m) { setNat(m[1] ?? ""); setName(`${m[2]}<<${m[3]}`); break; }
+  }
+  for (const l of J) {
+    // Data line: passport# (6-9) + nationality(3) + DOB(6) + check + sex + expiry(6).
+    const m = l.match(/(\d{6,9})[<A-Z0-9]{0,2}([A-Z]{3})(\d{6})\d?([MFX<])(\d{6})/);
+    if (m) { if (!out.passport_no) out.passport_no = m[1] ?? ""; setNat(m[2] ?? ""); setDob(m[3] ?? ""); setSex(m[4] ?? ""); setExp(m[5] ?? ""); break; }
+  }
+  return Object.keys(out).length ? fin() : [];
 }
 
 /** Pure text → vault fields. Exported for unit testing (no OCR needed). */
@@ -253,20 +268,38 @@ export function parseFields(text: string): ExtractedField[] {
     if (pob && looksGarbled(out["place_of_birth"])) out["place_of_birth"] = pob;
   }
 
-  // A licence/ID FRONT: the personal name is a line of 2–3 name-like caps words. Several noise lines
-  // ("BEAST TRIE ... NORD") can also look name-ish, so pick the candidate with the MOST total letters
-  // — a real full name (SUBRAMANYA VISHWANATHAN) outweighs short dictionary-noise words.
+  // A licence/ID FRONT: the GIVEN names are a line of 2–3 name-like caps words (noise lines like
+  // "BEAST TRIE ... NORD" also look name-ish, so pick the candidate with the MOST total letters — a
+  // real name outweighs short dictionary-noise words). US licences print the SURNAME on the line
+  // ABOVE the given names, so if that line is a clean 1–2 token name, use it as the last name.
   if (looksGarbled(out["first_name"]) && looksGarbled(out["last_name"])) {
-    const best = lr.map(nameToks).filter((t) => t.length >= 2 && t.length <= 3)
-      .sort((a, b) => b.join("").length - a.join("").length)[0];
-    if (best) { delete out["first_name"]; delete out["last_name"]; delete out["middle_name"]; putName(best.join(" ")); }
+    const cands = lr.map((l, i) => ({ i, t: nameToks(l) })).filter((c) => c.t.length >= 2 && c.t.length <= 3);
+    const best = cands.sort((a, b) => b.t.join("").length - a.t.join("").length)[0];
+    if (best) {
+      delete out["first_name"]; delete out["last_name"]; delete out["middle_name"];
+      const given = best.t;
+      const above = nameToks(lr[best.i - 1] ?? "");
+      if (above.length >= 1 && above.length <= 2 && !above.some((w) => given.includes(w))) {
+        // Surname line above + given-names line below: first / middle / last.
+        put("first_name", given[0] ?? "");
+        if (given.length > 1) put("middle_name", given.slice(1).join(" "));
+        put("last_name", above.join(" "));
+      } else {
+        putName(given.join(" "));
+      }
+    }
   }
 
-  // Dates MM/DD/YYYY anywhere: earliest year = DOB, latest = expiry (fills gaps only).
+  // Dates MM/DD/YYYY anywhere: earliest year = DOB, latest = expiry. A licence has THREE dates
+  // (DOB, ISS issue, EXP expiry); the middle one chronologically is the issue date. A labelled
+  // "ISS <date>" wins if present.
   const ds = [...new Set([...text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)].map((m) => m[0]))]
     .sort((a, b) => +(a.split("/")[2] ?? 0) - +(b.split("/")[2] ?? 0));
   if (ds.length && !out["date_of_birth"]) out["date_of_birth"] = ds[0] ?? "";
   if (ds.length > 1 && !out["expiry_date"]) out["expiry_date"] = ds[ds.length - 1] ?? "";
+  const issM = text.match(/\b(?:4A\s*)?ISS\.?\s*[:.]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+  if (issM && issM[1] && !out["issue_date"]) out["issue_date"] = issM[1];
+  else if (ds.length >= 3 && !out["issue_date"]) out["issue_date"] = ds[1] ?? ""; // middle date = issue
 
   // AAMVA-coded front fields (US licences print "15SEX M", "8 <address>", "18EYES HAZ", "19HAIR BLK",
   // "16HGT 5-06", "0 CLASS C"). Capture every one we can read so the profile fills as fully as possible.
@@ -281,15 +314,84 @@ export function parseFields(text: string): ExtractedField[] {
   // AAMVA address element "8" then the street; the city/state usually follow on the next line.
   const addr = text.match(/(?:^|\s)8\s+(\d{2,6}\s+[A-Z][A-Z .'-]{2,})/m);
   if (addr && addr[1] && !out["address_1"]) out["address_1"] = addr[1].trim();
-  // Passport DOB is printed as "DD MON YYYY" (e.g. 30 NOV 1968), not MM/DD/YYYY — parse it if the
-  // slash-date pass didn't already set one.
-  if (!out["date_of_birth"]) {
-    const MON: Record<string, string> = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
-    const dm = text.toUpperCase().match(/\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s*[^\d]{0,3}(\d{4})\b/);
-    if (dm && dm[2] && MON[dm[2]]) out["date_of_birth"] = `${MON[dm[2]]}/${(dm[1] ?? "").padStart(2, "0")}/${dm[3]}`;
+  // Expand a 3-letter nationality/country code (from the MRZ) to its full name, and clean a garbled
+  // visual-zone nationality (OCR "INITED STATES OF AMER").
+  const COUNTRY: Record<string, string> = { USA: "UNITED STATES OF AMERICA", GBR: "UNITED KINGDOM", IND: "INDIA", CAN: "CANADA", AUS: "AUSTRALIA", DEU: "GERMANY", FRA: "FRANCE", ITA: "ITALY", ESP: "SPAIN", CHN: "CHINA", JPN: "JAPAN", KOR: "SOUTH KOREA", MEX: "MEXICO", BRA: "BRAZIL" };
+  if (out["nationality"]) {
+    const n = out["nationality"].toUpperCase().trim();
+    if (COUNTRY[n]) out["nationality"] = COUNTRY[n];
+    else if (/[UI]N[IL]?TED\s*STATES|AMER/.test(n)) out["nationality"] = "UNITED STATES OF AMERICA";
   }
 
+  // Passport visual-zone extras (type/country, issuing authority, issue+expiry dates as "DD MON YYYY").
+  const MON: Record<string, string> = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+  const monDates = [...text.toUpperCase().matchAll(/\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s*[^\d]{0,3}(\d{4})\b/g)]
+    .map((m) => ({ d: `${MON[m[2] ?? ""]}/${(m[1] ?? "").padStart(2, "0")}/${m[3]}`, y: +(m[3] ?? 0) })).filter((x) => x.y > 1900 && x.y < 2100);
+  if (PASSPORT_MARKERS.test(text)) {
+    const tc = text.match(/\bP\s+([A-Z]{3})\b/);
+    if (tc) { if (!out["passport_type"]) out["passport_type"] = "P"; if (!out["country_code"]) out["country_code"] = tc[1] ?? ""; }
+    const auth = text.match(/((?:UNITED STATES )?DEPARTMENT OF STATE|MINISTRY OF[A-Z ]{3,}|PASSPORT OFFICE)/i);
+    if (auth && auth[1] && !out["issuing_authority"]) out["issuing_authority"] = auth[1].trim().replace(/\s+/g, " ");
+    const now = 2026;
+    for (const md of monDates) {
+      if (md.y > now && !out["passport_expiry_date"] && !out["expiry_date"]) out["passport_expiry_date"] = md.d;
+      else if (md.y <= now && md.y >= now - 15 && !out["issue_date"]) out["issue_date"] = md.d;
+    }
+  }
+  // DOB as "DD MON YYYY" (30 NOV 1968) if no slash-date/MRZ set one — earliest year of the mon-dates.
+  if (!out["date_of_birth"] && monDates.length) out["date_of_birth"] = [...monDates].sort((a, b) => a.y - b.y)[0]?.d ?? "";
+
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
+}
+
+// Preprocess for OCR ("polaroid filter"): upscale small captures so text is large enough, grayscale,
+// stretch contrast (1st–99th percentile), and — for over-exposed/glary images — apply a gamma>1 curve
+// to darken blown-out highlights and pull washed-out text back. Ported from the extension's capture.js
+// so desktop and extension read glossy IDs identically. Browser-only (canvas), fully on-device.
+function preprocessCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
+  const MIN_W = 1700;
+  const scale = src.width < MIN_W ? MIN_W / src.width : 1;
+  const w = Math.round(src.width * scale), h = Math.round(src.height * scale);
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, 0, 0, w, h);
+  const im = ctx.getImageData(0, 0, w, h);
+  const d = im.data;
+  const hist = new Uint32Array(256);
+  const gray = new Uint8Array(w * h);
+  let sum = 0, bright = 0;
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+    const g = (0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!) | 0;
+    gray[j] = g; hist[g]!++; sum += g; if (g > 225) bright++;
+  }
+  const total = w * h;
+  let lo = 0, hi = 255, cum = 0;
+  for (let v = 0; v < 256; v++) { cum += hist[v]!; if (cum > total * 0.01) { lo = v; break; } }
+  cum = 0;
+  for (let v = 255; v >= 0; v--) { cum += hist[v]!; if (cum > total * 0.01) { hi = v; break; } }
+  const range = Math.max(1, hi - lo);
+  const overexposed = sum / total > 170 || bright / total > 0.35;
+  const gamma = overexposed ? 1.8 : 1.0;
+  const lut = new Uint8Array(256);
+  for (let v = 0; v < 256; v++) {
+    let g = (v - lo) * 255 / range;
+    g = g < 0 ? 0 : g > 255 ? 255 : g;
+    if (gamma !== 1) g = 255 * Math.pow(g / 255, gamma);
+    lut[v] = (g < 0 ? 0 : g > 255 ? 255 : g) | 0;
+  }
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) { const g = lut[gray[j]!]!; d[i] = d[i + 1] = d[i + 2] = g; }
+  ctx.putImageData(im, 0, 0);
+  return c;
+}
+async function fileToProcessedCanvas(file: File | Blob): Promise<HTMLCanvasElement> {
+  const bmp = await createImageBitmap(file);
+  const src = document.createElement("canvas");
+  src.width = bmp.width; src.height = bmp.height;
+  src.getContext("2d", { willReadFrequently: true })!.drawImage(bmp, 0, 0);
+  return preprocessCanvas(src);
 }
 
 /** OCR an image on-device and pull out recognised data points for user review. */
@@ -305,7 +407,10 @@ export async function extractFromImage(
   const worker = await getTessWorker(lang);
   try {
     onProgress?.(0);
-    const { data } = await worker.recognize(file);
+    // Apply the glare/contrast preprocessing; fall back to the raw file if canvas isn't available.
+    let input: File | Blob | HTMLCanvasElement = file;
+    try { input = await fileToProcessedCanvas(file); } catch { input = file; }
+    const { data } = await worker.recognize(input as Parameters<typeof worker.recognize>[0]);
     onProgress?.(100);
     const text = data.text ?? "";
     return { text, fields: parseFields(text) };
