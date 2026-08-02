@@ -220,6 +220,75 @@ export function parseFields(text: string): ExtractedField[] {
     }
   }
 
+  // --- Messy real-world ID heuristics: a licence FRONT and a passport visual zone rarely OCR as clean
+  //     "Label: value" — the name is on its own line, dates are fused with field codes, and passport
+  //     labels ("Surname/Nom/Apellidos") sit ABOVE their value on a later line. These only fill GAPS
+  //     the clean label pass + MRZ left, so nothing here overwrites a confidently-parsed field. ---
+  const lr = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const STOP = /\b(DRIVER|LICEN[SC]E|CAROLINA|COMMISSIONER|MOTOR|VEHICLE|DEPARTMENT|PASSPORT|PASAPORTE|PASSEPORT|CLASS|ENDORSE|ENDORSEMENT|RESTR|NATIONALITY|SURNAME|GIVEN|NAMES|NORTH|SOUTH|WEST|EAST|SIGNATURE|TITULAIRE|ANNOTATION|MENTION|BEARER|ISSUING|AUTHORITY|TIPO)\b/;
+  // "Name-like" caps tokens: >=4 letters (drops 2-3 char OCR noise), not document boilerplate. Garbage
+  // prefixes ("; >") are ignored because we filter tokens, not whole lines.
+  const nameToks = (l: string) => l.split(/\s+/).filter((t) => /^[A-Z][A-Z'-]{3,}$/.test(t) && !STOP.test(t));
+  const toksAfter = (re: RegExp): string[] => {
+    const i = lr.findIndex((l) => re.test(l.toLowerCase()));
+    if (i < 0) return [];
+    for (let j = i + 1; j < Math.min(i + 6, lr.length); j++) { const t = nameToks(lr[j] ?? ""); if (t.length) return t; }
+    return [];
+  };
+  const looksGarbled = (v?: string) => !v || /[\/<>]/.test(v) || v.replace(/[A-Za-z ]/g, "").length > 1 || v.trim().length < 2;
+
+  if (PASSPORT_MARKERS.test(text)) {
+    // Passport visual zone is AUTHORITATIVE over the clean-label pass here — the multilingual label
+    // ("Given names/Prénoms/Nombres") fools that pass into first_name="/Prénoms/Nombres", so overwrite
+    // any garbled name with the real caps value that sits below the label.
+    const sur = toksAfter(/surname|apellidos|\bnom\b/);
+    if (sur[0] && (looksGarbled(out["last_name"]))) out["last_name"] = sur[0];
+    const giv = toksAfter(/given names|pr[eé]noms|nombres/);
+    if (giv.length) { if (looksGarbled(out["first_name"])) out["first_name"] = giv[0] ?? ""; if (giv.length > 1 && looksGarbled(out["middle_name"])) out["middle_name"] = giv.slice(1).join(" "); }
+    // Nationality: first up-to-4 caps words on the line after the label (skip trailing OCR noise).
+    const wordsAfter = (re: RegExp, n: number) => { const i = lr.findIndex((l) => re.test(l.toLowerCase())); if (i < 0) return ""; for (let j = i + 1; j < Math.min(i + 4, lr.length); j++) { const ws = (lr[j] ?? "").split(/\s+/).filter((t) => /^[A-Z]{2,}$/.test(t)); if (ws.length) return ws.slice(0, n).join(" "); } return ""; };
+    const nat = wordsAfter(/nationality|nationalit|nacionalidad/, 4);
+    if (nat && looksGarbled(out["nationality"])) out["nationality"] = nat;
+    const pob = toksAfter(/place of birth|lieu de naissance|lugar de nacimiento/)[0];
+    if (pob && looksGarbled(out["place_of_birth"])) out["place_of_birth"] = pob;
+  }
+
+  // A licence/ID FRONT: the personal name is a line of 2–3 name-like caps words. Several noise lines
+  // ("BEAST TRIE ... NORD") can also look name-ish, so pick the candidate with the MOST total letters
+  // — a real full name (SUBRAMANYA VISHWANATHAN) outweighs short dictionary-noise words.
+  if (looksGarbled(out["first_name"]) && looksGarbled(out["last_name"])) {
+    const best = lr.map(nameToks).filter((t) => t.length >= 2 && t.length <= 3)
+      .sort((a, b) => b.join("").length - a.join("").length)[0];
+    if (best) { delete out["first_name"]; delete out["last_name"]; delete out["middle_name"]; putName(best.join(" ")); }
+  }
+
+  // Dates MM/DD/YYYY anywhere: earliest year = DOB, latest = expiry (fills gaps only).
+  const ds = [...new Set([...text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)].map((m) => m[0]))]
+    .sort((a, b) => +(a.split("/")[2] ?? 0) - +(b.split("/")[2] ?? 0));
+  if (ds.length && !out["date_of_birth"]) out["date_of_birth"] = ds[0] ?? "";
+  if (ds.length > 1 && !out["expiry_date"]) out["expiry_date"] = ds[ds.length - 1] ?? "";
+
+  // AAMVA-coded front fields (US licences print "15SEX M", "8 <address>", "18EYES HAZ", "19HAIR BLK",
+  // "16HGT 5-06", "0 CLASS C"). Capture every one we can read so the profile fills as fully as possible.
+  const grab = (re: RegExp, key: string, up = true) => { const m = text.match(re); if (m && m[1] && !out[key]) out[key] = up ? m[1].trim().toUpperCase() : m[1].trim(); };
+  // NOTE: no leading \b — the AAMVA code sits flush against the label ("15SEX", "18EYES"), so a word
+  // boundary before the label never matches.
+  grab(/SEX\s*[:.]?\s*([MF])\b/i, "gender");
+  grab(/CLASS\s+([A-Z0-9]{1,3})\b/i, "license_class");
+  grab(/EYES?\.?\s*[:.]?\s*([A-Z]{3})\b/i, "eye_color");
+  grab(/HAIR\.?\s*[:.]?\s*([A-Z]{3})\b/i, "hair_color");
+  grab(/\bH[EG]T\.?\s*[:.]?\s*(\d\s*['’]\s*-?\s*\d{2}\s*["”]?)/i, "height", false);
+  // AAMVA address element "8" then the street; the city/state usually follow on the next line.
+  const addr = text.match(/(?:^|\s)8\s+(\d{2,6}\s+[A-Z][A-Z .'-]{2,})/m);
+  if (addr && addr[1] && !out["address_1"]) out["address_1"] = addr[1].trim();
+  // Passport DOB is printed as "DD MON YYYY" (e.g. 30 NOV 1968), not MM/DD/YYYY — parse it if the
+  // slash-date pass didn't already set one.
+  if (!out["date_of_birth"]) {
+    const MON: Record<string, string> = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+    const dm = text.toUpperCase().match(/\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s*[^\d]{0,3}(\d{4})\b/);
+    if (dm && dm[2] && MON[dm[2]]) out["date_of_birth"] = `${MON[dm[2]]}/${(dm[1] ?? "").padStart(2, "0")}/${dm[3]}`;
+  }
+
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 
