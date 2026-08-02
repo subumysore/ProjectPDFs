@@ -310,10 +310,28 @@ export function parseFields(text: string): ExtractedField[] {
   grab(/CLASS\s+([A-Z0-9]{1,3})\b/i, "license_class");
   grab(/EYES?\.?\s*[:.]?\s*([A-Z]{3})\b/i, "eye_color");
   grab(/HAIR\.?\s*[:.]?\s*([A-Z]{3})\b/i, "hair_color");
+  grab(/9A?\s*END\.?[:. ]*\s*(NONE|[A-Z0-9]{1,5})\b/i, "endorsements");
+  grab(/(?:12\s*)?RESTR(?:ICTIONS?)?\.?[:. ]*\s*([A-Z0-9*-]{1,8})/i, "restrictions", false);
   grab(/\bH[EG]T\.?\s*[:.]?\s*(\d\s*['’]\s*-?\s*\d{2}\s*["”]?)/i, "height", false);
-  // AAMVA address element "8" then the street; the city/state usually follow on the next line.
+  // AAMVA address element "8" then the street.
   const addr = text.match(/(?:^|\s)8\s+(\d{2,6}\s+[A-Z][A-Z .'-]{2,})/m);
   if (addr && addr[1] && !out["address_1"]) out["address_1"] = addr[1].trim();
+  // City / State / ZIP sit on the line(s) AFTER the street — NOT in the header. Anchor the search to
+  // the address block so the state NAME in the header ("NORTH CAROLINA") can't be misread as a bogus
+  // city/state. State must be a valid 2-letter code; OCR garbage glued after it is tolerated ("NCATE"→NC).
+  const ST = "AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC";
+  const streetIdx = lr.findIndex((l) => /\b8\s+\d{2,6}\s+[A-Z]/.test(l) || (!!out["address_1"] && l.toUpperCase().includes((out["address_1"].split(/\s+/)[1] || "###").toUpperCase())));
+  if (streetIdx >= 0) {
+    for (let j = streetIdx; j < Math.min(streetIdx + 3, lr.length); j++) {
+      const m = (lr[j] ?? "").toUpperCase().match(new RegExp(`\\b([A-Z][A-Z]{2,}(?:\\s[A-Z]{2,})?)[,\\s]+(${ST})[A-Z]{0,3}\\s*(\\d{5})?`));
+      if (m && m[1] && !/DEER|ALBINO|STREET|\bAVE\b|ROAD|LANE|DRIVE|\bWAY\b|BLVD|COURT/.test(m[1])) {
+        if (!out["city"]) out["city"] = m[1].trim();
+        if (m[2] && !out["state"]) out["state"] = m[2];
+        if (m[3] && !out["zip"]) out["zip"] = m[3];
+        break;
+      }
+    }
+  }
   // Expand a 3-letter nationality/country code (from the MRZ) to its full name, and clean a garbled
   // visual-zone nationality (OCR "INITED STATES OF AMER").
   const COUNTRY: Record<string, string> = { USA: "UNITED STATES OF AMERICA", GBR: "UNITED KINGDOM", IND: "INDIA", CAN: "CANADA", AUS: "AUSTRALIA", DEU: "GERMANY", FRA: "FRANCE", ITA: "ITALY", ESP: "SPAIN", CHN: "CHINA", JPN: "JAPAN", KOR: "SOUTH KOREA", MEX: "MEXICO", BRA: "BRAZIL" };
@@ -407,12 +425,18 @@ export async function extractFromImage(
   const worker = await getTessWorker(lang);
   try {
     onProgress?.(0);
-    // Apply the glare/contrast preprocessing; fall back to the raw file if canvas isn't available.
-    let input: File | Blob | HTMLCanvasElement = file;
-    try { input = await fileToProcessedCanvas(file); } catch { input = file; }
-    const { data } = await worker.recognize(input as Parameters<typeof worker.recognize>[0]);
+    // Read the RAW image AND a glare/contrast-preprocessed copy, then combine both OCR passes — a field
+    // that garbles in one pass is often clean in the other, and parseFields (first-good-match-wins)
+    // picks the best of both. This beats relying on either pass alone.
+    const rawText = (await worker.recognize(file)).data.text ?? "";
+    onProgress?.(50);
+    let procText = "";
+    try {
+      const canvas = await fileToProcessedCanvas(file);
+      procText = (await worker.recognize(canvas as Parameters<typeof worker.recognize>[0])).data.text ?? "";
+    } catch { /* canvas unavailable — raw pass alone */ }
     onProgress?.(100);
-    const text = data.text ?? "";
+    const text = procText ? `${rawText}\n${procText}` : rawText;
     return { text, fields: parseFields(text) };
   } finally {
     /* worker is cached and reused — do not terminate */
