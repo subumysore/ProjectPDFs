@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.6.0.schema.json
+# Version manifest — the entry point winget reads first. Submit all three files in this folder
+# together as a PR to microsoft/winget-pkgs under:
+#   manifests/s/SubramanyaMysore/PolyglotFormFill/1.0.6/
+PackageIdentifier: SubramanyaMysore.PolyglotFormFill
+PackageVersion: 1.0.6
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

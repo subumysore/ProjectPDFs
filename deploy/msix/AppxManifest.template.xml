@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX package manifest for the Microsoft Store build of PolyglotFormFill (permanent fix for the
+  SmartScreen/AV "virus" download warnings — Store-delivered apps are trusted by construction, no
+  reputation gate). Full-trust Win32 app (EntryPoint = Windows.FullTrustApplication) wrapping the
+  existing signed Tauri exe unchanged.
+
+  The __PLACEHOLDER__ tokens are filled by deploy/build-msix.ps1 from values you get from Partner
+  Center AFTER reserving the app name (see docs/runbooks/microsoft-store.md):
+    __IDENTITY_NAME__        Partner Center > Product identity > "Package/Identity/Name"
+    __PUBLISHER__            Partner Center > Product identity > "Package/Identity/Publisher"  (CN=...)
+    __PUBLISHER_DISPLAY__    Partner Center > Product identity > "Package/Properties/PublisherDisplayName"
+    __VERSION__              4-part, e.g. 1.0.6.0  (Store requires 4 parts; revision must be 0)
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="__IDENTITY_NAME__"
+    Publisher="__PUBLISHER__"
+    Version="__VERSION__"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>PolyglotFormFill</DisplayName>
+    <PublisherDisplayName>__PUBLISHER_DISPLAY__</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="PolyglotFormFill" Executable="PolyglotFormFill.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="PolyglotFormFill"
+        Description="Read and write any form, in any language, privately. All processing on-device."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\Square310x310Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png"
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          ShortName="PolyglotFormFill" />
+        <uap:SplashScreen Image="Assets\Square310x310Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Full-trust desktop app: it needs normal Win32 access (local vault file, on-device OCR/models,
+         PDF fill). No network capability that receives user content — privacy invariant preserved. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
