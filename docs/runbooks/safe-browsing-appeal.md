@@ -4,6 +4,18 @@
 brand-new domain + newly-signed installer (zero download reputation). This runbook is the professional,
 reproducible process to clear it and keep it clear.
 
+## Action log
+- **2026-08-02** — Domain `polyglotformfill.com` verified in Google Search Console (DNS/domain
+  property). Security Issues panel: **No issues detected** (confirms it is per-download reputation, not
+  a site-level flag).
+- **2026-08-02** — False-positive report **submitted successfully** to Google Safe Browsing
+  (report_error, "This page is safe") for
+  `https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe` with the justification below.
+- **TODO** — upload the .exe to VirusTotal + Microsoft WDSI; paste the report URLs here.
+- **Re-check cadence:** verify the download in a clean Chrome profile ~weekly; expect the warning to age
+  out within days-to-2-weeks as the signed cert accrues download history. If it persists past 2 weeks,
+  re-submit report_error and add the VirusTotal link.
+
 ## Evidence the file is safe (attach/quote in every appeal)
 - **Authenticode signature: Valid.** Signer `CN=Subramanya Mysore, O=Subramanya Mysore, L=Wake Forest,
   S=nc, C=US`; issuer `CN=Microsoft ID Verified CS EOC CA 03` (Azure Trusted Signing, a Microsoft-trusted
