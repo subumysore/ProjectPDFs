@@ -3,7 +3,7 @@
 // COMPLETE landing, privacy, and install page — never a stub, never half-English — each carrying a
 // language switcher and language-preserving navigation. English lives at / , /privacy/ , /install/ ;
 // every other language at /<lang>/… . No build tools, no external requests at build time.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -649,5 +649,19 @@ writeFileSync(
   `User-agent: *\nAllow: /\nSitemap: ${SITE_ORIGIN}/sitemap.xml\n`,
 );
 
+// Static root passthrough: anything under docs/marketing/well-known/ is copied verbatim to the site
+// root (preserving subdirs like .well-known/). This is how we host ownership-proof and trust files
+// REPRODUCIBLY, so they survive every rebuild: Google Search Console's googleXXeXX.html verification
+// file (needed to see + appeal the Chrome "Virus detected" Safe Browsing verdict), .well-known/
+// security.txt, Bing's BingSiteAuth.xml, etc. Drop the file in, publish, done.
+const wellKnown = join(dir, "well-known");
+let staticCount = 0;
+if (existsSync(wellKnown)) {
+  for (const f of readdirSync(wellKnown)) {
+    cpSync(join(wellKnown, f), join(site, f), { recursive: true });
+    staticCount++;
+  }
+}
+
 console.log(`install page versions: extension v${EXT_VER}, desktop v${APP_VER}`);
-console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404 + sitemap.xml + robots.txt`);
+console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404 + sitemap.xml + robots.txt + ${staticCount} static-root entries`);

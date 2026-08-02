@@ -1,0 +1,9 @@
+Contact: mailto:subumysore@gmail.com
+Expires: 2027-08-02T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://polyglotformfill.com/.well-known/security.txt
+Policy: https://polyglotformfill.com/privacy/
+
+# PolyglotFormFill is privacy-first: all user-content processing (OCR, translation,
+# fill, signing) happens on-device. The Windows installer is Authenticode code-signed
+# by a Microsoft-trusted CA (verified publisher: Subramanya Mysore).
