@@ -42,13 +42,13 @@ async function token() {
   return j.access_token;
 }
 
-async function updateCaptions(access, videoId, srtPath) {
-  // Find an existing English caption track to update; else insert a new one.
+async function updateCaptions(access, videoId, srtPath, lang = "en", name = "English") {
+  // Find an existing caption track for this language to update; else insert a new one.
   const list = await (await fetch(`https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}`,
     { headers: { Authorization: `Bearer ${access}` } })).json();
-  const existing = (list.items || []).find((c) => (c.snippet.language || "").startsWith("en"));
+  const existing = (list.items || []).find((c) => (c.snippet.language || "").startsWith(lang));
   const srt = readFileSync(srtPath);
-  const meta = { snippet: { videoId, language: "en", name: "English", isDraft: false } };
+  const meta = { snippet: { videoId, language: lang, name, isDraft: false } };
   const boundary = "ytcap" + Date.now();
   const body = Buffer.concat([
     Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(existing ? { id: existing.id, snippet: meta.snippet } : meta)}\r\n`),
@@ -109,15 +109,24 @@ if (has("--captions")) {
   if (!existsSync(srt)) { console.error("captions file not found: " + srt); process.exit(1); }
   await updateCaptions(access, vid, srt);
 } else {
-  const file = resolve(argv.find((a) => !a.startsWith("--") && a.endsWith(".mp4")) || "docs/guide/output/video/PolyglotFormFill-guide.mp4");
+  // --lang <code> uploads the localized dub (PolyglotFormFill-guide.<lang>.mp4) and attaches THAT
+  // language's captions with the right language code. Default (no --lang) is the English guide.
+  const LANG_NAMES = { en: "English", hi: "हिन्दी", ta: "தமிழ்", te: "తెలుగు", kn: "ಕನ್ನಡ", es: "Español", zh: "中文", ko: "한국어", ja: "日本語" };
+  const lang = opt("--lang", "en");
+  const langName = LANG_NAMES[lang] || lang;
+  const defaultFile = lang === "en"
+    ? "docs/guide/output/video/PolyglotFormFill-guide.mp4"
+    : `docs/guide/output/video/PolyglotFormFill-guide.${lang}.mp4`;
+  const file = resolve(argv.find((a) => !a.startsWith("--") && a.endsWith(".mp4")) || defaultFile);
   if (!existsSync(file)) { console.error("video not found: " + file + " — run `node scripts/build-guide.mjs` first."); process.exit(1); }
-  const title = opt("--title", "PolyglotFormFill — read & write any form, in any language, privately");
+  const langSuffix = lang === "en" ? "" : ` (${langName})`;
+  const title = opt("--title", `PolyglotFormFill — read & write any form, in any language, privately${langSuffix}`);
   const desc = opt("--description", "PolyglotFormFill fills any form — PDF, Word, Excel, or web — from your encrypted on-device vault, in 26 languages. Nothing leaves your device. Free during the beta at polyglotformfill.com");
   const privacy = opt("--privacy", "public");
   const id = await uploadVideo(access, file, title, desc, privacy);
-  // Auto-attach the matching captions (this cut's .srt) — same command, no second step.
-  const srt = resolve("docs/guide/output/captions/PolyglotFormFill-guide.en.srt");
-  if (existsSync(srt)) { try { await updateCaptions(access, id, srt); } catch (e) { console.warn("  (captions step skipped: " + e.message + ")"); } }
+  // Auto-attach the matching-language captions (this cut's .srt), same command, no second step.
+  const srt = resolve(`docs/guide/output/captions/PolyglotFormFill-guide.${lang}.srt`);
+  if (existsSync(srt)) { try { await updateCaptions(access, id, srt, lang, langName); } catch (e) { console.warn("  (captions step skipped: " + e.message + ")"); } }
   const watch = `https://www.youtube.com/watch?v=${id}`;
   // Copy the watch URL to the clipboard so pasting it into the Chrome Web Store promo field is trivial.
   try { execFileSync("powershell", ["-NoProfile", "-Command", `Set-Clipboard -Value '${watch}'`]); } catch { /* non-Windows / no clip */ }
