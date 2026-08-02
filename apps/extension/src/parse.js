@@ -115,6 +115,21 @@ export function parseFields(text) {
     idHeuristics(text, out, put);
   }
 
+  // Expand a 3-letter nationality/country code (from the MRZ) to the full name; clean a garbled
+  // visual-zone nationality (OCR "INITED STATES OF AMER").
+  const COUNTRY = { USA: "UNITED STATES OF AMERICA", GBR: "UNITED KINGDOM", IND: "INDIA", CAN: "CANADA", AUS: "AUSTRALIA", DEU: "GERMANY", FRA: "FRANCE", ITA: "ITALY", ESP: "SPAIN", CHN: "CHINA", JPN: "JAPAN", KOR: "SOUTH KOREA", MEX: "MEXICO", BRA: "BRAZIL" };
+  if (out.nationality) { const n = out.nationality.toUpperCase().trim(); if (COUNTRY[n]) out.nationality = COUNTRY[n]; else if (/[UI]N[IL]?TED\s*STATES|AMER/.test(n)) out.nationality = "UNITED STATES OF AMERICA"; }
+  if (/passport|passeport|pasaporte/i.test(text)) {
+    const tc = text.match(/\bP\s+([A-Z]{3})\b/); if (tc) { if (!out.passport_type) out.passport_type = "P"; if (!out.country_code) out.country_code = tc[1]; }
+    const auth = text.match(/((?:UNITED STATES )?DEPARTMENT OF STATE|MINISTRY OF[A-Z ]{3,}|PASSPORT OFFICE)/i);
+    if (auth && !out.issuing_authority) out.issuing_authority = auth[1].trim().replace(/\s+/g, " ");
+    const M = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+    const md = [...text.toUpperCase().matchAll(/\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s*[^\d]{0,3}(\d{4})\b/g)].map((m) => ({ d: `${M[m[2]]}/${m[1].padStart(2, "0")}/${m[3]}`, y: +m[3] })).filter((x) => x.y > 1900 && x.y < 2100);
+    const now = new Date().getFullYear();
+    for (const x of md) { if (x.y > now && !out.passport_expiry_date) out.passport_expiry_date = x.d; else if (x.y <= now && x.y >= now - 15 && !out.passport_issue_date) out.passport_issue_date = x.d; }
+    if (!out.date_of_birth && md.length) out.date_of_birth = [...md].sort((a, b) => a.y - b.y)[0].d;
+  }
+
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 
@@ -126,9 +141,10 @@ export function parseMrz(text) {
   const out = {};
   const setName = (field) => {
     const p = field.split("<<");
-    const sur = (p[0] || "").replace(/</g, " ").trim();
+    const sur = (p[0] || "").replace(/[<CLKX]{3,}[A-Z]*$/i, "").replace(/</g, " ").trim();
     if (sur) out.last_name = sur;
-    const g = (p[1] || "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
+    // Strip a trailing MRZ-filler run that OCR misread as letters ("<<<" -> "CCLLLLLS").
+    const g = (p[1] || "").replace(/[<CLKX]{3,}[A-Z]*$/i, "").replace(/</g, " ").trim().split(/\s+/).filter((w) => w.length > 1);
     if (g.length) { out.first_name = g[0]; if (g.length > 1) out.middle_name = g.slice(1).join(" "); }
   };
   const setDob = (yymmdd) => {
@@ -179,7 +195,19 @@ export function parseMrz(text) {
     if (l2) { out.id_number = l2.slice(0, 9).replace(/</g, ""); setNat(l2.slice(10, 13)); setDob(l2.slice(13, 19)); setSex(l2[20]); setExp(l2.slice(21, 27)); }
     return finalMrz(out);
   }
-  return [];
+  // LENIENT recovery: a real passport ALWAYS prints the MRZ, but OCR often misreads the leading 'P'
+  // (-> B/D/8) and the '<' filler, so the strict TD3 checks above miss it. Scan the raw text for the
+  // two MRZ signatures anywhere — exact, checksummed data that beats the noisy visual zone.
+  const J = (text || "").toUpperCase().replace(/[^A-Z0-9<\n]/g, "").split(/\n/).map((l) => l.replace(/\s+/g, ""));
+  for (const l of J) {
+    const m = l.match(/<([A-Z]{3})([A-Z]{2,})<<([A-Z][A-Z<]+)/);
+    if (m) { setNat(m[1]); setName(`${m[2]}<<${m[3]}`); break; }
+  }
+  for (const l of J) {
+    const m = l.match(/(\d{6,9})[<A-Z0-9]{0,2}([A-Z]{3})(\d{6})\d?([MFX<])(\d{6})/);
+    if (m) { if (!out.passport_no) out.passport_no = m[1]; setNat(m[2]); setDob(m[3]); setSex(m[4]); setExp(m[5]); break; }
+  }
+  return Object.keys(out).length ? finalMrz(out) : [];
 }
 function finalMrz(out) {
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));

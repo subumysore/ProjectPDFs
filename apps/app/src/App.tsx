@@ -141,6 +141,7 @@ export function App() {
   const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [scanned, setScanned] = useState(false);
+  const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -493,6 +494,7 @@ export function App() {
     setExtracted([]);
     setDocImage(null);
     setScanned(false);
+    setUncheckedKeys(new Set());
     setOcrPct(0);
     // Keep the source image as an on-device data URL so the picture itself can be saved too.
     const url = await new Promise<string>((res, rej) => {
@@ -533,6 +535,7 @@ export function App() {
   async function saveExtracted() {
     if (!selected) return;
     for (const f of extracted) {
+      if (uncheckedKeys.has(f.ontology_key)) continue; // user unticked this field — don't save it
       await guard(invoke("upsert_data_point", { profileId: selected, key: f.ontology_key, value: f.value }));
     }
     // Save the document picture itself too (passport / licence front / licence back), on-device.
@@ -1143,21 +1146,34 @@ export function App() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {/* Chips ONLY select a profile - no destructive control here, so a chip can never be a
               mis-click away from deleting data. Removal lives in its own confirmed action below. */}
-          {profiles.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => selectProfile(p.id)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 999,
-                border: p.id === selected ? "2px solid #0d8f83" : "1px solid #d9e2e6",
-                background: p.id === selected ? "#e2f2f0" : "#fff",
-                cursor: "pointer",
-              }}
-            >
-              {p.name}
-            </button>
-          ))}
+          {profiles.map((p) => {
+            // A distinct, stable pastel per profile (hashed from its id) so they're easy to tell apart
+            // at a glance instead of a wall of identical black-and-white chips.
+            const PALETTE = ["#dbeafe", "#fbe2e6", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#ffe4d6", "#f0f9c4"];
+            const DOT = ["#2563eb", "#db2777", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#ea580c", "#65a30d"];
+            const idx = Math.abs([...p.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length;
+            const on = p.id === selected;
+            return (
+              <button
+                key={p.id}
+                onClick={() => selectProfile(p.id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  padding: "7px 14px",
+                  borderRadius: 999,
+                  border: on ? "2px solid #0d8f83" : "1px solid #cbd5db",
+                  background: PALETTE[idx],
+                  color: "#152023",
+                  fontWeight: on ? 700 : 500,
+                  boxShadow: on ? "0 0 0 3px rgba(13,143,131,0.18)" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: DOT[idx], flexShrink: 0 }} />
+                {p.name}
+              </button>
+            );
+          })}
           {profiles.length === 0 && <span style={{ opacity: 0.6 }}>No profiles yet.</span>}
         </div>
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
@@ -1346,9 +1362,9 @@ export function App() {
             <button onClick={addPoint}>{tr("action.save")}</button>
           </div>
           <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
-            <label style={{ color: "#55666f" }}>Signature or profile photo — attach a single image (no OCR):</label>
+            <label style={{ color: "#55666f" }}>Signature, photo, etc. — attach an image under the key you type (signature and profile_photo are separate fields; no OCR):</label>
             <input
-              placeholder="key (e.g. signature, profile_photo)"
+              placeholder="key — e.g. signature (profile_photo is a separate key)"
               value={imgKey}
               onChange={(e) => setImgKey(e.currentTarget.value)}
               style={{ padding: 6, ...mono, width: "35%" }}
@@ -1376,6 +1392,7 @@ export function App() {
               <input
                 type="file"
                 accept="image/*"
+                style={{ fontSize: 15 }}
                 onChange={(e) => {
                   const f = e.currentTarget.files?.[0];
                   if (f) onDataSource(f);
@@ -1408,14 +1425,26 @@ export function App() {
             )}
             {(extracted.length > 0 || docImage) && (
               <div style={{ marginTop: 8 }}>
-                {extracted.length > 0 && <div style={{ fontSize: 13, color: "#0a6a60", fontWeight: 600, margin: "4px 0" }}>Found {extracted.length} field{extracted.length > 1 ? "s" : ""} — review before saving:</div>}
-                <ul style={{ margin: "6px 0" }}>
-                  {extracted.map((f) => (
-                    <li key={f.ontology_key} style={mono}>
-                      {f.ontology_key} = {f.value}
-                    </li>
-                  ))}
-                </ul>
+                {extracted.length > 0 && <div style={{ fontSize: 13, color: "#0a6a60", fontWeight: 600, margin: "4px 0" }}>Found {extracted.length} field{extracted.length > 1 ? "s" : ""} — untick any you don't want to save:</div>}
+                <div style={{ margin: "6px 0" }}>
+                  {extracted.map((f) => {
+                    const off = uncheckedKeys.has(f.ontology_key);
+                    return (
+                      <label key={f.ontology_key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", ...mono, opacity: off ? 0.45 : 1, cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={!off}
+                          onChange={(e) => setUncheckedKeys((prev) => {
+                            const n = new Set(prev);
+                            if (e.currentTarget.checked) n.delete(f.ontology_key); else n.add(f.ontology_key);
+                            return n;
+                          })}
+                        />
+                        <span>{f.ontology_key} = {f.value}</span>
+                      </label>
+                    );
+                  })}
+                </div>
                 {docImage && (
                   <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 10px", fontSize: 13 }}>
                     <input type="checkbox" checked={saveDocImage} onChange={(e) => setSaveDocImage(e.currentTarget.checked)} />
@@ -1424,7 +1453,7 @@ export function App() {
                   </label>
                 )}
                 <button onClick={saveExtracted}>
-                  Save {extracted.length + (docImage && saveDocImage ? 1 : 0)} to vault
+                  Save {extracted.filter((f) => !uncheckedKeys.has(f.ontology_key)).length + (docImage && saveDocImage ? 1 : 0)} to vault
                 </button>
               </div>
             )}
