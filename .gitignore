@@ -78,3 +78,6 @@ apps/app/models-staging/
 # Piper TTS binary + voice model for building the guide video (98MB, fetched, not committed).
 # Get them with: node scripts/fetch-piper.mjs
 tools/piper/
+
+.claude/worktrees/
+docs/guide/output/.*.log
