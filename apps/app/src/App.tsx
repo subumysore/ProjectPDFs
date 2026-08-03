@@ -1402,7 +1402,7 @@ export function App() {
               <input
                 type="file"
                 accept="image/*"
-                style={{ fontSize: 15 }}
+                style={{ fontSize: 17, padding: "4px 2px" }}
                 onChange={(e) => {
                   const f = e.currentTarget.files?.[0];
                   if (f) onDataSource(f);
