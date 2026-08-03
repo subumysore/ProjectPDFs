@@ -1379,18 +1379,26 @@ export function App() {
               onChange={(e) => setImgKey(e.currentTarget.value)}
               style={{ padding: 6, ...mono, width: "35%" }}
             />
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => {
-                const f = e.currentTarget.files?.[0];
-                if (f && imgKey.trim()) {
-                  addImagePoint(imgKey, f);
-                  setImgKey("");
-                  e.currentTarget.value = "";
-                }
-              }}
-            />
+            <label
+              title={imgKey.trim() ? "Choose a signature or photo image file" : "Type a key first (e.g. signature)"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 14px", border: "1px solid #cbd5db", borderRadius: 8, cursor: imgKey.trim() ? "pointer" : "not-allowed", background: imgKey.trim() ? "#eef7f5" : "#f2f4f5", fontSize: 14, opacity: imgKey.trim() ? 1 : 0.6, whiteSpace: "nowrap" }}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1 }}>✍️</span> Choose signature / photo file…
+              <input
+                type="file"
+                accept="image/png,image/jpeg"
+                style={{ display: "none" }}
+                disabled={!imgKey.trim()}
+                onChange={(e) => {
+                  const f = e.currentTarget.files?.[0];
+                  if (f && imgKey.trim()) {
+                    addImagePoint(imgKey, f);
+                    setImgKey("");
+                    e.currentTarget.value = "";
+                  }
+                }}
+              />
+            </label>
           </div>
 
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
