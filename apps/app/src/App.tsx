@@ -142,6 +142,8 @@ export function App() {
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [scanned, setScanned] = useState(false);
   const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
+  const [editedValues, setEditedValues] = useState<Record<string, string>>({});
+  const [manualFields, setManualFields] = useState<Array<{ key: string; value: string }>>([]);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
   const [pdfMsg, setPdfMsg] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -495,6 +497,8 @@ export function App() {
     setDocImage(null);
     setScanned(false);
     setUncheckedKeys(new Set());
+    setEditedValues({});
+    setManualFields([]);
     setOcrPct(0);
     // Keep the source image as an on-device data URL so the picture itself can be saved too.
     const url = await new Promise<string>((res, rej) => {
@@ -536,7 +540,13 @@ export function App() {
     if (!selected) return;
     for (const f of extracted) {
       if (uncheckedKeys.has(f.ontology_key)) continue; // user unticked this field — don't save it
-      await guard(invoke("upsert_data_point", { profileId: selected, key: f.ontology_key, value: f.value }));
+      const value = editedValues[f.ontology_key] ?? f.value; // user may have corrected the value
+      await guard(invoke("upsert_data_point", { profileId: selected, key: f.ontology_key, value }));
+    }
+    // Fields the user added by hand (e.g. a surname the OCR couldn't read).
+    for (const m of manualFields) {
+      const key = m.key.trim().toLowerCase().replace(/\s+/g, "_");
+      if (key && m.value.trim()) await guard(invoke("upsert_data_point", { profileId: selected, key, value: m.value.trim() }));
     }
     // Save the document picture itself too (passport / licence front / licence back), on-device.
     if (docImage && saveDocImage) {
@@ -1425,12 +1435,12 @@ export function App() {
             )}
             {(extracted.length > 0 || docImage) && (
               <div style={{ marginTop: 8 }}>
-                {extracted.length > 0 && <div style={{ fontSize: 13, color: "#0a6a60", fontWeight: 600, margin: "4px 0" }}>Found {extracted.length} field{extracted.length > 1 ? "s" : ""} — untick any you don't want to save:</div>}
+                {extracted.length > 0 && <div style={{ fontSize: 13, color: "#0a6a60", fontWeight: 600, margin: "4px 0" }}>Found {extracted.length} field{extracted.length > 1 ? "s" : ""} — edit any value, untick to skip, or add a missing one:</div>}
                 <div style={{ margin: "6px 0" }}>
                   {extracted.map((f) => {
                     const off = uncheckedKeys.has(f.ontology_key);
                     return (
-                      <label key={f.ontology_key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", ...mono, opacity: off ? 0.45 : 1, cursor: "pointer" }}>
+                      <div key={f.ontology_key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", opacity: off ? 0.5 : 1 }}>
                         <input
                           type="checkbox"
                           checked={!off}
@@ -1440,10 +1450,35 @@ export function App() {
                             return n;
                           })}
                         />
-                        <span>{f.ontology_key} = {f.value}</span>
-                      </label>
+                        <span style={{ ...mono, minWidth: 150 }}>{f.ontology_key}</span>
+                        <span>=</span>
+                        <input
+                          type="text"
+                          value={editedValues[f.ontology_key] ?? f.value}
+                          onChange={(e) => setEditedValues((p) => ({ ...p, [f.ontology_key]: e.currentTarget.value }))}
+                          style={{ ...mono, flex: 1, padding: "3px 6px", border: "1px solid #cbd5db", borderRadius: 5 }}
+                        />
+                      </div>
                     );
                   })}
+                  {manualFields.map((mf, i) => (
+                    <div key={`m${i}`} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
+                      <span style={{ width: 13, display: "inline-block" }} />
+                      <input type="text" placeholder="key e.g. last_name" value={mf.key}
+                        onChange={(e) => setManualFields((p) => p.map((x, j) => j === i ? { ...x, key: e.currentTarget.value } : x))}
+                        style={{ ...mono, minWidth: 150, padding: "3px 6px", border: "1px solid #cbd5db", borderRadius: 5 }} />
+                      <span>=</span>
+                      <input type="text" placeholder="value" value={mf.value}
+                        onChange={(e) => setManualFields((p) => p.map((x, j) => j === i ? { ...x, value: e.currentTarget.value } : x))}
+                        style={{ ...mono, flex: 1, padding: "3px 6px", border: "1px solid #cbd5db", borderRadius: 5 }} />
+                      <button onClick={() => setManualFields((p) => p.filter((_, j) => j !== i))}
+                        style={{ border: "none", background: "transparent", color: "#9a2c2c", cursor: "pointer", fontSize: 15 }}>✕</button>
+                    </div>
+                  ))}
+                  <button onClick={() => setManualFields((p) => [...p, { key: "", value: "" }])}
+                    style={{ marginTop: 6, fontSize: 13, background: "transparent", border: "1px dashed #9cb3b0", borderRadius: 8, padding: "4px 10px", cursor: "pointer", color: "#0a6a60" }}>
+                    + add a field (e.g. last_name = MYSORE)
+                  </button>
                 </div>
                 {docImage && (
                   <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 10px", fontSize: 13 }}>
@@ -1453,7 +1488,7 @@ export function App() {
                   </label>
                 )}
                 <button onClick={saveExtracted}>
-                  Save {extracted.filter((f) => !uncheckedKeys.has(f.ontology_key)).length + (docImage && saveDocImage ? 1 : 0)} to vault
+                  Save {extracted.filter((f) => !uncheckedKeys.has(f.ontology_key)).length + manualFields.filter((m) => m.key.trim() && m.value.trim()).length + (docImage && saveDocImage ? 1 : 0)} to vault
                 </button>
               </div>
             )}
