@@ -1142,7 +1142,19 @@ export function App() {
           const locked = (id === "forms" || id === "history") && !selected;
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
-              style={{ padding: "9px 16px", border: "none", borderBottom: tab === id ? "3px solid #0d8f83" : "3px solid transparent", background: "none", fontWeight: tab === id ? 700 : 500, fontSize: 14, color: tab === id ? "#0a6a60" : "#55666f", cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.4 : 1 }}>
+              style={{
+                padding: "9px 16px",
+                border: tab === id ? "1px solid #0d8f83" : "1px solid #cbd5db",
+                borderRadius: 9,
+                background: tab === id ? "#0d8f83" : "#eef2f4",
+                color: tab === id ? "#ffffff" : "#3b4a4e",
+                fontWeight: tab === id ? 700 : 600,
+                fontSize: 14,
+                cursor: locked ? "not-allowed" : "pointer",
+                opacity: locked ? 0.4 : 1,
+                boxShadow: tab === id ? "0 2px 7px rgba(13,143,131,0.35)" : "none",
+                transition: "background 0.12s, color 0.12s, box-shadow 0.12s",
+              }}>
               {label}
             </button>
           );
