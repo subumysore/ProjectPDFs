@@ -1,5 +1,45 @@
 # Active Context
 
+## XFA/LiveCycle form fill + DL surname OCR — 2026-08-02 (ADR-0030)
+- **Hybrid-XFA forms (USCIS N-400, I-130) now fill & stay editable.** pdf-lib can't parse them (0 fields,
+  `getPages()` throws) → fall back to pdf.js widgets + `annotationStorage` + `saveDocument()`, boxes labelled
+  by printed caption (shared proximity planner). New `apps/app/src/pdf.ts::fillXfaByWidgets`. Wired into
+  auto-fill + the (now prominent) "Fill from my vault" button. Proof: `docs/testing/pdf-fill-battery-2026-08.md`.
+- **DL surname "MYSORE" now read.** Sparse-text PSM 11 OCR pass + AAMVA field-1 authoritative in desktop
+  `ocr.ts` AND extension `parse.js` (parity). Tests: desktop 8/8, extension 12/12.
+- **Built desktop 1.0.6 (unsigned local test)** — NOT published, version NOT bumped (per owner's standing hold).
+- **Session 2 (2026-08-03) — made it actually work in the app + polish, all proven by driving the REAL app.**
+  Root causes only visible in the webview (not Node): encrypted-PDF load threw (→ `ignoreEncryption` on every
+  load); `fillAndExport` threw on the N-400 page tree (→ early-return 0 + callers catch→route to widget fill);
+  preview render race (→ dropped `renderFirstPage` when FormView renders). Added: auto-select lone/last profile
+  (persisted, `ppf.lastProfile`); prompt-to-save answers to vault keyed by printed caption (`fieldCaptions`);
+  larger form + zoom; glass tabs/buttons; teal checkbox outlines. **Extension parity:** new `pdfxfa.js`
+  (mirrors desktop) wired into `popup.js`; ext already had `ignoreEncryption`; ext PDF tests 37/37.
+- **Automated real-app testing harness (NEW, reusable):** launch `app.exe` with
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, connect puppeteer-core to Edge/WebView2,
+  drive unlock (passphrase)→profile→load→fill, screenshot. Proved N-400 86/391 + I-130 170/405 fill & render.
+  (puppeteer-core added as devDependency.) Temp test PDFs `_*_test.pdf` gitignored.
+- **CLAUDE.md rules added:** §8b dual-surface testing (EXE **and** extension), §4b parallelism.
+- **Session 3 (2026-08-03 cont.) — "fix everything + build unbuilt features":**
+  - **i18n suite green (343/343):** localised the updater Later/Update-now/Installing buttons (`update.*`
+    keys) + added the missing `guide.watch` key, across ALL 26 languages (were 3 pre-existing failures).
+  - **Grouped records (cards/addresses) BUILT on desktop** (memory [[grouped-records-cards]]): reuses
+    `@engine/groups.js`; records stored as one JSON data point `__records` in the vault (no Rust change);
+    `buildVault()` merges the PRIMARY card+address over the flat vault at fill; UI in Profile & Vault
+    (add/star-primary/remove, CVV optional + card masked). Was engine+tests only, unwired on both — now
+    wired on desktop. TODO parity: extension records UI + per-fill chooser (non-primary pick).
+  - Confirmed already-built: signature/photo fill (imagefill) + multi-profile UI.
+  - **Extension XFA + web-form autofill LIVE-verified in Edge AND Chrome** (headless): N-400 66/391 editable;
+    ATS form 11/11 incl. radio+select. Harness: static server + puppeteer-core + system Edge/Chrome.
+  - Bug found via real-app driving: record input onChange read `e.currentTarget.value` inside the setState
+    updater (pooled-event null) → crash; fixed by capturing the value first. Lesson reinforces [[automated-app-ui-testing]].
+- **OPEN / needs owner:** (1) extension XFA fill needs LIVE in-browser verification (code+unit-tests done);
+  (2) IRS W-4/W-9 (no tooltips, labels-above-boxes) fill weakly — documented; (3) live web-form battery
+  (Salesforce/ServiceNow/LinkedIn/…) NOT run — needs owner accounts + browser; real submissions violate privacy;
+  (4) **publishing BLOCKED** — F: signing key offline (unsigned only); no version bump per owner's standing hold.
+
+
+
 ## Marketing site fully localized in all 26 UI languages — 2026-07-25
 - `docs/marketing/build-site.mjs` rewritten: FULL landing + privacy + install rendered per language from
   ONE template set + a per-language catalogue, replacing the old ~3 KB per-language stubs. English at

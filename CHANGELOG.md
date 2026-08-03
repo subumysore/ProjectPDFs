@@ -3,6 +3,111 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Unreleased] - 2026-08-03
+### Fixed — never fill the CURRENT identity into a DIFFERENT concept (leave it blank)
+- The N-400 wrote the applicant's **current legal name** into *"Other Names You Have Used Since Birth"*
+  and into the **Interpreter/Preparer** name blocks. A box asking for a *different* concept (an alias the
+  user doesn't have, or another person filling the form) must stay **BLANK** — the field still exists to
+  complete by hand. Generalised in the shared engine (`apps/extension/src/pdfproximity.js`, used by BOTH
+  desktop and extension): `isOtherNameText` + a nearest-name-SECTION classifier (`nameSectionKind`) skip a
+  name box under an *other/former/maiden* heading; the entity list now also covers interpreter, preparer,
+  translator, attorney, representative, witness. Verified: N-400 Item-1 current name still fills; Item-2
+  Other-Names + Interpreter/Preparer left blank. New unit test locks it. Engine suite **347/347**.
+
+## [Unreleased] - 2026-08-02
+### Fixed — fill hybrid-XFA / LiveCycle forms (USCIS N-400, I-130, …) — ADR-0030
+- These forms were **unfillable**: `pdf-lib` can't parse them (0 fields; `getPages()` throws), so the app
+  treated a 440-widget form as flat and offered no fill. Now, when pdf-lib sees 0 fields, we fall back to
+  the **pdf.js widget layer** — label each box by its printed caption (shared proximity planner), write via
+  `annotationStorage` + `saveDocument()`. Output **stays editable** (verified: N-400 reloads with all 440
+  widgets + values). Wired into auto-fill-on-load and the "Fill from my vault" button.
+- **UI:** "Fill from my vault" promoted to a prominent primary button (was hidden under "manual/demo tools").
+### Fixed — driver-licence surname OCR (e.g. NC "1 MYSORE")
+- Default page-segmentation (PSM 3) mangled the surname line; added a **sparse-text (PSM 11) OCR pass** and
+  made **AAMVA field 1 authoritative** for the surname. Desktop `ocr.ts` + extension `parse.js` now both read
+  `first=SUBRAMANYA, middle=VISHWANATHAN, last=MYSORE`. OCR tests 8/8, extension parse tests 12/12.
+### Tested
+- PDF fill battery across USCIS/IRS/gov forms — see `docs/testing/pdf-fill-battery-2026-08.md`.
+### Fixed — the real webview blockers (found by driving the ACTUAL app, not just Node)
+- **Encrypted PDFs** (USCIS forms are permissions-locked): every `PDFDocument.load` now passes
+  `ignoreEncryption: true` — the load no longer throws before the XFA path runs.
+- **`fillAndExport` no longer throws on unparseable XFA page trees**: returns 0 fields early (skips
+  `appearances()`/`getPages()`), and callers treat any throw as 0 → route to the widget filler.
+- **Preview render race**: stopped calling `renderFirstPage` alongside FormView (it wedged the preview
+  on "Rendering the form…"). Form now auto-renders filled.
+### Added
+- **Auto-select a lone/last-used profile** (persisted) so the user lands ready-to-fill.
+- **Prompt-to-save form answers to the vault**, keyed by each box's printed caption (not the meaningless
+  XFA field name); junk XFA names with no caption are not offered.
+- **Larger form view + zoom controls**; **glass/aero styling** for tabs and the form toolbar; **visible
+  teal outlines on checkbox/radio overlays**.
+- **Extension XFA parity**: `apps/extension/src/pdfxfa.js` (mirrors the desktop widget+saveDocument fill)
+  wired into `popup.js`; extension already used `ignoreEncryption`. Extension PDF tests 37/37.
+### Tested (automated, real app)
+- Drove the actual desktop app over the WebView2 DevTools protocol (puppeteer-core + Edge): unlock →
+  auto-select profile → load → fill. **N-400: 86/391, I-130: 170/405**, editable, values verified on the
+  rendered form. Screenshots captured.
+### Verified in BOTH Edge and Chrome (headless, real browser runtime + screenshots)
+- **Extension XFA fill** (`pdfxfa.js`) on the N-400: `filled 66/391`, reload shows **440 widgets intact
+  (editable)** + values present — identical in Edge and Chrome. Runtime gate CLOSED.
+- **Web-form autofill** (`pagefill.js`) on a realistic ATS application (Workday/LinkedIn/Greenhouse-style
+  labels): **11/11 fields** — text/email/tel/url inputs, the work-authorization **radio**, and the
+  sponsorship **select** — identical in Edge and Chrome. Engine unit tests 94/94.
+### Fixed — extension: filling an XFA PDF (N-400) went to OCR and failed
+- The pdf.js widget filler (`pdfxfa.js`) returns a real filled, editable PDF, but it was flagged only
+  `xfa: true`, which `popup.js` treated as "AcroForm unreliable → OCR". So the N-400 was routed to the OCR
+  path and failed (`Expected instance of … undefined` — pdf-lib on the unparseable XFA). Now the widget
+  result is tagged `widgets: true` and routes to the viewer to SHOW the filled PDF (66/391), and the
+  redundant proximity pass is skipped. Extension suite 346/346.
+
+### Changed — form-fill UX (per owner)
+- **Checkboxes & radios are now BOLD and unmistakable** on the form: a thick teal box with a white ✓ when
+  ticked (radios show a teal ring + filled dot), keyboard-accessible, click toggles. (The old faint 16px
+  native controls were easy to miss.) Verified: click flips aria-checked false→true.
+- **Live animated hourglass** while filling (button + a banner) so it's obvious the fill is running on big
+  forms; the preview now **auto-jumps to the first page that has filled values** (gov forms often have a
+  blank "office use only" page 1).
+### Tested — full use-case/test matrix (EXE + Extension), `docs/testing/test-matrix.md`
+- Engine 346/346 · Desktop ocr/appearances/office 8/8 · Extension XFA fill + web-form + card/billing verified
+  in **Edge AND Chrome** · Real-app CDP: N-400 77/391, I-130 167/405, I-9 67/128, cards, profiles, checkboxes.
+
+### Added — payment CARDS with billing address, brand logos & card type (DESKTOP)
+- A saved card now **includes its own billing address**, **pre-filled from the mailing address** (edit if it
+  bills elsewhere) — no more separate address entry. **Card type** (Credit/Debit/Cash/Prepaid) is shown, and
+  the **brand logo** (Visa/Mastercard/Amex/Discover/…) is detected from the number and displayed; the number
+  stays masked (`•••• 1111`), CVV optional. The primary card fills payment forms — the resolver + web-form
+  engine learned the card + `billing_*` ontology (kept separate from the plain mailing address). Engine
+  tests 14/14; full suites green.
+### Changed — UI polish (per owner)
+- **Fill button moved to the TOP** form toolbar as the first, primary green-glass action (with Pen/Text/
+  Signature/Image). **Profiles** are a horizontally-scrollable strip when >5, with a **red glass "Remove this
+  profile — <name>"** button on the same row; its confirm dialog now offers **"export an encrypted backup
+  first."**
+### Incident + recovery (2026-08-03) — honesty
+- A test-cleanup script clicked *every* button labelled "Remove"; the vault table renders a Remove button per
+  row, so it **deleted ~52 of the owner's vault data points**. Not a sync/app bug — reckless automation.
+  Recovered ~26 identity/answer values (from this session's screenshots) + the DL/passport/signature/photo
+  images (re-read from `Documents/`), and backed up `vault.db`. Rule recorded: never broad destructive clicks;
+  test destructive flows on a throwaway profile; snapshot the DB first.
+
+### Added — grouped records (credit cards & extra addresses) on the DESKTOP
+- Reuses the shared `@engine/groups.js` engine (records live in the vault as one JSON data point, no Rust
+  change). Manage several **named cards/addresses**, star a **primary**; the primary of each type merges
+  over the vault at fill time so payment/address forms fill from the chosen record. **CVV optional + card
+  number masked** (`•••• 1234`) — never shown in full. (Was engine+tests only, unwired on both surfaces;
+  now built + wired on desktop. Extension records UI + per-fill chooser are the remaining increment.)
+### Fixed — i18n test suite fully green (was 3 pre-existing failures)
+- The updater **"Later"/"Update now"/"Installing…"** buttons are now localised (`update.*` keys); the
+  popup's **`guide.watch`** key was missing from the catalogue. Added all keys across **all 26 languages**
+  (no gaps). Extension suite **343/343**.
+### Investigated, not shipped
+- IRS **W-4/W-9** labels-above-boxes proximity fix: implemented + measured; it **regressed** N-400/I-130
+  without helping W-4, so it was **reverted** (proximity engine unchanged). Remains a documented limitation.
+### Known limitation
+- Tooltip-less AcroForms whose labels sit ABOVE the boxes (IRS W-4/W-9) still fill weakly via proximity.
+- Filling the *real* Salesforce/LinkedIn/Workday sites end-to-end needs the owner's logged-in accounts and
+  would breach the privacy invariant if actually submitted — the fill ENGINE is proven on representative forms.
+
 ## [Extension 1.0.3] - 2026-07-27
 Chrome Web Store release bundling all of today's web-autofill work (below): intent-based
 screening/EEO answering, iframe (Greenhouse) support, aria-labelledby questions, per-block

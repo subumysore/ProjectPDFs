@@ -15,10 +15,39 @@ const stem = (t) => t.replace(/s$/, "");
 
 // A box that belongs to a DIFFERENT entity than the applicant (employer / ship / hotel /
 // guarantor / inviter / partner …) must never be filled from the user's own identity.
-const ENTITY = ["employer", "company", "organization", "organisation", "ship", "airline", "vessel", "flight", "hotel", "guarantor", "sponsor", "inviter", "invitee", "reference", "referee", "emergency", "next of kin", "host", "partner", "parent", "spouse", "school", "university", "institution", "person", "relative", "friend"];
+const ENTITY = ["employer", "company", "organization", "organisation", "ship", "airline", "vessel", "flight", "hotel", "guarantor", "sponsor", "inviter", "invitee", "reference", "referee", "emergency", "next of kin", "host", "partner", "parent", "spouse", "school", "university", "institution", "person", "relative", "friend", "interpreter", "preparer", "translator", "attorney", "representative", "witness"];
 export function isEntityText(s) {
   const g = norm(s); const toks = new Set(g.split(" ").filter(Boolean).map(stem));
   return ENTITY.some((e) => (e.includes(" ") ? g.includes(e) : toks.has(stem(e))));
+}
+
+// A box asking for the applicant's OTHER / FORMER / MAIDEN names (aliases they have used) is NOT their
+// CURRENT legal name — filling it with the current name is wrong (USCIS N-400 "Other Names You Have Used
+// Since Birth", passport "previous names", etc.). Unless the vault holds an explicit alias, leave the box
+// BLANK — the field still exists to fill by hand. Matched on whole words so "mother name" ≠ "other name".
+const OTHER_NAME = ["other name", "other names", "names you have used", "name you have used", "maiden name",
+  "name at birth", "birth name", "former name", "former names", "previous name", "previous names",
+  "prior name", "also known as", "alias", "aliases", "married name", "names used", "used since birth"];
+export function isOtherNameText(s) {
+  const g = " " + norm(s) + " ";
+  return OTHER_NAME.some((e) => g.includes(" " + e + " "));
+}
+
+// The NAME SECTION a field sits under: scan upward for the NEAREST name-section heading and report
+// whether it's the applicant's CURRENT legal name or their OTHER/FORMER/MAIDEN names. headerAbove()
+// returns the field's own column label ("Family Name") so it can't tell these apart; this walks the
+// text above (any column) and returns the first heading that names a section. → "other" | "current" | null.
+const CURRENT_NAME = ["current legal name", "your current legal name", "your name", "your legal name",
+  "full legal name", "name of applicant", "applicant s name", "applicant name", "legal name"];
+function nameSectionKind(texts, r) {
+  const cy = r.y + r.height / 2;
+  const above = texts.filter((t) => t.y > cy).sort((a, b) => (a.y - cy) - (b.y - cy)); // nearest-above first
+  for (const t of above) {
+    if (isOtherNameText(t.s)) return "other";
+    const g = " " + norm(t.s) + " ";
+    if (CURRENT_NAME.some((c) => g.includes(" " + c + " "))) return "current";
+  }
+  return null;
 }
 
 const rowMatch = (t, cy) => Math.abs((t.y + t.h / 2) - cy) <= 7;
@@ -75,7 +104,14 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
     const isChoice = f.kind === "choice";
     const isRadio = isChoice && (f.widgets && f.widgets.length > 1);
     const caption = captionFor(T, f.rect, { preferColon: isRadio });
-    if (isEntityText(caption + " " + headerAbove(T, f.rect))) { skipped++; continue; }
+    // A different entity (employer/guarantor/interpreter/preparer/…) OR the applicant's OTHER/FORMER/
+    // MAIDEN names — never fill either from the user's CURRENT identity. Leave the field blank (it still
+    // exists to fill by hand). The general rule the owner asked for, not just for "Other Names".
+    const ctx = caption + " " + headerAbove(T, f.rect) + " " + (f.id || "");
+    // NAME field under an "Other/Former/Maiden names" section → leave blank (only for name fields, via the
+    // nearest name-section heading, so non-name fields below that section are unaffected).
+    const capIsName = /\b(family|last|given|first|middle|maiden|surname|forename|name)\b/i.test(caption);
+    if (isEntityText(ctx) || isOtherNameText(ctx) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
     const value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
 

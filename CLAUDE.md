@@ -57,6 +57,17 @@ Do not jump to code or debug "on vibes." Every task follows this loop:
 - **ENVIRONMENT FIRST:** for "module not found" and similar, verify config/deps before editing code.
 - **PROGRESS LOG:** after a module, update the traceability matrix + `memory-bank/progress.md`.
 
+# 4b. PARALLELISM RULE (do independent work concurrently)
+Whenever tasks are INDEPENDENT (no output of one is an input to another), execute them in PARALLEL, not
+one-after-another — it is faster and the default expectation here:
+- Batch independent tool calls into a single step (multiple searches/reads/edits at once; independent
+  builds/tests kicked off together; background long-runs while you continue other work).
+- Only serialize when there is a real data dependency (B needs A's result) or a shared-resource conflict
+  (e.g. two builds writing the same target, or editing the same file). When unsure whether they conflict,
+  say so and serialize just those.
+- Applies to code changes too: land related independent edits together and verify in one pass rather than
+  a slow edit→build→edit→build loop.
+
 # 5. DECISIONS: RFC → ADR
 - Propose a non-trivial change as an **RFC** (`docs/rfc/`, use `0000-template.md`).
 - Once decided, record the outcome as an **ADR** (`docs/adr/`, MADR template). ADRs are immutable;
@@ -86,6 +97,19 @@ On completing any task, BEFORE reporting done:
 - **SemVer** for releases; freeze/release via an annotated tag + a changelog entry + (optionally) a
   GitHub Release. A release tag MUST correspond to a reproducible build/commit.
 - Branch strategy: TODO (trunk-based recommended). Never commit secrets; never force-push shared branches.
+
+# 8b. DUAL-SURFACE TESTING RULE (Desktop **and** Extension — non-negotiable)
+No change is "tested" until it is verified on **BOTH** surfaces it can affect: the **Desktop app (EXE)**
+and the **Chrome Extension**. They share one engine (`@engine`) and must stay in lockstep, so:
+- Any change to shared logic (resolver, proximity, OCR/parse, PDF fill, i18n, optmatch, fonts, …) MUST be
+  tested against the Desktop app AND the Extension before being called done — not one, then "assume" the other.
+- **Test the real integration, not just the pure function.** A Node/unit pass proves the algorithm; it does
+  NOT prove the surface. Verify the actual runtime path (webview for the EXE, content-script/page for the
+  Extension) — the bug that bit us (encrypted-PDF load throwing only in the app) never showed up in Node.
+- Prefer **automated** verification (headless/driven UI) and capture the result; never hand the owner a
+  "please test this" when it can be automated. Document what was tested on each surface and the outcome.
+- Keep the two **in sync**: if a fix lands on one surface, port + test it on the other in the SAME task, or
+  explicitly flag the parity gap in the deliverables matrix.
 
 # 9. QUALITY GATES (CI must pass)
 lint · typecheck · unit + integration tests · acceptance specs · traceability check · migration-safety ·

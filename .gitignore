@@ -82,3 +82,6 @@ tools/piper/
 .claude/worktrees/
 docs/guide/output/.*.log
 apps/app/eng.traineddata
+
+# Temp form-fill test PDFs (automated UI testing, not source)
+_*_test.pdf

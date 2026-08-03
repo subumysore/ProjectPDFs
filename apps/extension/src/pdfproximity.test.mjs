@@ -56,3 +56,24 @@ test("employer 'Name' is SKIPPED (different entity), never the applicant's name"
   assert.equal(get("employer_name"), undefined);
   assert.ok(plan.skipped >= 1);
 });
+
+// The owner's rule (2026-08-03): a name box under "Other Names You Have Used" / interpreter / preparer
+// is a DIFFERENT concept than the applicant's CURRENT legal name — leave it blank, don't fill the
+// current name. Uses the nearest name-SECTION heading above (headerAbove sees only the column label).
+test("name fields: current legal name fills; Other Names / interpreter left blank", () => {
+  const V = { first_name: "SUBRAMANYA", last_name: "MYSORE" };
+  const tx = [
+    T(0, 40, 700, "1. Your Current Legal Name"),
+    T(0, 60, 685, "Family Name (Last Name)"),
+    T(0, 40, 600, "2. Other Names You Have Used Since Birth"),
+    T(0, 60, 585, "Family Name (Last Name)"),
+    T(0, 60, 500, "Interpreter's Family Name (Last Name)"),
+  ];
+  const F = (id, y) => ({ id, kind: "text", page: 0, rect: { x: 60, y, width: 120, height: 14 } });
+  const fields = [F("P2_Line1_FamilyName", 668), F("Line2_FamilyName1", 568), F("Interp_FamilyName", 483)];
+  const plan = planProximityFill(fields, tx, V, resolveFields);
+  const val = (id) => (plan.assignments.find((a) => a.id === id) || {}).value;
+  assert.equal(val("P2_Line1_FamilyName"), "MYSORE", "current legal name fills");
+  assert.equal(val("Line2_FamilyName1"), undefined, "Other Names last name left blank");
+  assert.equal(val("Interp_FamilyName"), undefined, "interpreter name left blank");
+});

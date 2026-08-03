@@ -270,27 +270,38 @@ export function parseFields(text: string): ExtractedField[] {
     if (pob && looksGarbled(out["place_of_birth"])) out["place_of_birth"] = pob;
   }
 
-  // A licence/ID FRONT: the GIVEN names are a line of 2–3 name-like caps words (noise lines like
-  // "BEAST TRIE ... NORD" also look name-ish, so pick the candidate with the MOST total letters — a
-  // real name outweighs short dictionary-noise words). US licences print the SURNAME on the line
-  // ABOVE the given names, so if that line is a clean 1–2 token name, use it as the last name.
-  if (looksGarbled(out["first_name"]) && looksGarbled(out["last_name"])) {
+  // AAMVA numbered fields on a US licence FRONT: field 1 = family name, field 2 = given names. Sparse-
+  // text OCR (PSM 11) reads these isolated label lines as "1 MYSORE" / "2 SUBRAMANYA ..." even when the
+  // default layout pass mangles them. Field 1 is the AUTHORITATIVE surname source — the front print
+  // rarely OCRs cleanly any other way. Match only a line that STARTS with the bare field number.
+  const numberedName = (n: string): string[] => {
+    for (const l of lr) {
+      const m = l.match(new RegExp(`^${n}[\\s.:_-]+(.+)$`));
+      if (m) { const t = nameToks(m[1] ?? ""); if (t.length) return t; }
+    }
+    return [];
+  };
+  const fam = numberedName("1");
+  if (fam.length && looksGarbled(out["last_name"])) { delete out["last_name"]; put("last_name", fam.join(" ")); }
+
+  // GIVEN names: a line of 2–3 name-like caps words. Noise lines ("BEAST TRIE ... NORD") and street/city
+  // lines also look name-ish, so pick the candidate with the MOST total letters — a real name outweighs
+  // short dictionary/street words. Run whenever the first name is missing, independent of the surname.
+  if (looksGarbled(out["first_name"])) {
     const cands = lr.map((l, i) => ({ i, t: nameToks(l) })).filter((c) => c.t.length >= 2 && c.t.length <= 3);
     const best = cands.sort((a, b) => b.t.join("").length - a.t.join("").length)[0];
     if (best) {
-      delete out["first_name"]; delete out["last_name"]; delete out["middle_name"];
+      delete out["first_name"]; delete out["middle_name"];
       const given = best.t;
-      const above = nameToks(lr[best.i - 1] ?? "");
-      if (above.length >= 1 && above.length <= 2 && !above.some((w) => given.includes(w))) {
-        // Surname line above + given-names line below: first / middle / last.
-        put("first_name", given[0] ?? "");
-        if (given.length > 1) put("middle_name", given.slice(1).join(" "));
-        put("last_name", above.join(" "));
-      } else {
-        // No readable surname line — on an ID the given-names line is FIRST (+ MIDDLE); the surname is
-        // separate (often illegible on the front). Do NOT mislabel the middle name as the last name.
-        put("first_name", given[0] ?? "");
-        if (given.length > 1) put("middle_name", given.slice(1).join(" "));
+      put("first_name", given[0] ?? "");
+      if (given.length > 1) put("middle_name", given.slice(1).join(" "));
+      // Only if field 1 gave us nothing, fall back to the US layout convention that the SURNAME sits on
+      // the line ABOVE the given names (a clean 1–2 token line that isn't part of the given names).
+      if (looksGarbled(out["last_name"])) {
+        const above = nameToks(lr[best.i - 1] ?? "");
+        if (above.length >= 1 && above.length <= 2 && !above.some((w) => given.includes(w))) {
+          delete out["last_name"]; put("last_name", above.join(" "));
+        }
       }
     }
   }
@@ -437,14 +448,33 @@ export async function extractFromImage(
     // that garbles in one pass is often clean in the other, and parseFields (first-good-match-wins)
     // picks the best of both. This beats relying on either pass alone.
     const rawText = (await worker.recognize(file)).data.text ?? "";
-    onProgress?.(50);
+    onProgress?.(40);
     let procText = "";
+    let canvas: Awaited<ReturnType<typeof fileToProcessedCanvas>> | null = null;
     try {
-      const canvas = await fileToProcessedCanvas(file);
+      canvas = await fileToProcessedCanvas(file);
       procText = (await worker.recognize(canvas as Parameters<typeof worker.recognize>[0])).data.text ?? "";
     } catch { /* canvas unavailable — raw pass alone */ }
+    onProgress?.(70);
+    // THIRD PASS — sparse-text segmentation (PSM 11). The default "auto" layout analysis (PSM 3)
+    // mis-groups the widely-spaced label lines on a driver's licence and mangles them (e.g. the
+    // surname line "1 MYSORE" OCRs to garbage). PSM 11 treats the card as scattered text and reads
+    // those isolated labels cleanly. We merge it in so parseFields (first-good-match-wins) can pick
+    // the surname up. Restored to the default mode afterward so cached-worker reuse is unaffected.
+    let sparseText = "";
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: "11" as never });
+      sparseText = (await worker.recognize(file)).data.text ?? "";
+      if (canvas) {
+        const s2 = (await worker.recognize(canvas as Parameters<typeof worker.recognize>[0])).data.text ?? "";
+        sparseText = s2 ? `${sparseText}\n${s2}` : sparseText;
+      }
+    } catch { /* sparse pass unavailable — the two default-mode passes still stand */
+    } finally {
+      try { await worker.setParameters({ tessedit_pageseg_mode: "3" as never }); } catch { /* leave as-is */ }
+    }
     onProgress?.(100);
-    const text = procText ? `${rawText}\n${procText}` : rawText;
+    const text = [rawText, procText, sparseText].filter(Boolean).join("\n");
     return { text, fields: parseFields(text) };
   } finally {
     /* worker is cached and reused — do not terminate */

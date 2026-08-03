@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { renderPageWithFields, type FormFieldBox } from "./pdf";
+import { renderPageWithFields, firstFilledPage, type FormFieldBox } from "./pdf";
 
 /**
  * The form itself, editable in place. The page is rendered and real inputs are laid exactly over
@@ -28,6 +28,16 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
   const [page, setPage] = useState(0);
   const [numPages, setNumPages] = useState(1);
   const [busy, setBusy] = useState(true);
+  // When a NEW (freshly-filled) document arrives, jump the preview to the first page that actually has
+  // filled values — so the user immediately SEES their data instead of a blank "office use only" page 1.
+  const lastBytesRef = useRef<ArrayBuffer | null>(null);
+  useEffect(() => {
+    if (lastBytesRef.current === bytes) return;
+    lastBytesRef.current = bytes;
+    let cancelled = false;
+    firstFilledPage(bytes).then((p) => { if (!cancelled) setPage(p); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [bytes]);
   const [fit, setFit] = useState(0);
   // The form renders at a natural document width (base 720). The user can zoom it in/out to taste —
   // small enough to see the whole page, or large enough to read fine print. Their choice, not fixed.
@@ -49,8 +59,10 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       try {
         // Fit the page to the panel, but CAP the width so the form renders at a natural document
         // size (like a page on screen) instead of being stretched 2–3× the app's own text and controls.
+        // Load the form as large as the panel allows (up to a full-page ~960px base), so it isn't a
+        // tiny truncated thumbnail. The user can still zoom in/out from here.
         const panel = (fit || wrapRef.current?.clientWidth || 0) - 4;
-        const avail = Math.min(panel, Math.round(720 * zoom));
+        const avail = Math.min(panel, Math.round(960 * zoom));
         const r = await renderPageWithFields(bytes, page, canvasRef.current, 1.3, avail > 100 ? avail : undefined);
         if (cancelled) return;
         setFields(r.fields);
@@ -84,14 +96,20 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
     borderRadius: 2,
   });
 
+  const btn: React.CSSProperties = {
+    padding: "6px 12px", border: "1px solid #b7c4cc", borderRadius: 8,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(232,240,242,0.9) 100%)",
+    color: "#22343a", fontWeight: 650, cursor: "pointer",
+    boxShadow: "0 1px 3px rgba(35,55,60,0.16), inset 0 1px 0 rgba(255,255,255,0.75)",
+  };
   return (
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "center", margin: "0 0 8px", fontSize: 13 }}>
         {numPages > 1 && (
           <>
-            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>‹ Prev</button>
+            <button style={btn} onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>‹ Prev</button>
             <span>Page {page + 1} / {numPages}</span>
-            <button onClick={() => setPage((p) => Math.min(numPages - 1, p + 1))} disabled={page === numPages - 1}>Next ›</button>
+            <button style={btn} onClick={() => setPage((p) => Math.min(numPages - 1, p + 1))} disabled={page === numPages - 1}>Next ›</button>
           </>
         )}
         <span style={{ color: "#55666f" }}>
@@ -100,10 +118,10 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
         </span>
         {/* User-controlled zoom — resize the form to taste. */}
         <span style={{ display: "inline-flex", gap: 4, alignItems: "center", marginLeft: "auto" }}>
-          <button onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={zoom <= 0.5} title="Zoom out">−</button>
-          <span style={{ minWidth: 42, textAlign: "center", color: "#55666f" }}>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom((z) => Math.min(2.5, Math.round((z + 0.1) * 10) / 10))} disabled={zoom >= 2.5} title="Zoom in">+</button>
-          {zoom !== 1 && <button onClick={() => setZoom(1)} title="Reset zoom">Reset</button>}
+          <button style={btn} onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={zoom <= 0.5} title="Zoom out">−</button>
+          <span style={{ minWidth: 42, textAlign: "center", color: "#55666f", fontWeight: 700 }}>{Math.round(zoom * 100)}%</span>
+          <button style={btn} onClick={() => setZoom((z) => Math.min(2.5, Math.round((z + 0.1) * 10) / 10))} disabled={zoom >= 2.5} title="Zoom in">+</button>
+          {zoom !== 1 && <button style={btn} onClick={() => setZoom(1)} title="Reset zoom">Reset</button>}
         </span>
       </div>
       <div ref={wrapRef} style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>
@@ -116,23 +134,43 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
             return (
               <div key={f.name + f.left + f.top} style={box(f)} title={title}>
                 {f.kind === "check" ? (
-                  <input
-                    type="checkbox"
-                    checked={cur === "Yes" || cur === "On"}
-                    onChange={(e) => onEdit(f.name, e.currentTarget.checked ? "Yes" : "Off")}
-                    style={{ width: "100%", height: "100%" }}
-                  />
+                  // BOLD, unmistakable checkbox: a thick teal box the user can clearly see and click;
+                  // fills solid teal with a white ✓ when checked. (A bare 16px native checkbox over the
+                  // printed box was too faint to notice.)
+                  (() => { const on = cur === "Yes" || cur === "On"; return (
+                    <div
+                      role="checkbox" aria-checked={on} tabIndex={0}
+                      onClick={() => onEdit(f.name, on ? "Off" : "Yes")}
+                      onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onEdit(f.name, on ? "Off" : "Yes"); } }}
+                      title={title}
+                      style={{
+                        width: "100%", height: "100%", boxSizing: "border-box",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        border: "2px solid #0d8f83", borderRadius: 3,
+                        background: on ? "#0d8f83" : "rgba(13,143,131,0.16)",
+                        color: "#fff", fontWeight: 900, lineHeight: 1, cursor: "pointer",
+                        fontSize: Math.max(11, Math.min(f.width, f.height) * 0.9),
+                        boxShadow: "0 0 0 1px rgba(255,255,255,0.7)",
+                      }}
+                    >{on ? "✓" : ""}</div>
+                  ); })()
                 ) : f.kind === "radio" && f.optionValue ? (
-                  // One widget = one option of the group. Render an actual radio dot, filled when the
-                  // group's value equals this widget's export value — so the chosen option is obvious.
-                  <input
-                    type="radio"
-                    name={f.name}
-                    checked={cur === f.optionValue}
-                    onChange={() => onEdit(f.name, f.optionValue!)}
-                    title={`${f.name}: ${f.optionValue}`}
-                    style={{ width: "100%", height: "100%", margin: 0, accentColor: "#0d8f83" }}
-                  />
+                  // One widget = one option of the group. A clear teal RING with a filled dot when chosen.
+                  (() => { const on = cur === f.optionValue; return (
+                    <div
+                      role="radio" aria-checked={on} tabIndex={0}
+                      onClick={() => onEdit(f.name, f.optionValue!)}
+                      onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onEdit(f.name, f.optionValue!); } }}
+                      title={`${f.name}: ${f.optionValue}`}
+                      style={{
+                        width: "100%", height: "100%", boxSizing: "border-box",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        border: "2px solid #0d8f83", borderRadius: "50%",
+                        background: "rgba(13,143,131,0.16)", cursor: "pointer",
+                        boxShadow: "0 0 0 1px rgba(255,255,255,0.7)",
+                      }}
+                    >{on && <span style={{ width: "58%", height: "58%", borderRadius: "50%", background: "#0d8f83", display: "block" }} />}</div>
+                  ); })()
                 ) : f.kind === "dropdown" || f.kind === "radio" ? (
                   <select value={cur} onChange={(e) => onEdit(f.name, e.currentTarget.value)} style={inputStyle(f)}>
                     <option value="">—</option>

@@ -285,17 +285,35 @@ function idHeuristics(text, out, put) {
     if (name.replace(/[^A-Z]/g, "").length < 3) continue;
     nameCands.push(name);
   }
-  if (nameCands.length && !out.first_name && !out.last_name) {
-    if (nameCands.length >= 2) {
+  // AUTHORITATIVE: AAMVA field 1 = family name. A line that BEGINS with the bare field number "1" is
+  // a stronger signal than line order — a dual-pass OCR can surface the surname line ("1 MYSORE") and
+  // the given-names line in either order, so anchor on the number, not the sequence.
+  const cleanToks = (s) => (s || "").split(/\s+/).filter(
+    (t) => /^[A-Z][A-Z'’.]{1,}$/.test(t) && !STOP.test(t) && !STATE_RE.test(t) && !STREET.test(t),
+  );
+  const famLine = lines.find((l) => /^1[\s.:_-]+[A-Z]/.test(l));
+  if (famLine && !out.last_name) { const t = cleanToks((famLine.match(/^1[\s.:_-]+(.+)$/) || [])[1]); if (t.length) put("last_name", t.join(" ")); }
+
+  // GIVEN names: the caps candidate line with the MOST letters (a real name outweighs short noise and
+  // the possibly-truncated "2 …" field line). Runs whenever the first name is still missing, even if
+  // the surname is already known from field 1.
+  if (nameCands.length && !out.first_name) {
+    const surTok = (out.last_name || "").split(/\s+/)[0];
+    const givenCand = nameCands
+      .filter((n) => n.split(/\s+/)[0] !== surTok)
+      .sort((a, b) => b.replace(/[^A-Z]/g, "").length - a.replace(/[^A-Z]/g, "").length)[0] || nameCands[0];
+    const parts = givenCand.split(/\s+/);
+    put("first_name", parts[0]);
+    if (out.last_name) {
+      if (parts.length > 1) put("middle_name", parts.slice(1).join(" "));
+    } else if (nameCands.length >= 2 && givenCand === nameCands[nameCands.length - 1]) {
+      // Surname line above + given-names line below (classic US licence layout): first / middle / last.
       put("last_name", nameCands[0].split(/\s+/)[0]);
-      const given = nameCands[1].split(/\s+/);
-      put("first_name", given[0]);
-      if (given.length > 1) put("middle_name", given.slice(1).join(" "));
-    } else {
-      const parts = nameCands[0].split(/\s+/);
-      put("first_name", parts[0]);
-      if (parts.length >= 3) { put("middle_name", parts.slice(1, -1).join(" ")); put("last_name", parts[parts.length - 1]); }
-      else if (parts.length === 2) put("last_name", parts[1]);
+      if (parts.length > 1) put("middle_name", parts.slice(1).join(" "));
+    } else if (parts.length >= 3) {
+      put("middle_name", parts.slice(1, -1).join(" ")); put("last_name", parts[parts.length - 1]);
+    } else if (parts.length === 2) {
+      put("last_name", parts[1]);
     }
   }
 

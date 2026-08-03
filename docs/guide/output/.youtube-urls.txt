@@ -1,0 +1,9 @@
+en=https://www.youtube.com/watch?v=r3vfEl3P6v4
+hi=https://www.youtube.com/watch?v=awPPwI_WPzI
+ta=https://www.youtube.com/watch?v=FRXkZQ2h7OY
+te=https://www.youtube.com/watch?v=ndoAX4iudeo
+kn=https://www.youtube.com/watch?v=3ivEQVoLCmw
+es=https://www.youtube.com/watch?v=eCQCcVGFVbc
+zh=https://www.youtube.com/watch?v=BFfGnfslEpU
+ko=https://www.youtube.com/watch?v=-EIRtNRzYew
+ja=https://www.youtube.com/watch?v=pmu-zIh-LCg

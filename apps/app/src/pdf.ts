@@ -4,7 +4,7 @@ import { PDFDocument, PDFTextField, PDFRadioGroup, PDFCheckBox, PDFDropdown, PDF
 import { resolveFields, resolveBundle } from "./fill/resolver";
 import { identifyAcroForm } from "./fill/forms";
 import { detectLang } from "./fill/lang";
-import { planProximityFill } from "./fill/pdfproximity";
+import { planProximityFill, captionFor } from "./fill/pdfproximity";
 import { appearances } from "./fill/appearances";
 import { userOptionValues, decideChoice } from "./fill/optmatch";
 // Sign/annotate ENGINE — shared with the extension (flatten drawn overlays into the PDF). The
@@ -36,6 +36,22 @@ export interface CatalogFieldSpec {
 // runs in the webview — the PDF and values never leave the device.
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+
+/** The 0-based index of the FIRST page carrying a filled text value — so the preview can jump straight
+ *  to where the user's data landed (many gov forms have a blank "office use only" page 1). 0 if none. */
+export async function firstFilledPage(bytes: ArrayBuffer): Promise<number> {
+  try {
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice() }).promise;
+    for (let pi = 0; pi < doc.numPages; pi++) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anns: any[] = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => []);
+      for (const a of anns) {
+        if (a.subtype === "Widget" && a.fieldType === "Tx" && typeof a.fieldValue === "string" && a.fieldValue.trim()) return pi;
+      }
+    }
+  } catch { /* fall through */ }
+  return 0;
+}
 
 /** Render page 1 of a PDF into a canvas. */
 export async function renderFirstPage(bytes: ArrayBuffer, canvas: HTMLCanvasElement): Promise<void> {
@@ -146,7 +162,7 @@ export interface ReviewField {
 // List every AcroForm field with its current value so the user can REVIEW and EDIT what was filled
 // before finalizing (nothing is auto-committed silently). Returns [] for flat/scanned PDFs.
 export async function listReviewFields(bytes: ArrayBuffer): Promise<ReviewField[]> {
-  const pdf = await PDFDocument.load(bytes);
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const out: ReviewField[] = [];
   for (const f of pdf.getForm().getFields()) {
     const name = f.getName();
@@ -169,7 +185,7 @@ export async function applyReviewEdits(
   bytes: ArrayBuffer,
   edits: Record<string, string>,
 ): Promise<Uint8Array> {
-  const pdf = await PDFDocument.load(bytes);
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
   const app = await appearances(pdf);
   for (const [name, value] of Object.entries(edits)) {
@@ -232,7 +248,7 @@ async function extractTexts(bytes: ArrayBuffer): Promise<any[]> {
 /** Fill a PDF whose field NAMES are meaningless (XFA/LiveCycle) by matching each box to its nearest
  *  printed caption — the SAME shared planner the extension uses, applied with the desktop's pdf-lib. */
 export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, string>): Promise<{ filled: number; total: number; data: Uint8Array; unencodable: Array<{ field: string; value: string }> }> {
-  const pdf = await PDFDocument.load(bytes);
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
   const pageRefs = pdf.getPages().map((p) => p.ref);
   const texts = await extractTexts(bytes);
@@ -259,17 +275,177 @@ export async function fillByProximity(bytes: ArrayBuffer, vault: Record<string, 
   filled -= unencodable.length;
   return { filled, total: fields.length, data: await pdf.save({ updateFieldAppearances: false }), unencodable };
 }
+
+// A single fillable widget as pdf.js sees it — used when pdf-lib CANNOT parse the form's fields
+// (hybrid XFA / LiveCycle forms like the USCIS N-400: pdf-lib's getFields() returns 0, yet the page
+// annotations are all present and fillable). rect is PDF user space (bottom-left origin).
+interface Widget {
+  name: string; page: number; kind: "text" | "choice";
+  rect: { x: number; y: number; width: number; height: number };
+  isButton: boolean; exportValue: string | null; options?: string[];
+}
+async function enumerateWidgets(bytes: ArrayBuffer): Promise<Widget[]> {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice() }).promise;
+  const out: Widget[] = [];
+  for (let pi = 0; pi < doc.numPages; pi++) {
+    const anns = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => [] as any[]);
+    for (const a of anns as any[]) {
+      if (a.subtype !== "Widget" || !a.fieldName || a.hidden || a.readOnly) continue;
+      const R = a.rect;
+      const rect = { x: Math.min(R[0], R[2]), y: Math.min(R[1], R[3]), width: Math.abs(R[2] - R[0]), height: Math.abs(R[3] - R[1]) };
+      if (rect.width < 2 || rect.height < 2) continue;
+      const isButton = a.fieldType === "Btn";
+      out.push({
+        name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton,
+        exportValue: (a.buttonValue ?? null) as string | null,
+        options: Array.isArray(a.options) ? a.options.map((o: any) => o.displayValue || o.exportValue || "") : undefined,
+      });
+    }
+  }
+  return out;
+}
+
+/** Fill a hybrid-XFA / LiveCycle form (USCIS N-400 &c.) that pdf-lib CANNOT parse at all — not its
+ *  fields, not even its page tree (`getPages()` throws "Expected instance of PDFDict"). pdf.js, which
+ *  ALREADY renders the form, can also WRITE it: we set each widget's value in pdf.js's annotation
+ *  storage and call `saveDocument()`, which emits a valid PDF that KEEPS every field EDITABLE (verified:
+ *  a filled N-400 reloads with all 440 widgets intact and the values in place). Boxes are labelled by
+ *  their PRINTED caption via the shared proximity planner. `values` (from the review editor) win over
+ *  the auto-plan. Returns 0/0 when there is nothing to fill by widget (caller then falls back to OCR). */
+export async function fillXfaByWidgets(
+  bytes: ArrayBuffer,
+  vault: Record<string, string>,
+  values?: Record<string, string>, // optional explicit name->value overrides (from the review editor)
+): Promise<{ filled: number; total: number; data: Uint8Array; formLang: string; captions: Record<string, string> }> {
+  const texts = await extractTexts(bytes);
+  // ONE doc instance: its annotationStorage is what saveDocument() serialises, and the annotation ids
+  // we set must come from THIS doc's getAnnotations().
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice(), useSystemFonts: true }).promise;
+  interface W { id: string; name: string; page: number; kind: "text" | "choice"; rect: { x: number; y: number; width: number; height: number }; isButton: boolean; exportValue: string | null }
+  const groups = new Map<string, W[]>();
+  for (let pi = 0; pi < doc.numPages; pi++) {
+    const anns = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => [] as any[]);
+    for (const a of anns as any[]) {
+      if (a.subtype !== "Widget" || !a.fieldName || a.hidden || a.readOnly) continue;
+      const R = a.rect;
+      const rect = { x: Math.min(R[0], R[2]), y: Math.min(R[1], R[3]), width: Math.abs(R[2] - R[0]), height: Math.abs(R[3] - R[1]) };
+      if (rect.width < 2 || rect.height < 2) continue;
+      const w: W = { id: a.id, name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton: a.fieldType === "Btn", exportValue: (a.buttonValue ?? null) as string | null };
+      const g = groups.get(w.name) ?? []; g.push(w); groups.set(w.name, g);
+    }
+  }
+  if (!groups.size) return { filled: 0, total: 0, data: new Uint8Array(bytes), formLang: "en", captions: {} };
+
+  const fields: any[] = [];
+  // Caption per field (its printed label) — lets the caller map an ANSWER back to a vault key, so the
+  // user can save what they typed for next time. Computed for every field, filled or not.
+  const captions: Record<string, string> = {};
+  const textsByPage = new Map<number, any[]>();
+  for (const t of texts as any[]) { const a = textsByPage.get(t.page) ?? []; a.push(t); textsByPage.set(t.page, a); }
+  for (const [name, ws] of groups) {
+    const w0 = ws[0]; if (!w0) continue;
+    const kind = w0.kind === "text" && !w0.isButton ? "text" : "choice";
+    const options = ws.map((w) => w.exportValue).filter(Boolean) as string[];
+    fields.push({ id: name, kind, page: w0.page, rect: w0.rect, options, widgets: ws.map((w) => ({ page: w.page, rect: w.rect })) });
+    try { const c = captionFor(textsByPage.get(w0.page) ?? [], w0.rect); if (c) captions[name] = c; } catch { /* no caption */ }
+  }
+  const { assignments } = planProximityFill(fields, texts, vault, resolveFields);
+  const planByName = new Map<string, { value?: string; option?: string }>();
+  for (const a of assignments as any[]) planByName.set(a.id, { value: a.value, option: a.option });
+  if (values) for (const [name, v] of Object.entries(values)) if (v != null && v !== "") planByName.set(name, { value: v });
+
+  let filled = 0;
+  for (const [name, plan] of planByName) {
+    const ws = groups.get(name); const w0 = ws?.[0]; if (!ws || !w0) continue;
+    try {
+      if (plan.option != null) {
+        // Radio (many widgets, distinct export values) → select the chosen one; checkbox → check it.
+        const hit = ws.find((w) => w.exportValue && String(w.exportValue) === String(plan.option)) ?? w0;
+        doc.annotationStorage.setValue(hit.id, ws.length > 1 && hit.exportValue ? { value: String(plan.option) } : { value: true } as any);
+        filled++;
+      } else {
+        const value = String(plan.value ?? ""); if (!value) continue;
+        doc.annotationStorage.setValue(w0.id, { value } as any);
+        filled++;
+      }
+    } catch { /* skip a value this widget can't take */ }
+  }
+  const formLang = detectLang(texts.map((x: any) => x.s).join(" ")).lang as string;
+  // PREFERRED: pdf.js writes the values back and keeps the form editable.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const outBytes: Uint8Array = await (doc as any).saveDocument();
+    if (outBytes && outBytes.byteLength > 0) return { filled, total: fields.length, data: new Uint8Array(outBytes), formLang, captions };
+  } catch { /* saveDocument unavailable/failed in this runtime → raster fallback below */ }
+
+  // FALLBACK (guarantees output even if saveDocument fails): render each page and DRAW the values on,
+  // then assemble a new flattened PDF from the page images. Not editable, but every value is baked in.
+  const out = await PDFDocument.create();
+  const SC = 2;
+  for (let pi = 0; pi < doc.numPages; pi++) {
+    const page = await doc.getPage(pi + 1);
+    const vp = page.getViewport({ scale: SC });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+    const ctx = canvas.getContext("2d"); if (!ctx) continue;
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp, annotationMode: 0 }).promise;
+    for (const [name, plan] of planByName) {
+      const ws = (groups.get(name) ?? []).filter((w) => w.page === pi); if (!ws.length) continue;
+      const w0 = ws[0]; if (!w0) continue;
+      const target = plan.option != null ? (ws.find((w) => String(w.exportValue) === String(plan.option)) ?? w0) : w0;
+      const [ax, ay, bx, by] = vp.convertToViewportRectangle([target.rect.x, target.rect.y, target.rect.x + target.rect.width, target.rect.y + target.rect.height]);
+      const left = Math.min(ax, bx), top = Math.min(ay, by), h = Math.abs(by - ay), w = Math.abs(bx - ax);
+      ctx.fillStyle = "#0a1466";
+      if (plan.option != null) { ctx.font = `${Math.round(h * 0.9)}px sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillText("X", left + w / 2, top + h / 2); }
+      else {
+        const value = String(plan.value ?? ""); if (!value) continue;
+        let px = Math.max(8, Math.min(h * 0.72, 22)); ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = `${Math.round(px)}px sans-serif`;
+        while (ctx.measureText(value).width > w - 4 && px > 6) { px -= 1; ctx.font = `${Math.round(px)}px sans-serif`; }
+        ctx.fillText(value, left + 3, top + h / 2);
+      }
+    }
+    const img = await out.embedJpg(canvas.toDataURL("image/jpeg", 0.85));
+    const pt = page.getViewport({ scale: 1 });
+    out.addPage([pt.width, pt.height]).drawImage(img, { x: 0, y: 0, width: pt.width, height: pt.height });
+  }
+  return { filled, total: fields.length, data: await out.save(), formLang, captions };
+}
+
+/** Review rows for a hybrid-XFA form pdf-lib can't parse — read straight from the pdf.js widgets so
+ *  the UI can still show/edit every field (grouped by name; radios list their option export values). */
+export async function listWidgetReviewFields(bytes: ArrayBuffer): Promise<ReviewField[]> {
+  const widgets = await enumerateWidgets(bytes);
+  const groups = new Map<string, Widget[]>();
+  for (const w of widgets) { const g = groups.get(w.name) ?? []; g.push(w); groups.set(w.name, g); }
+  const out: ReviewField[] = [];
+  for (const [name, ws] of groups) {
+    const w0 = ws[0]; if (!w0) continue;
+    const label = name.split(/[.[\]]/).filter(Boolean).pop() || name;
+    if (w0.kind === "text" && !w0.isButton) out.push({ name, label, kind: "text", value: "" });
+    else { const options = ws.map((w) => w.exportValue).filter(Boolean) as string[]; out.push({ name, label, kind: options.length > 1 ? "radio" : "check", value: "", options: options.length ? options : undefined }); }
+  }
+  return out;
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function fillAndExport(
   bytes: ArrayBuffer,
   vault: Record<string, string>,
 ): Promise<{ filled: number; total: number; data: Uint8Array; formLang: string; unencodable: Array<{ field: string; value: string }> }> {
-  const pdf = await PDFDocument.load(bytes);
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
   const fields = form.getFields();
   const names = fields.map((f) => f.getName());
   let filled = 0;
+
+  // pdf-lib sees NO fillable fields — either a flat/scanned PDF, or a hybrid-XFA form whose structure
+  // pdf-lib cannot parse. Return "0" immediately and do NOT touch appearances()/getPages(): on some XFA
+  // forms (USCIS N-400) pdf-lib's page tree is unreadable and getPages() throws "Expected instance of
+  // PDFDict". Signalling 0 lets the caller route to the pdf.js widget filler (fillXfaByWidgets).
+  if (fields.length === 0) {
+    return { filled: 0, total: 0, data: new Uint8Array(bytes), formLang: "en", unencodable: [] };
+  }
 
   // Opaque XFA/LiveCycle form (bracket names, no tooltips) → fill by proximity to printed captions,
   // matching the extension. Use it when it beats the name-based pass.
@@ -414,7 +590,7 @@ export async function makeFillableAndFill(
   fields: CatalogFieldSpec[],
   vault: Record<string, string>,
 ): Promise<{ created: number; filled: number; data: Uint8Array }> {
-  const pdf = await PDFDocument.load(bytes);
+  const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const form = pdf.getForm();
   const pages = pdf.getPages();
   let created = 0;

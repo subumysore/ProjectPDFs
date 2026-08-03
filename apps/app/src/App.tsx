@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { check as checkUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { extractFromImage, documentImageKey, type ExtractedField } from "./ocr";
-import { downloadBytes, fillAndExport, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
+import { downloadBytes, fillAndExport, fillXfaByWidgets, generateFlatSamplePdf, imageToPdf, makeFillableAndFill, renderFirstPage, listReviewFields, listWidgetReviewFields, applyReviewEdits, type ReviewField } from "./pdf";
 import { fillOfficeForm, officeToPdf } from "./office";
 import type { OfficeKind } from "./office";
 import { detectFields } from "./detect";
@@ -15,6 +15,7 @@ import { FormView } from "./FormView";
 // so the universal on-device translation is actually reachable from the UI.
 import { allLangs, langName } from "@engine/langcodes.js";
 import { keyFromLabel } from "@engine/vaultkey.js";
+import { listRecords, pickRecord, recordVault, maskCard, detectCardBrand, cardTypeLabel } from "@engine/groups.js";
 import { UI_LANGS, translator, dirOf, detectUiLang } from "@engine/i18n.js";
 
 // { iso: displayName } for every supported language.
@@ -22,6 +23,42 @@ const LANGS: Record<string, string> = Object.fromEntries(
   (allLangs() as string[]).map((c) => [c, langName(c) as string]),
 );
 type Lang = string;
+
+// Reusable "glass/aero" button — raised, tactile, clearly a control (not flat text). Used on the
+// form toolbar so Pen/Text/Signature/Image read as obvious buttons.
+const GLASS_BTN: React.CSSProperties = {
+  padding: "7px 13px",
+  border: "1px solid #b7c4cc",
+  borderRadius: 9,
+  background: "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(232,240,242,0.9) 100%)",
+  backdropFilter: "blur(6px)",
+  WebkitBackdropFilter: "blur(6px)",
+  color: "#22343a",
+  fontWeight: 650,
+  fontSize: 13.5,
+  cursor: "pointer",
+  boxShadow: "0 1px 3px rgba(35,55,60,0.16), inset 0 1px 0 rgba(255,255,255,0.75)",
+};
+
+// Recognisable card-brand mark (self-contained inline SVG/badges — no external images, CSP-safe).
+function BrandLogo({ brand }: { brand: string }) {
+  const box: React.CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", height: 22, minWidth: 40, borderRadius: 4, fontSize: 10.5, fontWeight: 800, padding: "0 6px", color: "#fff", letterSpacing: 0.4 };
+  switch (brand) {
+    case "visa": return <span style={{ ...box, background: "#1a1f71", fontStyle: "italic" }} title="Visa">VISA</span>;
+    case "mastercard": return (
+      <span style={{ display: "inline-flex", alignItems: "center", height: 22 }} title="Mastercard">
+        <svg width="40" height="22" viewBox="0 0 40 22" aria-label="Mastercard"><circle cx="16" cy="11" r="8" fill="#EB001B" /><circle cx="24" cy="11" r="8" fill="#F79E1B" fillOpacity="0.85" /></svg>
+      </span>
+    );
+    case "amex": return <span style={{ ...box, background: "#2e77bb" }} title="American Express">AMEX</span>;
+    case "discover": return <span style={{ ...box, background: "#e66a1e" }} title="Discover">DISCOVER</span>;
+    case "diners": return <span style={{ ...box, background: "#0079be" }} title="Diners Club">DINERS</span>;
+    case "jcb": return <span style={{ ...box, background: "#0b4ea2" }} title="JCB">JCB</span>;
+    case "unionpay": return <span style={{ ...box, background: "#d10429" }} title="UnionPay">UNIONPAY</span>;
+    case "rupay": return <span style={{ ...box, background: "#097969" }} title="RuPay">RuPay</span>;
+    default: return <span style={{ ...box, background: "#8a949b", minWidth: 22 }} title="Card">💳</span>;
+  }
+}
 
 // Stripe checkout links (SSOT: docs/business/stripe-config.json). The in-app Buy buttons open these
 // with the current device id as `client_reference_id`, so the issued licence binds to THIS device
@@ -108,6 +145,12 @@ export function App() {
   const [signing, setSigning] = useState(false);
   const [reviewFields, setReviewFields] = useState<ReviewField[]>([]);
   const [reviewEdits, setReviewEdits] = useState<Record<string, string>>({});
+  // Printed caption per form-field NAME (from the XFA widget fill). Lets us turn an answer on a form
+  // whose field names are meaningless (form1[0].#subform…) into a sensible vault key.
+  const [fieldCaptions, setFieldCaptions] = useState<Record<string, string>>({});
+  // "Add a saved card / address" mini-form state (grouped records).
+  const [recLabel, setRecLabel] = useState("");
+  const [recFields, setRecFields] = useState<Record<string, string>>({});
   const [reviewName, setReviewName] = useState("");
   const [viewLang, setViewLang] = useState<Record<string, string>>({});
   const [viewVals, setViewVals] = useState<Record<string, string>>({});
@@ -140,6 +183,7 @@ export function App() {
   const [docImage, setDocImage] = useState<{ url: string; key: string; label: string } | null>(null);
   const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
+  const [filling, setFilling] = useState(false); // form-fill in progress → show the live spinner
   const [scanned, setScanned] = useState(false);
   const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
@@ -292,6 +336,83 @@ export function App() {
 
   const known = useMemo(() => new Map(points.map((p) => [p.key, p.value])), [points]);
 
+  // Repeatable NAMED record GROUPS (credit cards, extra addresses) — the shared feature the extension
+  // engine (@engine/groups.js) defines. Stored as ONE JSON data point ("__records") inside the shared
+  // vault, so it travels with the profile and is hidden from the flat key/value table.
+  const RECORDS_KEY = "__records";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const records = useMemo<any[]>(() => {
+    const r = points.find((p) => p.key === RECORDS_KEY);
+    if (!r) return [];
+    try { const v = JSON.parse(r.value); return Array.isArray(v) ? v : []; } catch { return []; }
+  }, [points]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const saveRecords = async (next: any[]) => {
+    if (!selected) return;
+    await guard(invoke("upsert_data_point", { profileId: selected, key: RECORDS_KEY, value: JSON.stringify(next) }));
+    await loadPoints(selected);
+  };
+  // The vault used for FILLING: the flat identity with the PRIMARY address + card record merged OVER it,
+  // so a form that asks for card/address fields fills from the chosen record. (A per-fill chooser can
+  // pick a non-primary record later; today the primary of each type is used.)
+  const buildVault = (): Record<string, string> => {
+    let v: Record<string, string> = Object.fromEntries(points.filter((p) => p.key !== RECORDS_KEY).map((p) => [p.key, p.value]));
+    // The PRIMARY card's fields (incl. its billing address) merge OVER the vault so a payment form fills
+    // from it. Billing uses billing_* keys, so it never overwrites the plain mailing address.
+    const card = pickRecord({ records }, "card");
+    if (card) v = recordVault(v, card) as Record<string, string>;
+    return v;
+  };
+  // A saved CARD carries the payment fields PLUS its own BILLING address (defaulted from the mailing
+  // address). Keys are the exact ontology the resolver fills from (see @engine/resolver.js).
+  const CARD_FIELDS: Array<{ key: string; label: string; opt?: boolean; sensitive?: boolean; billing?: boolean; wide?: boolean }> = [
+    { key: "card_name", label: "Name on card", wide: true },
+    { key: "card_number", label: "Card number", wide: true },
+    { key: "card_expiry", label: "Expiry (MM/YY)" },
+    { key: "card_cvv", label: "CVV (optional)", opt: true, sensitive: true },
+    { key: "billing_address_1", label: "Billing address", billing: true, wide: true },
+    { key: "billing_address_2", label: "Billing address 2", opt: true, billing: true, wide: true },
+    { key: "billing_city", label: "Billing city", billing: true },
+    { key: "billing_state", label: "Billing state", billing: true },
+    { key: "billing_zip", label: "Billing ZIP", billing: true },
+  ];
+  const CARD_TYPES = ["Credit", "Debit", "Cash", "Prepaid"];
+  // Billing address DEFAULTS to the profile's MAILING address (the user can override per card).
+  const billingDefaults = (): Record<string, string> => ({
+    card_type: "Credit",
+    billing_address_1: known.get("address_1") || "",
+    billing_address_2: known.get("address_2") || "",
+    billing_city: known.get("city") || "",
+    billing_state: known.get("state") || "",
+    billing_zip: known.get("zip") || "",
+  });
+  const addRecord = async () => {
+    const fields: Record<string, string> = {};
+    for (const f of CARD_FIELDS) { const val = (recFields[f.key] || "").trim(); if (val) fields[f.key] = val; }
+    fields.card_type = recFields.card_type || "Credit";
+    if (!fields.card_number && !fields.card_name) { setLearnMsg("Enter at least the card number or the name on the card."); return; }
+    const brand = detectCardBrand(fields.card_number || "");
+    const brandName = brand ? brand.charAt(0).toUpperCase() + brand.slice(1) : "Card";
+    const id = `card_${[...JSON.stringify(fields)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36)}`;
+    const label = recLabel.trim() || `${brandName} ${cardTypeLabel(fields.card_type)} ${maskCard(fields.card_number)}`.replace(/\s+/g, " ").trim();
+    const isFirst = listRecords({ records }, "card").length === 0;
+    await saveRecords([...records.filter((r) => r.id !== id), { type: "card", id, label, primary: isFirst, fields }]);
+    setRecLabel(""); setRecFields(billingDefaults());
+    setLearnMsg(`Saved card “${label}”. It fills automatically when a form asks for payment details.`);
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deleteRecord = (id: string) => saveRecords(records.filter((r: any) => r.id !== id));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const makePrimary = (rec: any) => saveRecords(records.map((r: any) => r.type === rec.type ? { ...r, primary: r.id === rec.id } : r));
+  // Pre-fill the "add a card" billing address from the mailing address when a profile loads — unless the
+  // user is already mid-entering a card (don't clobber their typing).
+  useEffect(() => {
+    if (!selected) return;
+    setRecFields((prev) => (prev.card_number || prev.card_name) ? prev : billingDefaults());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, known]);
+
+
   /**
    * Anything typed onto the form that the vault does NOT already hold (or holds differently) is
    * NEW information. It is never saved silently — we show exactly what we found and ask.
@@ -302,18 +423,26 @@ export function App() {
     const seen = new Set<string>();
     for (const [name, raw] of Object.entries(reviewEdits)) {
       const value = (raw ?? "").trim();
-      if (!value || value === "Off" || value === "Yes" || value.startsWith("data:")) continue;
+      // Skip empties, unticked boxes and images. A ticked box ("Yes") IS worth saving when we have a
+      // real question caption for it (e.g. "are_you_at_least_18_years_of_age" = Yes).
+      if (!value || value === "Off" || value.startsWith("data:")) continue;
       const f = reviewFields.find((x) => x.name === name);
-      const label = ((f?.label || name) as string).trim();
+      const caption = fieldCaptions[name];
+      // Without a real PRINTED caption, an XFA field name (form1[0].#subform…, pdf417barcode…) makes a
+      // meaningless vault key — don't offer junk. Only save such a field when we have its caption.
+      if (!caption && (name.includes("[") || /_\d+_|form\d|subform|pdf417/i.test(name))) continue;
+      // Prefer the caption (meaningful) over the raw field name.
+      const label = ((caption || f?.label || name) as string).trim();
       const key = keyFromLabel(label);
       if (!key || seen.has(key)) continue;
+      if (value === "Yes" && key.length < 4) continue; // a bare "Yes" with no real question → skip
       const existing = known.get(key);
       if (existing === value) continue; // already known, unchanged
       seen.add(key);
       out.push({ key, label, value, existing });
     }
     return out;
-  }, [reviewEdits, reviewFields, known]);
+  }, [reviewEdits, reviewFields, known, fieldCaptions]);
 
   async function saveNewPairs() {
     if (!selected) { setLearnMsg("Choose a profile first."); return; }
@@ -333,7 +462,18 @@ export function App() {
     setLearnMsg(n ? `Saved ${n} new item(s) to your vault — they'll fill automatically next time.` : "Nothing ticked, so nothing was saved.");
   }
 
-  const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then(setProfiles));
+  const refreshProfiles = () => guard(invoke<Profile[]>("list_profiles").then((pts) => {
+    setProfiles(pts);
+    // Land ready-to-fill: auto-select a LONE profile, or the LAST-used one (persisted), so the user
+    // doesn't have to pick every session. Only when nothing is selected yet.
+    setSelected((cur) => {
+      if (cur && pts.some((p) => p.id === cur)) return cur;
+      const last = localStorage.getItem("ppf.lastProfile");
+      const pick = pts.length === 1 ? pts[0]?.id : (last && pts.some((p) => p.id === last) ? last : null);
+      if (pick) { loadPoints(pick); loadSavedForms(pick); return pick; }
+      return cur;
+    });
+  }));
   const loadPoints = (id: string) =>
     guard(
       invoke<DataPoint[]>("list_data_points", { profileId: id }).then((pts) => {
@@ -381,6 +521,7 @@ export function App() {
 
   function selectProfile(id: string) {
     setSelected(id);
+    localStorage.setItem("ppf.lastProfile", id); // remembered across sessions (auto-selected next launch)
     loadPoints(id);
     loadSavedForms(id);
   }
@@ -615,7 +756,7 @@ export function App() {
     const kind = /\.xlsx$/i.test(file.name) ? "xlsx" : "docx";
     try {
       const buf = await file.arrayBuffer();
-      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+      const vault = buildVault();
       const { created, filled, data, fields } = fillOfficeForm(buf, kind, vault);
       if (created === 0) {
         setPdfMsg(
@@ -811,7 +952,10 @@ export function App() {
   // before finalizing (nothing is silently committed).
   async function loadReview(bytes: ArrayBuffer, name: string) {
     try {
-      const fields = await listReviewFields(bytes);
+      let fields = await listReviewFields(bytes);
+      // Hybrid-XFA forms (USCIS N-400 &c.) parse as 0 AcroForm fields in pdf-lib but ARE fillable via
+      // the pdf.js widget layer — fall back to it so the review + on-page editor still appear.
+      if (fields.length === 0) fields = await listWidgetReviewFields(bytes);
       setReviewFields(fields);
       setReviewEdits({});
       setReviewName(name);
@@ -875,9 +1019,13 @@ export function App() {
   // The automatic pipeline: fill existing fields, else detect + create + fill.
   async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean, formName: string) {
     if (!requireEntitlement()) return;
-    const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+    const vault = buildVault();
+    setFilling(true);
     try {
-      const existing = await fillAndExport(bytes, vault); // total = # AcroForm fields
+      // total = # AcroForm fields pdf-lib can fill. A throw (some XFA page trees are unparseable) is
+      // treated as 0 so we fall through to the pdf.js widget filler.
+      let existing: { total: number; filled: number; data: Uint8Array } = { total: 0, filled: 0, data: new Uint8Array(bytes) };
+      try { existing = await fillAndExport(bytes, vault); } catch { /* route to XFA widget filler below */ }
       if (existing.total > 0) {
         const ab = existing.data.buffer.slice(
           existing.data.byteOffset,
@@ -890,6 +1038,25 @@ export function App() {
         await loadReview(ab, formName);
         await persistFilled(formName, existing.filled, existing.total, existing.data);
         return;
+      }
+      // Before falling back to OCR: a hybrid-XFA / LiveCycle form (USCIS N-400 &c.) reports 0 AcroForm
+      // fields to pdf-lib, yet its widgets ARE present and fillable via pdf.js. Fill them by matching
+      // each box to its printed caption, then flatten the values onto the page.
+      if (!wasImage) {
+        setPdfMsg("This is an XFA/LiveCycle form (e.g. USCIS) — filling it via its printed labels, on-device…");
+        const xfa = await fillXfaByWidgets(bytes, vault);
+        if (xfa.total > 0 && xfa.filled > 0) {
+          setFieldCaptions(xfa.captions);
+          const ab = xfa.data.buffer.slice(xfa.data.byteOffset, xfa.data.byteOffset + xfa.data.byteLength) as ArrayBuffer;
+          setPdfBytes(ab);
+          // FormView renders the form; don't also renderFirstPage (concurrent pdf.js render races it and
+          // can wedge the preview on "Rendering the form…").
+          await saveOut(xfa.data, formName || "filled");
+          setPdfMsg(`XFA/LiveCycle form (e.g. USCIS): filled ${xfa.filled} of ${xfa.total} fields from your vault, matched by each box's printed label — the form STAYS editable. Saved to your Desktop; review & correct below.`);
+          await loadReview(ab, formName);
+          await persistFilled(formName, xfa.filled, xfa.total, xfa.data);
+          return;
+        }
       }
       setPdfMsg(
         wasImage
@@ -913,22 +1080,75 @@ export function App() {
       await persistFilled(formName, filled, created, data);
     } catch (e) {
       setErr(String(e));
+    } finally {
+      setFilling(false);
     }
   }
   async function fillPdf() {
-    if (!requireEntitlement()) return;
-    if (!pdfBytes) return;
-    const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+    // DIAGNOSTIC: capture every step to Desktop\ppf-fill-debug.txt so a webview-only failure is visible.
+    const dbg: string[] = [`[fillPdf] ${new Date().toISOString()}`];
+    const flush = async () => { try { await invoke("save_to_desktop", { bytes: Array.from(new TextEncoder().encode(dbg.join("\n"))), filename: "ppf-fill-debug.txt" }); } catch { /* ignore */ } };
+    dbg.push(`licensed=${lic?.licensed} reason=${lic?.reason || ""}`);
+    if (!requireEntitlement()) { dbg.push("BLOCKED: requireEntitlement=false → jumped to License tab"); await flush(); return; }
+    if (!pdfBytes) { dbg.push("BLOCKED: no pdfBytes"); await flush(); return; }
+    const vault = buildVault();
+    dbg.push(`vault: ${points.length} points; keys=${Object.keys(vault).slice(0, 25).join(",")}`);
+    setFilling(true);
     try {
-      const { filled, total, data } = await fillAndExport(pdfBytes, vault);
-      await saveOut(data, "filled");
-      setPdfMsg(
-        total === 0
-          ? "No AcroForm fields in this PDF (flat/scanned) — use “Make fillable” below to create them."
-          : `Filled ${filled} of ${total} existing form fields from the vault; downloaded filled.pdf.`,
-      );
+      let filled = 0, total = 0, data: Uint8Array | null = null;
+      try {
+        const r = await fillAndExport(pdfBytes, vault);
+        filled = r.filled; total = r.total; data = r.data;
+      } catch (fe) {
+        // pdf-lib couldn't parse this form (some XFA page trees throw) — treat as 0 fields and let the
+        // pdf.js widget filler handle it below.
+        dbg.push(`fillAndExport threw (routing to XFA): ${String(fe)}`);
+      }
+      dbg.push(`fillAndExport: total=${total} filled=${filled}`);
+      if (total > 0 && data) {
+        await saveOut(data, "filled");
+        setPdfMsg(`Filled ${filled} of ${total} existing form fields from the vault; downloaded filled.pdf.`);
+        await flush();
+        return;
+      }
+      // pdf-lib saw no fields — but a hybrid-XFA form (USCIS &c.) still fills via its pdf.js widgets.
+      let xfa;
+      try {
+        xfa = await fillXfaByWidgets(pdfBytes, vault);
+        dbg.push(`fillXfaByWidgets: total=${xfa.total} filled=${xfa.filled} dataLen=${xfa.data.byteLength}`);
+      } catch (xe) {
+        dbg.push(`fillXfaByWidgets THREW: ${String(xe)}`);
+        await flush();
+        setPdfMsg(`XFA fill error: ${String(xe).slice(0, 300)}`);
+        return;
+      }
+      if (xfa.total > 0) {
+        setFieldCaptions(xfa.captions);
+        const ab = xfa.data.buffer.slice(xfa.data.byteOffset, xfa.data.byteOffset + xfa.data.byteLength) as ArrayBuffer;
+        setPdfBytes(ab);
+        // NOTE: do NOT call renderFirstPage here — FormView renders the form itself, and a concurrent
+        // pdf.js render on the (hidden) legacy canvas races it and can leave the preview stuck on
+        // "Rendering the form…". FormView mounts once loadReview populates reviewFields (below).
+        if (xfa.filled > 0) await saveOut(xfa.data, "filled");
+        setPdfMsg(
+          xfa.filled > 0
+            ? `XFA/LiveCycle form: filled ${xfa.filled} of ${xfa.total} fields from your vault (matched by each box's printed label) — stays editable. Saved to your Desktop. The name/address fields are further down the form — scroll the preview.`
+            : `Detected ${xfa.total} fillable XFA fields but matched 0 to your vault. Add your name/address to the vault (top of the app), then click Fill again.`,
+        );
+        await loadReview(ab, reviewName || "filled");
+        dbg.push(`after loadReview: reviewFields will populate from listWidgetReviewFields`);
+        await flush();
+        return;
+      }
+      dbg.push("no fields via any path (flat/scanned)");
+      await flush();
+      setPdfMsg("No AcroForm fields in this PDF (flat/scanned) — use “Make fillable” below to create them.");
     } catch (e) {
+      dbg.push(`OUTER CATCH: ${String(e)}`);
+      await flush();
       setErr(String(e));
+    } finally {
+      setFilling(false);
     }
   }
   async function genFlat() {
@@ -948,7 +1168,7 @@ export function App() {
     try {
       setPdfMsg("Detecting fields with on-device OCR…");
       const { fields, note } = await detectFields(pdfBytes, setPdfMsg, baseLang);
-      const vault = Object.fromEntries(points.map((p) => [p.key, p.value]));
+      const vault = buildVault();
       const { created, filled, data } = await makeFillableAndFill(pdfBytes, fields, vault);
       const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
       setPdfBytes(ab);
@@ -1063,9 +1283,9 @@ export function App() {
             {updating ? "Downloading & installing… the app will restart." : "A newer version is ready. It installs in a few seconds and restarts."}
           </span>
           <button onClick={installUpdate} disabled={updating} style={{ padding: "7px 14px" }}>
-            {updating ? "Installing…" : "Update now"}
+            {updating ? tr("update.installing") : tr("update.now")}
           </button>
-          {!updating && <button onClick={() => setUpdate(null)} style={{ padding: "7px 10px", background: "transparent", color: "#5a6b6d", border: "1px solid #cfe9e5" }}>Later</button>}
+          {!updating && <button onClick={() => setUpdate(null)} style={{ padding: "7px 10px", background: "transparent", color: "#5a6b6d", border: "1px solid #cfe9e5" }}>{tr("update.later")}</button>}
         </div>
       )}
       {signing && pdfBytes && (
@@ -1143,18 +1363,31 @@ export function App() {
           return (
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
               style={{
-                padding: "9px 16px",
-                border: tab === id ? "1px solid #0d8f83" : "1px solid #cbd5db",
-                borderRadius: 9,
-                background: tab === id ? "#0d8f83" : "#eef2f4",
-                color: tab === id ? "#ffffff" : "#3b4a4e",
-                fontWeight: tab === id ? 700 : 600,
+                padding: "10px 18px",
+                border: tab === id ? "1px solid #0b7d72" : "1px solid #b7c4cc",
+                borderRadius: 11,
+                // Glass/aero look: subtle gradient + translucency + blur behind, so tabs read as raised,
+                // tactile controls rather than flat text.
+                background: tab === id
+                  ? "linear-gradient(180deg, #14a99b 0%, #0d8f83 60%, #0b8175 100%)"
+                  : "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(233,240,242,0.85) 100%)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                color: tab === id ? "#ffffff" : "#2a3a3e",
+                fontWeight: tab === id ? 800 : 650,
                 fontSize: 14,
+                letterSpacing: 0.2,
                 cursor: locked ? "not-allowed" : "pointer",
                 opacity: locked ? 0.4 : 1,
-                boxShadow: tab === id ? "0 2px 7px rgba(13,143,131,0.35)" : "none",
-                transition: "background 0.12s, color 0.12s, box-shadow 0.12s",
-              }}>
+                textShadow: tab === id ? "0 1px 1px rgba(0,0,0,0.18)" : "none",
+                boxShadow: tab === id
+                  ? "0 3px 10px rgba(13,143,131,0.42), inset 0 1px 0 rgba(255,255,255,0.35)"
+                  : "0 1px 3px rgba(35,55,60,0.14), inset 0 1px 0 rgba(255,255,255,0.7)",
+                transition: "background 0.14s, color 0.14s, box-shadow 0.14s, transform 0.08s",
+              }}
+              onMouseDown={(e) => { if (!locked) e.currentTarget.style.transform = "translateY(1px)"; }}
+              onMouseUp={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}>
               {label}
             </button>
           );
@@ -1165,38 +1398,55 @@ export function App() {
       {tab === "setup" && (
       <section style={cardStyle}>
         <h2 style={h2Style}>1 · Profiles — add, choose, edit or remove</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {/* Chips ONLY select a profile - no destructive control here, so a chip can never be a
-              mis-click away from deleting data. Removal lives in its own confirmed action below. */}
-          {profiles.map((p) => {
-            // A distinct, stable pastel per profile (hashed from its id) so they're easy to tell apart
-            // at a glance instead of a wall of identical black-and-white chips.
-            const PALETTE = ["#dbeafe", "#fbe2e6", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#ffe4d6", "#f0f9c4"];
-            const DOT = ["#2563eb", "#db2777", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#ea580c", "#65a30d"];
-            const idx = Math.abs([...p.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length;
-            const on = p.id === selected;
+        {/* Profiles strip: a horizontally-SCROLLABLE row once there are many (>5), with the delete control
+            on the SAME row — a red glass button that names the selected profile. */}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, flex: 1, minWidth: 0, ...(profiles.length > 5 ? { overflowX: "auto", flexWrap: "nowrap", paddingBottom: 6 } : { flexWrap: "wrap" }) }}>
+            {profiles.map((p) => {
+              // A distinct, stable pastel per profile (hashed from its id) so they're easy to tell apart.
+              const PALETTE = ["#dbeafe", "#fbe2e6", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#ffe4d6", "#f0f9c4"];
+              const DOT = ["#2563eb", "#db2777", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#ea580c", "#65a30d"];
+              const idx = Math.abs([...p.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length;
+              const on = p.id === selected;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => selectProfile(p.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 7,
+                    padding: "7px 14px", borderRadius: 999,
+                    border: on ? "2px solid #0d8f83" : "1px solid #cbd5db",
+                    background: PALETTE[idx], color: "#152023",
+                    fontWeight: on ? 700 : 500,
+                    boxShadow: on ? "0 0 0 3px rgba(13,143,131,0.18)" : "none",
+                    cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: DOT[idx], flexShrink: 0 }} />
+                  {p.name}
+                </button>
+              );
+            })}
+            {profiles.length === 0 && <span style={{ opacity: 0.6 }}>No profiles yet.</span>}
+          </div>
+          {selected && (() => {
+            const sel = profiles.find((p) => p.id === selected);
+            if (!sel) return null;
             return (
               <button
-                key={p.id}
-                onClick={() => selectProfile(p.id)}
+                onClick={() => setConfirmDeleteId(selected)}
+                title={`Delete the profile “${sel.name}” and its vault`}
                 style={{
-                  display: "flex", alignItems: "center", gap: 7,
-                  padding: "7px 14px",
-                  borderRadius: 999,
-                  border: on ? "2px solid #0d8f83" : "1px solid #cbd5db",
-                  background: PALETTE[idx],
-                  color: "#152023",
-                  fontWeight: on ? 700 : 500,
-                  boxShadow: on ? "0 0 0 3px rgba(13,143,131,0.18)" : "none",
-                  cursor: "pointer",
+                  ...GLASS_BTN, flexShrink: 0, whiteSpace: "nowrap",
+                  border: "1px solid #e0b4b4", color: "#8a1f1f",
+                  background: "linear-gradient(180deg, rgba(255,244,244,0.96) 0%, rgba(250,224,224,0.92) 100%)",
+                  boxShadow: "0 1px 3px rgba(120,30,30,0.2), inset 0 1px 0 rgba(255,255,255,0.7)",
                 }}
               >
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: DOT[idx], flexShrink: 0 }} />
-                {p.name}
+                🗑 {tr("profile.remove")} — {sel.name}
               </button>
             );
-          })}
-          {profiles.length === 0 && <span style={{ opacity: 0.6 }}>No profiles yet.</span>}
+          })()}
         </div>
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
           <input
@@ -1209,56 +1459,46 @@ export function App() {
           <button onClick={addProfile}>{tr("profile.add")}</button>
         </div>
 
-        {/* Removal is a DELIBERATE, two-step action, in its own area away from the selection chips.
-            Step 1 reveals the intent; step 2 confirms and states plainly that it cannot be undone.
-            This replaced an inline "x" on each chip, which sat one mis-click from destroying data. */}
-        {selected && (() => {
+        {/* Delete confirmation (the trigger is the red button on the profiles row above). Verify with the
+            passphrase, and OFFER to save an encrypted backup of the profile FIRST so it can be restored. */}
+        {selected && confirmDeleteId === selected && (() => {
           const sel = profiles.find((p) => p.id === selected);
           if (!sel) return null;
-          const confirming = confirmDeleteId === selected;
           return (
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
-              {!confirming ? (
-                <button
-                  onClick={() => setConfirmDeleteId(selected)}
-                  style={{ background: "transparent", border: "1px solid #e3c9c9", color: "#9a2c2c", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13 }}
-                >
-                  {tr("profile.remove")} — {sel.name}
+            <div style={{ marginTop: 14, background: "#fbf1f1", border: "1px solid #e3c9c9", borderRadius: 10, padding: "12px 14px" }}>
+              <div style={{ color: "#7a2222", fontSize: 13, marginBottom: 10 }}>
+                {tr("profile.removeConfirm", { name: sel.name })}
+              </div>
+              {/* OPTIONAL: export an encrypted backup of this profile before deleting. */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+                <span style={{ fontSize: 12.5, color: "#5a4a4a" }}>Save its data first?</span>
+                <input
+                  type="password" value={bkPass} placeholder="Backup passphrase (8+)"
+                  onChange={(e) => setBkPass(e.currentTarget.value)}
+                  style={{ padding: "7px 10px", width: 210, maxWidth: "100%", border: "1px solid #d9e2e6", borderRadius: 8 }}
+                />
+                <button onClick={doExport} disabled={bkPass.length < 8}
+                  style={{ ...GLASS_BTN, opacity: bkPass.length < 8 ? 0.55 : 1, cursor: bkPass.length < 8 ? "not-allowed" : "pointer" }}>
+                  📦 Export encrypted backup
                 </button>
-              ) : (
-                <div style={{ background: "#fbf1f1", border: "1px solid #e3c9c9", borderRadius: 8, padding: "12px 14px" }}>
-                  <div style={{ color: "#7a2222", fontSize: 13, marginBottom: 10 }}>
-                    {tr("profile.removeConfirm", { name: sel.name })}
-                  </div>
-                  <input
-                    type="password"
-                    value={deletePass}
-                    autoFocus
-                    placeholder={tr("unlock.placeholder")}
-                    onChange={(e) => { setDeletePass(e.currentTarget.value); if (deleteErr) setDeleteErr(null); }}
-                    onKeyDown={(e) => { if (e.key === "Enter") removeProfile(selected); if (e.key === "Escape") cancelDelete(); }}
-                    style={{ width: 260, maxWidth: "100%", padding: "7px 10px", border: `1px solid ${deleteErr ? "#c0392b" : "#d9e2e6"}`, borderRadius: 8, marginBottom: 10 }}
-                  />
-                  {deleteErr && (
-                    <div style={{ color: "#c0392b", fontSize: 12.5, marginBottom: 10 }}>{deleteErr}</div>
-                  )}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={() => removeProfile(selected)}
-                      disabled={!deletePass.trim()}
-                      style={{ background: deletePass.trim() ? "#9a2c2c" : "#d8b6b6", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: deletePass.trim() ? "pointer" : "not-allowed" }}
-                    >
-                      {tr("profile.removeYes")}
-                    </button>
-                    <button
-                      onClick={cancelDelete}
-                      style={{ background: "#fff", border: "1px solid #d9e2e6", borderRadius: 8, padding: "7px 14px", cursor: "pointer" }}
-                    >
-                      {tr("action.cancel")}
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
+              {bkMsg && <div style={{ fontSize: 12, color: "#0a6a60", marginBottom: 8 }}>{bkMsg}</div>}
+              <div style={{ height: 1, background: "#eddede", margin: "4px 0 10px" }} />
+              <div style={{ fontSize: 12.5, color: "#7a2222", marginBottom: 6 }}>Confirm your passphrase to delete permanently:</div>
+              <input
+                type="password" value={deletePass} autoFocus placeholder={tr("unlock.placeholder")}
+                onChange={(e) => { setDeletePass(e.currentTarget.value); if (deleteErr) setDeleteErr(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") removeProfile(selected); if (e.key === "Escape") cancelDelete(); }}
+                style={{ width: 260, maxWidth: "100%", padding: "7px 10px", border: `1px solid ${deleteErr ? "#c0392b" : "#d9e2e6"}`, borderRadius: 8, marginBottom: 10 }}
+              />
+              {deleteErr && <div style={{ color: "#c0392b", fontSize: 12.5, marginBottom: 10 }}>{deleteErr}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => removeProfile(selected)} disabled={!deletePass.trim()}
+                  style={{ background: deletePass.trim() ? "#9a2c2c" : "#d8b6b6", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: deletePass.trim() ? "pointer" : "not-allowed" }}>
+                  {tr("profile.removeYes")}
+                </button>
+                <button onClick={cancelDelete} style={{ ...GLASS_BTN }}>{tr("action.cancel")}</button>
+              </div>
             </div>
           );
         })()}
@@ -1318,7 +1558,7 @@ export function App() {
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 760 }}>
             <tbody>
-              {points.map((dp, i) => (
+              {points.filter((dp) => dp.key !== RECORDS_KEY).map((dp, i) => (
                 <tr key={dp.key} style={{ background: i % 2 ? "#f4f8fa" : "#ffffff" }}>
                   <td style={{ padding: "7px 10px", ...mono, width: "34%", verticalAlign: "middle" }}>{dp.key}</td>
                   <td style={{ padding: "7px 10px", width: "46%", verticalAlign: "middle" }}>
@@ -1367,6 +1607,66 @@ export function App() {
               )}
             </tbody>
           </table>
+
+          {/* Saved payment CARDS. Each card includes its own BILLING address (defaulted from the mailing
+              address). The ⭐ primary card fills payment forms automatically; the number is shown masked
+              and the brand (Visa/Mastercard/…) + type (Credit/Debit/…) are evident. Shared @engine. */}
+          {(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const cards = listRecords({ records }, "card") as any[];
+            const liveBrand = detectCardBrand(recFields.card_number || "");
+            return (
+          <div style={{ marginTop: 16, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>💳 Saved cards</div>
+            <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+              Each card keeps its own billing address (pre-filled from your mailing address). The ⭐ primary card fills payment forms; the full number is never shown.
+            </p>
+            {cards.map((r) => {
+              const brand = detectCardBrand(r.fields?.card_number || "");
+              const ctype = cardTypeLabel(r.fields?.card_type);
+              return (
+                <div key={r.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: "6px 0", fontSize: 13, borderTop: "1px solid #f0f4f5" }}>
+                  <button onClick={() => makePrimary(r)} title={r.primary ? "Primary card (fills first)" : "Make primary"} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 16 }}>{r.primary ? "⭐" : "☆"}</button>
+                  <BrandLogo brand={brand} />
+                  <span style={{ ...mono, color: "#2a3a3e", minWidth: 92 }}>{maskCard(r.fields?.card_number)}</span>
+                  {ctype && <span style={{ fontSize: 11, fontWeight: 700, color: "#0a6a60", background: "#e2f2f0", borderRadius: 5, padding: "2px 7px" }}>{ctype}</span>}
+                  <span style={{ color: "#55666f" }}>{r.fields?.card_name || r.label}</span>
+                  {r.fields?.billing_city && <span style={{ color: "#8a949b", fontSize: 12 }}>· bills to {r.fields.billing_city}, {r.fields.billing_state}</span>}
+                  <button onClick={() => deleteRecord(r.id)} style={{ marginLeft: "auto", fontSize: 12, color: "#9a2c2c", border: "1px solid #e6c9c9", background: "#fff", borderRadius: 6, cursor: "pointer" }}>{tr("records.remove")}</button>
+                </div>
+              );
+            })}
+            {/* Add-a-card form */}
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #eef2f4" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
+                <strong style={{ fontSize: 12.5 }}>Add a card</strong>
+                <select value={recFields.card_type || "Credit"} onChange={(e) => { const v = e.currentTarget.value; setRecFields((s) => ({ ...s, card_type: v })); }} style={{ padding: "6px 8px" }} title="Card type">
+                  {CARD_TYPES.map((t) => <option key={t} value={t}>{t} card</option>)}
+                </select>
+                {liveBrand && <BrandLogo brand={liveBrand} />}
+                <input placeholder="Nickname (optional)" value={recLabel} onChange={(e) => setRecLabel(e.currentTarget.value)} style={{ padding: "6px 8px", width: 150 }} />
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {CARD_FIELDS.map((f) => (
+                  <input
+                    key={f.key}
+                    type={f.sensitive ? "password" : "text"}
+                    inputMode={f.key === "card_number" || f.key === "billing_zip" ? "numeric" : undefined}
+                    placeholder={f.label}
+                    value={recFields[f.key] || ""}
+                    onChange={(e) => { const v = e.currentTarget.value; setRecFields((s) => ({ ...s, [f.key]: v })); }}
+                    style={{ padding: "6px 8px", width: f.wide ? 220 : 130, ...(f.billing ? { background: "#f7fbfb" } : {}) }}
+                    title={f.billing ? "Billing address (pre-filled from your mailing address)" : undefined}
+                  />
+                ))}
+                <button onClick={addRecord} style={{ ...GLASS_BTN, fontWeight: 700 }}>{tr("records.save")}</button>
+              </div>
+              <div style={{ fontSize: 11, color: "#8a949b", marginTop: 4 }}>Billing fields are pre-filled from your mailing address — edit them if the card bills elsewhere.</div>
+            </div>
+          </div>
+            );
+          })()}
+
           <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
             <input
               placeholder="key (e.g. full_name)"
@@ -1633,7 +1933,16 @@ export function App() {
           </div>
           </>)}
           </>); })()}
-          {pdfMsg && <p style={{ fontSize: 13, color: "#0a6a60", margin: "8px 0 0" }}>{pdfMsg}</p>}
+          {/* Live fill progress — a dynamic hourglass so it's obvious the form is being filled (big XFA
+              forms take a moment). Shown for both auto-fill-on-load and the Fill button. */}
+          {filling && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0", padding: "12px 16px", background: "#eef7f5", border: "1px solid #bfe0d8", borderRadius: 10 }}>
+              <style>{`@keyframes ppfflip{0%{transform:rotate(0)}45%,55%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}`}</style>
+              <span style={{ fontSize: 22, display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span>
+              <b style={{ fontSize: 14, color: "#0a6a60" }}>Filling the form from your vault, on-device… please wait.</b>
+            </div>
+          )}
+          {pdfMsg && !filling && <p style={{ fontSize: 13, color: "#0a6a60", margin: "8px 0 0" }}>{pdfMsg}</p>}
           {pdfBytes && reviewFields.length === 0 && (
             <div style={{ margin: "6px 0" }}>
               <button onClick={() => setSigning(true)} style={{ fontWeight: 600 }}>
@@ -1661,10 +1970,33 @@ export function App() {
                   background: "#f4f8f9", border: "1px solid #d9e2e6", borderRadius: 8,
                 }}
               >
-                <button onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
-                <button onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>
-                <button onClick={() => setSigning(true)} title="Place your signature — move &amp; resize it">✍︎ Signature</button>
-                <button onClick={() => setSigning(true)} title="Place a photo or image — move &amp; resize it">🖼 Image</button>
+                {/* FILL is the FIRST, primary action — on top of the form with the other tools. While it
+                    runs, a live animated hourglass shows progress (the fill can take a moment on big forms). */}
+                <style>{`@keyframes ppfflip{0%{transform:rotate(0)}45%,55%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}`}</style>
+                <button
+                  onClick={fillPdf}
+                  disabled={filling}
+                  title="Fill every matching field from your vault — works on USCIS/XFA forms too, and keeps the form editable"
+                  style={{
+                    ...GLASS_BTN, fontWeight: 800, color: "#fff", fontSize: 14,
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    background: filling
+                      ? "linear-gradient(180deg, #7fb3ac 0%, #5a9a92 100%)"
+                      : "linear-gradient(180deg, #14a99b 0%, #0d8f83 60%, #0b8175 100%)",
+                    border: "1px solid #0b7d72",
+                    cursor: filling ? "wait" : "pointer",
+                    boxShadow: "0 2px 8px rgba(13,143,131,0.42), inset 0 1px 0 rgba(255,255,255,0.3)",
+                  }}
+                >
+                  {filling
+                    ? <><span style={{ display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span> Filling…</>
+                    : <>⚡ Fill from my vault</>}
+                </button>
+                <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
+                <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
+                <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>
+                <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Place your signature — move &amp; resize it">✍︎ Signature</button>
+                <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Place a photo or image — move &amp; resize it">🖼 Image</button>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
                 <button onClick={translateReview} disabled={baseLang === "en"}>
                   🌐 {baseLang === "en" ? "Already in your language" : `Show whole form in ${LANGS[baseLang] || baseLang}`}
@@ -1787,7 +2119,7 @@ export function App() {
               </span>
             </div>
           )}
-          <div style={{ marginTop: 4 }}>
+          <div style={{ marginTop: 6 }}>
             <button
               onClick={() => setShowAdvanced((v) => !v)}
               style={{ fontSize: 12, background: "none", border: "none", color: "#0a6a60", cursor: "pointer", padding: 0 }}

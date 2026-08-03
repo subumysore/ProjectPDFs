@@ -99,6 +99,18 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     city:     ["city", "town", "city town", "village"],
     state:    ["state", "province", "region", "state province"],
     zip:      ["zip", "zip code", "postal code", "pincode", "pin code", "postcode", "post code"],
+    // Payment CARD + its BILLING address (from a saved card record) — mirrors resolver.js so web
+    // payment forms fill too. Billing is kept separate from the mailing address.
+    cardname:  ["card name", "name on card", "name on the card", "cardholder name", "card holder name", "cardholder", "card holder", "name as on card", "name as it appears on card"],
+    cardnumber:["card number", "credit card number", "debit card number", "card no", "cc number", "card num", "pan", "primary account number", "credit card no", "debit card no"],
+    cardexp:   ["card expiry", "card expiration", "card expiration date", "card expiry date", "valid thru", "valid through", "exp date", "mm yy", "expiry mm yy", "expiration mm yy"],
+    cardcvv:   ["card cvv", "cvv", "cvc", "csc", "cvv2", "cid", "security code", "card security code", "card verification value", "card verification code"],
+    cardtype:  ["card type", "type of card", "credit or debit"],
+    billing_street1: ["billing address", "billing address 1", "billing address line 1", "billing street", "billing street address", "billing addr", "billing address one"],
+    billing_street2: ["billing address 2", "billing address line 2", "billing apartment", "billing suite", "billing unit"],
+    billing_city:  ["billing city", "billing town"],
+    billing_state: ["billing state", "billing province", "billing region"],
+    billing_zip:   ["billing zip", "billing zip code", "billing postal code", "billing postcode", "billing pin code"],
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],

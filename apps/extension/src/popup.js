@@ -7,6 +7,7 @@ import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 import { UI_LANGS, translator, dirOf, detectUiLang } from "./i18n.js";
 import { fillPdfBytes, fillPdfByProximity } from "./pdffill.js";
+import { fillPdfXfaWidgets } from "./pdfxfa.js";
 import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("vendor/pdfjs/pdf.worker.min.mjs");
 
@@ -566,9 +567,18 @@ async function runPdfFlow(r, tab, url, view = false) {
     // Name the download after the original file: Sample-Fillable-PDF.pdf -> Sample-Fillable-PDF-filled.pdf
     const base = (url.split("?")[0].split("#")[0].split("/").pop() || "form.pdf").replace(/\.pdf$/i, "");
     let acro = await fillPdfBytes(bytes, r.vault);
+    // pdf-lib saw NO fillable fields — a hybrid-XFA / LiveCycle form (USCIS N-400, I-130, …) it cannot
+    // parse. pdf.js CAN read+write it: fill each widget by its printed caption and saveDocument().
+    if (!view && acro.total === 0) {
+      try {
+        const xfa = await fillPdfXfaWidgets(bytes, r.vault);
+        if (xfa.total > 0 && xfa.filled > 0) acro = xfa;
+      } catch (_) { /* keep the (empty) name-based result */ }
+    }
     // Opaque XFA/LiveCycle form (meaningless field names): fill by proximity to printed captions.
     // Use it when it beats the name-based pass (e.g. the Japan MOFA visa form fills ~0 by name).
-    if (!view && acro.xfa) {
+    // (Skip when the pdf.js widget filler already succeeded — it produced a real filled PDF.)
+    if (!view && acro.xfa && !acro.widgets) {
       try {
         const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes));
         if (prox.filled > acro.filled) acro = prox;
@@ -597,7 +607,7 @@ async function runPdfFlow(r, tab, url, view = false) {
     // shadow — OCR reads their true printed labels instead.
     // Proximity fills produce a real, viewable AcroForm result even though the form is XFA —
     // route them to the viewer too (NOT the OCR fallback, which would discard them).
-    if (acro.filled && acro.bytes && (!acro.xfa || acro.proximity)) {
+    if (acro.filled && acro.bytes && (!acro.xfa || acro.proximity || acro.widgets)) {
       // Fast path: matched by AcroForm field names. Show the result in the viewer,
       // passing the field labels + languages so the viewer can offer a translated
       // label+value side panel (view a foreign PDF in your language).
@@ -688,7 +698,9 @@ if ($("signPdf")) $("signPdf").onclick = async () => {
         let r = await readVault();
         if (r.ok) r = await withLargeImages(r); // include big ID/photo/signature images to draw
         let acro = r.ok ? await fillPdfBytes(bytes, r.vault) : null;
-        if (acro && acro.xfa && r.ok) { try { const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes)); if (prox.filled > acro.filled) acro = prox; } catch (_) { /* keep name-based */ } }
+        // Hybrid-XFA form pdf-lib can't parse (0 fields) → pdf.js widget fill (USCIS N-400/I-130).
+        if (acro && r.ok && acro.total === 0) { try { const xfa = await fillPdfXfaWidgets(bytes, r.vault); if (xfa.total > 0 && xfa.filled > 0) acro = xfa; } catch (_) { /* keep */ } }
+        if (acro && acro.xfa && !acro.widgets && r.ok) { try { const prox = await fillPdfByProximity(bytes, r.vault, await extractPdfTexts(bytes)); if (prox.filled > acro.filled) acro = prox; } catch (_) { /* keep name-based */ } }
         const outBytes = (acro && acro.bytes) ? acro.bytes : bytes;
         let bin = ""; for (let i = 0; i < outBytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, outBytes.subarray(i, i + 0x8000));
         b64 = btoa(bin);
