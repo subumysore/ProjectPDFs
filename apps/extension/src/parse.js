@@ -174,8 +174,9 @@ export function parseMrz(text) {
     setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20]); setExp(p2.slice(21, 27));
     return finalMrz(out);
   }
-  // TD1 — ID card: 3 lines of ~30; name is on line 3, numbers on lines 1–2.
-  const t1 = lines.filter((l) => l.length >= 28 && l.length <= 32);
+  // TD1 — ID card (NOT passports, which are TD3 — the ID-card parsers false-match a passport MRZ).
+  const _isPass = /passport|passeport|pasaporte/i.test(text || "");
+  const t1 = _isPass ? [] : lines.filter((l) => l.length >= 28 && l.length <= 32);
   if (t1.length >= 3) {
     // The name line has "<<" and NO digits; the doc-number/data lines carry digits.
     const nameLine = t1.find((l) => l.includes("<<") && !/\d/.test(l)) || t1[2];
@@ -187,7 +188,7 @@ export function parseMrz(text) {
     return finalMrz(out);
   }
   // TD2 — 2 lines of ~36; name on line 1, numbers on line 2.
-  const t2 = lines.filter((l) => l.length >= 34 && l.length <= 38);
+  const t2 = _isPass ? [] : lines.filter((l) => l.length >= 34 && l.length <= 38);
   if (t2.length >= 2) {
     const l1 = t2.find((l) => l.includes("<<") && !/\d/.test(l)) || t2[0]; // name line (no digits)
     const l2 = t2.find((l) => l !== l1 && /^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}/.test(l)) || t2[1];

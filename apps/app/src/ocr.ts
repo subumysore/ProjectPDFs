@@ -107,8 +107,10 @@ export function parseMrz(text: string): ExtractedField[] {
     setNat(p2.slice(10, 13)); setDob(p2.slice(13, 19)); setSex(p2[20] ?? ""); setExp(p2.slice(21, 27));
     return fin();
   }
-  // TD1 — ID card (3×30): name on line 3, numbers on lines 1–2.
-  const t1 = lines.filter((l) => l.length >= 28 && l.length <= 32);
+  // TD1 — ID card (3×30): name on line 3, numbers on lines 1–2. NOT for passports (they are TD3) — the
+  // ID-card parsers false-match a passport MRZ and produce a bogus id_no, so skip them for passports.
+  const isPassport = /passport|passeport|pasaporte/i.test(text || "");
+  const t1 = isPassport ? [] : lines.filter((l) => l.length >= 28 && l.length <= 32);
   if (t1.length >= 3) {
     const nameLine = t1.find((l) => l.includes("<<") && !/\d/.test(l)) || t1[2] || "";
     const l1 = t1.find((l) => /^[A-Z<]{2}[A-Z]{3}\d/.test(l)) || t1[0];
@@ -118,8 +120,8 @@ export function parseMrz(text: string): ExtractedField[] {
     if (l2) { setDob(l2.slice(0, 6)); setSex(l2[7] ?? ""); setExp(l2.slice(8, 14)); setNat(l2.slice(15, 18)); }
     return fin();
   }
-  // TD2 — 2×36: name on line 1, numbers on line 2.
-  const t2 = lines.filter((l) => l.length >= 34 && l.length <= 38);
+  // TD2 — 2×36: name on line 1, numbers on line 2. Also skipped for passports (TD3).
+  const t2 = isPassport ? [] : lines.filter((l) => l.length >= 34 && l.length <= 38);
   if (t2.length >= 2) {
     const l1 = t2.find((l) => l.includes("<<") && !/\d/.test(l)) || t2[0] || "";
     const l2 = t2.find((l) => l !== l1 && /^[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}/.test(l)) || t2[1] || "";
@@ -285,7 +287,10 @@ export function parseFields(text: string): ExtractedField[] {
         if (given.length > 1) put("middle_name", given.slice(1).join(" "));
         put("last_name", above.join(" "));
       } else {
-        putName(given.join(" "));
+        // No readable surname line — on an ID the given-names line is FIRST (+ MIDDLE); the surname is
+        // separate (often illegible on the front). Do NOT mislabel the middle name as the last name.
+        put("first_name", given[0] ?? "");
+        if (given.length > 1) put("middle_name", given.slice(1).join(" "));
       }
     }
   }
@@ -356,6 +361,9 @@ export function parseFields(text: string): ExtractedField[] {
       else if (md.y <= now && md.y >= now - 15 && !out["issue_date"]) out["issue_date"] = md.d;
     }
   }
+  // Reject a garbled/label date_of_birth (the multilingual "Date of birth/Date de naissance/..." label
+  // can leak through the generic label pass) so a real date can take its place.
+  if (out["date_of_birth"] && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(out["date_of_birth"])) delete out["date_of_birth"];
   // DOB as "DD MON YYYY" (30 NOV 1968) if no slash-date/MRZ set one — earliest year of the mon-dates.
   if (!out["date_of_birth"] && monDates.length) out["date_of_birth"] = [...monDates].sort((a, b) => a.y - b.y)[0]?.d ?? "";
 
