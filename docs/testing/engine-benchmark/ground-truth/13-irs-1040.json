@@ -1,0 +1,15 @@
+{
+  "form": "13-irs-1040.pdf",
+  "note": "IRS 1040: applicant name/SSN/address POSITIVES + spouse + foreign-field NEGATIVES.",
+  "assertions": [
+    { "idRe": "Page1\\[0\\]\\.f1_14", "expect": "SUBRAMANYA", "mode": "contains", "note": "your first name + MI (bug: only 'S' landed)" },
+    { "idRe": "Page1\\[0\\]\\.f1_15", "expect": "MYSORE", "note": "your last name" },
+    { "idRe": "Page1\\[0\\]\\.f1_16", "expect": "123-45-6789", "note": "your SSN" },
+    { "capRe": "Home address", "expect": "4308 ALBINO DEER WAY", "mode": "contains", "note": "home address" },
+    { "capRe": "City, town, or post office", "expect": "WAKE FOREST", "mode": "contains", "note": "city" },
+    { "idRe": "Page1\\[0\\]\\.f1_17", "expect": "", "note": "NEG: spouse first name" },
+    { "idRe": "Page1\\[0\\]\\.f1_19", "expect": "", "note": "NEG: spouse SSN" },
+    { "capRe": "Foreign province", "expect": "", "note": "NEG: foreign province (over-filled NC)" },
+    { "capRe": "Foreign postal", "expect": "", "note": "NEG: foreign postal (over-filled 27587)" }
+  ]
+}

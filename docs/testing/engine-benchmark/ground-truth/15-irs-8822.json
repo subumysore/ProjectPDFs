@@ -1,0 +1,12 @@
+{
+  "form": "15-irs-8822.pdf",
+  "note": "IRS 8822 (change of address): applicant POSITIVES + decedent/spouse/prior-name NEGATIVES.",
+  "assertions": [
+    { "idRe": "Page1\\[0\\]\\.f1_3", "expect": "MYSORE", "mode": "contains", "note": "your name" },
+    { "idRe": "Page1\\[0\\]\\.f1_4", "expect": "123-45-6789", "note": "your SSN" },
+    { "idRe": "Page1\\[0\\]\\.f1_1\\[", "expect": "", "note": "BUG: decedent's name over-filled with applicant" },
+    { "idRe": "Page1\\[0\\]\\.f1_2\\[", "expect": "", "note": "BUG: decedent's SSN over-filled with applicant" },
+    { "idRe": "Page1\\[0\\]\\.f1_5", "expect": "", "note": "NEG: spouse's name" },
+    { "idRe": "Page1\\[0\\]\\.f1_7", "expect": "", "note": "NEG: your prior name(s)" }
+  ]
+}

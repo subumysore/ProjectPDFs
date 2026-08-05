@@ -1,0 +1,8 @@
+{
+  "form": "14-irs-w8ben.pdf",
+  "note": "IRS W-8BEN: individual name + residence city.",
+  "assertions": [
+    { "capRe": "Name of individual", "expect": "MYSORE", "mode": "contains", "note": "line 1 name" },
+    { "idRe": "Page1\\[0\\]\\.f_4", "expect": "WAKE FOREST", "mode": "contains", "note": "residence city/town" }
+  ]
+}

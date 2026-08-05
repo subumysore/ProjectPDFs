@@ -1,0 +1,9 @@
+{
+  "form": "11-irs-w9.pdf",
+  "note": "IRS W-9: no tooltips. Individual name (line 1) + address (lines 5/6).",
+  "assertions": [
+    { "idRe": "Page1\\[0\\]\\.f1_01", "expect": "MYSORE", "mode": "contains", "note": "line 1 name of individual" },
+    { "idRe": "Address_ReadOrder", "expect": "4308 ALBINO DEER WAY", "mode": "contains", "note": "line 5 address" },
+    { "idRe": "Page1\\[0\\]\\.f1_09", "expect": "WAKE FOREST", "mode": "contains", "note": "line 6 city/state/zip" }
+  ]
+}

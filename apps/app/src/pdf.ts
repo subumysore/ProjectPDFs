@@ -321,7 +321,7 @@ export async function fillXfaByWidgets(
   // ONE doc instance: its annotationStorage is what saveDocument() serialises, and the annotation ids
   // we set must come from THIS doc's getAnnotations().
   const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice(), useSystemFonts: true }).promise;
-  interface W { id: string; name: string; page: number; kind: "text" | "choice"; rect: { x: number; y: number; width: number; height: number }; isButton: boolean; exportValue: string | null }
+  interface W { id: string; name: string; page: number; kind: "text" | "choice"; rect: { x: number; y: number; width: number; height: number }; isButton: boolean; exportValue: string | null; tooltip: string }
   const groups = new Map<string, W[]>();
   for (let pi = 0; pi < doc.numPages; pi++) {
     const anns = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => [] as any[]);
@@ -330,7 +330,7 @@ export async function fillXfaByWidgets(
       const R = a.rect;
       const rect = { x: Math.min(R[0], R[2]), y: Math.min(R[1], R[3]), width: Math.abs(R[2] - R[0]), height: Math.abs(R[3] - R[1]) };
       if (rect.width < 2 || rect.height < 2) continue;
-      const w: W = { id: a.id, name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton: a.fieldType === "Btn", exportValue: (a.buttonValue ?? null) as string | null };
+      const w: W = { id: a.id, name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton: a.fieldType === "Btn", exportValue: (a.buttonValue ?? null) as string | null, tooltip: (a.alternativeText || "").trim() };
       const g = groups.get(w.name) ?? []; g.push(w); groups.set(w.name, g);
     }
   }
@@ -346,7 +346,7 @@ export async function fillXfaByWidgets(
     const w0 = ws[0]; if (!w0) continue;
     const kind = w0.kind === "text" && !w0.isButton ? "text" : "choice";
     const options = ws.map((w) => w.exportValue).filter(Boolean) as string[];
-    fields.push({ id: name, kind, page: w0.page, rect: w0.rect, options, widgets: ws.map((w) => ({ page: w.page, rect: w.rect })) });
+    fields.push({ id: name, kind, page: w0.page, rect: w0.rect, options, tooltip: w0.tooltip || "", widgets: ws.map((w) => ({ page: w.page, rect: w.rect })) });
     try { const c = captionFor(textsByPage.get(w0.page) ?? [], w0.rect); if (c) captions[name] = c; } catch { /* no caption */ }
   }
   const { assignments } = planProximityFill(fields, texts, vault, resolveFields);

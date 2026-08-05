@@ -77,3 +77,33 @@ test("name fields: current legal name fills; Other Names / interpreter left blan
   assert.equal(val("Line2_FamilyName1"), undefined, "Other Names last name left blank");
   assert.equal(val("Interp_FamilyName"), undefined, "interpreter name left blank");
 });
+
+// Precision fixes (2026-08-05) from the engine benchmark + the owner's live N-400 report: a field's
+// TOOLTIP names the section, so a spouse/marital-history name box stays blank; the applicant's own name
+// must NOT land in an ADDRESS box ("Street Number and Name", "In Care Of Name"); and a benign tooltip
+// ("… Person applying …") must NOT false-trigger the entity guard on the applicant's own name.
+test("tooltip section + address-name guard (N-400 over-fills)", () => {
+  const V = { first_name: "SUBRAMANYA", last_name: "MYSORE", address_1: "4308 ALBINO DEER WAY", city: "WAKE FOREST" };
+  const tx = [
+    T(0, 60, 700, "Family Name (Last Name)"),
+    T(0, 60, 640, "Family Name (Last Name)"),
+    T(0, 60, 580, "Street Number and Name"),
+    T(0, 60, 520, "In Care Of Name (if any)"),
+    T(0, 60, 460, "City or Town"),
+  ];
+  const F = (id, y, tip) => ({ id, kind: "text", page: 0, rect: { x: 60, y, width: 140, height: 14 }, tooltip: tip });
+  const fields = [
+    F("P2_FamilyName", 683, "Part 2. Information About You (Person applying for naturalization)"),
+    F("P10_Line4a_FamilyName", 623, "Part 7. Information About Your Marital History"),
+    F("P4_StreetName", 563, "Part 4. Current Mailing Address"),
+    F("P4_InCareOfName", 503, "Part 4. Current Mailing Address"),
+    F("P4_City", 443, "Part 4. Current Mailing Address"),
+  ];
+  const plan = planProximityFill(fields, tx, V, resolveFields);
+  const val = (id) => (plan.assignments.find((a) => a.id === id) || {}).value;
+  assert.equal(val("P2_FamilyName"), "MYSORE", "applicant family name fills (not blocked by 'person')");
+  assert.equal(val("P10_Line4a_FamilyName"), undefined, "spouse family name blank (marital-history tooltip)");
+  assert.notEqual(val("P4_StreetName"), "MYSORE", "applicant name not in street box");
+  assert.notEqual(val("P4_InCareOfName"), "MYSORE", "applicant name not in in-care-of box");
+  assert.equal(val("P4_City"), "WAKE FOREST", "city still fills");
+});

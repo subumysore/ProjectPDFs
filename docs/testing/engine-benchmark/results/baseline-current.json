@@ -1,0 +1,334 @@
+[
+  {
+    "form": "01-uscis-i9.pdf",
+    "pages": 4,
+    "fields": 128,
+    "filled": 24,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 8
+  },
+  {
+    "form": "02-uscis-i130.pdf",
+    "pages": 12,
+    "fields": 405,
+    "filled": 102,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 11
+  },
+  {
+    "form": "03-uscis-n400.pdf",
+    "pages": 14,
+    "fields": 391,
+    "filled": 46,
+    "precision": 1,
+    "recall": 0.75,
+    "blankOk": 1,
+    "labeled": 15,
+    "coverage": 12,
+    "TP": 3,
+    "WRONG": 0,
+    "MISS": 1,
+    "blankTotal": 11,
+    "blankKept": 11,
+    "failures": [
+      {
+        "idRe": "P4_Line1_StreetName",
+        "expect": "4308 ALBINO DEER WAY",
+        "mode": "contains",
+        "note": "BUG: street filled with NAME; should be street address",
+        "why": "not filled",
+        "got": ""
+      }
+    ]
+  },
+  {
+    "form": "04-uscis-i485.pdf",
+    "pages": 24,
+    "fields": 626,
+    "filled": 52,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 9
+  },
+  {
+    "form": "05-uscis-i765.pdf",
+    "pages": 7,
+    "fields": 145,
+    "filled": 24,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 10
+  },
+  {
+    "form": "06-uscis-i131.pdf",
+    "pages": 14,
+    "fields": 209,
+    "filled": 22,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 10
+  },
+  {
+    "form": "07-uscis-g28.pdf",
+    "pages": 4,
+    "fields": 77,
+    "filled": 20,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 8
+  },
+  {
+    "form": "08-uscis-i90.pdf",
+    "pages": 7,
+    "fields": 146,
+    "filled": 25,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 10
+  },
+  {
+    "form": "09-uscis-n600.pdf",
+    "pages": 16,
+    "fields": 261,
+    "filled": 56,
+    "precision": null,
+    "recall": null,
+    "blankOk": null,
+    "labeled": 0,
+    "coverage": 11
+  },
+  {
+    "form": "10-irs-w4.pdf",
+    "pages": 5,
+    "fields": 48,
+    "filled": 1,
+    "precision": 1,
+    "recall": 0.2,
+    "blankOk": 1,
+    "labeled": 7,
+    "coverage": 1,
+    "TP": 1,
+    "WRONG": 0,
+    "MISS": 4,
+    "blankTotal": 2,
+    "blankKept": 2,
+    "failures": [
+      {
+        "idRe": "Step1a\\[0\\]\\.f1_01",
+        "expect": "SUBRAMANYA",
+        "mode": "contains",
+        "note": "first name + MI",
+        "why": "not filled",
+        "got": ""
+      },
+      {
+        "idRe": "Step1a\\[0\\]\\.f1_02",
+        "expect": "MYSORE",
+        "note": "last name",
+        "why": "not filled",
+        "got": ""
+      },
+      {
+        "idRe": "Step1a\\[0\\]\\.f1_03",
+        "expect": "4308 ALBINO DEER WAY",
+        "mode": "contains",
+        "note": "address",
+        "why": "not filled",
+        "got": ""
+      },
+      {
+        "idRe": "Page1\\[0\\]\\.f1_05",
+        "expect": "123-45-6789",
+        "note": "SSN",
+        "why": "not filled",
+        "got": ""
+      }
+    ]
+  },
+  {
+    "form": "11-irs-w9.pdf",
+    "pages": 6,
+    "fields": 23,
+    "filled": 3,
+    "precision": 0.5,
+    "recall": 0.3333333333333333,
+    "blankOk": null,
+    "labeled": 3,
+    "coverage": 2,
+    "TP": 1,
+    "WRONG": 1,
+    "MISS": 1,
+    "blankTotal": 0,
+    "blankKept": 0,
+    "failures": [
+      {
+        "idRe": "Page1\\[0\\]\\.f1_01",
+        "expect": "MYSORE",
+        "mode": "contains",
+        "note": "line 1 name of individual",
+        "why": "not filled",
+        "got": ""
+      },
+      {
+        "idRe": "Page1\\[0\\]\\.f1_09",
+        "expect": "WAKE FOREST",
+        "mode": "contains",
+        "note": "line 6 city/state/zip",
+        "why": "wrong value",
+        "got": [
+          "27587"
+        ]
+      }
+    ]
+  },
+  {
+    "form": "12-irs-w7.pdf",
+    "pages": 1,
+    "fields": 69,
+    "filled": 4,
+    "precision": 1,
+    "recall": 1,
+    "blankOk": 0.6,
+    "labeled": 6,
+    "coverage": 3,
+    "TP": 1,
+    "WRONG": 0,
+    "MISS": 0,
+    "blankTotal": 5,
+    "blankKept": 3,
+    "failures": [
+      {
+        "idRe": "Page1\\[0\\]\\.f1_02",
+        "expect": "",
+        "note": "NEGATIVE: name/SSN of U.S. citizen (delegate)",
+        "why": "should be BLANK but was filled",
+        "got": [
+          "123-45-6789"
+        ]
+      },
+      {
+        "idRe": "Page1\\[0\\]\\.f1_38",
+        "expect": "",
+        "note": "NEGATIVE: college city and state",
+        "why": "should be BLANK but was filled",
+        "got": [
+          "WAKE FOREST"
+        ]
+      }
+    ]
+  },
+  {
+    "form": "13-irs-1040.pdf",
+    "pages": 2,
+    "fields": 199,
+    "filled": 28,
+    "precision": 0.8,
+    "recall": 0.8,
+    "blankOk": 0.5,
+    "labeled": 9,
+    "coverage": 10,
+    "TP": 4,
+    "WRONG": 1,
+    "MISS": 0,
+    "blankTotal": 4,
+    "blankKept": 2,
+    "failures": [
+      {
+        "idRe": "Page1\\[0\\]\\.f1_14",
+        "expect": "SUBRAMANYA",
+        "mode": "contains",
+        "note": "your first name + MI (bug: only 'S' landed)",
+        "why": "wrong value",
+        "got": [
+          "S"
+        ]
+      },
+      {
+        "capRe": "Foreign province",
+        "expect": "",
+        "note": "NEG: foreign province (over-filled NC)",
+        "why": "should be BLANK but was filled",
+        "got": [
+          "NC"
+        ]
+      },
+      {
+        "capRe": "Foreign postal",
+        "expect": "",
+        "note": "NEG: foreign postal (over-filled 27587)",
+        "why": "should be BLANK but was filled",
+        "got": [
+          "27587"
+        ]
+      }
+    ]
+  },
+  {
+    "form": "14-irs-w8ben.pdf",
+    "pages": 1,
+    "fields": 23,
+    "filled": 2,
+    "precision": 1,
+    "recall": 1,
+    "blankOk": null,
+    "labeled": 2,
+    "coverage": 1,
+    "TP": 1,
+    "WRONG": 0,
+    "MISS": 0,
+    "blankTotal": 0,
+    "blankKept": 0,
+    "failures": [
+      {
+        "capRe": "Name of individual",
+        "expect": "MYSORE",
+        "mode": "contains",
+        "note": "line 1 name",
+        "why": "locator matched no field"
+      }
+    ]
+  },
+  {
+    "form": "15-irs-8822.pdf",
+    "pages": 2,
+    "fields": 25,
+    "filled": 9,
+    "precision": 1,
+    "recall": 1,
+    "blankOk": 0.75,
+    "labeled": 6,
+    "coverage": 3,
+    "TP": 2,
+    "WRONG": 0,
+    "MISS": 0,
+    "blankTotal": 4,
+    "blankKept": 3,
+    "failures": [
+      {
+        "idRe": "Page1\\[0\\]\\.f1_2\\[",
+        "expect": "",
+        "note": "BUG: decedent's SSN over-filled with applicant",
+        "why": "should be BLANK but was filled",
+        "got": [
+          "123-45-6789"
+        ]
+      }
+    ]
+  }
+]

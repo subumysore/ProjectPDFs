@@ -10,12 +10,15 @@
 // and gets back { assignments:[{ id, caption, value, option? }], skipped }. It mutates nothing,
 // so it is trivially testable; pdffill.js wires it to pdf-lib + pdf.js.
 
-const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+// Split camelCase FIRST so programmatic field names tokenise ("EmployerName" -> "employer name",
+// "P10_Line4a" -> untouched) — otherwise a compound like "EmployerName" hides the "employer" token
+// and an entity box slips through as fillable.
+const norm = (s) => (s || "").toString().replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const stem = (t) => t.replace(/s$/, "");
 
 // A box that belongs to a DIFFERENT entity than the applicant (employer / ship / hotel /
 // guarantor / inviter / partner …) must never be filled from the user's own identity.
-const ENTITY = ["employer", "company", "organization", "organisation", "ship", "airline", "vessel", "flight", "hotel", "guarantor", "sponsor", "inviter", "invitee", "reference", "referee", "emergency", "next of kin", "host", "partner", "parent", "spouse", "school", "university", "institution", "person", "relative", "friend", "interpreter", "preparer", "translator", "attorney", "representative", "witness"];
+const ENTITY = ["employer", "company", "organization", "organisation", "ship", "airline", "vessel", "flight", "hotel", "guarantor", "sponsor", "inviter", "invitee", "reference", "referee", "emergency", "next of kin", "host", "partner", "parent", "spouse", "school", "university", "college", "institution", "person", "relative", "friend", "interpreter", "preparer", "translator", "attorney", "representative", "witness", "decedent", "deceased", "delegate"];
 export function isEntityText(s) {
   const g = norm(s); const toks = new Set(g.split(" ").filter(Boolean).map(stem));
   return ENTITY.some((e) => (e.includes(" ") ? g.includes(e) : toks.has(stem(e))));
@@ -99,21 +102,37 @@ export function dayFirstNear(texts, r) {
 export function planProximityFill(fields, texts, vault, resolveFields) {
   const assignments = []; let skipped = 0;
   const byPage = (pi) => texts.filter((t) => t.page === pi);
+  // The applicant's own name in every rendered form — so we can detect it landing in a box that is
+  // NOT a name box (e.g. "Street Number and Name", "In Care Of Name") and suppress that mis-fill.
+  const nm = (lbl) => (resolveFields(vault, [{ label: lbl }])[0] || "");
+  const nameVals = new Set([nm("full name"), nm("first name"), nm("last name"), nm("given and middle names"),
+    [nm("first name"), nm("middle name"), nm("last name")].filter(Boolean).join(" ")].filter(Boolean).map(norm));
   for (const f of fields) {
     const T = byPage(f.page);
     const isChoice = f.kind === "choice";
     const isRadio = isChoice && (f.widgets && f.widgets.length > 1);
     const caption = captionFor(T, f.rect, { preferColon: isRadio });
-    // A different entity (employer/guarantor/interpreter/preparer/…) OR the applicant's OTHER/FORMER/
-    // MAIDEN names — never fill either from the user's CURRENT identity. Leave the field blank (it still
-    // exists to fill by hand). The general rule the owner asked for, not just for "Other Names".
+    // A different entity (employer/guarantor/interpreter/preparer/decedent/…) OR the applicant's OTHER/
+    // FORMER/MAIDEN names — never fill either from the user's CURRENT identity. Leave the field blank (it
+    // still exists to fill by hand). The field's TOOLTIP (/TU) — which these gov forms carry and which
+    // names the section ("Part 7 … Marital History", "Interpreter's …") — is folded into the context so a
+    // spouse/preparer box is recognised even when its own visible label is just "Family Name".
     const ctx = caption + " " + headerAbove(T, f.rect) + " " + (f.id || "");
-    // NAME field under an "Other/Former/Maiden names" section → leave blank (only for name fields, via the
-    // nearest name-section heading, so non-name fields below that section are unaffected).
+    // The tooltip names the SECTION on gov forms ("Part 7 … Marital History", "Interpreter's …",
+    // "Information About Your Children"). We DON'T fold it into the broad entity check (benign tooltips
+    // like "Information About You (Person applying…)" would false-trigger on "person"); instead we match
+    // a tight set of OTHER-PERSON section keywords, and only skip NAME boxes on that basis.
+    const tip = f.tooltip || "";
     const capIsName = /\b(family|last|given|first|middle|maiden|surname|forename|name)\b/i.test(caption);
-    if (isEntityText(ctx) || isOtherNameText(ctx) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
+    const otherPersonSection = /\b(spouse|marital history|husband|wife|interpreter|preparer|decedent|deceased|delegate|employer or school|about your children|your children)\b/i.test(tip + " " + caption + " " + headerAbove(T, f.rect));
+    if (isEntityText(ctx) || isOtherNameText(ctx) || isOtherNameText(tip)
+        || (capIsName && otherPersonSection) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
     const value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
+    // The applicant's NAME resolved into an ADDRESS box ("Street Number and Name", "In Care Of Name") is a
+    // mis-resolution — the word "Name" in the label pulled a name concept. Leave it blank rather than wrong.
+    const addrCtx = /\b(street|address|city|town|state|province|zip|postal|country|apt|suite|floor|care of)\b/i.test(caption + " " + (f.tooltip || ""));
+    if (addrCtx && nameVals.has(norm(value))) { skipped++; continue; }
 
     if (isChoice) {
       const opts = f.options || [];

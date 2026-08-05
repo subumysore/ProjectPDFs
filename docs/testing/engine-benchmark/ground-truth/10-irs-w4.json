@@ -1,0 +1,13 @@
+{
+  "form": "10-irs-w4.pdf",
+  "note": "IRS W-4: no tooltips, labels ABOVE boxes. Applicant Step 1(a) fields vs employer negatives.",
+  "assertions": [
+    { "idRe": "Step1a\\[0\\]\\.f1_01", "expect": "SUBRAMANYA", "mode": "contains", "note": "first name + MI" },
+    { "idRe": "Step1a\\[0\\]\\.f1_02", "expect": "MYSORE", "note": "last name" },
+    { "idRe": "Step1a\\[0\\]\\.f1_03", "expect": "4308 ALBINO DEER WAY", "mode": "contains", "note": "address" },
+    { "idRe": "Step1a\\[0\\]\\.f1_04", "expect": "WAKE FOREST", "mode": "contains", "note": "city/state/zip line" },
+    { "idRe": "Page1\\[0\\]\\.f1_05", "expect": "123-45-6789", "note": "SSN" },
+    { "idRe": "Page1\\[0\\]\\.f1_12", "expect": "", "note": "NEGATIVE: employer name+address" },
+    { "idRe": "Page1\\[0\\]\\.f1_14", "expect": "", "note": "NEGATIVE: employer EIN" }
+  ]
+}

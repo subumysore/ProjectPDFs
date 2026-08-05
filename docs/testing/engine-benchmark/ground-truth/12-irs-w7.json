@@ -1,0 +1,12 @@
+{
+  "form": "12-irs-w7.pdf",
+  "note": "IRS W-7 (ITIN): applicant mailing city vs strong NEGATIVES (delegate name/SSN, college, company).",
+  "assertions": [
+    { "idRe": "Page1\\[0\\]\\.f1_14", "expect": "WAKE FOREST", "mode": "contains", "note": "applicant mailing city/state" },
+    { "idRe": "Page1\\[0\\]\\.f1_02", "expect": "", "note": "NEGATIVE: name/SSN of U.S. citizen (delegate)" },
+    { "idRe": "Page1\\[0\\]\\.f1_37", "expect": "", "note": "NEGATIVE: name of college/university" },
+    { "idRe": "Page1\\[0\\]\\.f1_38", "expect": "", "note": "NEGATIVE: college city and state" },
+    { "idRe": "Page1\\[0\\]\\.f1_41", "expect": "", "note": "NEGATIVE: name of delegate" },
+    { "idRe": "Page1\\[0\\]\\.f1_45", "expect": "", "note": "NEGATIVE: name of company" }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "form": "03-uscis-n400.pdf",
+  "note": "USCIS N-400 (hybrid-XFA). Applicant identity POSITIVES + the wrong-concept NEGATIVES confirmed live by the owner: Other Names, interpreter, preparer, spouse (Part 7 marital), employer/children columns, street-vs-name, in-care-of.",
+  "assertions": [
+    { "idRe": "P2_Line1_FamilyName", "expect": "MYSORE", "note": "applicant last name" },
+    { "idRe": "P2_Line1_GivenName", "expect": "SUBRAMANYA", "note": "applicant first name" },
+    { "idRe": "P2_Line1_MiddleName", "expect": "VISHWANATHAN", "note": "applicant middle name" },
+
+    { "idRe": "Line2_FamilyName1", "expect": "", "note": "NEG: Other Names (family)" },
+    { "idRe": "Line3_GivenName1", "expect": "", "note": "NEG: Other Names (given)" },
+    { "idRe": "Line3_MiddleName1", "expect": "", "note": "NEG: Other Names (middle)" },
+
+    { "idRe": "P14_Line1_nterpreterGivenName", "expect": "", "note": "NEG: interpreter given name" },
+    { "idRe": "P14_Line1_nterpreterFamilyName", "expect": "", "note": "NEG: interpreter family name" },
+    { "idRe": "P15_Line1_PreparerGivenName", "expect": "", "note": "NEG: preparer given name" },
+    { "idRe": "P15_Line1_PreparerFamilyName", "expect": "", "note": "NEG: preparer family name" },
+
+    { "idRe": "P4_Line1_StreetName", "expect": "4308 ALBINO DEER WAY", "mode": "contains", "note": "BUG: street filled with NAME; should be street address" },
+    { "idRe": "P4_Line1_InCareOfName", "expect": "", "note": "BUG: In Care Of Name filled with applicant name; should be blank" },
+
+    { "idRe": "P10_Line4a_FamilyName", "expect": "", "note": "NEG: Part 7 spouse family name (over-filled with applicant)" },
+    { "idRe": "P10_Line4a_GivenName", "expect": "", "note": "NEG: Part 7 spouse given name" },
+
+    { "idRe": "P7_EmployerName1", "expect": "", "note": "BUG: employer/child name column filled with applicant name/occupation" }
+  ]
+}
