@@ -2007,12 +2007,12 @@ export function App() {
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#425055", padding: "0 4px" }}>
                   <span style={{ fontWeight: 600 }}>Engine:</span>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
-                    <input type="radio" name="fillengine" checked={fillEngine === "standard"} onChange={() => setFillEngine("standard")} />
+                    <input type="radio" name="fillengine" checked={fillEngine === "standard"} onChange={() => { setFillEngine("standard"); setPdfMsg(""); }} />
                     Standard
                   </label>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
-                    <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={() => setFillEngine("granite")} />
-                    Granite <span style={{ fontSize: 10, color: "#a06a00", background: "#fff3d6", border: "1px solid #f0d8a0", borderRadius: 4, padding: "0 4px" }}>beta</span>
+                    <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={() => { setFillEngine("granite"); setPdfMsg("Granite is a one-time ~260 MB on-device layout model (downloads once, never leaves your device). It is still being packaged as that separate download + its on-device inference — not available yet, so Standard is used for now. Tracked in RFC-0010."); }} />
+                    Granite <span style={{ fontSize: 10, color: "#a06a00", background: "#fff3d6", border: "1px solid #f0d8a0", borderRadius: 4, padding: "0 4px" }}>not ready</span>
                   </label>
                 </span>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
