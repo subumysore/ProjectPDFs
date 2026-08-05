@@ -246,6 +246,9 @@ export function App() {
   // Once a form is loaded, the big chooser (upload/URL/search) has done its job — collapse it so the
   // actual form rises to the top of the view instead of sitting 700px down behind the picker chrome.
   const [showPicker, setShowPicker] = useState(false);
+  // Auto-collapse the "choose a form" picker once a form is loaded — otherwise its upload UI stays open
+  // ABOVE the form and pushes it off-screen (this was the real cause of the tiny-form / scrolling issue).
+  useEffect(() => { if (pdfBytes) setShowPicker(false); }, [pdfBytes]);
   const [formUrl, setFormUrl] = useState("");
   const [officeFilled, setOfficeFilled] = useState<{ data: Uint8Array; kind: OfficeKind } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1104,7 +1107,7 @@ export function App() {
           // FormView renders the form; don't also renderFirstPage (concurrent pdf.js render races it and
           // can wedge the preview on "Rendering the form…").
           await saveOut(xfa.data, formName || "filled");
-          setPdfMsg(`XFA/LiveCycle form (e.g. USCIS): filled ${xfa.filled} of ${xfa.total} fields from your vault, matched by each box's printed label — the form STAYS editable. Saved to your Desktop; review & correct below.`);
+          setPdfMsg(`Filled ${xfa.filled} of ${xfa.total} fields — editable, saved to your Desktop. Review below.`);
           await loadReview(ab, formName);
           await persistFilled(formName, xfa.filled, xfa.total, xfa.data);
           return;
@@ -1326,7 +1329,8 @@ export function App() {
         // fixed 820px column wasted most of a wide display. Caps at 1600 so text lines stay readable.
         maxWidth: "min(1600px, 96vw)",
         margin: "0 auto",
-        padding: "28px 20px 64px",
+        // When a form is open, shrink the outer padding hard so the form gets the screen.
+        padding: (tab === "forms" && pdfBytes) ? "8px 18px 8px" : "28px 20px 64px",
         color: "#101a20",
       }}
     >
@@ -1362,14 +1366,17 @@ export function App() {
         />
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.15 }}>PolyglotFormFill</h1>
-        <button onClick={lockNow} style={{ fontSize: 12 }}>
+        {!(tab === "forms" && pdfBytes) && <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.15 }}>PolyglotFormFill</h1>}
+        <button onClick={lockNow} style={{ fontSize: 12, marginLeft: "auto" }}>
           🔒 {tr("lock.button")}
         </button>
       </div>
-      <p style={{ color: "#55666f", margin: "1px 0 7px", fontSize: 12.5 }}>
-        {tr("privacy.body")}
-      </p>
+      {!(tab === "forms" && pdfBytes) && (
+        <p style={{ color: "#55666f", margin: "1px 0 7px", fontSize: 12.5 }}>
+          {tr("privacy.body")}
+        </p>
+      )}
+      {!(tab === "forms" && pdfBytes) && (
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", fontSize: 13 }}>
         <label htmlFor="uilang" style={{ color: "#55666f" }}>{tr("lang.ui")}:</label>
         <select id="uilang" value={uiLang} onChange={(e) => setUiLang(e.currentTarget.value)} style={{ padding: "4px 6px" }}>
@@ -1400,12 +1407,13 @@ export function App() {
           {tr("lang.fillHint")}
         </span>
       </div>
+      )}
       {err && (
         <p style={{ color: "#9a2c2c", cursor: "pointer" }} onClick={() => setErr("")}>
           {err} (click to dismiss)
         </p>
       )}
-      {savedPath && (
+      {savedPath && !(tab === "forms" && pdfBytes) && (
         <p
           style={{ background: "#e2f2f0", color: "#0a6a60", borderRadius: 8, padding: "8px 10px", fontSize: 13, cursor: "pointer", margin: "6px 0" }}
           title="Click to dismiss"

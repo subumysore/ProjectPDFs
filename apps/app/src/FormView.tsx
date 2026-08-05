@@ -46,7 +46,9 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
   // small enough to see the whole page, or large enough to read fine print. Their choice, not fixed.
   const [zoom, setZoom] = useState(1);
 
-  // Re-fit the page (width) AND size the scroll area to the space left under the header, on resize.
+  // Re-fit the page (width) AND size the scroll area to the space left under the header. Recomputed on
+  // window resize AND whenever the page content above shifts (a banner appearing/removing changes the
+  // form's top offset without a window resize — that staleness left the form overflowing below the fold).
   useEffect(() => {
     const measure = () => {
       setFit(wrapRef.current?.clientWidth ?? 0);
@@ -54,9 +56,13 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
       setAvailH(Math.max(340, Math.round(window.innerHeight - top - 14)));
     };
     measure();
-    const t = setTimeout(measure, 60); // after layout settles (banners, etc.)
+    const t = setTimeout(measure, 60);
     window.addEventListener("resize", measure);
-    return () => { clearTimeout(t); window.removeEventListener("resize", measure); };
+    // Watch the whole document: when banners above the form toggle, the form's top offset changes and we
+    // must resize the scroll area so it still ends exactly at the viewport bottom (only the form scrolls).
+    const ro = new ResizeObserver(() => measure());
+    if (document.body) ro.observe(document.body);
+    return () => { clearTimeout(t); window.removeEventListener("resize", measure); ro.disconnect(); };
   }, []);
 
   useEffect(() => {
