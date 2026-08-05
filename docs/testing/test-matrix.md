@@ -23,7 +23,9 @@ harnesses (Edge+Chrome) all pass. Results below.
 | E8 | Passport MRZ (TD3) parse | U | ✅ parse.test |
 | E9 | Education routing (degree/field/school/year/gpa) | U | ✅ |
 | E10 | i18n: no hard-coded English control; every key in all 26 langs | U | ✅ (in 347) |
-| E11 | Wrong-concept name boxes left BLANK (Other Names / interpreter / preparer); current name fills | U | ✅ pdfproximity 347/347 |
+| E11 | Wrong-concept name boxes left BLANK (Other Names / interpreter / preparer); current name fills | U | ✅ pdfproximity 348/348 |
+| E12 | Tooltip section guard: spouse/marital name box blank; applicant name NOT in address box (street/in-care-of) | U | ✅ pdfproximity 348/348 |
+| E13 | 15-form accuracy benchmark: precision/recall/blank-correctness vs ground truth (RFC-0010) | B | ✅ P=90% R=73% blankOK=77% (7 labeled forms); `run-current.mjs` |
 
 ## B. Desktop EXE — real app (CDP) + unit
 | ID | Scenario | Method | Result |

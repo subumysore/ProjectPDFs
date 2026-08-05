@@ -1,0 +1,6 @@
+{
+  "engine": "granite-docling-258M",
+  "status": "PENDING",
+  "reason": "no PDF rasteriser (install @napi-rs/canvas or canvas) — VLM needs page images",
+  "repro": "See docs/testing/engine-benchmark/README.md — provide a PDF rasteriser + the int8 model, then re-run."
+}

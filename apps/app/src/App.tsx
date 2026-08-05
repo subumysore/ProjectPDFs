@@ -184,6 +184,10 @@ export function App() {
   const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [filling, setFilling] = useState(false); // form-fill in progress → show the live spinner
+  // Which labelling engine fills the form. "standard" = the shipped proximity+tooltip engine.
+  // "granite" = the experimental on-device Granite-Docling VLM (RFC-0010) — lets the owner swap and
+  // compare manually. Granite is beta and needs the on-device model; until present it notes + falls back.
+  const [fillEngine, setFillEngine] = useState<"standard" | "granite">("standard");
   const [scanned, setScanned] = useState(false);
   const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
@@ -1093,6 +1097,12 @@ export function App() {
     if (!pdfBytes) { dbg.push("BLOCKED: no pdfBytes"); await flush(); return; }
     const vault = buildVault();
     dbg.push(`vault: ${points.length} points; keys=${Object.keys(vault).slice(0, 25).join(",")}`);
+    // Granite-Docling (RFC-0010) is an experimental on-device VLM engine; the model isn't bundled yet, so
+    // until it's fetched we tell the user and fall back to the Standard engine (fill still works).
+    if (fillEngine === "granite") {
+      dbg.push("engine=granite requested; on-device model not yet installed → falling back to standard");
+      setPdfMsg("Granite (beta) needs its on-device layout model, which isn't installed yet — filled with the Standard engine for now.");
+    }
     setFilling(true);
     try {
       let filled = 0, total = 0, data: Uint8Array | null = null;
@@ -1992,6 +2002,19 @@ export function App() {
                     ? <><span style={{ display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span> Filling…</>
                     : <>⚡ Fill from my vault</>}
                 </button>
+                {/* Engine selector — swap the field-labelling engine and re-Fill to compare manually (RFC-0010). */}
+                <span title="Which engine labels the fields. Granite-Docling is an experimental on-device layout model (beta)."
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#425055", padding: "0 4px" }}>
+                  <span style={{ fontWeight: 600 }}>Engine:</span>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
+                    <input type="radio" name="fillengine" checked={fillEngine === "standard"} onChange={() => setFillEngine("standard")} />
+                    Standard
+                  </label>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
+                    <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={() => setFillEngine("granite")} />
+                    Granite <span style={{ fontSize: 10, color: "#a06a00", background: "#fff3d6", border: "1px solid #f0d8a0", borderRadius: 4, padding: "0 4px" }}>beta</span>
+                  </label>
+                </span>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>

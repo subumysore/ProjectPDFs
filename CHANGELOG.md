@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Unreleased] - 2026-08-05
+### Added — fill-engine accuracy benchmark (RFC-0010)
+- 15 real government forms (USCIS + IRS, 1–24 pages) with a headless pdf.js harness
+  (`scripts/engine-benchmark/`) that scores an engine on **precision / recall / blank-correctness**
+  against per-form ground truth — real accuracy, not just coverage. Reproduce:
+  `node scripts/engine-benchmark/run-current.mjs`. Proof: `docs/testing/engine-benchmark/results/`.
+- Baseline of the shipped engine: **P=86% R=73% blank-correctness=65%**.
+### Fixed — N-400 over-fills (name in address box; spouse/interpreter/preparer/decedent/employer boxes)
+- The engine ignored the widget **tooltip** (which names the section) and mis-tokenised compound field
+  names. Now: the tooltip drives section detection (a spouse/marital-history or interpreter/preparer name
+  box stays blank even when its visible label is only "Family Name" — scoped keywords so benign
+  "…Person applying…" tooltips don't false-trigger); compound ids like `EmployerName` are camelCase-split
+  so their entity token shows; the applicant's own **name** is suppressed when it resolves into an
+  **address** box ("Street Number and Name", "In Care Of Name"); entity list += decedent/deceased/
+  delegate/college. Wired through both surfaces (extension `pdfxfa.js` + desktop `pdf.ts`).
+- Result: **P=90% (+4), blank-correctness=77% (+12), recall held at 73%**; N-400 P=100%,
+  blank-correctness=100%. Extension suite **348/348**, desktop `tsc` clean. Benchmark = regression guard.
+
 ## [Unreleased] - 2026-08-03
 ### Fixed — never fill the CURRENT identity into a DIFFERENT concept (leave it blank)
 - The N-400 wrote the applicant's **current legal name** into *"Other Names You Have Used Since Birth"*
