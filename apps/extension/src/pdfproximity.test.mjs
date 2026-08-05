@@ -107,3 +107,17 @@ test("tooltip section + address-name guard (N-400 over-fills)", () => {
   assert.notEqual(val("P4_InCareOfName"), "MYSORE", "applicant name not in in-care-of box");
   assert.equal(val("P4_City"), "WAKE FOREST", "city still fills");
 });
+
+// Ownership as a GENERAL rule (2026-08-05), not per-form keyword lists (owner's ask: "fix the pattern,
+// build intelligence"). A non-self POSSESSIVE ("X's field", X≠you/applicant) marks someone else's box.
+import { otherSubject } from "./pdfproximity.js";
+test("ownership: a non-self possessive marks another subject's field", () => {
+  assert.equal(otherSubject("Interpreter's Family Name (Last Name)", "", ""), true);
+  assert.equal(otherSubject("Family Name", "Part 12. Preparer's Contact Information", ""), true);
+  assert.equal(otherSubject("Current Spouse's Current Employer", "", ""), true);
+  assert.equal(otherSubject("Son or Daughter's Name", "", ""), true);
+  assert.equal(otherSubject("Decedent's name", "", ""), true);
+  assert.equal(otherSubject("Applicant's Signature", "", ""), false, "applicant IS self");
+  assert.equal(otherSubject("Your Current Legal Name", "", ""), false, "your = self");
+  assert.equal(otherSubject("Family Name (Last Name)", "Part 2. Information About You", ""), false);
+});

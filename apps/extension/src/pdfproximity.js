@@ -53,6 +53,31 @@ function nameSectionKind(texts, r) {
   return null;
 }
 
+// ── OWNERSHIP: the fundamental pattern, not a per-form list ──────────────────────────────────────
+// A box belongs to the APPLICANT (fill it from their identity) UNLESS its label/section shows it is about
+// a DIFFERENT subject. Two general, grammar-level signals catch this across every form:
+//
+//   (1) A NON-SELF POSSESSIVE — "Spouse's / Interpreter's / Decedent's / Son or Daughter's / Employer's
+//       <field>". English marks "whose field is this?" with 's; if the possessor isn't the applicant
+//       (your/applicant/petitioner/my/our) it's someone else's box → leave blank. This one rule replaces
+//       spouse+interpreter+preparer+decedent+delegate+… — we detect the GRAMMAR, not the nouns.
+//
+//   (2) A REPEATING-HISTORY row we have no data for — a numbered enumeration (…Name1/Name2/Name3, row
+//       index [1]/[2]) or a section that says to LIST/PROVIDE multiple entries (employment/residence
+//       history, list of children). A single identity value smeared down every row is noise, not a fill.
+const SELF_POSS = new Set(["applicant", "petitioner", "your", "my", "our", "yours"]);
+export function otherSubject(caption, tip, header) {
+  const blob = `${caption || ""} . ${tip || ""} . ${header || ""}`;
+  for (const m of blob.matchAll(/\b([A-Za-z]{3,})['’]s\b/g)) { if (!SELF_POSS.has(m[1].toLowerCase())) return true; }
+  return false;
+}
+export function repeatingHistoryRow(field, tip, header) {
+  const id = field.id || "";
+  const numbered = /(?:name|line|row|entry)\s*[2-9]\b/i.test(id) || /[_\.]?\d?\[[1-9]\]/.test(id.replace(/\[0\]$/, ""));
+  const listLead = /\b(list (all|every|where)|provide the following information about|during the (last|past)\s*\d|information about your (children|employment|marital))\b/i.test(`${tip} ${header}`);
+  return numbered && listLead;
+}
+
 const rowMatch = (t, cy) => Math.abs((t.y + t.h / 2) - cy) <= 7;
 
 // The box's own caption = same-row printed text that BEGINS to its left (a long label can extend
@@ -125,7 +150,16 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
     const tip = f.tooltip || "";
     const capIsName = /\b(family|last|given|first|middle|maiden|surname|forename|name)\b/i.test(caption);
     const otherPersonSection = /\b(spouse|marital history|husband|wife|interpreter|preparer|decedent|deceased|delegate|employer or school|about your children|your children)\b/i.test(tip + " " + caption + " " + headerAbove(T, f.rect));
+    // REPEATING HISTORY TABLES (children, employment/schools) enumerate rows we have no data for — a
+    // single identity value (occupation, a name) smeared across every row is noise, not a fill. Leave the
+    // WHOLE section blank for manual entry. Keyed on the tooltip that names the section, so it can't catch
+    // an unrelated single field. (NOT marital-history — its status radio should still fill; only its
+    // spouse NAME boxes are skipped, via otherPersonSection above.)
+    const header = headerAbove(T, f.rect);
+    const historyTable = /information about your children|information about your employment and sch|employment and schools you attended/i.test(tip);
     if (isEntityText(ctx) || isOtherNameText(ctx) || isOtherNameText(tip)
+        || otherSubject(caption, tip, header)                 // GENERAL: someone else's box (possessive)
+        || repeatingHistoryRow(f, tip, header) || historyTable // GENERAL: a repeating history row / table
         || (capIsName && otherPersonSection) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
     const value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
