@@ -198,6 +198,24 @@ pub fn parse_ddg_results(html: &str) -> Vec<(String, String)> {
 /// **This sends the query off-device** — a user-directed egress exception (like
 /// "Submit online"): device → DuckDuckGo directly, never proxied by us. Returns
 /// (title, url) hits; the chosen URL is later fetched + filled on-device.
+/// Download a large PUBLIC model file (e.g. an ONNX weight shard) to bytes. Same inbound-only posture
+/// as the form/asset fetches — the request carries NO user data — but WITHOUT the small-file cap, since
+/// model weights run to hundreds of MB. SSRF-guarded (public hosts only) and time-bounded.
+pub async fn fetch_model_file(raw: &str) -> Result<Vec<u8>, FetchError> {
+    let url = validate_url(raw)?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(900))
+        .user_agent(concat!("PolyglotFormFill/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|_| FetchError::Request)?;
+    let resp = client.get(url).send().await.map_err(|_| FetchError::Request)?;
+    if !resp.status().is_success() {
+        return Err(FetchError::Request);
+    }
+    let bytes = resp.bytes().await.map_err(|_| FetchError::Request)?;
+    Ok(bytes.to_vec())
+}
+
 pub async fn web_search(query: &str) -> Result<Vec<(String, String)>, FetchError> {
     let q: String = url::form_urlencoded::byte_serialize(query.trim().as_bytes()).collect();
     if q.is_empty() {

@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 fn now_secs() -> i64 {
     SystemTime::now()
@@ -941,6 +941,82 @@ fn save_to_desktop(app: tauri::AppHandle, bytes: Vec<u8>, filename: String) -> R
     Ok(path.to_string_lossy().into_owned())
 }
 
+// ---- Granite-Docling on-device model (RFC-0010) — one-time DOWNWARD download, cached in app-data ----
+// A ~260 MB layout VLM, fetched once (public model, INBOUND only — no user data up) into the app-data
+// models/ dir the `ppfmodel` scheme already serves to the WebView. Prompted on first Granite use.
+#[derive(Clone, Serialize)]
+struct GraniteProgress {
+    file: String,
+    index: usize,
+    total: usize,
+    done: bool,
+}
+const GRANITE_BASE: &str =
+    "https://huggingface.co/onnx-community/granite-docling-258M-ONNX/resolve/main/";
+const GRANITE_FILES: [&str; 16] = [
+    "config.json",
+    "generation_config.json",
+    "preprocessor_config.json",
+    "processor_config.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "added_tokens.json",
+    "vocab.json",
+    "merges.txt",
+    "onnx/embed_tokens_quantized.onnx",
+    "onnx/embed_tokens_quantized.onnx_data",
+    "onnx/vision_encoder_quantized.onnx",
+    "onnx/vision_encoder_quantized.onnx_data",
+    "onnx/decoder_model_merged_quantized.onnx",
+    "onnx/decoder_model_merged_quantized.onnx_data",
+];
+fn granite_dir(state: &AppState) -> std::path::PathBuf {
+    state.data_dir.join("models").join("granite-docling-258M")
+}
+
+/// Is the Granite model already cached on this device?
+#[tauri::command]
+async fn granite_model_present(state: State<'_, AppState>) -> Result<bool, String> {
+    let dir = granite_dir(&state);
+    Ok(dir.join("config.json").exists()
+        && dir
+            .join("onnx")
+            .join("decoder_model_merged_quantized.onnx")
+            .exists())
+}
+
+/// Fetch the Granite model files ONCE into app-data (downward, inbound-only). Emits `granite-dl`
+/// progress events per file; resumes by skipping files already present. Never sends user content.
+#[tauri::command]
+async fn download_granite_model(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let dir = granite_dir(&state);
+    std::fs::create_dir_all(dir.join("onnx")).map_err(|e| e.to_string())?;
+    let total = GRANITE_FILES.len();
+    for (i, f) in GRANITE_FILES.iter().enumerate() {
+        let _ = app.emit(
+            "granite-dl",
+            GraniteProgress { file: (*f).to_string(), index: i, total, done: false },
+        );
+        let dest = dir.join(f);
+        if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false) {
+            continue; // already fetched — resume
+        }
+        let bytes = core_fetch::fetch_model_file(&format!("{GRANITE_BASE}{f}"))
+            .await
+            .map_err(|e| format!("downloading {f}: {e}"))?;
+        if let Some(p) = dest.parent() {
+            std::fs::create_dir_all(p).ok();
+        }
+        std::fs::write(&dest, &bytes).map_err(|e| e.to_string())?;
+    }
+    let _ = app.emit(
+        "granite-dl",
+        GraniteProgress { file: String::new(), index: total, total, done: true },
+    );
+    Ok(())
+}
+
 /// Download a web-hosted form on-device (SSRF-guarded, size-capped) and return its
 /// raw bytes to the UI, which runs the same auto-fill pipeline. Inbound only — the
 /// user directs the download; no user content goes up.
@@ -1259,6 +1335,8 @@ pub fn run() {
             form_signatures,
             open_submit_url,
             download_form,
+            granite_model_present,
+            download_granite_model,
             save_to_desktop,
             guide_video,
             script_font,

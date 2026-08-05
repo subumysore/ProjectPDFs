@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { check as checkUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { extractFromImage, documentImageKey, type ExtractedField } from "./ocr";
@@ -188,6 +189,33 @@ export function App() {
   // "granite" = the experimental on-device Granite-Docling VLM (RFC-0010) — lets the owner swap and
   // compare manually. Granite is beta and needs the on-device model; until present it notes + falls back.
   const [fillEngine, setFillEngine] = useState<"standard" | "granite">("standard");
+  // Granite = the on-device layout VLM (RFC-0010). Milestone 1: its ~260 MB model is fetched ONCE into
+  // app-data (prompted on first use), downward/inbound-only. Filling still uses Standard until the
+  // on-device inference (milestone 2) lands — stated honestly to the user.
+  const [graniteModal, setGraniteModal] = useState(false);
+  const [graniteReady, setGraniteReady] = useState(false);
+  const [graniteDL, setGraniteDL] = useState<{ on: boolean; i: number; total: number; file: string; err?: string }>({ on: false, i: 0, total: 16, file: "" });
+
+  async function selectGranite() {
+    setFillEngine("granite");
+    try {
+      const present = await invoke<boolean>("granite_model_present");
+      setGraniteReady(present);
+      if (present) setPdfMsg("Granite's model is on your device ✓. Its on-device inference is the next milestone (RFC-0010); Standard fills for now.");
+      else setGraniteModal(true);
+    } catch { setGraniteModal(true); }
+  }
+  async function downloadGranite() {
+    setGraniteDL({ on: true, i: 0, total: 16, file: "starting…" });
+    const un = await listen<{ file: string; index: number; total: number; done: boolean }>("granite-dl", (e) => {
+      const p = e.payload;
+      setGraniteDL((d) => ({ ...d, on: !p.done, i: p.index, total: p.total, file: p.file }));
+      if (p.done) { setGraniteReady(true); setGraniteModal(false); setPdfMsg("Granite model downloaded to your device ✓ — on-device inference (milestone 2) is next; Standard fills for now."); }
+    });
+    try { await invoke("download_granite_model"); }
+    catch (e) { setGraniteDL((d) => ({ ...d, on: false, err: String(e) })); }
+    finally { un(); }
+  }
   const [scanned, setScanned] = useState(false);
   const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
@@ -1971,6 +1999,33 @@ export function App() {
                   — check each value, then <b>Apply changes</b> to re-export.
                 </span>
               </div>
+              {graniteModal && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+                  onClick={() => { if (!graniteDL.on) setGraniteModal(false); }}>
+                  <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 22, maxWidth: 470, boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
+                    <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>Download the Granite layout model</div>
+                    <div style={{ fontSize: 13.5, color: "#425055", lineHeight: 1.5 }}>
+                      Granite reads a form's layout with an on-device AI model. It's a <b>one-time ~260&nbsp;MB download</b> that
+                      stays on your device and <b>never leaves it</b> — nothing about your forms is ever sent anywhere.
+                      <br /><span style={{ color: "#8a8f92" }}>Note: filling still uses the Standard engine until Granite's on-device inference (the next milestone) is ready.</span>
+                    </div>
+                    {graniteDL.err && <div style={{ color: "#c0392b", fontSize: 12.5, marginTop: 10 }}>Download failed: {graniteDL.err}</div>}
+                    {graniteDL.on ? (
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{ fontSize: 12.5, color: "#0a6a60", marginBottom: 6 }}>Downloading {Math.min(graniteDL.i + 1, graniteDL.total)} of {graniteDL.total} — {graniteDL.file}</div>
+                        <div style={{ height: 8, background: "#eef2f4", borderRadius: 6, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.round((100 * graniteDL.i) / graniteDL.total)}%`, background: "linear-gradient(90deg,#14a99b,#0b8175)", transition: "width .3s" }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}>
+                        <button onClick={() => setGraniteModal(false)} style={GLASS_BTN}>Not now</button>
+                        <button onClick={downloadGranite} style={{ ...GLASS_BTN, fontWeight: 700, color: "#fff", background: "linear-gradient(180deg,#14a99b,#0b8175)", border: "1px solid #0b7d72" }}>Download Granite (~260 MB)</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {/* Persistent form toolbar — the SAME tools the extension exposes, in the same place:
                   on the form, always visible. Parity is the rule, not a nice-to-have. */}
               <div
@@ -2011,8 +2066,8 @@ export function App() {
                     Standard
                   </label>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
-                    <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={() => { setFillEngine("granite"); setPdfMsg("Granite is a one-time ~260 MB on-device layout model (downloads once, never leaves your device). It is still being packaged as that separate download + its on-device inference — not available yet, so Standard is used for now. Tracked in RFC-0010."); }} />
-                    Granite <span style={{ fontSize: 10, color: "#a06a00", background: "#fff3d6", border: "1px solid #f0d8a0", borderRadius: 4, padding: "0 4px" }}>not ready</span>
+                    <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={selectGranite} />
+                    Granite <span style={{ fontSize: 10, color: graniteReady ? "#0a6a60" : "#a06a00", background: graniteReady ? "#e6f5f2" : "#fff3d6", border: `1px solid ${graniteReady ? "#a9ded6" : "#f0d8a0"}`, borderRadius: 4, padding: "0 4px" }}>{graniteReady ? "model ready" : "needs download"}</span>
                   </label>
                 </span>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
