@@ -69,7 +69,15 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
         setDims({ w: r.width, h: r.height });
         setNumPages(r.numPages);
       } catch {
-        if (!cancelled) setFields([]);
+        if (!cancelled) {
+          setFields([]);
+          // renderPageWithFields can DRAW the page and then throw while reading annotations of a
+          // malformed saved PDF (hybrid-XFA saveDocument output has broken object refs). The canvas is
+          // already sized + painted, so size the page-container from the canvas itself — otherwise it
+          // collapses to 0 height and the whole form appears blank even though it rendered.
+          const c = canvasRef.current;
+          if (c && c.width > 1 && c.height > 1) { setDims({ w: c.width, h: c.height }); setNumPages((n) => n || 1); }
+        }
       }
       if (!cancelled) setBusy(false);
     })();
