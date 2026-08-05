@@ -216,6 +216,22 @@ export function App() {
     catch (e) { setGraniteDL((d) => ({ ...d, on: false, err: String(e) })); }
     finally { un(); }
   }
+  // Milestone 2: run Granite on a page ON-DEVICE and SHOW what it read (DocTags).
+  const [gBusy, setGBusy] = useState(false);
+  const [gStatus, setGStatus] = useState("");
+  const [gPage, setGPage] = useState(1);
+  const [gOut, setGOut] = useState<{ doctags: string; ms: number; chars: number } | null>(null);
+  const [gErr, setGErr] = useState("");
+  async function runGranite() {
+    if (!pdfBytes) return;
+    setGBusy(true); setGErr(""); setGOut(null); setGStatus("Starting…");
+    try {
+      const { graniteReadPage } = await import("./granite");
+      const r = await graniteReadPage(pdfBytes, Math.max(0, gPage - 1), setGStatus);
+      setGOut(r); setGStatus(`Done in ${(r.ms / 1000).toFixed(1)}s`);
+    } catch (e) { setGErr(String((e as Error)?.message || e)); setGStatus(""); }
+    finally { setGBusy(false); }
+  }
   const [scanned, setScanned] = useState(false);
   const [uncheckedKeys, setUncheckedKeys] = useState<Set<string>>(new Set());
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
@@ -2086,6 +2102,26 @@ export function App() {
                 )}
                 {transStatus && <span style={{ fontSize: 12, color: "#55666f", flexBasis: "100%" }}>{transStatus}</span>}
               </div>
+              {fillEngine === "granite" && graniteReady && (
+                <div style={{ margin: "0 0 8px", padding: "8px 10px", border: "1px solid #cfe9e5", background: "#f2fbf9", borderRadius: 8 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
+                    <b style={{ color: "#0a6a60" }}>Granite (on-device)</b>
+                    <span>Read page</span>
+                    <input type="number" min={1} value={gPage} onChange={(e) => setGPage(parseInt(e.currentTarget.value, 10) || 1)} style={{ width: 56, padding: "3px 6px" }} />
+                    <button onClick={runGranite} disabled={gBusy} style={{ ...GLASS_BTN, fontWeight: 700, color: "#fff", background: "linear-gradient(180deg,#14a99b,#0b8175)", border: "1px solid #0b7d72", cursor: gBusy ? "wait" : "pointer" }}>
+                      {gBusy ? "⏳ Reading…" : "🔍 Read this page with Granite"}
+                    </button>
+                    {gStatus && <span style={{ color: "#55666f" }}>{gStatus}</span>}
+                  </div>
+                  {gErr && <div style={{ color: "#c0392b", fontSize: 12.5, marginTop: 6 }}>Granite error: {gErr}</div>}
+                  {gOut && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 12, color: "#55666f", marginBottom: 4 }}>What Granite read from page {gPage} ({gOut.chars} chars, {(gOut.ms / 1000).toFixed(1)}s). This is milestone 2 (reading the layout); mapping it onto fields to fill is milestone 3.</div>
+                      <textarea readOnly value={gOut.doctags} style={{ width: "100%", height: 180, fontFamily: "monospace", fontSize: 11, border: "1px solid #cfe9e5", borderRadius: 6, padding: 8, boxSizing: "border-box" }} />
+                    </div>
+                  )}
+                </div>
+              )}
               {pdfBytes && (
                 <FormView
                   bytes={pdfBytes}
