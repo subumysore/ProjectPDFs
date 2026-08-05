@@ -85,3 +85,8 @@ apps/app/eng.traineddata
 
 # Temp form-fill test PDFs (automated UI testing, not source)
 _*_test.pdf
+
+# Engine-benchmark corpus + generated results (re-fetch/re-run to regenerate)
+docs/testing/engine-benchmark/forms/
+docs/testing/engine-benchmark/results/
+_*_test.pdf
