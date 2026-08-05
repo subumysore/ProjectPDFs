@@ -189,7 +189,7 @@ export function App() {
   // "granite" = the experimental on-device Granite-Docling VLM (RFC-0010) — lets the owner swap and
   // compare manually. Granite is beta and needs the on-device model; until present it notes + falls back.
   const [fillEngine, setFillEngine] = useState<"standard" | "granite">("standard");
-  // Granite = the on-device layout VLM (RFC-0010). Milestone 1: its ~260 MB model is fetched ONCE into
+  // Granite = the on-device layout VLM (RFC-0010). Milestone 1: its ~310 MB model is fetched ONCE into
   // app-data (prompted on first use), downward/inbound-only. Filling still uses Standard until the
   // on-device inference (milestone 2) lands — stated honestly to the user.
   const [graniteModal, setGraniteModal] = useState(false);
@@ -2005,7 +2005,7 @@ export function App() {
                   <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 22, maxWidth: 470, boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
                     <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>Download the Granite layout model</div>
                     <div style={{ fontSize: 13.5, color: "#425055", lineHeight: 1.5 }}>
-                      Granite reads a form's layout with an on-device AI model. It's a <b>one-time ~260&nbsp;MB download</b> that
+                      Granite reads a form's layout with an on-device AI model. It's a <b>one-time ~310&nbsp;MB download</b> that
                       stays on your device and <b>never leaves it</b> — nothing about your forms is ever sent anywhere.
                       <br /><span style={{ color: "#8a8f92" }}>Note: filling still uses the Standard engine until Granite's on-device inference (the next milestone) is ready.</span>
                     </div>
@@ -2020,7 +2020,7 @@ export function App() {
                     ) : (
                       <div style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}>
                         <button onClick={() => setGraniteModal(false)} style={GLASS_BTN}>Not now</button>
-                        <button onClick={downloadGranite} style={{ ...GLASS_BTN, fontWeight: 700, color: "#fff", background: "linear-gradient(180deg,#14a99b,#0b8175)", border: "1px solid #0b7d72" }}>Download Granite (~260 MB)</button>
+                        <button onClick={downloadGranite} style={{ ...GLASS_BTN, fontWeight: 700, color: "#fff", background: "linear-gradient(180deg,#14a99b,#0b8175)", border: "1px solid #0b7d72" }}>Download Granite (~310 MB)</button>
                       </div>
                     )}
                   </div>
