@@ -1314,12 +1314,12 @@ export function App() {
         />
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1 style={{ marginBottom: 2 }}>PolyglotFormFill</h1>
+        <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.15 }}>PolyglotFormFill</h1>
         <button onClick={lockNow} style={{ fontSize: 12 }}>
           🔒 {tr("lock.button")}
         </button>
       </div>
-      <p style={{ color: "#55666f", marginTop: 0 }}>
+      <p style={{ color: "#55666f", margin: "1px 0 7px", fontSize: 12.5 }}>
         {tr("privacy.body")}
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "0 0 8px", fontSize: 13 }}>

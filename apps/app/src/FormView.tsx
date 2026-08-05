@@ -39,16 +39,24 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
     return () => { cancelled = true; };
   }, [bytes]);
   const [fit, setFit] = useState(0);
+  // The form area fills the REMAINING viewport height (below the header/toolbar), so the whole app fits
+  // one screen and only the FORM scrolls — never a second, outer page scroll. Recomputed on resize.
+  const [availH, setAvailH] = useState(0);
   // The form renders at a natural document width (base 720). The user can zoom it in/out to taste —
   // small enough to see the whole page, or large enough to read fine print. Their choice, not fixed.
   const [zoom, setZoom] = useState(1);
 
-  // Re-fit the page whenever the window (and so the panel) changes size.
+  // Re-fit the page (width) AND size the scroll area to the space left under the header, on resize.
   useEffect(() => {
-    const measure = () => setFit(wrapRef.current?.clientWidth ?? 0);
+    const measure = () => {
+      setFit(wrapRef.current?.clientWidth ?? 0);
+      const top = wrapRef.current?.getBoundingClientRect().top ?? 0;
+      setAvailH(Math.max(340, Math.round(window.innerHeight - top - 14)));
+    };
     measure();
+    const t = setTimeout(measure, 60); // after layout settles (banners, etc.)
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => { clearTimeout(t); window.removeEventListener("resize", measure); };
   }, []);
 
   useEffect(() => {
@@ -132,7 +140,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
           {zoom !== 1 && <button style={btn} onClick={() => setZoom(1)} title="Reset zoom">Reset</button>}
         </span>
       </div>
-      <div ref={wrapRef} style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>
+      <div ref={wrapRef} style={{ overflow: "auto", height: availH || undefined, maxHeight: availH ? undefined : "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>
         <div style={{ position: "relative", width: dims.w, height: dims.h, margin: "0 auto" }}>
           <canvas ref={canvasRef} style={{ position: "absolute", left: 0, top: 0, background: "#fff" }} />
           {fields.map((f) => {
