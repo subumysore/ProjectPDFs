@@ -2039,7 +2039,7 @@ export function App() {
                       </div>
                     ) : (
                       <div style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}>
-                        <button onClick={() => setGraniteModal(false)} style={GLASS_BTN}>Not now</button>
+                        <button onClick={() => setGraniteModal(false)} style={GLASS_BTN}>{tr("update.later")}</button>
                         <button onClick={downloadGranite} style={{ ...GLASS_BTN, fontWeight: 700, color: "#fff", background: "linear-gradient(180deg,#14a99b,#0b8175)", border: "1px solid #0b7d72" }}>Download Granite (~310 MB)</button>
                       </div>
                     )}
