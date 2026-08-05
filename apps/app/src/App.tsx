@@ -189,6 +189,10 @@ export function App() {
   // "granite" = the experimental on-device Granite-Docling VLM (RFC-0010) — lets the owner swap and
   // compare manually. Granite is beta and needs the on-device model; until present it notes + falls back.
   const [fillEngine, setFillEngine] = useState<"standard" | "granite">("standard");
+  // PARKED (RFC-0010): Granite's model download works, but its on-device inference isn't producing usable
+  // output yet, so the whole Granite UI is hidden and Standard is the only engine. Flip to re-enable the
+  // toggle/modal/panel when milestone 2 lands — all the code below stays intact.
+  const GRANITE_ENABLED = false;
   // Granite = the on-device layout VLM (RFC-0010). Milestone 1: its ~310 MB model is fetched ONCE into
   // app-data (prompted on first use), downward/inbound-only. Filling still uses Standard until the
   // on-device inference (milestone 2) lands — stated honestly to the user.
@@ -2015,7 +2019,7 @@ export function App() {
                   — check each value, then <b>Apply changes</b> to re-export.
                 </span>
               </div>
-              {graniteModal && (
+              {GRANITE_ENABLED && graniteModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
                   onClick={() => { if (!graniteDL.on) setGraniteModal(false); }}>
                   <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 22, maxWidth: 470, boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
@@ -2073,8 +2077,9 @@ export function App() {
                     ? <><span style={{ display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span> Filling…</>
                     : <>⚡ Fill from my vault</>}
                 </button>
-                {/* Engine selector — swap the field-labelling engine and re-Fill to compare manually (RFC-0010). */}
-                <span title="Which engine labels the fields. Granite-Docling is an experimental on-device layout model (beta)."
+                {/* Engine selector — swap the field-labelling engine and re-Fill to compare manually (RFC-0010).
+                    PARKED: hidden until Granite inference produces usable output; Standard is the only engine. */}
+                {GRANITE_ENABLED && <span title="Which engine labels the fields. Granite-Docling is an experimental on-device layout model (beta)."
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#425055", padding: "0 4px" }}>
                   <span style={{ fontWeight: 600 }}>Engine:</span>
                   <label style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}>
@@ -2085,7 +2090,7 @@ export function App() {
                     <input type="radio" name="fillengine" checked={fillEngine === "granite"} onChange={selectGranite} />
                     Granite <span style={{ fontSize: 10, color: graniteReady ? "#0a6a60" : "#a06a00", background: graniteReady ? "#e6f5f2" : "#fff3d6", border: `1px solid ${graniteReady ? "#a9ded6" : "#f0d8a0"}`, borderRadius: 4, padding: "0 4px" }}>{graniteReady ? "model ready" : "needs download"}</span>
                   </label>
-                </span>
+                </span>}
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Draw with the pen — colour & size, undo">✎ Pen</button>
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>
@@ -2102,7 +2107,7 @@ export function App() {
                 )}
                 {transStatus && <span style={{ fontSize: 12, color: "#55666f", flexBasis: "100%" }}>{transStatus}</span>}
               </div>
-              {fillEngine === "granite" && graniteReady && (
+              {GRANITE_ENABLED && fillEngine === "granite" && graniteReady && (
                 <div style={{ margin: "0 0 8px", padding: "8px 10px", border: "1px solid #cfe9e5", background: "#f2fbf9", borderRadius: 8 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
                     <b style={{ color: "#0a6a60" }}>Granite (on-device)</b>
