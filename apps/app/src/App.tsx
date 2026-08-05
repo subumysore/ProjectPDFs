@@ -258,6 +258,9 @@ export function App() {
   const [companionMsg, setCompanionMsg] = useState("");
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
+  // When a form is open the page can't scroll, so "Submit online" moves off the page flow into a
+  // toggled bottom bar (nothing lives below the form → the form fills the viewport).
+  const [showSubmit, setShowSubmit] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -274,6 +277,15 @@ export function App() {
   const updateRef = useRef<{ downloadAndInstall: () => Promise<void> } | null>(null);
   // Step-based tabs instead of one long scrolling page.
   const [tab, setTab] = useState<"license" | "setup" | "forms" | "history" | "docs">("license");
+  // While a form is open, lock the document itself so the PAGE cannot scroll (main is viewport-height;
+  // only the form's own scroll area moves). Reverts on leaving the form — general, not per-form.
+  useEffect(() => {
+    const lock = tab === "forms" && !!pdfBytes;
+    const el = document.documentElement, bd = document.body;
+    if (lock) { el.style.overflow = "hidden"; bd.style.overflow = "hidden"; bd.style.margin = "0"; }
+    else { el.style.overflow = ""; bd.style.overflow = ""; bd.style.margin = ""; }
+    return () => { el.style.overflow = ""; bd.style.overflow = ""; bd.style.margin = ""; };
+  }, [tab, pdfBytes]);
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -1327,8 +1339,14 @@ export function App() {
         fontFamily: "system-ui, sans-serif",
         // Use the screen the user actually has: the form panel is the point of this app, and a
         // fixed 820px column wasted most of a wide display. Caps at 1600 so text lines stay readable.
-        maxWidth: "min(1600px, 96vw)",
+        // Narrower when a form is open so the page isn't mostly empty margin around the form.
+        maxWidth: (tab === "forms" && pdfBytes) ? "min(1240px, 98vw)" : "min(1600px, 96vw)",
         margin: "0 auto",
+        // When a form is open, cap the app at the viewport height so the PAGE cannot scroll — only the
+        // form's own scroll area does. The form area's height is computed live from its top offset to the
+        // viewport bottom and recomputed by a ResizeObserver on ANY layout change (window/banners/form),
+        // so it's general, not tuned per form. Nothing renders below the form (submit lives in the toolbar).
+        ...((tab === "forms" && pdfBytes) ? { height: "100vh", overflow: "hidden" as const } : {}),
         // When a form is open, shrink the outer padding hard so the form gets the screen.
         padding: (tab === "forms" && pdfBytes) ? "8px 18px 8px" : "28px 20px 64px",
         color: "#101a20",
@@ -2104,6 +2122,7 @@ export function App() {
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Type text anywhere on the form">T {tr("sign.text")}</button>
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Place your signature — move &amp; resize it">✍︎ Signature</button>
                 <button style={GLASS_BTN} onClick={() => setSigning(true)} title="Place a photo or image — move &amp; resize it">🖼 Image</button>
+                <button style={GLASS_BTN} onClick={() => setShowSubmit((v) => !v)} title="Submit the filled form online (opens a bottom bar)">⤴ Submit</button>
                 <span style={{ width: 1, height: 18, background: "#d9e2e6" }} />
                 <button onClick={translateReview} disabled={baseLang === "en"}>
                   🌐 {baseLang === "en" ? "Already in your language" : `Show whole form in ${LANGS[baseLang] || baseLang}`}
@@ -2276,9 +2295,13 @@ export function App() {
             <canvas ref={canvasRef} style={{ maxWidth: "100%" }} />
           </div>
 
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
-            <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8 }}>
-              Submit online — opens the vendor page; you submit there (device → vendor, we never proxy)
+          {(!(tab === "forms" && pdfBytes) || showSubmit) && (
+          <div style={(tab === "forms" && pdfBytes)
+            ? { position: "fixed", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #d9e2e6", padding: "10px 18px", boxShadow: "0 -2px 12px rgba(0,0,0,0.10)", zIndex: 900 }
+            : { marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
+            <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8, display: "flex", alignItems: "center", gap: 8 }}>
+              <span>Submit online — opens the vendor page; you submit there (device → vendor, we never proxy)</span>
+              {(tab === "forms" && pdfBytes) && <button onClick={() => setShowSubmit(false)} style={{ marginLeft: "auto", fontSize: 12 }}>✕ Close</button>}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <input
@@ -2297,9 +2320,11 @@ export function App() {
               </p>
             )}
           </div>
+          )}
         </section>
       )}
 
+      {!(tab === "forms" && pdfBytes) && (
       <section style={cardStyle}>
         <h2 style={h2Style}>6 · Browser companion (extension)</h2>
         <p style={{ fontSize: 12, color: "#55666f", marginTop: 0 }}>
@@ -2318,6 +2343,7 @@ export function App() {
         </div>
         {companionMsg && <p style={{ fontSize: 13, color: "#0a6a60" }}>{companionMsg}</p>}
       </section>
+      )}
       </>)}
 
       {tab === "history" && (

@@ -53,7 +53,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
     const measure = () => {
       setFit(wrapRef.current?.clientWidth ?? 0);
       const top = wrapRef.current?.getBoundingClientRect().top ?? 0;
-      setAvailH(Math.max(340, Math.round(window.innerHeight - top - 14)));
+      setAvailH(Math.max(300, Math.round(window.innerHeight - top - 16)));
     };
     measure();
     const t = setTimeout(measure, 60);
@@ -76,7 +76,9 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
         // Load the form as large as the panel allows (up to a full-page ~960px base), so it isn't a
         // tiny truncated thumbnail. The user can still zoom in/out from here.
         const panel = (fit || wrapRef.current?.clientWidth || 0) - 4;
-        const avail = Math.min(panel, Math.round(960 * zoom));
+        // Render close to the panel width (up to ~1180px base) so the form fills the space instead of
+        // floating in whitespace. Zoom still scales from there.
+        const avail = Math.min(panel, Math.round(1180 * zoom));
         const r = await renderPageWithFields(bytes, page, canvasRef.current, 1.3, avail > 100 ? avail : undefined);
         if (cancelled) return;
         setFields(r.fields);
