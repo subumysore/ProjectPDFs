@@ -338,7 +338,7 @@ export async function fillXfaByWidgets(
   // ONE doc instance: its annotationStorage is what saveDocument() serialises, and the annotation ids
   // we set must come from THIS doc's getAnnotations().
   const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice(), useSystemFonts: true }).promise;
-  interface W { id: string; name: string; page: number; kind: "text" | "choice"; rect: { x: number; y: number; width: number; height: number }; isButton: boolean; exportValue: string | null; tooltip: string }
+  interface W { id: string; name: string; page: number; kind: "text" | "choice"; rect: { x: number; y: number; width: number; height: number }; isButton: boolean; exportValue: string | null; choiceOptions: string[] | null; tooltip: string }
   const groups = new Map<string, W[]>();
   for (let pi = 0; pi < doc.numPages; pi++) {
     const anns = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => [] as any[]);
@@ -347,7 +347,12 @@ export async function fillXfaByWidgets(
       const R = a.rect;
       const rect = { x: Math.min(R[0], R[2]), y: Math.min(R[1], R[3]), width: Math.abs(R[2] - R[0]), height: Math.abs(R[3] - R[1]) };
       if (rect.width < 2 || rect.height < 2) continue;
-      const w: W = { id: a.id, name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton: a.fieldType === "Btn", exportValue: (a.buttonValue ?? null) as string | null, tooltip: (a.alternativeText || "").trim() };
+      // Dropdown/combo/list (Ch) values live in a.options ([{exportValue,displayValue}]), NOT buttonValue
+      // (a radio/checkbox export). Capture them so a resolved value ("NC") can be matched + selected.
+      const choiceOptions: string[] | null = (a.fieldType === "Ch" && Array.isArray(a.options))
+        ? (a.options as any[]).map((o) => (typeof o === "string" ? o : (o.exportValue ?? o.displayValue))).filter((v) => v != null && String(v).trim() !== "")
+        : null;
+      const w: W = { id: a.id, name: a.fieldName, page: pi, kind: a.fieldType === "Tx" ? "text" : "choice", rect, isButton: a.fieldType === "Btn", exportValue: (a.buttonValue ?? null) as string | null, choiceOptions, tooltip: (a.alternativeText || "").trim() };
       const g = groups.get(w.name) ?? []; g.push(w); groups.set(w.name, g);
     }
   }
@@ -362,7 +367,10 @@ export async function fillXfaByWidgets(
   for (const [name, ws] of groups) {
     const w0 = ws[0]; if (!w0) continue;
     const kind = w0.kind === "text" && !w0.isButton ? "text" : "choice";
-    const options = ws.map((w) => w.exportValue).filter(Boolean) as string[];
+    // Dropdown/combo/list => its own option list; radio/checkbox => each widget's export value.
+    const options = (w0.choiceOptions && w0.choiceOptions.length)
+      ? w0.choiceOptions
+      : (ws.map((w) => w.exportValue).filter(Boolean) as string[]);
     fields.push({ id: name, kind, page: w0.page, rect: w0.rect, options, tooltip: w0.tooltip || "", widgets: ws.map((w) => ({ page: w.page, rect: w.rect })) });
     try { const c = captionFor(textsByPage.get(w0.page) ?? [], w0.rect); if (c) captions[name] = c; } catch { /* no caption */ }
   }
@@ -376,9 +384,14 @@ export async function fillXfaByWidgets(
     const ws = groups.get(name); const w0 = ws?.[0]; if (!ws || !w0) continue;
     try {
       if (plan.option != null) {
-        // Radio (many widgets, distinct export values) → select the chosen one; checkbox → check it.
-        const hit = ws.find((w) => w.exportValue && String(w.exportValue) === String(plan.option)) ?? w0;
-        doc.annotationStorage.setValue(hit.id, ws.length > 1 && hit.exportValue ? { value: String(plan.option) } : { value: true } as any);
+        if (w0.choiceOptions && w0.choiceOptions.length) {
+          // Dropdown/combo/list: set the field's selected value to the chosen option string.
+          doc.annotationStorage.setValue(w0.id, { value: String(plan.option) } as any);
+        } else {
+          // Radio (many widgets, distinct export values) → select the chosen one; checkbox → check it.
+          const hit = ws.find((w) => w.exportValue && String(w.exportValue) === String(plan.option)) ?? w0;
+          doc.annotationStorage.setValue(hit.id, ws.length > 1 && hit.exportValue ? { value: String(plan.option) } : { value: true } as any);
+        }
         filled++;
       } else {
         const value = String(plan.value ?? ""); if (!value) continue;
@@ -414,7 +427,9 @@ export async function fillXfaByWidgets(
       const [ax, ay, bx, by] = vp.convertToViewportRectangle([target.rect.x, target.rect.y, target.rect.x + target.rect.width, target.rect.y + target.rect.height]);
       const left = Math.min(ax, bx), top = Math.min(ay, by), h = Math.abs(by - ay), w = Math.abs(bx - ax);
       ctx.fillStyle = "#0a1466";
-      if (plan.option != null) { ctx.font = `${Math.round(h * 0.9)}px sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillText("X", left + w / 2, top + h / 2); }
+      const isDropdown = plan.option != null && !!w0.choiceOptions && w0.choiceOptions.length > 0;
+      if (plan.option != null && !isDropdown) { ctx.font = `${Math.round(h * 0.9)}px sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillText("X", left + w / 2, top + h / 2); }
+      else if (isDropdown) { const t = String(plan.option).trim(); let px = Math.max(8, Math.min(h * 0.72, 22)); ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = `${Math.round(px)}px sans-serif`; while (ctx.measureText(t).width > w - 4 && px > 6) { px -= 1; ctx.font = `${Math.round(px)}px sans-serif`; } ctx.fillText(t, left + 3, top + h / 2); }
       else {
         const value = String(plan.value ?? ""); if (!value) continue;
         let px = Math.max(8, Math.min(h * 0.72, 22)); ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = `${Math.round(px)}px sans-serif`;

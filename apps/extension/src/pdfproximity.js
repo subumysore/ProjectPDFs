@@ -73,8 +73,17 @@ export function otherSubject(caption, tip, header) {
 }
 export function repeatingHistoryRow(field, tip, header) {
   const id = field.id || "";
-  const numbered = /(?:name|line|row|entry)\s*[2-9]\b/i.test(id) || /[_\.]?\d?\[[1-9]\]/.test(id.replace(/\[0\]$/, ""));
-  const listLead = /\b(list (all|every|where)|provide the following information about|during the (last|past)\s*\d|information about your (children|employment|marital))\b/i.test(`${tip} ${header}`);
+  // Look ONLY at the field's own LEAF name — not the XFA container path. A full pdf name like
+  // "form1[0].#subform[2].P4_Line1_StreetName[0]" carries "#subform[2]" (a structural index, NOT a row)
+  // and a "[0]" widget suffix; both would false-trigger the row-index check.
+  const leaf = (id.replace(/\[\d+\]$/, "").split(".").pop() || "");
+  // A repeating ROW is marked by a row index in the LEAF name — an explicit "…[1]/[2]", a "Line2/Name3"
+  // style token, OR (USCIS tables) a trailing digit on the leaf ("PhysicalAddress2", "CityTown3",
+  // "State1"). The CURRENT single address ends in a WORD ("StreetName", "City", "State") → not a row.
+  const numbered = /[A-Za-z]\d$/.test(leaf)
+    || /(?:name|line|row|entry)\s*[2-9]\b/i.test(leaf)
+    || /[_.]?\d?\[[1-9]\]/.test(leaf);
+  const listLead = /\b(list (all|every|where)|provide the following information about|during the (last|past)\s*\d|every (location|address|place) where you have (lived|resided)|information about your (children|employment|marital))\b/i.test(`${tip} ${header}`);
   return numbered && listLead;
 }
 
@@ -98,6 +107,18 @@ export function captionFor(texts, r, { preferColon = false } = {}) {
 export function headerAbove(texts, r) {
   const c = texts.filter((t) => t.x <= 80 && t.y > r.y + r.height - 2 && t.s.length >= 3);
   return c.length ? c.sort((a, b) => a.y - b.y)[0].s : "";
+}
+
+// The section INSTRUCTIONS printed above a field (any x, within a vertical band). Gov forms put the
+// defining sentence — "List every location where you have lived during the last 5 years" — as an
+// indented paragraph well ABOVE the table it governs, so it lands in neither the left-margin header nor
+// the widget tooltip. This wider window lets the history/list detector see it. (PDF y grows upward, so
+// "above" = larger y.) Cheap: a specific-phrase match, not used to fill anything.
+export function instructionsAbove(texts, r, up = 540) {
+  return texts
+    .filter((t) => t.y >= r.y && t.y <= r.y + up)
+    .map((t) => t.s)
+    .join(" ");
 }
 
 // The printed label for a single radio/checkbox option — usually immediately to the LEFT of the
@@ -156,17 +177,31 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
     // an unrelated single field. (NOT marital-history — its status radio should still fill; only its
     // spouse NAME boxes are skipped, via otherPersonSection above.)
     const header = headerAbove(T, f.rect);
+    // The residence / "list every location where you have lived during the last 5 years" table governs
+    // its rows from a paragraph FAR above them — fold the wider section text into the history check so a
+    // single address isn't smeared down every residence/employment row.
+    const near = instructionsAbove(T, f.rect);
+    // Field-specific section tooltips (children / employment-schools) mark EVERY field in those tables,
+    // including non-numbered ones, so keep them here. The RESIDENCE ("every location where you have
+    // lived") table is handled by repeatingHistoryRow — which needs the row-index signal so it skips the
+    // Line3 table rows but NOT the current (Line1) address that shares the same section instruction.
     const historyTable = /information about your children|information about your employment and sch|employment and schools you attended/i.test(tip);
     if (isEntityText(ctx) || isOtherNameText(ctx) || isOtherNameText(tip)
         || otherSubject(caption, tip, header)                 // GENERAL: someone else's box (possessive)
-        || repeatingHistoryRow(f, tip, header) || historyTable // GENERAL: a repeating history row / table
+        || repeatingHistoryRow(f, tip, header + " " + near) || historyTable // GENERAL: a repeating history row / table
         || (capIsName && otherPersonSection) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
-    const value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
+    let value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
     // The applicant's NAME resolved into an ADDRESS box ("Street Number and Name", "In Care Of Name") is a
-    // mis-resolution — the word "Name" in the label pulled a name concept. Leave it blank rather than wrong.
+    // mis-resolution — the word "Name" in the label pulled a name concept. For a STREET line, fill the real
+    // street instead of blanking it; for a courtesy "In Care Of" line, leave it blank.
     const addrCtx = /\b(street|address|city|town|state|province|zip|postal|country|apt|suite|floor|care of)\b/i.test(caption + " " + (f.tooltip || ""));
-    if (addrCtx && nameVals.has(norm(value))) { skipped++; continue; }
+    if (addrCtx && nameVals.has(norm(value))) {
+      const isStreetLine = /\bstreet\b|address line|residence address|mailing address|home address/i.test(caption) && !/care of|in care/i.test(caption);
+      const streetVal = isStreetLine ? (resolveFields(vault, [{ label: "street address" }])[0] || "") : "";
+      if (streetVal && !nameVals.has(norm(streetVal))) value = streetVal;
+      else { skipped++; continue; }
+    }
 
     if (isChoice) {
       const opts = f.options || [];

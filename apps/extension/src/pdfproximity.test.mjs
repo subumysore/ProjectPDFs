@@ -121,3 +121,50 @@ test("ownership: a non-self possessive marks another subject's field", () => {
   assert.equal(otherSubject("Your Current Legal Name", "", ""), false, "your = self");
   assert.equal(otherSubject("Family Name (Last Name)", "Part 2. Information About You", ""), false);
 });
+
+// ── Regression: N-400 Part 3/4 address bugs (owner-reported 2026-08-06) ───────────────────────────
+// (1) State DROPDOWN must select the option (not stay blank while Province filled).
+// (2) The current "Street Number and Name" must get the STREET — the word "Name" in the label
+//     mis-pulled the applicant's name, which the addr-guard then blanked.
+// (3) The residence "list every location where you have lived during the last 5 years" TABLE rows must
+//     stay blank (numbered leaf) while the current (non-numbered) address fills.
+import { repeatingHistoryRow } from "./pdfproximity.js";
+
+test("repeatingHistoryRow: XFA container index (#subform[2]) is NOT a row; leaf digit IS", () => {
+  const lead = "List every location where you have lived during the last 5 years";
+  // current address — leaf ends in a word => fills even inside the residence section
+  assert.equal(repeatingHistoryRow({ id: "form1[0].#subform[2].P4_Line1_StreetName[0]" }, "", lead), false);
+  assert.equal(repeatingHistoryRow({ id: "form1[0].#subform[2].P4_Line1_City[0]" }, "", lead), false);
+  // table rows — leaf ends in a digit => blank
+  assert.equal(repeatingHistoryRow({ id: "form1[0].#subform[2].P4_Line3_PhysicalAddress2[0]" }, "", lead), true);
+  assert.equal(repeatingHistoryRow({ id: "form1[0].#subform[2].P4_Line3_State1[0]" }, "", lead), true);
+  // …but only when the section actually says to LIST history (no lead => a lone "Address2" still fills)
+  assert.equal(repeatingHistoryRow({ id: "x.Address2[0]" }, "", "Current Mailing Address"), false);
+});
+
+test("N-400 address: street fills, State dropdown selects, history rows blank", () => {
+  const V = { full_name: "SUBRAMANYA VISHWANATHAN MYSORE", first_name: "SUBRAMANYA", middle_name: "VISHWANATHAN", last_name: "MYSORE", street_address: "4308 ALBINO DEER WAY", city: "WAKE FOREST", state: "NC", zip_code: "27587-3971", country: "USA" };
+  const tx = [
+    T(0, 60, 700, "List every location where you have lived during the last 5 years."),
+    T(0, 60, 660, "Current Physical Address"),
+    T(0, 60, 636, "Street Number and Name"),           // label left of the street box
+    T(0, 60, 600, "City or Town"), T(0, 470, 600, "State"),
+    T(0, 60, 300, "Physical Address (Street Number and Name)"), // table header
+  ];
+  // Boxes sit to the RIGHT of their labels (same row) so captionFor picks the label.
+  const F = (id, y, extra = {}) => ({ id, kind: "text", page: 0, rect: { x: 260, y, width: 200, height: 12 }, ...extra });
+  const fields = [
+    F("form1[0].#subform[2].P4_Line1_StreetName[0]", 634),
+    F("form1[0].#subform[2].P4_Line1_City[0]", 598),
+    { id: "form1[0].#subform[2].P4_Line1_State[0]", kind: "choice", page: 0, rect: { x: 510, y: 598, width: 60, height: 12 }, options: [" ", " NC", " NY", " CA"], widgets: [{ page: 0, rect: { x: 510, y: 598, width: 60, height: 12 } }] },
+    F("form1[0].#subform[2].P4_Line3_PhysicalAddress2[0]", 296),
+    F("form1[0].#subform[2].P4_Line3_PhysicalAddress3[0]", 268),
+  ];
+  const plan = planProximityFill(fields, tx, V, resolveFields);
+  const a = (frag) => plan.assignments.find((x) => x.id.includes(frag)) || {};
+  assert.equal(a("P4_Line1_StreetName").value, "4308 ALBINO DEER WAY", "current street fills (not blank/name)");
+  assert.equal(a("P4_Line1_City").value, "WAKE FOREST", "current city fills");
+  assert.match(String(a("P4_Line1_State").option || ""), /NC/, "State dropdown selects the NC option");
+  assert.equal(a("P4_Line3_PhysicalAddress2").value, undefined, "history table row 2 stays blank");
+  assert.equal(a("P4_Line3_PhysicalAddress3").value, undefined, "history table row 3 stays blank");
+});
