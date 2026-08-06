@@ -153,11 +153,32 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
   const nm = (lbl) => (resolveFields(vault, [{ label: lbl }])[0] || "");
   const nameVals = new Set([nm("full name"), nm("first name"), nm("last name"), nm("given and middle names"),
     [nm("first name"), nm("middle name"), nm("last name")].filter(Boolean).join(" ")].filter(Boolean).map(norm));
+  // A repeating TABLE column, detected GEOMETRY-FREE from the field names: the same leaf enumerated across
+  // rows ("…PhysicalAddress1/2/3", "…State1/2/3", "…CityTown1/2/3"). When a leaf-base (trailing digits
+  // stripped) recurs with 2+ distinct row indices, those indexed fields are history-table rows we have no
+  // data for — a single identity value smeared down every row is noise, not a fill. The CURRENT single
+  // field ("…StreetName", "…State", "…City" — no trailing digit) is in no such group and still fills.
+  const leafOf = (id) => ((id || "").replace(/\[\d+\]$/, "").split(".").pop() || "");
+  // Precompute each field's caption once (reused in the loop).
+  const capOf = new Map();
+  for (const f of fields) { try { capOf.set(f.id, captionFor(byPage(f.page), f.rect, { preferColon: f.kind === "choice" && f.widgets && f.widgets.length > 1 })); } catch { capOf.set(f.id, ""); } }
+  // A repeating TABLE column, detected GEOMETRY-FREE of any instruction text: fields sharing a leaf-base
+  // ("…PhysicalAddress", "…State") whose rects are X-ALIGNED and stacked = one column of a grid, so the
+  // indexed rows are history entries we have no data for (a single value smeared down them is noise).
+  // The X-alignment requirement is what separates a real table from a form whose DISTINCT fields merely
+  // carry sequential opaque names (T1=surname, T2=given, T3=dob…) at different positions.
+  const colGroup = new Map();
+  for (const f of fields) { const m = leafOf(f.id).match(/^(.*[^\d])(\d+)$/); if (m) { const arr = colGroup.get(m[1]) || []; arr.push({ x: f.rect.x, page: f.page }); colGroup.set(m[1], arr); } }
+  const repeatingColumnRow = (f) => {
+    const m = leafOf(f.id).match(/^(.*[^\d])(\d+)$/); if (!m) return false;
+    const aligned = (colGroup.get(m[1]) || []).filter((o) => o.page === f.page && Math.abs(o.x - f.rect.x) <= 12);
+    return aligned.length >= 2;
+  };
   for (const f of fields) {
     const T = byPage(f.page);
     const isChoice = f.kind === "choice";
     const isRadio = isChoice && (f.widgets && f.widgets.length > 1);
-    const caption = captionFor(T, f.rect, { preferColon: isRadio });
+    const caption = capOf.get(f.id) ?? captionFor(T, f.rect, { preferColon: isRadio });
     // A different entity (employer/guarantor/interpreter/preparer/decedent/…) OR the applicant's OTHER/
     // FORMER/MAIDEN names — never fill either from the user's CURRENT identity. Leave the field blank (it
     // still exists to fill by hand). The field's TOOLTIP (/TU) — which these gov forms carry and which
@@ -177,18 +198,15 @@ export function planProximityFill(fields, texts, vault, resolveFields) {
     // an unrelated single field. (NOT marital-history — its status radio should still fill; only its
     // spouse NAME boxes are skipped, via otherPersonSection above.)
     const header = headerAbove(T, f.rect);
-    // The residence / "list every location where you have lived during the last 5 years" table governs
-    // its rows from a paragraph FAR above them — fold the wider section text into the history check so a
-    // single address isn't smeared down every residence/employment row.
-    const near = instructionsAbove(T, f.rect);
     // Field-specific section tooltips (children / employment-schools) mark EVERY field in those tables,
     // including non-numbered ones, so keep them here. The RESIDENCE ("every location where you have
-    // lived") table is handled by repeatingHistoryRow — which needs the row-index signal so it skips the
-    // Line3 table rows but NOT the current (Line1) address that shares the same section instruction.
+    // lived") table — and any indexed grid — is caught GEOMETRY-FREE by repeatingColumnRow (a leaf
+    // enumerated across 2+ rows), which is robust to where the section instruction is printed.
     const historyTable = /information about your children|information about your employment and sch|employment and schools you attended/i.test(tip);
     if (isEntityText(ctx) || isOtherNameText(ctx) || isOtherNameText(tip)
         || otherSubject(caption, tip, header)                 // GENERAL: someone else's box (possessive)
-        || repeatingHistoryRow(f, tip, header + " " + near) || historyTable // GENERAL: a repeating history row / table
+        || repeatingColumnRow(f)                              // GENERAL: an indexed, x-aligned table column
+        || repeatingHistoryRow(f, tip, header) || historyTable // GENERAL: a repeating history row / table
         || (capIsName && otherPersonSection) || (capIsName && nameSectionKind(T, f.rect) === "other")) { skipped++; continue; }
     let value = resolveFields(vault, [{ label: caption, name: f.id }])[0];
     if (!value) continue;
