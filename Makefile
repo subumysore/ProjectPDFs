@@ -7,6 +7,9 @@ install:        ## Install all workspace deps (pnpm, CI-safe)
 dev:            ## Run API + web together
 	pnpm dev
 
+dev-app:        ## Clean-launch the desktop app (kills the previous session first)
+	pwsh -NoProfile -File scripts/dev-app.ps1
+
 build:          ## Production build / type-check all packages
 	pnpm build
 

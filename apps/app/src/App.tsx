@@ -186,6 +186,8 @@ export function App() {
   const [saveDocImage, setSaveDocImage] = useState(true);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [filling, setFilling] = useState(false); // form-fill in progress → show the live spinner
+  const fillingRef = useRef(false); // SYNCHRONOUS re-entry guard: block repeated Fill clicks / a load-autofill overlapping a manual fill (state is async, a ref is not)
+  const [fillStatus, setFillStatus] = useState(""); // live verbal status shown next to the hourglass
   // Which labelling engine fills the form. "standard" = the shipped proximity+tooltip engine.
   // "granite" = the experimental on-device Granite-Docling VLM (RFC-0010) — lets the owner swap and
   // compare manually. Granite is beta and needs the on-device model; until present it notes + falls back.
@@ -263,6 +265,7 @@ export function App() {
   // toggled bottom bar (nothing lives below the form → the form fills the viewport).
   const [showSubmit, setShowSubmit] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const passInputRef = useRef<HTMLInputElement | null>(null); // focus the passphrase box whenever the lock screen shows
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [camOn, setCamOn] = useState(false);
@@ -278,6 +281,9 @@ export function App() {
   const updateRef = useRef<{ downloadAndInstall: () => Promise<void> } | null>(null);
   // Step-based tabs instead of one long scrolling page.
   const [tab, setTab] = useState<"license" | "setup" | "forms" | "history" | "docs">("license");
+  // Cursor lands in the passphrase box the moment the lock screen appears (autoFocus alone misses cases
+  // like a relaunch/HMR where the window wasn't focused). No click needed to start typing.
+  useEffect(() => { if (locked) { const t = setTimeout(() => passInputRef.current?.focus(), 60); return () => clearTimeout(t); } }, [locked]);
   // While a form is open, lock the document itself so the PAGE cannot scroll (main is viewport-height;
   // only the form's own scroll area moves). Reverts on leaving the form — general, not per-form.
   useEffect(() => {
@@ -287,6 +293,19 @@ export function App() {
     else { el.style.overflow = ""; bd.style.overflow = ""; bd.style.margin = ""; }
     return () => { el.style.overflow = ""; bd.style.overflow = ""; bd.style.margin = ""; };
   }, [tab, pdfBytes]);
+  // Auto-lock after extended INACTIVITY. An idle unlocked session is a security + cleanup risk and keeps
+  // the shared-vault bridge open to the extension; locking clears the native-host session sentinel. Any
+  // real interaction resets the 15-minute timer.
+  useEffect(() => {
+    if (locked) return;
+    const IDLE_MS = 15 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => { clearTimeout(timer); timer = setTimeout(() => { void lockNow(); }, IDLE_MS); };
+    const evs: (keyof WindowEventMap)[] = ["mousemove", "mousedown", "keydown", "wheel", "touchstart"];
+    evs.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => { clearTimeout(timer); evs.forEach((e) => window.removeEventListener(e, reset)); };
+  }, [locked]);
 
   const guard = (p: Promise<unknown>) => p.catch((e) => setErr(String(e)));
 
@@ -1090,9 +1109,12 @@ export function App() {
 
   // The automatic pipeline: fill existing fields, else detect + create + fill.
   async function autoFillForm(bytes: ArrayBuffer, wasImage: boolean, formName: string) {
+    if (fillingRef.current) return; // a fill is already in flight — don't overlap
     if (!requireEntitlement()) return;
     const vault = buildVault();
+    fillingRef.current = true;
     setFilling(true);
+    setFillStatus(wasImage ? "Scanning the document on-device…" : "Reading the form on-device…");
     try {
       // total = # AcroForm fields pdf-lib can fill. A throw (some XFA page trees are unparseable) is
       // treated as 0 so we fall through to the pdf.js widget filler.
@@ -1153,10 +1175,11 @@ export function App() {
     } catch (e) {
       setErr(String(e));
     } finally {
-      setFilling(false);
+      setFilling(false); fillingRef.current = false; setFillStatus("");
     }
   }
   async function fillPdf() {
+    if (fillingRef.current) return; // block repeated clicks / overlap with a load-autofill already running
     // DIAGNOSTIC: capture every step to Desktop\ppf-fill-debug.txt so a webview-only failure is visible.
     const dbg: string[] = [`[fillPdf] ${new Date().toISOString()}`];
     const flush = async () => { try { await invoke("save_to_desktop", { bytes: Array.from(new TextEncoder().encode(dbg.join("\n"))), filename: "ppf-fill-debug.txt" }); } catch { /* ignore */ } };
@@ -1171,7 +1194,9 @@ export function App() {
       dbg.push("engine=granite requested; on-device model not yet installed → falling back to standard");
       setPdfMsg("Granite (beta) needs its on-device layout model, which isn't installed yet — filled with the Standard engine for now.");
     }
+    fillingRef.current = true;
     setFilling(true);
+    setFillStatus("Filling from your vault, on-device…");
     try {
       let filled = 0, total = 0, data: Uint8Array | null = null;
       try {
@@ -1226,7 +1251,7 @@ export function App() {
       await flush();
       setErr(String(e));
     } finally {
-      setFilling(false);
+      setFilling(false); fillingRef.current = false; setFillStatus("");
     }
   }
   async function genFlat() {
@@ -1295,6 +1320,7 @@ export function App() {
         <style>{`@keyframes ppfflip{0%{transform:rotate(0)}45%,55%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}`}</style>
         <form onSubmit={(e) => { e.preventDefault(); submitLock(); }}>
           <input
+            ref={passInputRef}
             type="password"
             autoFocus
             placeholder={hasPass ? tr("unlock.placeholder") : "Create a passphrase (min 6 chars)"}
@@ -2031,7 +2057,7 @@ export function App() {
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "10px 0", padding: "12px 16px", background: "#eef7f5", border: "1px solid #bfe0d8", borderRadius: 10 }}>
               <style>{`@keyframes ppfflip{0%{transform:rotate(0)}45%,55%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}`}</style>
               <span style={{ fontSize: 22, display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span>
-              <b style={{ fontSize: 14, color: "#0a6a60" }}>Filling the form from your vault, on-device… please wait.</b>
+              <b style={{ fontSize: 14, color: "#0a6a60" }}>{fillStatus || "Filling the form from your vault, on-device…"} please wait.</b>
             </div>
           )}
           {pdfMsg && !filling && <p style={{ fontSize: 13, color: "#0a6a60", margin: "8px 0 0" }}>{pdfMsg}</p>}
@@ -2111,6 +2137,16 @@ export function App() {
                     ? <><span style={{ display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span> Filling…</>
                     : <>⚡ Fill from my vault</>}
                 </button>
+                {/* Fill from ANY profile without leaving this tab — switching loads that profile's vault;
+                    click Fill to apply. Inline in the toolbar so it uses no extra vertical space. */}
+                {profiles.length > 1 && (
+                  <label title="Fill this form from another profile's vault — pick one, then click Fill" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#425055", padding: "0 2px" }}>
+                    <span style={{ fontWeight: 600 }}>Profile:</span>
+                    <select value={selected || ""} onChange={(e) => selectProfile(e.currentTarget.value)} disabled={filling} style={{ padding: "3px 6px", maxWidth: 170 }}>
+                      {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </label>
+                )}
                 {/* Engine selector — swap the field-labelling engine and re-Fill to compare manually (RFC-0010).
                     PARKED: hidden until Granite inference produces usable output; Standard is the only engine. */}
                 {GRANITE_ENABLED && <span title="Which engine labels the fields. Granite-Docling is an experimental on-device layout model (beta)."
