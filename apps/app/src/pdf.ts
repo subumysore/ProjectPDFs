@@ -40,17 +40,34 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 /** The 0-based index of the FIRST page carrying a filled text value — so the preview can jump straight
  *  to where the user's data landed (many gov forms have a blank "office use only" page 1). 0 if none. */
 export async function firstFilledPage(bytes: ArrayBuffer): Promise<number> {
+  return (await scanFilledPages(bytes)).first;
+}
+
+/**
+ * Scan every page for pages that actually carry vault data, so the preview can (a) JUMP to the first
+ * one and (b) TELL the user which pages hold their data. Without this the N-400 opens on page 1 — whose
+ * top is only eligibility checkboxes — and looks empty even though the name/DOB/address/email did fill.
+ * Barcodes (PDF417*) are excluded: every page has one, so they are not "your data".
+ */
+export async function scanFilledPages(bytes: ArrayBuffer): Promise<{ first: number; pages: number[] }> {
+  const pages: number[] = [];
   try {
     const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes).slice() }).promise;
     for (let pi = 0; pi < doc.numPages; pi++) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const anns: any[] = await (await doc.getPage(pi + 1)).getAnnotations().catch(() => []);
-      for (const a of anns) {
-        if (a.subtype === "Widget" && a.fieldType === "Tx" && typeof a.fieldValue === "string" && a.fieldValue.trim()) return pi;
-      }
+      const hit = anns.some((a) => {
+        if (a.subtype !== "Widget") return false;
+        if (typeof a.fieldName === "string" && /barcode|pdf417/i.test(a.fieldName)) return false;
+        if (a.fieldType === "Tx") return typeof a.fieldValue === "string" && a.fieldValue.trim() !== "";
+        if (a.fieldType === "Btn") { const v = a.fieldValue; return typeof v === "string" && v && v !== "Off"; }
+        if (a.fieldType === "Ch") { const v = a.fieldValue; return (Array.isArray(v) ? v.join("") : String(v ?? "")).trim() !== ""; }
+        return false;
+      });
+      if (hit) pages.push(pi);
     }
   } catch { /* fall through */ }
-  return 0;
+  return { first: pages[0] ?? 0, pages };
 }
 
 /** Render page 1 of a PDF into a canvas. */

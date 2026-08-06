@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { renderPageWithFields, firstFilledPage, type FormFieldBox } from "./pdf";
+import { renderPageWithFields, scanFilledPages, type FormFieldBox } from "./pdf";
 
 /**
  * The form itself, editable in place. The page is rendered and real inputs are laid exactly over
@@ -31,11 +31,21 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
   // When a NEW (freshly-filled) document arrives, jump the preview to the first page that actually has
   // filled values — so the user immediately SEES their data instead of a blank "office use only" page 1.
   const lastBytesRef = useRef<ArrayBuffer | null>(null);
+  // Which pages actually carry vault data (shown in the pager so the user knows where to look) and a
+  // one-shot flag: after the fresh doc renders, scroll DOWN to the first filled field so the very first
+  // thing seen is the user's data — not the blank top of the page.
+  const [filledPages, setFilledPages] = useState<number[]>([]);
+  const wantScrollToFieldRef = useRef(false);
   useEffect(() => {
     if (lastBytesRef.current === bytes) return;
     lastBytesRef.current = bytes;
     let cancelled = false;
-    firstFilledPage(bytes).then((p) => { if (!cancelled) setPage(p); }).catch(() => {});
+    wantScrollToFieldRef.current = true;
+    scanFilledPages(bytes).then(({ first, pages }) => {
+      if (cancelled) return;
+      setFilledPages(pages);
+      setPage(first);
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [bytes]);
   const [fit, setFit] = useState(0);
@@ -89,6 +99,22 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
         setFields(r.fields);
         setDims({ w: r.width, h: r.height });
         setNumPages(r.numPages);
+        // One-shot: on a freshly-filled doc, after the first-filled page renders, scroll the form so the
+        // first field that has a value is in view — otherwise the user lands on the blank top of the page
+        // and thinks nothing filled. Runs once per new document.
+        if (wantScrollToFieldRef.current) {
+          wantScrollToFieldRef.current = false;
+          const target = r.fields.find((f) => {
+            const v = edits[f.name] ?? f.value;
+            return typeof v === "string" && v.trim() !== "";
+          });
+          if (target) {
+            requestAnimationFrame(() => {
+              const el = wrapRef.current;
+              if (el) el.scrollTo({ top: Math.max(0, target.top - 24), behavior: "smooth" });
+            });
+          }
+        }
       } catch {
         if (!cancelled) {
           setFields([]);
@@ -113,14 +139,18 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
     height: f.height,
     boxSizing: "border-box",
   });
-  const inputStyle = (f: FormFieldBox): React.CSSProperties => ({
+  const inputStyle = (f: FormFieldBox, filled = false): React.CSSProperties => ({
     width: "100%",
     height: "100%",
     boxSizing: "border-box",
-    border: "1px solid rgba(13,143,131,0.55)",
-    background: showTranslated ? "rgba(226,242,240,0.85)" : "rgba(226,242,240,0.45)",
+    // A field that carries a value is tinted amber with a stronger border so the user can SEE, at a
+    // glance, exactly what was filled from their vault — empty fields stay a faint teal.
+    border: filled ? "1px solid rgba(200,140,0,0.85)" : "1px solid rgba(13,143,131,0.45)",
+    background: filled
+      ? "rgba(255,236,179,0.80)"
+      : showTranslated ? "rgba(226,242,240,0.85)" : "rgba(226,242,240,0.35)",
     color: "#101a20",
-    font: `${Math.max(9, Math.min(15, f.height * 0.62))}px system-ui, sans-serif`,
+    font: `${filled ? 600 : 400} ${Math.max(9, Math.min(15, f.height * 0.62))}px system-ui, sans-serif`,
     padding: "0 3px",
     borderRadius: 2,
   });
@@ -145,6 +175,21 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
           {busy ? "Rendering the form…" : `${fields.length} field(s) on this page — type straight onto the form`}
           {showTranslated && " · showing your language (reading aid — the saved file keeps the original)"}
         </span>
+        {filledPages.length > 0 && (
+          // Tell the user, plainly, WHICH pages carry their filled data — and let them click straight to
+          // one. This is the antidote to "it looks empty": the data is there, on these pages.
+          <span style={{ display: "inline-flex", gap: 4, alignItems: "center", flexWrap: "wrap", color: "#7a5a00" }}>
+            <span style={{ fontWeight: 700 }}>Your data on:</span>
+            {filledPages.map((p) => (
+              <button
+                key={p}
+                onClick={() => { wantScrollToFieldRef.current = true; setPage(p); }}
+                title={`Jump to page ${p + 1}`}
+                style={{ ...btn, padding: "2px 8px", fontSize: 12, background: p === page ? "#ffe08a" : "linear-gradient(180deg, rgba(255,247,224,0.95) 0%, rgba(255,236,179,0.9) 100%)", borderColor: "#e0b34d" }}
+              >{p + 1}</button>
+            ))}
+          </span>
+        )}
         {/* User-controlled zoom — resize the form to taste. */}
         <span style={{ display: "inline-flex", gap: 4, alignItems: "center", marginLeft: "auto" }}>
           <button style={btn} onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={zoom <= 0.5} title="Zoom out">−</button>
@@ -203,7 +248,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
                     >{on && <span style={{ width: "58%", height: "58%", borderRadius: "50%", background: "#0d8f83", display: "block" }} />}</div>
                   ); })()
                 ) : f.kind === "dropdown" || f.kind === "radio" ? (
-                  <select value={cur} onChange={(e) => onEdit(f.name, e.currentTarget.value)} style={inputStyle(f)}>
+                  <select value={cur} onChange={(e) => onEdit(f.name, e.currentTarget.value)} style={inputStyle(f, typeof cur === "string" && cur.trim() !== "")}>
                     <option value="">—</option>
                     {(f.options ?? []).filter(Boolean).map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
@@ -215,7 +260,7 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
                     value={shown}
                     readOnly={showTranslated}
                     onChange={(e) => onEdit(f.name, e.currentTarget.value)}
-                    style={inputStyle(f)}
+                    style={inputStyle(f, typeof shown === "string" && shown.trim() !== "")}
                   />
                 )}
               </div>
