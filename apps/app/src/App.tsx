@@ -175,6 +175,7 @@ export function App() {
   }, [uiLang]);
   const [locked, setLocked] = useState(true);
   const [hasPass, setHasPass] = useState(false);
+  const [unlocking, setUnlocking] = useState(false); // show a live spinner while the vault decrypts
   const [pass, setPass] = useState("");
   const [lockMsg, setLockMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
@@ -569,7 +570,9 @@ export function App() {
     }
   }
   async function submitLock() {
+    if (unlocking || !pass) return;
     setLockMsg("");
+    setUnlocking(true);
     try {
       if (hasPass) await invoke("unlock", { passphrase: pass });
       else await invoke("set_passphrase", { passphrase: pass });
@@ -578,6 +581,8 @@ export function App() {
       refreshProfiles();
     } catch (e) {
       setLockMsg(String(e));
+    } finally {
+      setUnlocking(false);
     }
   }
   async function lockNow() {
@@ -1287,20 +1292,23 @@ export function App() {
         <p style={{ color: "#55666f", marginTop: 0 }}>
           {hasPass ? tr("unlock.title") : "Set a passphrase to protect your vault."}
         </p>
-        <input
-          type="password"
-          autoFocus
-          placeholder={hasPass ? tr("unlock.placeholder") : "Create a passphrase (min 6 chars)"}
-          value={pass}
-          onChange={(e) => setPass(e.currentTarget.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submitLock();
-          }}
-          style={{ width: "100%", padding: "10px 12px", margin: "12px 0", boxSizing: "border-box" }}
-        />
-        <button onClick={submitLock} style={{ padding: "10px 16px", width: "100%" }}>
-          {hasPass ? tr("unlock.button") : "Set passphrase & continue"}
-        </button>
+        <style>{`@keyframes ppfflip{0%{transform:rotate(0)}45%,55%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}`}</style>
+        <form onSubmit={(e) => { e.preventDefault(); submitLock(); }}>
+          <input
+            type="password"
+            autoFocus
+            placeholder={hasPass ? tr("unlock.placeholder") : "Create a passphrase (min 6 chars)"}
+            value={pass}
+            onChange={(e) => setPass(e.currentTarget.value)}
+            disabled={unlocking}
+            style={{ width: "100%", padding: "10px 12px", margin: "12px 0", boxSizing: "border-box" }}
+          />
+          <button type="submit" disabled={unlocking || !pass} style={{ padding: "10px 16px", width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: unlocking ? "wait" : "pointer" }}>
+            {unlocking
+              ? <><span style={{ display: "inline-block", animation: "ppfflip 1.1s ease-in-out infinite" }}>⏳</span> {hasPass ? "Unlocking…" : "Setting up…"}</>
+              : (hasPass ? tr("unlock.button") : "Set passphrase & continue")}
+          </button>
+        </form>
         {lockMsg && <p style={{ color: "#9a2c2c", fontSize: 13 }}>{lockMsg}</p>}
         {hasPass && (
           <p style={{ marginTop: 14 }}>
