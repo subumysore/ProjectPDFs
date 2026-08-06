@@ -51,18 +51,23 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
   // form's top offset without a window resize — that staleness left the form overflowing below the fold).
   useEffect(() => {
     const measure = () => {
-      setFit(wrapRef.current?.clientWidth ?? 0);
-      const top = wrapRef.current?.getBoundingClientRect().top ?? 0;
-      setAvailH(Math.max(300, Math.round(window.innerHeight - top - 16)));
+      const el = wrapRef.current; if (!el) return;
+      const top = Math.round(el.getBoundingClientRect().top);
+      const w = el.clientWidth;
+      // Only setState when a value actually changed, so the 250ms poll below is a cheap no-op at rest.
+      setFit((prev) => (prev !== w ? w : prev));
+      setAvailH((prev) => { const next = Math.max(300, Math.round(window.innerHeight - top - 16)); return Math.abs(prev - next) > 1 ? next : prev; });
     };
     measure();
-    const t = setTimeout(measure, 60);
     window.addEventListener("resize", measure);
-    // Watch the whole document: when banners above the form toggle, the form's top offset changes and we
-    // must resize the scroll area so it still ends exactly at the viewport bottom (only the form scrolls).
+    // A ResizeObserver only fires on SIZE changes; the form's top offset also moves when the header
+    // above it shrinks/grows (no size change of the observed node), which left availH stale. A light
+    // poll (250ms, self-cancelling to a no-op via the guards above) makes the fit robust to ANY layout
+    // change — general, not per-form/per-window.
     const ro = new ResizeObserver(() => measure());
     if (document.body) ro.observe(document.body);
-    return () => { clearTimeout(t); window.removeEventListener("resize", measure); ro.disconnect(); };
+    const iv = setInterval(measure, 250);
+    return () => { window.removeEventListener("resize", measure); ro.disconnect(); clearInterval(iv); };
   }, []);
 
   useEffect(() => {
@@ -148,9 +153,11 @@ export function FormView({ bytes, edits, onEdit, labels = {}, values = {}, showT
           {zoom !== 1 && <button style={btn} onClick={() => setZoom(1)} title="Reset zoom">Reset</button>}
         </span>
       </div>
-      <div ref={wrapRef} style={{ overflow: "auto", height: availH || undefined, maxHeight: availH ? undefined : "78vh", border: "1px solid #eef2f4", borderRadius: 8 }}>
+      <div ref={wrapRef} style={{ overflow: "auto", height: availH || undefined, maxHeight: availH ? undefined : "78vh", border: "1px solid #eef2f4", borderRadius: 8, paddingBottom: dims.h ? 24 : 0, boxSizing: "border-box" }}>
         <div style={{ position: "relative", width: dims.w, height: dims.h, margin: "0 auto" }}>
-          <canvas ref={canvasRef} style={{ position: "absolute", left: 0, top: 0, background: "#fff" }} />
+          {/* Pin the canvas DISPLAY size to the render dims so it exactly matches the field-overlay
+              coordinate space — independent of the drawing-buffer size or device pixel ratio. */}
+          <canvas ref={canvasRef} style={{ position: "absolute", left: 0, top: 0, width: dims.w || undefined, height: dims.h || undefined, background: "#fff" }} />
           {fields.map((f) => {
             const cur = edits[f.name] ?? f.value;
             const shown = showTranslated && values[f.name] ? values[f.name] : cur;
