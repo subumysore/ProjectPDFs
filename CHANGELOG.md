@@ -4,6 +4,33 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased] - 2026-08-05
+### Fixed — desktop form view: fills the window, one scroller, any page size
+- The form preview was a small band that forced whole-page scrolling. Now, when a form is open, the app
+  is viewport-height with the page/body scroll LOCKED so only the form's own area scrolls (no double
+  scrollbar); the form fills the panel width (whitespace L/R ~640px→~5px). The scroll area's height is
+  derived from its live top offset and recomputed on ANY layout change (resize/banners/form-swap) via a
+  250ms poll — general, not per-form. Root cause of the "tiny form": the *choose-a-form picker* stayed
+  expanded above the loaded form; it now auto-collapses. "Submit online" moved into the toolbar (toggled
+  bottom bar) so nothing renders below the form. Header trimmed when a form is open (title/tagline/lang
+  row/saved-banner hidden).
+- **Chopped bottom / page-size:** canvas display pinned to the render dimensions (matches field overlays
+  regardless of drawing-buffer size / DPR) + 24px bottom breathing room; renderer already uses each PDF's
+  real page size, so letter/legal/landscape/custom all render and scroll to the full bottom.
+- **Form renders even when the filled XFA saveDocument output throws** on annotation parse (falls back to
+  the drawn canvas dimensions) — fixed "N-400 fills but shows blank".
+### Fixed — unlock UX
+- The passphrase now submits on **Enter** (wrapped in a `<form>`; was relying on onKeyDown and felt dead)
+  and shows a **live spinner** (⏳ Unlocking…/Setting up…) during the Argon2 key-derivation wait.
+### Fixed — more wrong-concept over-fills (general ownership rule)
+- Replaced growing per-form keyword lists with a grammar rule: a NON-SELF possessive ("Spouse's /
+  Interpreter's / Decedent's / Son or Daughter's <field>") marks a box belonging to another subject →
+  left blank. Plus repeating-history tables (children, employment/schools) left blank. Fixes the N-400
+  filling occupation into the children/employment columns and the applicant name into street/spouse boxes.
+### Added — guide-video language links
+- Pushed a "watch in your language" block (all 9 dubs) to every YouTube guide description
+  (`scripts/youtube-language-links.mjs`, idempotent).
+
+## [Unreleased] - 2026-08-05
 ### Added — fill-engine accuracy benchmark (RFC-0010)
 - 15 real government forms (USCIS + IRS, 1–24 pages) with a headless pdf.js harness
   (`scripts/engine-benchmark/`) that scores an engine on **precision / recall / blank-correctness**

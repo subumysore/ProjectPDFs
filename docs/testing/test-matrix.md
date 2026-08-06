@@ -7,8 +7,10 @@ tested on a THROWAWAY profile only; never broad "click every Remove"; snapshot v
 Legend — Method: `U`=unit(node --test), `B`=headless browser harness (Edge+Chrome), `A`=real-app via
 WebView2 CDP. Result: ✅ pass · ⚠️ partial/limitation · ⛔ blocked · ⬜ not yet run.
 
-Run 2026-08-03: Extension unit **347/347**, Desktop ocr/appearances/office **8/8 each**. Browser
-harnesses (Edge+Chrome) all pass. Results below.
+Run 2026-08-05: Shared-engine/extension unit **349/349**, Desktop ocr/appearances/office **24/24**,
+Rust `cargo test --workspace` **pass, 0 failures** (core-crypto 15, core-store 5, core-fetch 4, …).
+15-form accuracy benchmark P=90% R=73% blankOK=77%. Signed installer + extension zip built (v1.0.6, no
+bump) & verified. All green; the only ⚠️ are documented parked items (Granite output, IRS label-above).
 
 ## A. Shared engine (both surfaces) — unit
 | ID | Scenario | Method | Result |
@@ -26,6 +28,8 @@ harnesses (Edge+Chrome) all pass. Results below.
 | E11 | Wrong-concept name boxes left BLANK (Other Names / interpreter / preparer); current name fills | U | ✅ pdfproximity 348/348 |
 | E12 | Tooltip section guard: spouse/marital name box blank; applicant name NOT in address box (street/in-care-of) | U | ✅ pdfproximity 348/348 |
 | E13 | 15-form accuracy benchmark: precision/recall/blank-correctness vs ground truth (RFC-0010) | B | ✅ P=90% R=73% blankOK=77% (7 labeled forms); `run-current.mjs` |
+| E14 | GENERAL ownership rule: a non-self possessive ("Spouse's/Interpreter's/Decedent's/Son or Daughter's") → box blank, grammar not per-form keyword list | U | ✅ pdfproximity 349/349 |
+| E15 | Repeating-history table (children / employment-schools) left blank — occupation not smeared down rows | U | ✅ (in 349) |
 
 ## B. Desktop EXE — real app (CDP) + unit
 | ID | Scenario | Method | Result |
@@ -50,11 +54,21 @@ harnesses (Edge+Chrome) all pass. Results below.
 | X18 | Flat/scanned PDF → OCR field detection | A | ⬜ pending |
 | X19 | Word/Excel → export flow | A | ⬜ pending |
 | X20 | Save filled PDF to Desktop | A | ✅ "Saved to Desktop as …" |
+| X21 | N-400 renders (not blank) even when saveDocument output throws on annotation parse | A | ✅ FormView falls back to drawn-canvas dims |
+| X22 | Form fills the viewport + SINGLE scroller (page/body locked; only form scrolls), any window size | A | ✅ header 309px / form 674px @996; ResizeObserver+250ms poll |
+| X23 | Form renders ANY page size + scrolls to full bottom (not chopped): letter/legal/landscape | A | ✅ canvas pinned to render dims; reachedBottom=true |
+| X24 | No L/R whitespace: form fills panel width (container narrows when form open) | A | ✅ L/R gap ~640→~5px |
+| X25 | Unlock: Enter key submits (form) + live ⏳ spinner during Argon2 decrypt | A | ✅ `<form onSubmit>` + unlocking state |
+| X26 | Submit-online moved into toolbar as toggled bottom bar (nothing below the form) | A | ✅ ⤴ Submit toggle |
+| X27 | N-400 E2E (real vault): over-fills BLANK (street/children/employment/spouse/interpreter/preparer); applicant filled | A | ✅ verified on saved n-400 (5).pdf |
+| X28 | Granite milestone 1: prompted one-time model download (~312MB) caches to app-data (UI parked) | A | ✅ 16 files, granite_model_present=true |
+| X29 | Granite inference pipeline runs on-device (VLM, ~90s) — output not yet usable (parked) | A | ⚠️ pipeline ok; DocTags near-empty (RFC-0010) |
 
 ## C. Chrome Extension — unit + headless browser (Edge & Chrome)
 | ID | Scenario | Method | Result |
 |----|----------|--------|--------|
-| C1 | Full extension unit suite | U | ✅ 346/346 |
+| C1 | Full extension unit suite | U | ✅ 349/349 |
+| C9 | Shared-engine fixes present in extension source (ownership/history/tooltip) — dual-surface parity | U | ✅ pdfproximity.js + pdfxfa.js; zip rebuilt v1.0.6 |
 | C2 | XFA PDF fill (pdfxfa.js saveDocument) on N-400 | B | ✅ Edge+Chrome: 66/391, 440 editable widgets |
 | C3 | Web-form autofill (pagefill) on ATS form: text/email/radio/select | B | ✅ Edge+Chrome: radio=Yes, select=No |
 | C4 | Card + billing fill on a web payment form | B | ✅ Edge+Chrome: card# ✓, billing ✓ |
