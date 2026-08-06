@@ -1,10 +1,10 @@
 {
-  "version": "1.0.6",
-  "notes": "Moved to polyglotformfill.com, plus auto-update, 7-day trial, and code signing.",
-  "pub_date": "2026-08-03T00:00:00Z",
+  "version": "1.0.7",
+  "notes": "N-400 address fills (State dropdown, street, residence-history table) and fill UX improvements.",
+  "pub_date": "2026-08-06T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHAySHNyZlJpTkQ3dEdtZklxWnhacVRySXYwYzJaOURhYi9SbHdJYTljNE1vTHlaR0J4eG9Jc2wvUURpVlVhYlBkNzI4M2FOdUpYWW9neVp5OUZzTUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Nzk5MTQ0CWZpbGU6UG9seWdsb3RGb3JtRmlsbC1TZXR1cC5leGUKakVFMk42L2lUSzQ3eVRtM2NwdVNwVFZuNy8zZ3ZWWDExbGxJNktySUpJS0N2ZUVMNnhhQ2FvQTI4bElwYzhaM3JnM0ZVRG1pQjBNZzRiRERkWmdUQXc9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHNSZGVqRVdERm1GMGVNRmVnTk9kK1hlVGkxOHdwYmFwMEk4UUY5L25vWHgybG5zL2l3eUdTZjNDRkRzTkxMbGhicjFFUllxLzVKcFgvd2tUSEZCcUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDMyNTM5CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuN194NjQtc2V0dXAuZXhlCmdWcHBvcGgzb29iY2grVkZ4Y1VXU0R1aTJ2ZWFNb2V4aS9zbENWU0ZEaFdPcUgvdzdFYU0wODhoNXhCeHBsL3B3ZHhYTDNDekZPaUxOV2JlazhON0FBPT0K",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }
