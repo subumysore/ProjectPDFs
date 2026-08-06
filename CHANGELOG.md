@@ -3,6 +3,28 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.7] - 2026-08-06
+### Fixed — N-400 Part 3/4 address fills (owner-reported)
+- **State dropdown now fills.** The XFA fillers only read a widget's `buttonValue` (radio/checkbox), so a
+  choice **dropdown's options were dropped** and nothing could be selected (Province filled, State blank).
+  Both fillers now extract `a.options` and set the chosen option string. Selects `NC`.
+- **Current "Street Number and Name" now fills.** The word "Name" in the label mis-pulled the applicant's
+  *name*, which the address-guard then blanked. An address street line now re-resolves to the street
+  concept instead of blanking (In-Care-Of still stays blank).
+- **Residence-history table stays blank.** The "list every location where you have lived…" rows were
+  smeared with the current address. Detected geometry-free now: an x-aligned indexed column
+  (`PhysicalAddress1/2/3`) is a table → left for manual entry. Distinguishes real tables from forms whose
+  distinct fields merely carry sequential opaque names.
+### Added — see your fills, and save your edits
+- The form preview **auto-scrolls to your first filled field**, tints filled fields **amber**, and shows a
+  clickable **"Your data on: &lt;pages&gt;"** map — so a form no longer opens on a blank page and looks empty.
+- Editing a value on the form and tabbing out now surfaces a **fixed "save to your vault" bar** over the
+  full-screen form (it previously rendered just below the fold, unreachable). Saves under the caption key
+  (e.g. `country_of_birth`), which wins over generic fields on the next fill.
+### Added — fill UX
+- Passphrase box **auto-focuses** on the lock screen; **Fill** has a re-entry guard + live status; a
+  **profile dropdown** in the Forms tab switches profile without leaving; **idle auto-lock** after 15 min.
+
 ## [Unreleased] - 2026-08-05
 ### Fixed — desktop form view: fills the window, one scroller, any page size
 - The form preview was a small band that forced whole-page scrolling. Now, when a form is open, the app
