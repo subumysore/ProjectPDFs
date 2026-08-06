@@ -2208,6 +2208,25 @@ export function App() {
                   showTranslated={Object.keys(viewVals).length > 0 || Object.keys(viewLang).length > 0}
                 />
               )}
+              {/* When the form fills the viewport (scroll-locked), the inline "new info" panel below sits
+                  off the bottom of the screen — a user who edits a value and tabs out sees nothing. This
+                  fixed bar surfaces the prompt immediately, over the form, so the edit→save loop is
+                  reachable without hunting. */}
+              {pdfBytes && newPairs.length > 0 && (
+                <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, background: "#fffdf3", borderTop: "2px solid #e0b400", boxShadow: "0 -3px 12px rgba(35,55,60,0.14)", padding: "8px 16px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700 }}>💡 {newPairs.length} new value{newPairs.length > 1 ? "s" : ""} to save to your vault:</span>
+                  <span style={{ fontSize: 13, color: "#55666f", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42vw" }}>
+                    {newPairs.slice(0, 3).map((p) => `${p.label} = ${p.value}`).join("  ·  ")}{newPairs.length > 3 ? "  …" : ""}
+                  </span>
+                  <button onClick={saveNewPairs} style={{ fontWeight: 700, marginLeft: "auto", padding: "6px 14px", border: "1px solid #b98a00", borderRadius: 8, background: "#ffe08a", cursor: "pointer" }}>
+                    Save to vault
+                  </button>
+                  <button onClick={() => { setSkipNew(Object.fromEntries(newPairs.map((p) => [p.key, true]))); setLearnMsg("Dismissed — nothing saved."); }} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}>
+                    Dismiss
+                  </button>
+                  {learnMsg && <span style={{ fontSize: 12, color: "#0a6a60", width: "100%" }}>{learnMsg}</span>}
+                </div>
+              )}
               {newPairs.length > 0 && (
                 <div style={{ marginTop: 10, border: "1px solid #e0b400", background: "#fffdf3", borderRadius: 8, padding: 10 }}>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>
