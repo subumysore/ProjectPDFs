@@ -130,3 +130,10 @@ test("licence OCR: two numbers on adjacent lines never fuse into one value", () 
   const m = asMap(["DRIVER LICENSE", "000026610696", "27587-3971"].join("\n"));
   assert.equal(m.license_no, "000026610696", "the licence number stands alone, not fused with the ZIP");
 });
+
+// Regression (caught by real-image testing 2026-08-06): the ZIP-shape guard must NOT delete a valid
+// 9-digit passport/ID number — a US ZIP+4 has a SEPARATOR (27587-3971); a bare 9-digit run is an ID.
+test("a bare 9-digit passport number is kept (not mistaken for a ZIP+4)", () => {
+  const m = asMap(["UNITED STATES OF AMERICA PASSPORT", "Passport No 352279543", "DOB 30 NOV 1968"].join("\n"));
+  assert.equal(m.passport_no, "352279543");
+});

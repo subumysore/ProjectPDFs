@@ -410,7 +410,9 @@ export function parseFields(text: string): ExtractedField[] {
   for (const k of ["license_no", "id_no", "passport_no"]) {
     const v = out[k]; if (!v) continue;
     const d = digitsOnly(v);
-    if (/^\d{5}([-\s]?\d{4})?$/.test(v.trim()) || (out["zip"] && d.length > 0 && d === digitsOnly(out["zip"]))) delete out[k];
+    // A US ZIP+4 has a SEPARATOR ("27587-3971"); a bare 9-digit run (352279543) is a valid passport/ID
+    // number, NOT a zip — so require the dash/space, or an exact match to the already-extracted ZIP.
+    if (/^\d{5}[-\s]\d{4}$/.test(v.trim()) || (out["zip"] && d.length > 0 && d === digitsOnly(out["zip"]))) delete out[k];
   }
   // 3. An expiry / issue date must be a real date (a 4-digit year in a sane range) — drop noise.
   for (const k of ["expiry_date", "issue_date", "passport_expiry_date", "passport_issue_date", "dl_expiry_date", "dl_issue_date"]) {
