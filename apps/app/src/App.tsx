@@ -117,7 +117,7 @@ const h2Style: React.CSSProperties = {
   letterSpacing: "0.06em",
   color: "#0b7d72",
   fontWeight: 800,
-  margin: "0 0 10px",
+  margin: "0 0 3px",
 };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
@@ -1718,7 +1718,7 @@ export function App() {
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 10, marginBottom: 10 }}>
-          <div style={{ fontWeight: 700 }}>📇 Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
+          <div style={{ fontWeight: 700 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>📇</span>Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
           {/* The list scrolls within a bounded height so 'Add a detail' below stays reachable without
               scrolling the whole page. */}
           <div style={{ maxHeight: 360, overflowY: "auto", margin: "8px 0 0", border: "1px solid #eef2f4", borderRadius: 8 }}>
@@ -1802,8 +1802,8 @@ export function App() {
             </tbody>
           </table>
           </div>
-          <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #eef2f4", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <strong style={{ fontSize: 12.5 }}>Add a detail</strong>
+          <div style={{ marginTop: 10, padding: "10px 12px", background: "#e9f8f5", border: "1px solid #b7e3da", borderRadius: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <strong style={{ fontSize: 13.5, color: "#0b7d72" }}>➕ Add a detail</strong>
             <input
               placeholder="key (e.g. full_name)"
               value={k}
@@ -1818,7 +1818,7 @@ export function App() {
               onKeyDown={(e) => e.key === "Enter" && addPoint()}
               style={{ padding: "6px 8px", flex: 1, minWidth: 150 }}
             />
-            <button onClick={addPoint} style={{ ...GLASS_BTN, fontWeight: 700 }}>{tr("action.save")}</button>
+            <button onClick={addPoint} style={{ fontWeight: 800, fontSize: 14, padding: "8px 18px" }}>{tr("action.save")}</button>
           </div>
           </div>
 
@@ -1831,7 +1831,7 @@ export function App() {
             const liveBrand = detectCardBrand(recFields.card_number || "");
             return (
           <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>💳 Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>💳</span>Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
             {cards.map((r) => {
               const brand = detectCardBrand(r.fields?.card_number || "");
               const ctype = cardTypeLabel(r.fields?.card_type);
@@ -1879,18 +1879,20 @@ export function App() {
           })()}
 
           <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>🪪 Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>🪪</span>Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
+            <div style={{ fontSize: 13, color: "#425055", margin: "2px 0 8px" }}>Either <b>choose an existing image file</b> or <b>scan a new one</b> with your camera:</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <input
-                type="file"
-                accept="image/*"
-                style={{ fontSize: 17, padding: "4px 2px" }}
-                onChange={(e) => {
-                  const f = e.currentTarget.files?.[0];
-                  if (f) onDataSource(f);
-                }}
-              />
-              {!camOn && <button onClick={startCamera}>📷 Scan with camera</button>}
+              {/* A native file input can't be colour-styled, so a styled label drives a hidden input. */}
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer", boxShadow: "0 1px 2px rgba(13,143,131,0.28)" }}>
+                📁 Choose an existing file…
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) onDataSource(f); e.currentTarget.value = ""; }}
+                />
+              </label>
+              {!camOn && <button onClick={startCamera}>📷 Scan a new image</button>}
             </div>
             {camOn && (
               <div style={{ marginTop: 10 }}>
