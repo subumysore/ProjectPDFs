@@ -1560,12 +1560,14 @@ export function App() {
             on the SAME row — a red glass button that names the selected profile. */}
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8, flex: 1, minWidth: 0, ...(profiles.length > 5 ? { overflowX: "auto", flexWrap: "nowrap", paddingBottom: 6 } : { flexWrap: "wrap" }) }}>
-            {profiles.map((p) => {
+            {profiles.map((p, pIdx) => {
               // A distinct, stable pastel per profile (hashed from its id) so they're easy to tell apart.
               // NO red/pink here — red is reserved exclusively for the Delete-profile button.
               const PALETTE = ["#dbeafe", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#e0f2fe", "#f0f9c4", "#e2e8f0"];
               const DOT = ["#2563eb", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#0284c7", "#65a30d", "#475569"];
-              const idx = Math.abs([...p.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length;
+              // Colour by POSITION in the list, so consecutive profiles are always different (an
+              // id-hash could collide and give two profiles the same colour).
+              const idx = pIdx % PALETTE.length;
               const on = p.id === selected;
               return (
                 <button
