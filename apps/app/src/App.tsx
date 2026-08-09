@@ -1982,14 +1982,14 @@ export function App() {
           {!locked && (
           <div style={{ flex: "1 1 360px", border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>📦</span>Backup &amp; transfer <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— passphrase-encrypted file; import on another device or the extension (no plaintext export)</span></div>
-            <input
-              type="password"
-              placeholder="backup passphrase (remember it!)"
-              value={bkPass}
-              onChange={(e) => setBkPass(e.currentTarget.value)}
-              style={{ padding: "7px 10px", width: "100%", boxSizing: "border-box", border: "1px solid #d9e2e6", borderRadius: 8 }}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                type="password"
+                placeholder="backup passphrase (remember it!)"
+                value={bkPass}
+                onChange={(e) => setBkPass(e.currentTarget.value)}
+                style={{ padding: "7px 10px", flex: "1 1 160px", minWidth: 140, boxSizing: "border-box", border: "1px solid #d9e2e6", borderRadius: 8 }}
+              />
               <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : <>🔐 {tr("backup.exportEncrypted")}</>}</button>
               <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer" }}>
                 📥 Import file…
