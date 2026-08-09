@@ -1493,16 +1493,16 @@ export function App() {
             <button key={id} onClick={() => !locked && setTab(id)} disabled={locked}
               style={{
                 padding: "10px 18px",
-                border: tab === id ? "1px solid #0b7d72" : "1px solid #b7c4cc",
+                border: tab === id ? "1px solid #0b7d72" : "1px solid #7fccc0",
                 borderRadius: 11,
-                // Glass/aero look: subtle gradient + translucency + blur behind, so tabs read as raised,
-                // tactile controls rather than flat text.
+                // Selected = solid teal; unselected = a soft MINT tint (colourful, not grey) with teal text
+                // — clearly a tab, clearly not the active one.
                 background: tab === id
                   ? "linear-gradient(180deg, #14a99b 0%, #0d8f83 60%, #0b8175 100%)"
-                  : "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(233,240,242,0.85) 100%)",
+                  : "linear-gradient(180deg, #ecfbf8 0%, #d3f0eb 100%)",
                 backdropFilter: "blur(6px)",
                 WebkitBackdropFilter: "blur(6px)",
-                color: tab === id ? "#ffffff" : "#2a3a3e",
+                color: tab === id ? "#ffffff" : "#0b6f66",
                 fontWeight: tab === id ? 800 : 650,
                 fontSize: 14,
                 letterSpacing: 0.2,
