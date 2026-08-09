@@ -3,6 +3,28 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.8] - 2026-08-06  (desktop only — the extension is unchanged since 1.0.7)
+### Added
+- **Scan a credit/debit card** (image or camera) to pre-fill Saved cards — on-device OCR reads
+  number (Luhn-checked), expiry (MM/YY), and cardholder name for review; brand/type auto-detected; CVV
+  is never captured. Detected before the label-free grabber so a PAN is never mis-filed as a licence/ID.
+- **Always-visible app version badge** in the header.
+- New profiles are **seeded with the standard fields** (name, email, address 1–3, city/state/county/zip,
+  cell/land-line phone, signature, profile picture) empty, ready to fill.
+### Fixed — OCR robustness (general invariants; verified on real DL/passport images)
+- A **future/expiry date is never adopted as the date_of_birth**; a **ZIP/ZIP+4 is never captured as a
+  licence/ID number**; a bare 9-digit passport number is kept (not deleted as a ZIP); the number grabber
+  no longer fuses two numbers across a newline. A final sanity pass enforces these on every extraction.
+### Changed — Profile & Vault UX
+- Clear bounded cards (Your details / Saved cards / Signature & photo / Import / Backup) with larger
+  icons and visible teal borders; **Saved cards is collapsible**; **Your details scrolls** so *Add a
+  detail* stays reachable; friendly field labels (Signature vs Profile picture); image fields show
+  Add image/Replace (Scan or file, re-runs OCR for documents).
+- Modern colourful buttons (no more grey); coloured tabs when unselected; visible brand-teal section
+  headers; profile colours by list position (no two-same collisions); **Backup & transfer shares a row
+  with Import**.
+- **Export encrypted** shows an animated hourglass and clears the passphrase on profile switch / after export.
+
 ## [1.0.7] - 2026-08-06
 ### Fixed — N-400 Part 3/4 address fills (owner-reported)
 - **State dropdown now fills.** The XFA fillers only read a widget's `buttonValue` (radio/checkbox), so a
