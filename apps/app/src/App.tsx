@@ -1723,7 +1723,21 @@ export function App() {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>{" "}
+                        {dp.value.startsWith("data:image") ? (
+                          // An image value (signature/photo/scanned ID) can't be text-edited — its base64 is
+                          // meaningless in an input. Offer REPLACE (pick a new image) instead of Edit.
+                          <label title="Replace this image with a new file" style={{ display: "inline-block", padding: "2px 9px", border: "1px solid #cbd5db", borderRadius: 5, background: "#eef7f5", cursor: "pointer", fontSize: 13 }}>
+                            🔄 Replace
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg"
+                              style={{ display: "none" }}
+                              onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) addImagePoint(dp.key, f); e.currentTarget.value = ""; }}
+                            />
+                          </label>
+                        ) : (
+                          <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>
+                        )}{" "}
                         <button onClick={() => removePoint(dp.key)}>{tr("action.remove")}</button>
                       </>
                     )}
