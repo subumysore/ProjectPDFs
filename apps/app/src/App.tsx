@@ -1747,7 +1747,7 @@ export function App() {
                             );
                           }
                           return (
-                            <button onClick={() => setReplaceKey(dp.key)} title={isDoc ? "Replace — scan or pick a file (re-runs OCR)" : "Replace this image"}>🔄 Replace</button>
+                            <button onClick={() => setReplaceKey(dp.key)} title={isDoc ? "Replace — scan or pick a file (re-runs OCR)" : "Replace this image"}>Replace</button>
                           );
                         })() : (
                           <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>
