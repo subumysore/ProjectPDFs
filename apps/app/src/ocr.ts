@@ -217,7 +217,9 @@ export function parseFields(text: string): ExtractedField[] {
   const email = text.match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
   if (!out["cell_phone"] && !out["license_no"] && !out["id_no"] && !out["passport_no"]) {
-    const numMatch = text.match(/(?:\+?\d[\d\s\-()]{7,}\d)/);
+    // A single number token — separators allowed WITHIN a line (space/dash/paren) but NOT across a
+    // newline, so two separate numbers on adjacent lines never fuse into one garbled value.
+    const numMatch = text.match(/(?:\+?\d[\d \-()]{7,}\d)/);
     if (numMatch) {
       const raw = (numMatch[0] ?? "").replace(/\s+/g, " ").trim();
       const digits = raw.replace(/\D/g, "");
@@ -227,7 +229,12 @@ export function parseFields(text: string): ExtractedField[] {
       // number like 000026610696 was landing in cell_phone).
       const idContext = DL_MARKERS.test(text) || PASSPORT_MARKERS.test(text);
       const looksLikeIdNumber = /^0{2,}/.test(digits);
-      if (idContext || looksLikeIdNumber) {
+      // A US ZIP+4 ("27587-3971") is 9 digits in a 5-4 group — it is an ADDRESS, never a licence/ID or
+      // phone number. The label-free grabber used to seize it as the licence number; exclude that shape.
+      const isZip4 = /^\d{5}[-\s]\d{4}$/.test(raw);
+      if (isZip4) {
+        // leave it for the ZIP extractor below; do not route to any ID/phone field
+      } else if (idContext || looksLikeIdNumber) {
         if (PASSPORT_MARKERS.test(text)) put("passport_no", raw);
         else if (DL_MARKERS.test(text)) put("license_no", raw);
         else put("id_no", raw);
@@ -306,12 +313,20 @@ export function parseFields(text: string): ExtractedField[] {
     }
   }
 
-  // Dates MM/DD/YYYY anywhere: earliest year = DOB, latest = expiry. A licence has THREE dates
+  // A date_of_birth MUST be a plausible birth date — in the PAST, holder ~13–120 years old. A licence's
+  // EXPIRY is in the FUTURE and commonly falls on the birthday (same MM/DD), so when the printed DOB
+  // OCRs garbled the expiry (e.g. 11/30/2029) used to masquerade as the birth date. Reject any
+  // implausible DOB and pick the earliest BIRTH-PLAUSIBLE date instead.
+  const nowY = new Date().getFullYear();
+  const birthYearOk = (d?: string) => { const y = +((d || "").split("/")[2] ?? 0); return y >= nowY - 120 && y <= nowY - 13; };
+  if (out["date_of_birth"] && !birthYearOk(out["date_of_birth"])) delete out["date_of_birth"];
+  // Dates MM/DD/YYYY anywhere: earliest birth-plausible = DOB, latest = expiry. A licence has THREE dates
   // (DOB, ISS issue, EXP expiry); the middle one chronologically is the issue date. A labelled
   // "ISS <date>" wins if present.
   const ds = [...new Set([...text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)].map((m) => m[0]))]
     .sort((a, b) => +(a.split("/")[2] ?? 0) - +(b.split("/")[2] ?? 0));
-  if (ds.length && !out["date_of_birth"]) out["date_of_birth"] = ds[0] ?? "";
+  const births = ds.filter(birthYearOk);
+  if (births.length && !out["date_of_birth"]) out["date_of_birth"] = births[0] ?? "";
   if (ds.length > 1 && !out["expiry_date"]) out["expiry_date"] = ds[ds.length - 1] ?? "";
   const issM = text.match(/\b(?:4A\s*)?ISS\.?\s*[:.]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
   if (issM && issM[1] && !out["issue_date"]) out["issue_date"] = issM[1];
@@ -375,9 +390,34 @@ export function parseFields(text: string): ExtractedField[] {
   // Reject a garbled/label date_of_birth (the multilingual "Date of birth/Date de naissance/..." label
   // can leak through the generic label pass) so a real date can take its place.
   if (out["date_of_birth"] && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(out["date_of_birth"])) delete out["date_of_birth"];
-  // DOB as "DD MON YYYY" (30 NOV 1968) if no slash-date/MRZ set one — earliest year of the mon-dates.
-  if (!out["date_of_birth"] && monDates.length) out["date_of_birth"] = [...monDates].sort((a, b) => a.y - b.y)[0]?.d ?? "";
+  // …and reject an implausible birth date (a future/expiry year that slipped through the generic pass).
+  if (out["date_of_birth"] && !birthYearOk(out["date_of_birth"])) delete out["date_of_birth"];
+  // DOB as "DD MON YYYY" (30 NOV 1968) if no slash-date/MRZ set one — earliest BIRTH-PLAUSIBLE mon-date.
+  if (!out["date_of_birth"] && monDates.length) {
+    const mb = [...monDates].filter((x) => birthYearOk(x.d)).sort((a, b) => a.y - b.y);
+    if (mb[0]) out["date_of_birth"] = mb[0].d;
+  }
 
+  // ── FINAL SANITY PASS (applies to EVERY document/image, not one form) ──────────────────────────
+  // Field values must satisfy their MEANING no matter which extraction path filled them. A value that
+  // violates its field's invariant is dropped — a blank the user fills is always better than a
+  // confident wrong value. This is the general guard behind the DL bugs (future "DOB", ZIP-as-licence).
+  const digitsOnly = (s?: string) => (s || "").replace(/\D/g, "");
+  // 1. A birth date is in the PAST, holder ~13–120 (never a future/expiry year).
+  if (out["date_of_birth"] && !birthYearOk(out["date_of_birth"])) delete out["date_of_birth"];
+  // 2. An ID / licence / passport NUMBER is not an ADDRESS: never a bare ZIP / ZIP+4, never equal to
+  //    the extracted ZIP.
+  for (const k of ["license_no", "id_no", "passport_no"]) {
+    const v = out[k]; if (!v) continue;
+    const d = digitsOnly(v);
+    if (/^\d{5}([-\s]?\d{4})?$/.test(v.trim()) || (out["zip"] && d.length > 0 && d === digitsOnly(out["zip"]))) delete out[k];
+  }
+  // 3. An expiry / issue date must be a real date (a 4-digit year in a sane range) — drop noise.
+  for (const k of ["expiry_date", "issue_date", "passport_expiry_date", "passport_issue_date", "dl_expiry_date", "dl_issue_date"]) {
+    const v = out[k]; if (!v) continue;
+    const y = +((v.match(/\b(\d{4})\b/) || [])[1] || 0);
+    if (y && (y < 1900 || y > nowY + 30)) delete out[k];
+  }
   return Object.entries(out).map(([ontology_key, value]) => ({ ontology_key, value }));
 }
 

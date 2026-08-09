@@ -98,3 +98,35 @@ test("passport 'Given names' splits into first (+middle), not first_name='names:
   assert.equal(m.passport_no, "X1234567");
   assert.ok(!/names:/i.test(m.first_name || ""));
 });
+
+// ── Regression: driver-licence FRONT OCR mis-attribution (owner-reported 2026-08-06) ──────────────
+// A US licence's EXPIRY is in the future and often falls on the birthday (same MM/DD). When the printed
+// DOB OCRs garbled, the expiry (11/30/2029) used to masquerade as the birth date; and a ZIP+4 used to
+// be seized as the licence number.
+test("licence OCR: a future expiry is NEVER adopted as the date_of_birth", () => {
+  // Only the expiry OCR'd as a clean MM/DD/YYYY; the DOB came through in a different (dashed) form.
+  const m = asMap(["NORTH CAROLINA DRIVER LICENSE", "MYSORE, SUBRAMANYA", "DOB 11-30-1968", "EXP 11/30/2029"].join("\n"));
+  assert.notEqual(m.date_of_birth, "11/30/2029", "an expiry/future date must not be a birth date");
+});
+
+test("licence OCR: DOB is the earliest BIRTH-PLAUSIBLE slash-date (not merely the earliest date)", () => {
+  const m = asMap(["DRIVER LICENSE", "DOB 11/30/1968", "ISS 11/30/2021", "EXP 11/30/2029"].join("\n"));
+  assert.equal(m.date_of_birth, "11/30/1968");
+  assert.equal(m.expiry_date, "11/30/2029");
+});
+
+test("licence OCR: a ZIP+4 is never kept as the licence number", () => {
+  // The exact owner-reported failure: the ZIP+4 landed in license_no.
+  const m = asMap(["NORTH CAROLINA DRIVER LICENSE", "License No 27587-3971"].join("\n"));
+  assert.notEqual(m.license_no, "27587-3971", "a ZIP+4 is an address, not a licence number");
+});
+
+test("licence OCR: a real licence number IS kept", () => {
+  const m = asMap(["DRIVER LICENSE", "License No D1234567"].join("\n"));
+  assert.equal(m.license_no, "D1234567");
+});
+
+test("licence OCR: two numbers on adjacent lines never fuse into one value", () => {
+  const m = asMap(["DRIVER LICENSE", "000026610696", "27587-3971"].join("\n"));
+  assert.equal(m.license_no, "000026610696", "the licence number stands alone, not fused with the ZIP");
+});
