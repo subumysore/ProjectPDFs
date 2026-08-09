@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PolyglotFormFill</title>
+    <style>
+      /* Modern, colourful default buttons (replaces the historic grey). Buttons that set their own
+         inline background — the red Delete, the glass toolbar, the teal primary/selected — override this,
+         so intent-coloured buttons keep their look while every plain button becomes a branded pill. */
+      button {
+        font: 600 13px/1.1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #fff;
+        background: linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%);
+        border: 1px solid rgba(9,110,101,0.55);
+        border-radius: 9px;
+        padding: 7px 14px;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(13,143,131,0.28), inset 0 1px 0 rgba(255,255,255,0.22);
+        transition: filter .12s ease, box-shadow .12s ease, transform .04s ease;
+      }
+      button:hover:not(:disabled) { filter: brightness(1.07) saturate(1.05); box-shadow: 0 3px 8px rgba(13,143,131,0.34), inset 0 1px 0 rgba(255,255,255,0.22); }
+      button:active:not(:disabled) { transform: translateY(1px); filter: brightness(0.96); }
+      button:focus-visible { outline: 2px solid #0b6f66; outline-offset: 2px; }
+      button:disabled { background: #d3dcdf; color: #8a969b; border-color: #c3ccd0; box-shadow: none; cursor: not-allowed; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
