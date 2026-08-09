@@ -1718,7 +1718,7 @@ export function App() {
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 10, marginBottom: 10 }}>
-          <div style={{ fontWeight: 700 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>📇</span>Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
+          <div style={{ fontWeight: 700 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>📇</span>Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
           {/* The list scrolls within a bounded height so 'Add a detail' below stays reachable without
               scrolling the whole page. */}
           <div style={{ maxHeight: 360, overflowY: "auto", margin: "8px 0 0", border: "1px solid #eef2f4", borderRadius: 8 }}>
@@ -1831,7 +1831,7 @@ export function App() {
             const liveBrand = detectCardBrand(recFields.card_number || "");
             return (
           <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>💳</span>Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>💳</span>Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
             {cards.map((r) => {
               const brand = detectCardBrand(r.fields?.card_number || "");
               const ctype = cardTypeLabel(r.fields?.card_type);
@@ -1878,8 +1878,9 @@ export function App() {
             );
           })()}
 
-          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 24, verticalAlign: "-4px", marginRight: 3 }}>🪪</span>Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch", marginTop: 10 }}>
+          <div style={{ flex: "1 1 360px", border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>🪪</span>Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
             <div style={{ fontSize: 13, color: "#425055", margin: "2px 0 8px" }}>Either <b>choose an existing image file</b> or <b>scan a new one</b> with your camera:</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               {/* A native file input can't be colour-styled, so a styled label drives a hidden input. */}
@@ -1977,39 +1978,28 @@ export function App() {
               </div>
             )}
           </div>
-        </section>
-      )}
-
-      {tab === "setup" && selected && !locked && (
-        <section style={cardStyle}>
-          <h2 style={h2Style}>Backup &amp; transfer (encrypted)</h2>
-          <p style={{ color: "#5a6b6d", fontSize: 13, marginTop: 0 }}>
-            Export this profile's vault to a passphrase-encrypted file and import it on another device
-            — or into the browser extension (same format). There is no plaintext export.
-          </p>
-          <input
-            type="password"
-            placeholder="backup passphrase (remember it!)"
-            value={bkPass}
-            onChange={(e) => setBkPass(e.currentTarget.value)}
-          />
-          <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : tr("backup.exportEncrypted")}</button>
-            <label style={{ cursor: "pointer", padding: "6px 10px", border: "1px solid #dde6e4", borderRadius: 6 }}>
-              Import file…
-              <input
-                type="file"
-                accept=".ppfvault"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.currentTarget.files?.[0];
-                  if (f) doImport(f);
-                  e.currentTarget.value = "";
-                }}
-              />
-            </label>
+          {/* Backup & transfer — same row as Import to save vertical space. */}
+          {!locked && (
+          <div style={{ flex: "1 1 360px", border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>📦</span>Backup &amp; transfer <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— passphrase-encrypted file; import on another device or the extension (no plaintext export)</span></div>
+            <input
+              type="password"
+              placeholder="backup passphrase (remember it!)"
+              value={bkPass}
+              onChange={(e) => setBkPass(e.currentTarget.value)}
+              style={{ padding: "7px 10px", width: "100%", boxSizing: "border-box", border: "1px solid #d9e2e6", borderRadius: 8 }}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : tr("backup.exportEncrypted")}</button>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer" }}>
+                📥 Import file…
+                <input type="file" accept=".ppfvault" style={{ display: "none" }} onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) doImport(f); e.currentTarget.value = ""; }} />
+              </label>
+            </div>
+            {bkMsg && <p style={{ fontSize: 13, margin: "6px 0 0" }}>{bkMsg}</p>}
           </div>
-          {bkMsg && <p style={{ fontSize: 13 }}>{bkMsg}</p>}
+          )}
+          </div>
         </section>
       )}
 
