@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
 import { check as checkUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { extractFromImage, documentImageKey, type ExtractedField } from "./ocr";
@@ -174,6 +175,9 @@ export function App() {
     document.documentElement.dir = dirOf(uiLang); // Arabic/Hebrew/Urdu/Persian flip the whole app
   }, [uiLang]);
   const [locked, setLocked] = useState(true);
+  // The app version, shown always in the header so the user knows exactly which build they're running.
+  const [appVersion, setAppVersion] = useState("");
+  useEffect(() => { getVersion().then(setAppVersion).catch(() => {}); }, []);
   const [hasPass, setHasPass] = useState(false);
   const [unlocking, setUnlocking] = useState(false); // show a live spinner while the vault decrypts
   const [pass, setPass] = useState("");
@@ -1419,7 +1423,14 @@ export function App() {
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         {!(tab === "forms" && pdfBytes) && <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.15 }}>PolyglotFormFill</h1>}
-        <button onClick={lockNow} style={{ fontSize: 12, marginLeft: "auto" }}>
+        {/* Always-visible version badge — so the user can tell which build they're testing. */}
+        <span
+          title="Installed app version"
+          style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "#55666f", background: "#eef2f4", border: "1px solid #d7e0e3", borderRadius: 999, padding: "2px 9px", letterSpacing: 0.2, alignSelf: "center" }}
+        >
+          v{appVersion || "…"}
+        </span>
+        <button onClick={lockNow} style={{ fontSize: 12, marginLeft: 8 }}>
           🔒 {tr("lock.button")}
         </button>
       </div>
@@ -1522,8 +1533,9 @@ export function App() {
           <div style={{ display: "flex", gap: 8, flex: 1, minWidth: 0, ...(profiles.length > 5 ? { overflowX: "auto", flexWrap: "nowrap", paddingBottom: 6 } : { flexWrap: "wrap" }) }}>
             {profiles.map((p) => {
               // A distinct, stable pastel per profile (hashed from its id) so they're easy to tell apart.
-              const PALETTE = ["#dbeafe", "#fbe2e6", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#ffe4d6", "#f0f9c4"];
-              const DOT = ["#2563eb", "#db2777", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#ea580c", "#65a30d"];
+              // NO red/pink here — red is reserved exclusively for the Delete-profile button.
+              const PALETTE = ["#dbeafe", "#dcfce7", "#fef3c7", "#ede9fe", "#cffafe", "#e0f2fe", "#f0f9c4", "#e2e8f0"];
+              const DOT = ["#2563eb", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#0284c7", "#65a30d", "#475569"];
               const idx = Math.abs([...p.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % PALETTE.length;
               const on = p.id === selected;
               return (
@@ -1674,7 +1686,12 @@ export function App() {
       {tab === "setup" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
-          <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 760 }}>
+          <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontWeight: 700, marginBottom: 2 }}>📇 Your details</div>
+          <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+            Individual facts that fill forms — name, date of birth, email, address… Each is a <b>key</b> (a field name like <code style={mono}>full_name</code>) and its value.
+          </p>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <tbody>
               {points.filter((dp) => dp.key !== RECORDS_KEY).map((dp, i) => (
                 <tr key={dp.key} style={{ background: i % 2 ? "#f4f8fa" : "#ffffff" }}>
@@ -1716,15 +1733,34 @@ export function App() {
                   </td>
                 </tr>
               ))}
-              {points.length === 0 && (
+              {points.filter((dp) => dp.key !== RECORDS_KEY).length === 0 && (
                 <tr>
-                  <td colSpan={3} style={{ padding: "6px 8px", opacity: 0.6 }}>
-                    No data points. Add one (key = ontology key, e.g. full_name).
+                  <td colSpan={3} style={{ padding: "8px 2px", color: "#8a949b" }}>
+                    Nothing here yet — add your first detail below.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #eef2f4", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <strong style={{ fontSize: 12.5 }}>Add a detail</strong>
+            <input
+              placeholder="key (e.g. full_name)"
+              value={k}
+              onChange={(e) => setK(e.currentTarget.value)}
+              style={{ padding: "6px 8px", ...mono, width: 170 }}
+            />
+            <span style={{ color: "#8a949b" }}>=</span>
+            <input
+              placeholder="value"
+              value={v}
+              onChange={(e) => setV(e.currentTarget.value)}
+              onKeyDown={(e) => e.key === "Enter" && addPoint()}
+              style={{ padding: "6px 8px", flex: 1, minWidth: 150 }}
+            />
+            <button onClick={addPoint} style={{ ...GLASS_BTN, fontWeight: 700 }}>{tr("action.save")}</button>
+          </div>
+          </div>
 
           {/* Saved payment CARDS. Each card includes its own BILLING address (defaulted from the mailing
               address). The ⭐ primary card fills payment forms automatically; the number is shown masked
@@ -1785,24 +1821,12 @@ export function App() {
             );
           })()}
 
-          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-            <input
-              placeholder="key (e.g. full_name)"
-              value={k}
-              onChange={(e) => setK(e.currentTarget.value)}
-              style={{ padding: 8, ...mono, width: "35%" }}
-            />
-            <input
-              placeholder="value"
-              value={v}
-              onChange={(e) => setV(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === "Enter" && addPoint()}
-              style={{ padding: 8, flex: 1 }}
-            />
-            <button onClick={addPoint}>{tr("action.save")}</button>
-          </div>
-          <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
-            <label style={{ color: "#55666f" }}>Signature, photo, etc. — attach an image under the key you type (signature and profile_photo are separate fields; no OCR):</label>
+          <div style={{ marginTop: 14, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>✍️ Signature &amp; photo</div>
+            <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
+              Attach an image under a key so forms can stamp it. <code style={mono}>signature</code> and <code style={mono}>profile_photo</code> are separate fields (no OCR).
+            </p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
             <input
               placeholder="key — e.g. signature (profile_photo is a separate key)"
               value={imgKey}
@@ -1830,11 +1854,12 @@ export function App() {
               />
             </label>
           </div>
+          </div>
 
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #eef2f4" }}>
-            <div style={{ fontSize: 13, marginBottom: 6, opacity: 0.8 }}>
-              Import a data source (passport, licence, business card…) — OCR runs on-device,
-              recognised fields fill your profile
+          <div style={{ marginTop: 14, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>📄 Import from a document</div>
+            <div style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
+              Passport, licence, business card… — OCR runs on-device; recognised fields fill your profile.
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <input
