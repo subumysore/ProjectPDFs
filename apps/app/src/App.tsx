@@ -1990,7 +1990,7 @@ export function App() {
               style={{ padding: "7px 10px", width: "100%", boxSizing: "border-box", border: "1px solid #d9e2e6", borderRadius: 8 }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : tr("backup.exportEncrypted")}</button>
+              <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : <>🔐 {tr("backup.exportEncrypted")}</>}</button>
               <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer" }}>
                 📥 Import file…
                 <input type="file" accept=".ppfvault" style={{ display: "none" }} onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) doImport(f); e.currentTarget.value = ""; }} />
