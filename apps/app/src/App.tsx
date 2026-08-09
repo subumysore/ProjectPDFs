@@ -132,6 +132,7 @@ export function App() {
   const [points, setPoints] = useState<DataPoint[]>([]);
   const [editKey, setEditKey] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
+  const [replaceKey, setReplaceKey] = useState<string | null>(null); // which image row is showing Scan/File choice
   const [imgKey, setImgKey] = useState("");
   const [newProfile, setNewProfile] = useState("");
   // Two-step delete: null = idle, or the id of the profile whose removal is being confirmed inline.
@@ -1725,21 +1726,28 @@ export function App() {
                     ) : (
                       <>
                         {dp.value.startsWith("data:image") ? (() => {
-                          // An image value can't be text-edited (base64 is meaningless in an input) — offer
-                          // REPLACE. For a scanned DOCUMENT (licence/passport/ID) replacing it should re-run
-                          // OCR and refresh the extracted fields, not just swap the picture; for a personal
-                          // image (signature/photo) it's a plain swap.
+                          // An image value can't be text-edited — offer REPLACE. Replacing a scanned DOCUMENT
+                          // (licence/passport/ID) re-runs OCR to refresh the extracted fields; a personal image
+                          // (signature/photo) is a plain swap. The user picks the SOURCE: camera or a file.
                           const isDoc = /driver_license|passport|document_image|(^|_)id($|_)/i.test(dp.key) && !/signature|photo/i.test(dp.key);
+                          const useImage = (f: File) => { if (isDoc) onDataSource(f); else addImagePoint(dp.key, f); };
+                          if (replaceKey === dp.key) {
+                            // Same teal look as every other button (label matches via inline gradient).
+                            const btnLike: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "7px 12px", cursor: "pointer", boxShadow: "0 1px 2px rgba(13,143,131,0.28)" };
+                            return (
+                              <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                                {isDoc && <button onClick={() => { setReplaceKey(null); startCamera(); }} title="Take a new photo with your camera">📷 Scan</button>}
+                                <label style={btnLike} title="Choose an image file from this device">
+                                  📁 From file
+                                  <input type="file" accept="image/png,image/jpeg" style={{ display: "none" }}
+                                    onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) useImage(f); e.currentTarget.value = ""; setReplaceKey(null); }} />
+                                </label>
+                                <button onClick={() => setReplaceKey(null)} title="Cancel" style={{ background: "#eef2f4", color: "#55666f", border: "1px solid #cbd5db", borderRadius: 9, padding: "7px 10px", cursor: "pointer" }}>✕</button>
+                              </span>
+                            );
+                          }
                           return (
-                          <label title={isDoc ? "Replace & re-scan (runs OCR again)" : "Replace this image with a new file"} style={{ display: "inline-block", padding: "2px 9px", border: "1px solid #cbd5db", borderRadius: 5, background: "#eef7f5", cursor: "pointer", fontSize: 13 }}>
-                            {isDoc ? "🔄 Replace & scan" : "🔄 Replace"}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              style={{ display: "none" }}
-                              onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) { if (isDoc) onDataSource(f); else addImagePoint(dp.key, f); } e.currentTarget.value = ""; }}
-                            />
-                          </label>
+                            <button onClick={() => setReplaceKey(dp.key)} title={isDoc ? "Replace — scan or pick a file (re-runs OCR)" : "Replace this image"}>🔄 Replace</button>
                           );
                         })() : (
                           <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>
