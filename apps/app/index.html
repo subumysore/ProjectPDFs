@@ -23,6 +23,10 @@
       button:active:not(:disabled) { transform: translateY(1px); filter: brightness(0.96); }
       button:focus-visible { outline: 2px solid #0b6f66; outline-offset: 2px; }
       button:disabled { background: #d3dcdf; color: #8a969b; border-color: #c3ccd0; box-shadow: none; cursor: not-allowed; }
+      /* Shared spinner animations (flip = hourglass, spin = ring) so any ⏳/spinner can animate. */
+      @keyframes ppfflip { 0%{transform:rotate(0)} 45%,55%{transform:rotate(180deg)} 100%{transform:rotate(360deg)} }
+      @keyframes ppfspin { to { transform: rotate(360deg) } }
+      .ppf-hourglass { display: inline-block; animation: ppfflip 1.1s ease-in-out infinite; }
     </style>
   </head>
   <body>

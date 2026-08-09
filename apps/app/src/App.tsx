@@ -384,6 +384,7 @@ export function App() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBkPass(""); // done — clear the passphrase from the field
       setBkMsg(`Exported ${points.length} field(s), encrypted. Keep the passphrase safe.`);
     } catch (e) {
       setBkMsg("Export failed: " + String(e));
@@ -644,6 +645,10 @@ export function App() {
   function selectProfile(id: string) {
     setSelected(id);
     localStorage.setItem("ppf.lastProfile", id); // remembered across sessions (auto-selected next launch)
+    // A backup passphrase belongs to ONE profile's export — clear it (and its message) when switching so
+    // it never carries over to a different profile.
+    setBkPass("");
+    setBkMsg("");
     loadPoints(id);
     loadSavedForms(id);
   }
@@ -1665,7 +1670,7 @@ export function App() {
                 />
                 <button onClick={doExport} disabled={bkPass.length < 8 || exporting}
                   style={{ ...GLASS_BTN, opacity: (bkPass.length < 8 || exporting) ? 0.55 : 1, cursor: (bkPass.length < 8 || exporting) ? "not-allowed" : "pointer" }}>
-                  {exporting ? "⏳ Exporting…" : "📦 Export encrypted backup"}
+                  {exporting ? <><span className="ppf-hourglass">⏳</span> Exporting…</> : "📦 Export encrypted backup"}
                 </button>
               </div>
               {bkMsg && <div style={{ fontSize: 12, color: "#0a6a60", marginBottom: 8 }}>{bkMsg}</div>}
@@ -2041,7 +2046,7 @@ export function App() {
                 onChange={(e) => setBkPass(e.currentTarget.value)}
                 style={{ padding: "8px 10px", flex: "1 1 160px", minWidth: 140, boxSizing: "border-box", border: "2px solid #0d8f83", borderRadius: 8, outline: "none" }}
               />
-              <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : <>🔐 {tr("backup.exportEncrypted")}</>}</button>
+              <button onClick={doExport} disabled={exporting}>{exporting ? <><span className="ppf-hourglass">⏳</span> Exporting…</> : <>🔐 {tr("backup.exportEncrypted")}</>}</button>
               <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer" }}>
                 📥 Import file…
                 <input type="file" accept=".ppfvault" style={{ display: "none" }} onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) doImport(f); e.currentTarget.value = ""; }} />
