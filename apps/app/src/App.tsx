@@ -121,6 +121,25 @@ const h2Style: React.CSSProperties = {
 };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
+// Standard fields seeded (EMPTY) into every new profile, so the user just fills them in. Keys are the
+// canonical ontology keys the resolver recognises, so once filled they auto-populate forms. signature and
+// profile_photo are IMAGE fields (attach a picture, not type a value).
+const DEFAULT_PROFILE_KEYS = [
+  "first_name", "middle_name", "last_name", "email",
+  "address_1", "address_2", "address_3", "city", "state", "county", "zip",
+  "cell_phone", "home_phone", "signature", "profile_photo",
+];
+// A vault key that holds an IMAGE (attach/replace a picture) rather than a typed value.
+const isImageKey = (k: string) => /signature|photo|driver_license|passport|document_image/i.test(k);
+// Friendly display names for the standard keys, so a row reads clearly (Signature vs Profile picture are
+// unmistakable) while the underlying ontology key still shows small beneath it.
+const KEY_LABELS: Record<string, string> = {
+  first_name: "First name", middle_name: "Middle name", last_name: "Last name", email: "Email",
+  address_1: "Address line 1", address_2: "Address line 2", address_3: "Address line 3",
+  city: "City", state: "State", county: "County", zip: "ZIP",
+  cell_phone: "Cell phone", home_phone: "Land line", signature: "Signature", profile_photo: "Profile picture",
+};
+
 /**
  * PolyglotFormFill — Phase-1 shell. All on-device: Profiles + encrypted DataPoints in
  * the SQLite vault (core-store), catalog search + field-maps (core-catalog).
@@ -133,7 +152,6 @@ export function App() {
   const [editKey, setEditKey] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
   const [replaceKey, setReplaceKey] = useState<string | null>(null); // which image row is showing Scan/File choice
-  const [imgKey, setImgKey] = useState("");
   const [newProfile, setNewProfile] = useState("");
   // Two-step delete: null = idle, or the id of the profile whose removal is being confirmed inline.
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -650,6 +668,10 @@ export function App() {
     if (!name) return;
     const id = crypto.randomUUID();
     await guard(invoke("create_profile", { id, name }));
+    // Seed the standard fields EMPTY so the user just fills them in (blank values fill nothing).
+    for (const key of DEFAULT_PROFILE_KEYS) {
+      try { await invoke("upsert_data_point", { profileId: id, key, value: "" }); } catch { /* keep going */ }
+    }
     setNewProfile("");
     await refreshProfiles();
     selectProfile(id);
@@ -1690,11 +1712,20 @@ export function App() {
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
           <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 10, marginBottom: 10 }}>
           <div style={{ fontWeight: 700 }}>📇 Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
+          {/* The list scrolls within a bounded height so 'Add a detail' below stays reachable without
+              scrolling the whole page. */}
+          <div style={{ maxHeight: 360, overflowY: "auto", margin: "8px 0 0", border: "1px solid #eef2f4", borderRadius: 8 }}>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <tbody>
               {points.filter((dp) => dp.key !== RECORDS_KEY).map((dp, i) => (
                 <tr key={dp.key} style={{ background: i % 2 ? "#f4f8fa" : "#ffffff" }}>
-                  <td style={{ padding: "7px 10px", ...mono, width: "34%", verticalAlign: "middle" }}>{dp.key}</td>
+                  <td style={{ padding: "7px 10px", width: "34%", verticalAlign: "middle" }}>
+                    {KEY_LABELS[dp.key] ? (
+                      <><span style={{ fontWeight: 600 }}>{KEY_LABELS[dp.key]}</span><span style={{ ...mono, fontSize: 11, color: "#98a2a6", display: "block" }}>{dp.key}</span></>
+                    ) : (
+                      <span style={mono}>{dp.key}</span>
+                    )}
+                  </td>
                   <td style={{ padding: "7px 10px", width: "46%", verticalAlign: "middle" }}>
                     {editKey === dp.key ? (
                       <input
@@ -1713,6 +1744,8 @@ export function App() {
                         alt={dp.key}
                         style={{ maxHeight: 48, maxWidth: 160, border: "1px solid #eef2f4", borderRadius: 4 }}
                       />
+                    ) : isImageKey(dp.key) ? (
+                      <span style={{ color: "#8a949b", fontStyle: "italic", fontSize: 12 }}>— no image yet —</span>
                     ) : (
                       dp.value
                     )}
@@ -1725,10 +1758,11 @@ export function App() {
                       </>
                     ) : (
                       <>
-                        {dp.value.startsWith("data:image") ? (() => {
-                          // An image value can't be text-edited — offer REPLACE. Replacing a scanned DOCUMENT
-                          // (licence/passport/ID) re-runs OCR to refresh the extracted fields; a personal image
-                          // (signature/photo) is a plain swap. The user picks the SOURCE: camera or a file.
+                        {(dp.value.startsWith("data:image") || isImageKey(dp.key)) ? (() => {
+                          // An image field can't be text-edited — offer REPLACE (or ADD when empty). Replacing a
+                          // scanned DOCUMENT (licence/passport/ID) re-runs OCR to refresh the extracted fields;
+                          // a personal image (signature/photo) is a plain swap. The user picks the SOURCE.
+                          const hasImage = dp.value.startsWith("data:image");
                           const isDoc = /driver_license|passport|document_image|(^|_)id($|_)/i.test(dp.key) && !/signature|photo/i.test(dp.key);
                           const useImage = (f: File) => { if (isDoc) onDataSource(f); else addImagePoint(dp.key, f); };
                           if (replaceKey === dp.key) {
@@ -1747,7 +1781,7 @@ export function App() {
                             );
                           }
                           return (
-                            <button onClick={() => setReplaceKey(dp.key)} title={isDoc ? "Replace — scan or pick a file (re-runs OCR)" : "Replace this image"}>Replace</button>
+                            <button onClick={() => setReplaceKey(dp.key)} title={isDoc ? "Scan or pick a file (re-runs OCR)" : "Attach or replace this image"}>{hasImage ? "Replace" : "Add image"}</button>
                           );
                         })() : (
                           <button onClick={() => startEdit(dp)}>{tr("action.edit")}</button>
@@ -1760,6 +1794,7 @@ export function App() {
               ))}
             </tbody>
           </table>
+          </div>
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #eef2f4", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <strong style={{ fontSize: 12.5 }}>Add a detail</strong>
             <input
@@ -1835,38 +1870,6 @@ export function App() {
           </div>
             );
           })()}
-
-          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>✍️ Signature &amp; photo <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— attach an image under a key (<code style={mono}>signature</code>, <code style={mono}>profile_photo</code>; no OCR)</span></div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
-            <input
-              placeholder="key — e.g. signature (profile_photo is a separate key)"
-              value={imgKey}
-              onChange={(e) => setImgKey(e.currentTarget.value)}
-              style={{ padding: 6, ...mono, width: "35%" }}
-            />
-            <label
-              title={imgKey.trim() ? "Choose a signature or photo image file" : "Type a key first (e.g. signature)"}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 14px", border: "1px solid #cbd5db", borderRadius: 8, cursor: imgKey.trim() ? "pointer" : "not-allowed", background: imgKey.trim() ? "#eef7f5" : "#f2f4f5", fontSize: 14, opacity: imgKey.trim() ? 1 : 0.6, whiteSpace: "nowrap" }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>✍️</span> Choose signature / photo file…
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                style={{ display: "none" }}
-                disabled={!imgKey.trim()}
-                onChange={(e) => {
-                  const f = e.currentTarget.files?.[0];
-                  if (f && imgKey.trim()) {
-                    addImagePoint(imgKey, f);
-                    setImgKey("");
-                    e.currentTarget.value = "";
-                  }
-                }}
-              />
-            </label>
-          </div>
-          </div>
 
           <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>🪪 Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
