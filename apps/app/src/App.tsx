@@ -112,10 +112,11 @@ const cardStyle: React.CSSProperties = {
   marginTop: 16,
 };
 const h2Style: React.CSSProperties = {
-  fontSize: 13,
+  fontSize: 13.5,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
-  opacity: 0.6,
+  color: "#0b7d72",
+  fontWeight: 800,
   margin: "0 0 10px",
 };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
