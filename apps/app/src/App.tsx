@@ -1686,11 +1686,8 @@ export function App() {
       {tab === "setup" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
-          <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 12, marginBottom: 14 }}>
-          <div style={{ fontWeight: 700, marginBottom: 2 }}>📇 Your details</div>
-          <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
-            Individual facts that fill forms — name, date of birth, email, address… Each is a <b>key</b> (a field name like <code style={mono}>full_name</code>) and its value.
-          </p>
+          <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 10, marginBottom: 10 }}>
+          <div style={{ fontWeight: 700 }}>📇 Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <tbody>
               {points.filter((dp) => dp.key !== RECORDS_KEY).map((dp, i) => (
@@ -1733,16 +1730,9 @@ export function App() {
                   </td>
                 </tr>
               ))}
-              {points.filter((dp) => dp.key !== RECORDS_KEY).length === 0 && (
-                <tr>
-                  <td colSpan={3} style={{ padding: "8px 2px", color: "#8a949b" }}>
-                    Nothing here yet — add your first detail below.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
-          <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #eef2f4", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #eef2f4", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <strong style={{ fontSize: 12.5 }}>Add a detail</strong>
             <input
               placeholder="key (e.g. full_name)"
@@ -1770,11 +1760,8 @@ export function App() {
             const cards = listRecords({ records }, "card") as any[];
             const liveBrand = detectCardBrand(recFields.card_number || "");
             return (
-          <div style={{ marginTop: 16, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>💳 Saved cards</div>
-            <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
-              Each card keeps its own billing address (pre-filled from your mailing address). The ⭐ primary card fills payment forms; the full number is never shown.
-            </p>
+          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>💳 Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
             {cards.map((r) => {
               const brand = detectCardBrand(r.fields?.card_number || "");
               const ctype = cardTypeLabel(r.fields?.card_type);
@@ -1821,11 +1808,8 @@ export function App() {
             );
           })()}
 
-          <div style={{ marginTop: 14, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>✍️ Signature &amp; photo</div>
-            <p style={{ fontSize: 12, color: "#55666f", margin: "0 0 8px" }}>
-              Attach an image under a key so forms can stamp it. <code style={mono}>signature</code> and <code style={mono}>profile_photo</code> are separate fields (no OCR).
-            </p>
+          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>✍️ Signature &amp; photo <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— attach an image under a key (<code style={mono}>signature</code>, <code style={mono}>profile_photo</code>; no OCR)</span></div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 13 }}>
             <input
               placeholder="key — e.g. signature (profile_photo is a separate key)"
@@ -1856,11 +1840,8 @@ export function App() {
           </div>
           </div>
 
-          <div style={{ marginTop: 14, border: "1px solid #d9e2e6", borderRadius: 10, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>📄 Import from a document</div>
-            <div style={{ fontSize: 12, color: "#55666f", margin: "0 0 10px" }}>
-              Passport, licence, business card… — OCR runs on-device; recognised fields fill your profile.
-            </div>
+          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>🪪 Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <input
                 type="file"
