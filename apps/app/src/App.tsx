@@ -296,6 +296,7 @@ export function App() {
   const [err, setErr] = useState("");
   const [bkPass, setBkPass] = useState("");
   const [bkMsg, setBkMsg] = useState("");
+  const [exporting, setExporting] = useState(false); // encrypted-backup export in progress (shows a spinner)
   const [deviceId, setDeviceId] = useState("");
   const [lic, setLic] = useState<Lic | null>(null);
   const [licKey, setLicKey] = useState("");
@@ -368,6 +369,8 @@ export function App() {
   async function doExport() {
     if (!selected) return;
     if (bkPass.length < 8) return setBkMsg("Choose a backup passphrase (8+ characters).");
+    setExporting(true);
+    setBkMsg("⏳ Encrypting your vault on-device…");
     try {
       const arr = await invoke<number[]>("export_vault", { profileId: selected, passphrase: bkPass });
       const blob = new Blob([new Uint8Array(arr)], { type: "application/octet-stream" });
@@ -382,6 +385,8 @@ export function App() {
       setBkMsg(`Exported ${points.length} field(s), encrypted. Keep the passphrase safe.`);
     } catch (e) {
       setBkMsg("Export failed: " + String(e));
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -1631,9 +1636,9 @@ export function App() {
                   onChange={(e) => setBkPass(e.currentTarget.value)}
                   style={{ padding: "7px 10px", width: 210, maxWidth: "100%", border: "1px solid #d9e2e6", borderRadius: 8 }}
                 />
-                <button onClick={doExport} disabled={bkPass.length < 8}
-                  style={{ ...GLASS_BTN, opacity: bkPass.length < 8 ? 0.55 : 1, cursor: bkPass.length < 8 ? "not-allowed" : "pointer" }}>
-                  📦 Export encrypted backup
+                <button onClick={doExport} disabled={bkPass.length < 8 || exporting}
+                  style={{ ...GLASS_BTN, opacity: (bkPass.length < 8 || exporting) ? 0.55 : 1, cursor: (bkPass.length < 8 || exporting) ? "not-allowed" : "pointer" }}>
+                  {exporting ? "⏳ Exporting…" : "📦 Export encrypted backup"}
                 </button>
               </div>
               {bkMsg && <div style={{ fontSize: 12, color: "#0a6a60", marginBottom: 8 }}>{bkMsg}</div>}
@@ -1985,7 +1990,7 @@ export function App() {
             onChange={(e) => setBkPass(e.currentTarget.value)}
           />
           <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={doExport}>{tr("backup.exportEncrypted")}</button>
+            <button onClick={doExport} disabled={exporting}>{exporting ? "⏳ Exporting…" : tr("backup.exportEncrypted")}</button>
             <label style={{ cursor: "pointer", padding: "6px 10px", border: "1px solid #dde6e4", borderRadius: 6 }}>
               Import file…
               <input
