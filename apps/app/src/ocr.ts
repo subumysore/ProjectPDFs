@@ -212,11 +212,28 @@ export function parseFields(text: string): ExtractedField[] {
     }
   }
 
+  // PAYMENT CARD (credit/debit): a 13–19 digit Luhn-valid number (spaces/dashes ok) is unmistakably a
+  // card number, so detect it UP-FRONT — before the label-free grabber would mis-file it as a licence/ID.
+  // Expiry = MM/YY near "valid thru/expires"; cardholder = an all-caps name line. Best-effort; the user
+  // reviews before saving. CVV is never on the front and is deliberately not captured.
+  {
+    const luhn = (d: string) => { let s = 0, alt = false; for (let i = d.length - 1; i >= 0; i--) { let n = +(d[i] ?? "0"); if (alt) { n *= 2; if (n > 9) n -= 9; } s += n; alt = !alt; } return d.length > 0 && s % 10 === 0; };
+    const pan = (text.match(/\b(?:\d[ -]?){13,19}\b/g) || []).map((m) => m.replace(/\D/g, "")).find((d) => d.length >= 13 && d.length <= 19 && luhn(d));
+    if (pan) {
+      out["card_number"] = pan.replace(/(\d{4})(?=\d)/g, "$1 ").trim(); // grouped in 4s
+      const exp = text.match(/\b(0[1-9]|1[0-2])\s*[/\-]\s*(\d{4}|\d{2})\b/);
+      if (exp && exp[1] && exp[2]) out["card_expiry"] = `${exp[1]}/${exp[2].length === 4 ? exp[2].slice(2) : exp[2]}`;
+      const BANKWORD = /\b(VISA|MASTERCARD|DEBIT|CREDIT|BANK|VALID|THRU|MEMBER|EXPIRES|CARDHOLDER|PLATINUM|GOLD|SIGNATURE|WORLD|ELITE)\b/;
+      const nameLine = text.split(/\r?\n/).map((l) => l.trim())
+        .find((l) => /^[A-Z][A-Z .'-]{4,30}$/.test(l) && l.split(/\s+/).length >= 2 && l.split(/\s+/).length <= 3 && !BANKWORD.test(l));
+      if (nameLine) out["card_name"] = nameLine;
+    }
+  }
   // Label-free formats anywhere in the document — but never overwrite a labelled value, and
   // don't mistake a licence/ID number for a phone number (that was the classic misread).
   const email = text.match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
-  if (!out["cell_phone"] && !out["license_no"] && !out["id_no"] && !out["passport_no"]) {
+  if (!out["cell_phone"] && !out["license_no"] && !out["id_no"] && !out["passport_no"] && !out["card_number"]) {
     // A single number token — separators allowed WITHIN a line (space/dash/paren) but NOT across a
     // newline, so two separate numbers on adjacent lines never fuse into one garbled value.
     const numMatch = text.match(/(?:\+?\d[\d \-()]{7,}\d)/);

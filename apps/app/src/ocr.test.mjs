@@ -137,3 +137,23 @@ test("a bare 9-digit passport number is kept (not mistaken for a ZIP+4)", () => 
   const m = asMap(["UNITED STATES OF AMERICA PASSPORT", "Passport No 352279543", "DOB 30 NOV 1968"].join("\n"));
   assert.equal(m.passport_no, "352279543");
 });
+
+// ── Payment-card OCR (2026-08-06): scan a credit/debit card to pre-fill Saved cards ───────────────
+test("payment card: a Luhn-valid number + expiry + name → card_* fields (not a licence)", () => {
+  const m = asMap(["VISA", "4242 4242 4242 4242", "VALID THRU 08/27", "JOHN Q PUBLIC"].join("\n"));
+  assert.equal(m.card_number, "4242 4242 4242 4242");
+  assert.equal(m.card_expiry, "08/27");
+  assert.equal(m.card_name, "JOHN Q PUBLIC");
+  assert.equal(m.license_no, undefined, "a card number must not be mis-filed as a licence");
+});
+
+test("payment card: a non-Luhn 16-digit number is NOT treated as a card", () => {
+  const m = asMap(["1234 5678 9012 3456"].join("\n"));
+  assert.notEqual(m.card_number, "1234 5678 9012 3456");
+});
+
+test("payment card: 4-year expiry is normalised to MM/YY", () => {
+  const m = asMap(["5555 5555 5555 4444", "Expires 11/2029"].join("\n"));
+  assert.equal(m.card_number, "5555 5555 5555 4444"); // Mastercard test number (Luhn-valid)
+  assert.equal(m.card_expiry, "11/29");
+});

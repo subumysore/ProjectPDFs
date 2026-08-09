@@ -294,6 +294,7 @@ export function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [camOn, setCamOn] = useState(false);
+  const [camTarget, setCamTarget] = useState<"doc" | "card">("doc"); // where a camera capture is routed
   const [err, setErr] = useState("");
   const [bkPass, setBkPass] = useState("");
   const [bkMsg, setBkMsg] = useState("");
@@ -823,13 +824,35 @@ export function App() {
     loadPoints(selected);
   }
   // Camera capture → OCR → key/value (snap an ID/form and your profile fills itself).
-  async function startCamera() {
+  async function startCamera(target: "doc" | "card" = "doc") {
+    setCamTarget(target);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       streamRef.current = stream;
       setCamOn(true);
     } catch (e) {
       setErr("Camera unavailable (grant permission?): " + String(e));
+    }
+  }
+  // Scan a PAYMENT CARD image on-device → pre-fill the Add-a-card form (review before Save). CVV isn't
+  // on the front, so it's never captured. Nothing leaves the device (same on-device OCR as everything).
+  async function onScanCard(file: File) {
+    setCardsOpen(true);
+    try {
+      const r = await extractFromImage(file, (pct) => setLearnMsg(`⏳ Reading the card on-device… ${pct}%`), baseLang);
+      const m = Object.fromEntries(r.fields.map((f) => [f.ontology_key, f.value]));
+      setRecFields((s) => ({
+        ...s,
+        card_number: m["card_number"] || s.card_number || "",
+        card_expiry: m["card_expiry"] || s.card_expiry || "",
+        card_name: m["card_name"] || s.card_name || "",
+      }));
+      const got = ["card_number", "card_expiry", "card_name"].filter((k) => m[k]);
+      setLearnMsg(got.length
+        ? `Read ${got.length} card field(s) — review below, add CVV/type if needed, then Save card.`
+        : "Couldn't read the card — enter it manually, or try a sharper, well-lit, glare-free photo.");
+    } catch (e) {
+      setLearnMsg("Card scan failed: " + String(e));
     }
   }
   function stopCamera() {
@@ -845,8 +868,9 @@ export function App() {
     canvas.height = video.videoHeight;
     canvas.getContext("2d")?.drawImage(video, 0, 0);
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+    const target = camTarget;
     stopCamera();
-    if (blob) onDataSource(new File([blob], "capture.png", { type: "image/png" }));
+    if (blob) { const file = new File([blob], "capture.png", { type: "image/png" }); if (target === "card") onScanCard(file); else onDataSource(file); }
   }
   // Open a form (PDF or image) and AUTOMATICALLY make it fillable + fill it:
   //   already has fields → fill them; no fields → OCR-detect, create, fill.
@@ -1855,6 +1879,26 @@ export function App() {
             })}
             {/* Add-a-card form */}
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #eef2f4" }}>
+              {/* Scan a card on-device to pre-fill the fields below (review before saving; CVV isn't on
+                  the front, so type it if you use it). */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+                <span style={{ fontSize: 12.5, color: "#425055" }}>Have the card? Scan it:</span>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 13px/1.1 system-ui, sans-serif", color: "#fff", background: "linear-gradient(180deg, #17b0a1 0%, #0d8f83 100%)", border: "1px solid rgba(9,110,101,0.55)", borderRadius: 9, padding: "8px 14px", cursor: "pointer" }}>
+                  📁 From image
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) onScanCard(f); e.currentTarget.value = ""; }} />
+                </label>
+                {!camOn && <button onClick={() => startCamera("card")}>📷 Scan with camera</button>}
+                <span style={{ fontSize: 11, color: "#8a949b" }}>on-device OCR · review before saving</span>
+              </div>
+              {camOn && camTarget === "card" && (
+                <div style={{ marginBottom: 10 }}>
+                  <video ref={videoRef} playsInline muted style={{ width: "100%", maxWidth: 420, borderRadius: 8, background: "#000" }} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <button onClick={captureFrame}>Capture &amp; read</button>
+                    <button onClick={stopCamera}>{tr("action.cancel")}</button>
+                  </div>
+                </div>
+              )}
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
                 <strong style={{ fontSize: 12.5 }}>Add a card</strong>
                 <select value={recFields.card_type || "Credit"} onChange={(e) => { const v = e.currentTarget.value; setRecFields((s) => ({ ...s, card_type: v })); }} style={{ padding: "6px 8px" }} title="Card type">
@@ -1900,9 +1944,9 @@ export function App() {
                   onChange={(e) => { const f = e.currentTarget.files?.[0]; if (f) onDataSource(f); e.currentTarget.value = ""; }}
                 />
               </label>
-              {!camOn && <button onClick={startCamera}>📷 Scan a new image</button>}
+              {!camOn && <button onClick={() => startCamera("doc")}>📷 Scan a new image</button>}
             </div>
-            {camOn && (
+            {camOn && camTarget === "doc" && (
               <div style={{ marginTop: 10 }}>
                 <video ref={videoRef} playsInline muted style={{ width: "100%", maxWidth: 420, borderRadius: 8, background: "#000" }} />
                 <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
