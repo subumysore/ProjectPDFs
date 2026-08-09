@@ -106,7 +106,7 @@ interface SavedFormSummary {
 }
 
 const cardStyle: React.CSSProperties = {
-  border: "1px solid #d9e2e6",
+  border: "1.5px solid #93c2ba",
   borderRadius: 12,
   padding: 16,
   marginTop: 16,
@@ -152,6 +152,7 @@ export function App() {
   const [editKey, setEditKey] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
   const [replaceKey, setReplaceKey] = useState<string | null>(null); // which image row is showing Scan/File choice
+  const [cardsOpen, setCardsOpen] = useState(false); // Saved cards section expanded? (collapsed by default)
   const [newProfile, setNewProfile] = useState("");
   // Two-step delete: null = idle, or the id of the profile whose removal is being confirmed inline.
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -1636,7 +1637,7 @@ export function App() {
                 <input
                   type="password" value={bkPass} placeholder="Backup passphrase (8+)"
                   onChange={(e) => setBkPass(e.currentTarget.value)}
-                  style={{ padding: "7px 10px", width: 210, maxWidth: "100%", border: "1px solid #d9e2e6", borderRadius: 8 }}
+                  style={{ padding: "7px 10px", width: 210, maxWidth: "100%", border: "1.5px solid #93c2ba", borderRadius: 8 }}
                 />
                 <button onClick={doExport} disabled={bkPass.length < 8 || exporting}
                   style={{ ...GLASS_BTN, opacity: (bkPass.length < 8 || exporting) ? 0.55 : 1, cursor: (bkPass.length < 8 || exporting) ? "not-allowed" : "pointer" }}>
@@ -1717,7 +1718,7 @@ export function App() {
       {tab === "setup" && selected && (
         <section style={cardStyle}>
           <h2 style={h2Style}>2 · Vault — {selectedName} (encrypted at rest)</h2>
-          <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 10, marginBottom: 10 }}>
+          <div style={{ border: "1.5px solid #93c2ba", borderRadius: 10, padding: 10, marginBottom: 10 }}>
           <div style={{ fontWeight: 700 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>📇</span>Your details <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— facts that fill forms; each is a <code style={mono}>key</code> = value</span></div>
           {/* The list scrolls within a bounded height so 'Add a detail' below stays reachable without
               scrolling the whole page. */}
@@ -1830,8 +1831,13 @@ export function App() {
             const cards = listRecords({ records }, "card") as any[];
             const liveBrand = detectCardBrand(recFields.card_number || "");
             return (
-          <div style={{ marginTop: 10, border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>💳</span>Saved cards <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— ⭐ primary fills payment forms; number never shown; each has its own billing address</span></div>
+          <div style={{ marginTop: 10, border: "1.5px solid #93c2ba", borderRadius: 10, padding: 10 }}>
+            <div onClick={() => setCardsOpen((o) => !o)} title={cardsOpen ? "Collapse" : "Expand"} style={{ cursor: "pointer", fontWeight: 700, marginBottom: cardsOpen ? 6 : 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#0d8f83", width: 18, textAlign: "center", lineHeight: 1 }}>{cardsOpen ? "−" : "+"}</span>
+              <span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>💳</span>Saved cards
+              <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— {cards.length} saved · ⭐ primary fills payment forms; number never shown</span>
+            </div>
+            {cardsOpen && (<>
             {cards.map((r) => {
               const brand = detectCardBrand(r.fields?.card_number || "");
               const ctype = cardTypeLabel(r.fields?.card_type);
@@ -1874,12 +1880,13 @@ export function App() {
               </div>
               <div style={{ fontSize: 11, color: "#8a949b", marginTop: 4 }}>Billing fields are pre-filled from your mailing address — edit them if the card bills elsewhere.</div>
             </div>
+            </>)}
           </div>
             );
           })()}
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch", marginTop: 10 }}>
-          <div style={{ flex: "1 1 360px", border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+          <div style={{ flex: "1 1 360px", border: "1.5px solid #93c2ba", borderRadius: 10, padding: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>🪪</span>Import a DL, Passport or ID <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— OCR runs on-device and fills your profile (business cards too)</span></div>
             <div style={{ fontSize: 13, color: "#425055", margin: "2px 0 8px" }}>Either <b>choose an existing image file</b> or <b>scan a new one</b> with your camera:</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1980,7 +1987,7 @@ export function App() {
           </div>
           {/* Backup & transfer — same row as Import to save vertical space. */}
           {!locked && (
-          <div style={{ flex: "1 1 360px", border: "1px solid #d9e2e6", borderRadius: 10, padding: 10 }}>
+          <div style={{ flex: "1 1 360px", border: "1.5px solid #93c2ba", borderRadius: 10, padding: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}><span style={{ fontSize: 30, verticalAlign: "-6px", marginRight: 3 }}>📦</span>Backup &amp; transfer <span style={{ fontWeight: 400, fontSize: 11.5, color: "#8a949b" }}>— passphrase-encrypted file; import on another device or the extension (no plaintext export)</span></div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <input
@@ -2108,7 +2115,7 @@ export function App() {
             </div>
           )}
           {reviewFields.length > 0 && (
-            <div style={{ border: "1px solid #d9e2e6", borderRadius: 10, padding: 12, marginTop: 8 }}>
+            <div style={{ border: "1.5px solid #93c2ba", borderRadius: 10, padding: 12, marginTop: 8 }}>
               <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
                 Review &amp; edit the filled form
                 <span style={{ fontWeight: 400, fontSize: 12, color: "#55666f", marginLeft: 8 }}>
@@ -2148,7 +2155,7 @@ export function App() {
                 style={{
                   display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                   margin: "0 0 8px", padding: "6px 8px",
-                  background: "#f4f8f9", border: "1px solid #d9e2e6", borderRadius: 8,
+                  background: "#f4f8f9", border: "1.5px solid #93c2ba", borderRadius: 8,
                 }}
               >
                 {/* FILL is the FIRST, primary action — on top of the form with the other tools. While it
