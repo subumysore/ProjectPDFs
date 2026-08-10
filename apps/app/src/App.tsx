@@ -1925,7 +1925,7 @@ export function App() {
                     title={f.billing ? "Billing address (pre-filled from your mailing address)" : undefined}
                   />
                 ))}
-                <button onClick={addRecord} style={{ fontWeight: 800, fontSize: 14, padding: "8px 18px" }}>Save card</button>
+                <button onClick={addRecord} style={{ fontWeight: 800, fontSize: 14, padding: "8px 18px" }}>💾 Save card</button>
               </div>
               <div style={{ fontSize: 11, color: "#8a949b", marginTop: 4 }}>Billing fields are pre-filled from your mailing address — edit them if the card bills elsewhere.</div>
             </div>

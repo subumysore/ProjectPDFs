@@ -120,3 +120,21 @@ test("parseFields: splits a packed 'City: .. State: .. Zip: ..' line", () => {
   assert.equal(r.state, "IL");
   assert.equal(r.zip, "62704");
 });
+
+// Payment-card OCR — dual-surface parity with the desktop (apps/app/src/ocr.ts).
+test("payment card: Luhn number + expiry + name → card_* fields (not a phone/ID)", () => {
+  const m = map(parseFields(["VISA", "4242 4242 4242 4242", "VALID THRU 08/27", "JOHN Q PUBLIC"].join("\n")));
+  assert.equal(m.card_number, "4242 4242 4242 4242");
+  assert.equal(m.card_expiry, "08/27");
+  assert.equal(m.card_name, "JOHN Q PUBLIC");
+  assert.equal(m.cell_phone, undefined);
+});
+test("payment card: a non-Luhn 16-digit number is NOT a card", () => {
+  const m = map(parseFields("1234 5678 9012 3456"));
+  assert.notEqual(m.card_number, "1234 5678 9012 3456");
+});
+test("payment card: 4-year expiry normalised to MM/YY", () => {
+  const m = map(parseFields(["5555 5555 5555 4444", "Expires 11/2029"].join("\n")));
+  assert.equal(m.card_number, "5555 5555 5555 4444");
+  assert.equal(m.card_expiry, "11/29");
+});

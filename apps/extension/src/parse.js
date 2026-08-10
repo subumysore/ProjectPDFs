@@ -75,6 +75,22 @@ export function parseFields(text) {
   // Label-free formats anywhere in the text.
   const email = (text || "").match(/\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/);
   if (email) put("email_address", email[0] ?? "");
+  // PAYMENT CARD (credit/debit): a 13–19 digit Luhn-valid number is unmistakably a card number → detect
+  // it up-front so it's never taken for a phone/ID. Mirrors the desktop (apps/app/src/ocr.ts). Expiry =
+  // MM/YY near valid-thru/expires; cardholder = an all-caps non-boilerplate line. CVV isn't on the front.
+  {
+    const luhn = (d) => { let s = 0, alt = false; for (let i = d.length - 1; i >= 0; i--) { let n = +(d[i] ?? "0"); if (alt) { n *= 2; if (n > 9) n -= 9; } s += n; alt = !alt; } return d.length > 0 && s % 10 === 0; };
+    const pan = ((text || "").match(/\b(?:\d[ -]?){13,19}\b/g) || []).map((m) => m.replace(/\D/g, "")).find((d) => d.length >= 13 && d.length <= 19 && luhn(d));
+    if (pan) {
+      put("card_number", pan.replace(/(\d{4})(?=\d)/g, "$1 ").trim());
+      const exp = (text || "").match(/\b(0[1-9]|1[0-2])\s*[/\-]\s*(\d{4}|\d{2})\b/);
+      if (exp && exp[1] && exp[2]) put("card_expiry", `${exp[1]}/${exp[2].length === 4 ? exp[2].slice(2) : exp[2]}`);
+      const BANKWORD = /\b(VISA|MASTERCARD|DEBIT|CREDIT|BANK|VALID|THRU|MEMBER|EXPIRES|CARDHOLDER|PLATINUM|GOLD|SIGNATURE|WORLD|ELITE)\b/;
+      const nameLine = (text || "").split(/\r?\n/).map((l) => l.trim())
+        .find((l) => /^[A-Z][A-Z .'-]{4,30}$/.test(l) && l.split(/\s+/).length >= 2 && l.split(/\s+/).length <= 3 && !BANKWORD.test(l));
+      if (nameLine) put("card_name", nameLine);
+    }
+  }
   // Phone — but ONLY if it looks like one AND the document plausibly has a phone. IDs /
   // driver's licences carry NO phone number, so their date/ID digits (e.g. an EXP date
   // "11/30/2029" fused with a field number) must never be misread as one.
