@@ -941,6 +941,18 @@ fn save_to_desktop(app: tauri::AppHandle, bytes: Vec<u8>, filename: String) -> R
     Ok(path.to_string_lossy().into_owned())
 }
 
+// Seconds since the browser extension last used the shared vault (via the native host's
+// bridge-activity marker). The desktop app uses this so it does NOT idle-lock while the user is
+// actively working in the extension — cross-surface activity keeps the session alive. i64::MAX = never.
+#[tauri::command]
+fn bridge_active_secs_ago(state: State<AppState>) -> i64 {
+    let p = state.data_dir.join("bridge-activity.flag");
+    match std::fs::read_to_string(&p).ok().and_then(|s| s.trim().parse::<i64>().ok()) {
+        Some(t) => (now_secs() - t).max(0),
+        None => i64::MAX,
+    }
+}
+
 // Encrypted-vault backup → ONE fixed file on the Desktop, OVERWRITTEN each export (no name (1), (2), …
 // pile-up). Distinct from save_to_desktop, which forces .pdf and never clobbers.
 #[tauri::command]
@@ -1356,6 +1368,7 @@ pub fn run() {
             download_granite_model,
             save_to_desktop,
             save_vault_backup,
+            bridge_active_secs_ago,
             guide_video,
             script_font,
             web_search,

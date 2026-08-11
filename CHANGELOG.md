@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.9] - 2026-08-11
+### Fixed — no "vault locked" while working in the browser extension
+- The native host now records real extension usage (a served, non-ping request) in a bridge-activity
+  marker, and the desktop app's **idle auto-lock no longer fires while the extension is actively using
+  the shared vault** — cross-surface activity (desktop OR extension) keeps the session alive. Locking a
+  truly idle session still works; security gate unchanged.
+### Changed
+- **One encrypted-backup file**: Export encrypted writes a single fixed `polyglotformfill-vault.ppfvault`
+  on the Desktop and overwrites it — no more `(1) (2) (3)` pile-up. (Extension already used a Save-As
+  dialog, so no change there.)
+- **Extension buttons** are now the same modern teal style as the desktop (glass/hover/press states).
+### Tests
+- All green before ship: shared-engine/extension 354, desktop 33, Rust workspace all pass.
+
 ## [1.0.8] - 2026-08-06  (desktop only — the extension is unchanged since 1.0.7)
 ### Added
 - **Scan a credit/debit card** (image or camera) to pre-fill Saved cards — on-device OCR reads

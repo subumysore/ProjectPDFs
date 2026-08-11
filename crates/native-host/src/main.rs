@@ -29,6 +29,12 @@ fn main() {
                 "error": format!("vault unavailable ({e}). Run the PolyglotFormFill app once to create it.")
             }),
         };
+        // Record real extension usage (a served, non-ping request) so the desktop app does NOT
+        // idle-lock the shared vault while the user is actively working in the browser extension.
+        let ty = req.get("type").and_then(|t| t.as_str()).unwrap_or("");
+        if unlocked && ty != "ping" {
+            let _ = std::fs::write(dir.join("bridge-activity.flag"), now_secs().to_string());
+        }
         let bytes = serde_json::to_vec(&resp).unwrap_or_default();
         if output.write_all(&frame::encode(&bytes)).is_err() || output.flush().is_err() {
             break;

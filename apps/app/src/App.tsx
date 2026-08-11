@@ -327,7 +327,14 @@ export function App() {
     if (locked) return;
     const IDLE_MS = 15 * 60 * 1000;
     let timer: ReturnType<typeof setTimeout>;
-    const reset = () => { clearTimeout(timer); timer = setTimeout(() => { void lockNow(); }, IDLE_MS); };
+    // On idle, DON'T lock if the browser extension has been using the shared vault recently — otherwise a
+    // user working entirely in the extension would get "vault locked" mid-task. Cross-surface activity
+    // (either the desktop OR the extension) keeps the session alive.
+    const fire = async () => {
+      try { const ago = await invoke<number>("bridge_active_secs_ago"); if (ago * 1000 < IDLE_MS) { reset(); return; } } catch { /* fall through to lock */ }
+      void lockNow();
+    };
+    const reset = () => { clearTimeout(timer); timer = setTimeout(() => { void fire(); }, IDLE_MS); };
     const evs: (keyof WindowEventMap)[] = ["mousemove", "mousedown", "keydown", "wheel", "touchstart"];
     evs.forEach((e) => window.addEventListener(e, reset, { passive: true }));
     reset();
