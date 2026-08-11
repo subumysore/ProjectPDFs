@@ -375,17 +375,10 @@ export function App() {
     setBkMsg("⏳ Encrypting your vault on-device…");
     try {
       const arr = await invoke<number[]>("export_vault", { profileId: selected, passphrase: bkPass });
-      const blob = new Blob([new Uint8Array(arr)], { type: "application/octet-stream" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "polyglotformfill-vault.ppfvault";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // ONE fixed file on the Desktop, overwritten each time — no polyglotformfill-vault (1)(2)(3) pile-up.
+      const path = await invoke<string>("save_vault_backup", { bytes: arr });
       setBkPass(""); // done — clear the passphrase from the field
-      setBkMsg(`Exported ${points.length} field(s), encrypted. Keep the passphrase safe.`);
+      setBkMsg(`Exported ${points.length} field(s), encrypted → ${path.split(/[\\/]/).pop()} on your Desktop (one file, replaces the previous backup). Keep the passphrase safe.`);
     } catch (e) {
       setBkMsg("Export failed: " + String(e));
     } finally {

@@ -941,6 +941,23 @@ fn save_to_desktop(app: tauri::AppHandle, bytes: Vec<u8>, filename: String) -> R
     Ok(path.to_string_lossy().into_owned())
 }
 
+// Encrypted-vault backup → ONE fixed file on the Desktop, OVERWRITTEN each export (no name (1), (2), …
+// pile-up). Distinct from save_to_desktop, which forces .pdf and never clobbers.
+#[tauri::command]
+fn save_vault_backup(app: tauri::AppHandle, bytes: Vec<u8>) -> Result<String, String> {
+    let dir = app
+        .path()
+        .desktop_dir()
+        .or_else(|_| app.path().document_dir())
+        .or_else(|_| app.path().home_dir())
+        .or_else(|_| app.path().app_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join("polyglotformfill-vault.ppfvault");
+    std::fs::write(&path, &bytes).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 // ---- Granite-Docling on-device model (RFC-0010) — one-time DOWNWARD download, cached in app-data ----
 // A ~260 MB layout VLM, fetched once (public model, INBOUND only — no user data up) into the app-data
 // models/ dir the `ppfmodel` scheme already serves to the WebView. Prompted on first Granite use.
@@ -1338,6 +1355,7 @@ pub fn run() {
             granite_model_present,
             download_granite_model,
             save_to_desktop,
+            save_vault_backup,
             guide_video,
             script_font,
             web_search,
