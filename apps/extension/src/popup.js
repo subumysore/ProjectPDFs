@@ -31,7 +31,17 @@ const $ = (id) => document.getElementById(id);
 // Opened via the ⤢ expand button (popup.html?win=1) → this is a real, RESIZABLE window, so drop the
 // fixed 320px popup width and let the layout fill/reflow. (The toolbar popup itself is never resizable
 // — a Chrome limitation — which is exactly why the expand button exists.)
-if (new URLSearchParams(location.search).has("win")) document.documentElement.classList.add("win");
+const IS_WIN = new URLSearchParams(location.search).has("win");
+if (IS_WIN) document.documentElement.classList.add("win");
+// STICKY enlarged window: once popped out, every toolbar click (any site, any tab) focuses/reopens the
+// SAME window — remembering size + position — until the user manually closes it. The BACKGROUND owns the
+// window (one service worker → strict singleton, never duplicates). When compact and winMode is set,
+// hand off to the background and close this little popup.
+if (!IS_WIN) {
+  chrome.storage.local.get("winMode").then(async ({ winMode }) => {
+    if (winMode) { try { await chrome.runtime.sendMessage({ type: "openToolWindow" }); } catch (_) {} window.close(); }
+  });
+}
 // The web page we act on. In the normal toolbar popup, `currentWindow` IS the page's window, so the
 // active tab there is the page. But when the popup is "kept open" as a DETACHED window (see the
 // pop-out button), `currentWindow` is the tool window itself — so we must instead resolve the active
@@ -1077,16 +1087,10 @@ async function isDetached() {
   try { return new URLSearchParams(location.search).get("win") === "1"; } catch (_) { return false; }
 }
 async function openAsWindow() {
-  // Reuse an already-open tool window if there is one, otherwise spawn it. On-demand only (no sticky
-  // preference) so a normal toolbar click still gives the quick popup — the user opts into persistence
-  // per session with one click, and closes the window themselves when done.
-  const existing = (await chrome.windows.getAll({ populate: true, windowTypes: ["popup"] }))
-    .find((w) => (w.tabs || []).some((t) => (t.url || "").includes("popup.html")));
-  if (existing) { await chrome.windows.update(existing.id, { focused: true }); window.close(); return; }
-  // type:"popup" gives a clean chrome-less window the user can freely drag to resize; open it roomy.
-  await chrome.windows.create({
-    url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: 560, height: 760,
-  });
+  // Delegate to the background so the window is a STRICT SINGLETON (no duplicate windows even on rapid
+  // clicks / multiple tabs). Mark winMode so it stays sticky until the user manually closes the window.
+  await chrome.storage.local.set({ winMode: true });
+  try { await chrome.runtime.sendMessage({ type: "openToolWindow" }); } catch (_) { /* ignore */ }
   window.close();
 }
 (async () => {

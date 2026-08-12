@@ -1391,7 +1391,10 @@ export function App() {
             ))}
           </select>
         </div>
-        <h1 style={{ marginBottom: 4 }}>🔒 {tr("app.name")}</h1>
+        <h1 style={{ marginBottom: 2 }}>🔒 {tr("app.name")}</h1>
+        {appVersion && (
+          <div style={{ color: "#0a6a60", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>v{appVersion}</div>
+        )}
         <p style={{ color: "#55666f", marginTop: 0 }}>
           {hasPass ? tr("unlock.title") : "Set a passphrase to protect your vault."}
         </p>

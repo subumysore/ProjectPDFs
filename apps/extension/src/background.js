@@ -192,6 +192,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse({ ok: true, saved });
           break;
         }
+        case "openToolWindow":
+          await openToolWindow();
+          sendResponse({ ok: true });
+          break;
         case "del":
           await ensureUnlocked();
           if (!key) throw new Error("locked");
@@ -413,3 +417,48 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     });
   } catch (_) { /* auto-fill must never throw into the worker */ }
 });
+
+// ---- Sticky enlarged tool window (strict singleton) ------------------------------------------------
+// The user can pop the popup out into a resizable window; once they do, it stays their default (across
+// sites + tabs) until they manually close it. The background OWNS the window so there is never a
+// duplicate, remembers its size+position, and clears the sticky flag when the window is closed.
+let _toolWinBusy = false;
+async function openToolWindow() {
+  const { winWindowId, winBounds } = await chrome.storage.local.get(["winWindowId", "winBounds"]);
+  // Focus the existing window if it's still open.
+  if (winWindowId != null) {
+    try { await chrome.windows.get(winWindowId); await chrome.windows.update(winWindowId, { focused: true }); return; }
+    catch (_) { /* it was closed — fall through to (re)create */ }
+  }
+  if (_toolWinBusy) return;               // guard against a create race from rapid opens
+  _toolWinBusy = true;
+  try {
+    // Double-check nothing slipped through (a stray tool window with no stored id).
+    const all = await chrome.windows.getAll({ populate: true, windowTypes: ["popup"] });
+    const stray = all.find((w) => (w.tabs || []).some((t) => (t.url || "").includes("popup.html?win=1")));
+    if (stray) { await chrome.storage.local.set({ winWindowId: stray.id }); await chrome.windows.update(stray.id, { focused: true }); return; }
+    const b = winBounds || {};
+    const opts = { url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: b.width || 560, height: b.height || 760 };
+    if (Number.isInteger(b.left)) opts.left = b.left;
+    if (Number.isInteger(b.top)) opts.top = b.top;
+    const w = await chrome.windows.create(opts);
+    await chrome.storage.local.set({ winWindowId: w.id });
+  } finally { _toolWinBusy = false; }
+}
+
+// Manual close of the tool window reverts to the compact popup (clears the sticky flag).
+chrome.windows.onRemoved.addListener(async (id) => {
+  try {
+    const { winWindowId } = await chrome.storage.local.get("winWindowId");
+    if (id === winWindowId) await chrome.storage.local.set({ winMode: false, winWindowId: null });
+  } catch (_) { /* ignore */ }
+});
+// Remember the window's size + position as the user drags/resizes it.
+if (chrome.windows.onBoundsChanged) {
+  chrome.windows.onBoundsChanged.addListener(async (win) => {
+    try {
+      const { winWindowId } = await chrome.storage.local.get("winWindowId");
+      if (win.id === winWindowId) await chrome.storage.local.set({ winBounds: { width: win.width, height: win.height, left: win.left, top: win.top } });
+    } catch (_) { /* ignore */ }
+  });
+}
