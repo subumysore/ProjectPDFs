@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]  (batched — held at 1.0.11 until a release is warranted)
+## [1.0.12] - 2026-08-12
 ### Added — Auto-save new details (default ON, no clicking)
 - The extension now learns what you type WITHOUT clicking "Save new details" each time. A tiny beacon
   installed on page load captures on form submit / page hide (reusing collectTypedValues) and the

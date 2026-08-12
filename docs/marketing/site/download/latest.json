@@ -1,10 +1,10 @@
 {
-  "version": "1.0.11",
-  "notes": "Extension now learns your choice-question answers (EEO self-ID, Yes/No eligibility) into the vault. Desktop: version-only bump (it already learned these); no functional change.",
-  "pub_date": "2026-08-11T00:00:00Z",
+  "version": "1.0.12",
+  "notes": "Profiles shared with the extension over the local bridge (fixed for sideloaded too); sticky enlarged extension window; lock-screen version; Enter-to-unlock; auto-save ignores page menus; cleaner Common-answers layout.",
+  "pub_date": "2026-08-12T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHNEOFp6emMxSzcwK3BxUGUwRCs0ajQ1WjVDaUlWa1Y5Lzg5UkJUeHFra3lFeDFiclhIOVBpb2tHRnJzMU5NclFLQnFEM280V0NYSUZzUnFkT2IwdGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTA0NDMyCWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTFfeDY0LXNldHVwLmV4ZQprWWMvRjJNckhsUjFmZFg1UEJKWUVmc0daaENIM2lZaG9lZXp1UzJJSUV0aWFjWmwwSkE4ZVJ3eEwxZGFxUzNGZEYycWJLV0F0U2ErSXFIWSt3dHhBZz09Cg==",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UGlSOElLVVd3bXM5L1RKKzRQZGo0RjdqVXQrcUkybzVlODA1dkd1QS8yaVdIWUxUZXVFOUZlaHQxSmNqTVlVOGVFTzBnZEwyN3pBMnROMnByMXYrdmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTE0MTU5CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTJfeDY0LXNldHVwLmV4ZQpoNHRDaTZNeFdEUFl0aWNSZEZSMWtRa3A5UEhMTlhmUkJ0SWlpNmhEb280dkFMalZNUHpmWXFYMGZJZ0UvM0tSSDdTZ1hnYXIyV2JEdXdNR3RkN3NCZz09Cg==",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }
