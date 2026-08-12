@@ -16,6 +16,21 @@
  * @returns {Array<{label: string, value: string}>}
  */
 export function collectTypedValues() {
+  // Pierce OPEN shadow roots so web-component forms (ADP careers, some Workday/iCIMS) are read too —
+  // the same reach the filler has. Light-DOM matches come first, in document order, so existing
+  // behaviour is unchanged when there are no shadow roots.
+  const deepQSA = (sel, root = document) => {
+    const res = [];
+    const walk = (r) => {
+      try { r.querySelectorAll(sel).forEach((e) => res.push(e)); } catch (_) { /* ignore */ }
+      let hosts = [];
+      try { hosts = r.querySelectorAll("*"); } catch (_) { hosts = []; }
+      for (const e of hosts) if (e.shadowRoot) walk(e.shadowRoot);
+    };
+    walk(root);
+    return res;
+  };
+  const norm = (s) => String(s == null ? "" : s).toLowerCase().replace(/\s+/g, " ").trim();
   const labelOf = (el) => {
     const own = [
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
@@ -28,7 +43,7 @@ export function collectTypedValues() {
     return own[0] || "";
   };
   const out = [];
-  for (const el of document.querySelectorAll("input, textarea, select")) {
+  for (const el of deepQSA("input, textarea, select")) {
     const type = (el.type || "").toLowerCase();
     if (["password", "hidden", "file", "submit", "button", "image", "reset", "checkbox", "radio"].includes(type)) continue;
     if (el.disabled) continue;
@@ -68,7 +83,7 @@ export function collectTypedValues() {
     return "";
   };
   const seenW = [];
-  for (const el of document.querySelectorAll(
+  for (const el of deepQSA(
     '[role="combobox"], [aria-haspopup="listbox"], ng-select, mat-select, [class*="ng-select"], [class*="mat-select"], ' +
     '[class*="react-select"], [class*="ant-select"], [class*="p-dropdown"], [class*="combobox"], [class*="Combobox"], [class*="Select"], [class*="dropdown"]',
   )) {
@@ -81,6 +96,94 @@ export function collectTypedValues() {
     if (!label || label.length > 200 || PLACEHOLDER.test(label)) continue;
     seenW.push(el);
     out.push({ label, value: txt });
+  }
+
+  // RADIO groups + CHECKBOX groups (Yes/No screening, EEO self-ID like "Are you Hispanic or Latino?"
+  // and "Ethnicity"). The desktop already offers a ticked box for capture; the extension skipped them,
+  // so answering an EEO/eligibility question on a page never taught the vault. We record the QUESTION
+  // and the CHOSEN option(s); the fill side maps a stored answer back onto any phrasing. Reviewed
+  // before saving, like everything else — nothing lands silently.
+  const isChecked = (el) => (el.tagName === "INPUT" ? !!el.checked : el.getAttribute("aria-checked") === "true");
+  // A concise option label: prefer a short title element (bold/·title) over a long legal description
+  // ("Asian" — not "Asian  Not Hispanic or Latino. A person having origins…"). The fill only needs the
+  // keyword present, but a tidy value keeps the vault readable.
+  const shortText = (node) => {
+    if (!node) return "";
+    const pref = node.querySelector && node.querySelector("strong,b,[class*='title'],[class*='Title'],[class*='name'],[class*='Name']");
+    let t = pref && pref.textContent ? pref.textContent : "";
+    if (!t) { for (const n of node.childNodes || []) { if (n.nodeType === 3) { const s = (n.textContent || "").trim(); if (s) { t = s; break; } } } }
+    if (!t) t = node.textContent || "";
+    return String(t).replace(/\s+/g, " ").trim();
+  };
+  const optLabel = (el) => {
+    let t = el.getAttribute("aria-label") || "";
+    if (!t) { const lab = (el.labels && el.labels[0]) || el.closest("label") || (el.parentElement && el.parentElement.querySelector && el.parentElement.querySelector("label")); t = shortText(lab); }
+    if (!t) t = el.value || "";
+    t = String(t).replace(/\s+/g, " ").trim();
+    return t.length > 90 ? t.slice(0, 90) : t;
+  };
+  const byId = (el, id) => { const r = el.getRootNode && el.getRootNode(); return (r && r.getElementById && r.getElementById(id)) || document.getElementById(id); };
+  // The QUESTION a radio/checkbox belongs to: fieldset legend → aria-labelledby / role=group aria-label
+  // → a heading/[class*=question] descendant → a NON-control previous sibling (ADP renders the question
+  // as a <div> just before the options container). Option rows (they contain a control) are skipped so
+  // an option caption is never mistaken for the question.
+  const groupQuestion = (el) => {
+    const fs = el.closest("fieldset");
+    if (fs) { const lg = fs.querySelector("legend"); const t = lg && lg.textContent ? lg.textContent.replace(/\s+/g, " ").trim() : ""; if (t && !PLACEHOLDER.test(t)) return t; }
+    let node = el;
+    for (let i = 0; i < 6 && node; i++) {
+      node = node.parentElement; if (!node) break;
+      const lb = node.getAttribute && node.getAttribute("aria-labelledby");
+      if (lb) { const t = lb.split(/\s+/).map((id) => { const n = byId(el, id); return n ? n.textContent : ""; }).join(" ").replace(/\s+/g, " ").trim(); if (t && !PLACEHOLDER.test(t)) return t; }
+      const role = node.getAttribute && node.getAttribute("role");
+      const al = node.getAttribute && node.getAttribute("aria-label");
+      if ((role === "radiogroup" || role === "group") && al) return al.replace(/\s+/g, " ").trim();
+      const cand = node.querySelector && node.querySelector("legend,[class*='question'],[class*='Question'],[class*='prompt'],[class*='Prompt'],h1,h2,h3,h4,h5,h6");
+      if (cand && !(cand.querySelector && cand.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) {
+        const t = cand.textContent ? cand.textContent.replace(/\s+/g, " ").trim() : "";
+        if (t && t.length <= 200 && !PLACEHOLDER.test(t)) return t;
+      }
+      let ps = node.previousElementSibling;
+      for (let j = 0; j < 3 && ps; j++) {
+        if (!(ps.querySelector && ps.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) {
+          const t = ps.textContent ? ps.textContent.replace(/\s+/g, " ").trim() : "";
+          if (t && t.length <= 200 && !PLACEHOLDER.test(t)) return t;
+        }
+        ps = ps.previousElementSibling;
+      }
+    }
+    return "";
+  };
+  const have = new Set(out.map((o) => norm(o.label)));
+  const pushChoice = (label, value) => {
+    if (!label || !value) return;
+    if (PLACEHOLDER.test(label) || norm(label) === norm(value)) return; // a lone consent box (label == option) is not a Q/A
+    const k = norm(label);
+    if (have.has(k)) return;                                            // already captured via the text/select pass
+    have.add(k);
+    out.push({ label, value });
+  };
+  // Group radios/checkboxes by name (native grouping) or, when unnamed (custom widgets), by the nearest
+  // fieldset / group container.
+  const groupKey = (el) => (el.name ? "n:" + el.name.replace(/\[\]$/, "") : (el.closest("fieldset") || el.getAttribute("aria-labelledby") || el.parentElement));
+  const radios = new Map(); const checks = new Map();
+  for (const el of deepQSA('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]')) {
+    if (el.disabled) continue;
+    const isCheckbox = el.type === "checkbox" || el.getAttribute("role") === "checkbox";
+    const map = isCheckbox ? checks : radios;
+    const gk = groupKey(el);
+    let arr = map.get(gk); if (!arr) { arr = []; map.set(gk, arr); }
+    arr.push(el);
+  }
+  for (const [, arr] of radios) {
+    const chosen = arr.find(isChecked); if (!chosen) continue;
+    pushChoice(groupQuestion(chosen), optLabel(chosen));
+  }
+  for (const [, arr] of checks) {
+    const chosen = arr.filter(isChecked); if (!chosen.length) continue;
+    const q = groupQuestion(chosen[0]);
+    const vals = chosen.map(optLabel).filter(Boolean);
+    if (q && vals.length) pushChoice(q, [...new Set(vals)].join(", "));
   }
   return out;
 }

@@ -93,3 +93,60 @@ test("custom dropdown answers (Workday 'Select One') are captured, placeholder i
   // the placeholder-only widget is NOT captured
   assert.equal(typed.some((t) => t.value === "Select One"), false);
 });
+
+test("EEO radio answer (Hispanic/Latino) is captured as question → chosen option", () => {
+  // ADP-style: the question is a plain element just BEFORE the options; radios share a name.
+  const dom = new JSDOM(`<!doctype html><body>
+    <div class="field">
+      <div class="q">Are you Hispanic or Latino?</div>
+      <div class="opts">
+        <label><input type="radio" name="hisp" value="yes"> Yes</label>
+        <label><input type="radio" name="hisp" value="no" checked> No</label>
+        <label><input type="radio" name="hisp" value="decline"> Decline to identify</label>
+      </div>
+    </div>
+  </body>`);
+  globalThis.document = dom.window.document;
+  const byLabel = Object.fromEntries(collectTypedValues().map((t) => [t.label, t.value]));
+  assert.equal(byLabel["Are you Hispanic or Latino?"], "No");
+});
+
+test("EEO race checkboxes: only the ticked options are captured, tidy titles not long descriptions", () => {
+  const dom = new JSDOM(`<!doctype html><body>
+    <fieldset>
+      <legend>Ethnicity</legend>
+      <label><input type="checkbox" name="race" value="white"><strong>White</strong><div>Not Hispanic or Latino. A person having origins in any of the original peoples of Europe.</div></label>
+      <label><input type="checkbox" name="race" value="asian" checked><strong>Asian</strong><div>Not Hispanic or Latino. A person having origins in any of the peoples of the Far East.</div></label>
+    </fieldset>
+  </body>`);
+  globalThis.document = dom.window.document;
+  const byLabel = Object.fromEntries(collectTypedValues().map((t) => [t.label, t.value]));
+  assert.equal(byLabel["Ethnicity"], "Asian"); // tidy title, only the ticked one
+});
+
+test("a lone consent checkbox (label IS the option) is not proposed as a Q/A pair", () => {
+  const dom = new JSDOM(`<!doctype html><body>
+    <label><input type="checkbox" checked> I agree to the terms and conditions</label>
+  </body>`);
+  globalThis.document = dom.window.document;
+  assert.deepEqual(collectTypedValues(), []);
+});
+
+test("choice answers inside an OPEN shadow root are captured too (ADP/web-components)", () => {
+  const dom = new JSDOM(`<!doctype html><body><div id="host"></div></body>`);
+  const host = dom.window.document.getElementById("host");
+  const root = host.attachShadow({ mode: "open" });
+  root.innerHTML = `<fieldset><legend>Protected veteran status</legend>
+    <label><input type="radio" name="vet" value="no" checked> I am not a protected veteran</label>
+    <label><input type="radio" name="vet" value="yes"> I am a protected veteran</label></fieldset>`;
+  globalThis.document = dom.window.document;
+  const byLabel = Object.fromEntries(collectTypedValues().map((t) => [t.label, t.value]));
+  assert.equal(byLabel["Protected veteran status"], "I am not a protected veteran");
+});
+
+test("captured EEO answers, once in the vault, are proposed only when new (learn flow)", () => {
+  // The captured question→answer flows through newInformation like any typed value.
+  const typed = [{ label: "Are you Hispanic or Latino?", value: "No" }, { label: "Ethnicity", value: "Asian" }];
+  const out = pick(typed, { ethnicity: "Asian" }); // ethnicity already known → not re-proposed
+  assert.deepEqual(out.map((o) => o.key), ["are_you_hispanic_or_latino"]);
+});

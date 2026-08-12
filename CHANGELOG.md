@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+### Added — the extension now LEARNS your choice-question answers (desktop already did)
+- Answering a **radio / checkbox / dropdown** question on a page (EEO self-ID like "Are you Hispanic or
+  Latino?" and "Ethnicity", plus Yes/No eligibility) is now offered for capture into the vault via the
+  existing "Save new details from this page" review — previously the extension read only typed text and
+  silently dropped choice answers, so the same action behaved differently from the desktop app.
+- Capture pierces **open shadow roots**, so choice answers inside web-component forms (ADP careers,
+  some Workday/iCIMS) are read too. Option titles are captured tidily ("Asian", not the legal blurb),
+  a lone consent checkbox is never mistaken for a Q/A pair, and nothing is saved without being ticked.
+- Once saved, the filler re-applies these answers on **both surfaces** through the shared vault — so
+  the ADP EEOC page fills after you answer it once. No version bump (held while 1.0.10 is in store review).
+
 ## [1.0.10] - 2026-08-11
 ### Fixed / Added — web-form autofill (extension) is much smarter
 - **Shadow DOM**: the filler now pierces open shadow roots, so modern web-component forms (ADP careers,
