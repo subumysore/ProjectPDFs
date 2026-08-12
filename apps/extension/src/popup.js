@@ -1152,11 +1152,15 @@ if ($("autofillOnLoad")) {
 // Auto-save new details — DEFAULT ON (only an explicit false turns it off), so answering a new field
 // on any page is remembered without clicking "Save new details" each time. New fields only; never
 // passwords; saved to your own vault on this device.
+// When Auto-save is ON, the manual "Save new details from this page" button is redundant (details save
+// themselves) — hide it so the two never look like competing toggles. Shown again when Auto-save is OFF.
+function syncManualSaveVisibility(on) { const b = $("learnPage"); if (b) b.classList.toggle("hidden", !!on); }
 if ($("autoSaveDetails")) {
-  chrome.storage.local.get("autoSaveDetails").then(({ autoSaveDetails }) => { $("autoSaveDetails").checked = autoSaveDetails !== false; paintToggle("autoSaveDetails", "autoSaveState"); });
+  chrome.storage.local.get("autoSaveDetails").then(({ autoSaveDetails }) => { const on = autoSaveDetails !== false; $("autoSaveDetails").checked = on; paintToggle("autoSaveDetails", "autoSaveState"); syncManualSaveVisibility(on); });
   $("autoSaveDetails").onchange = () => {
     chrome.storage.local.set({ autoSaveDetails: $("autoSaveDetails").checked });
     paintToggle("autoSaveDetails", "autoSaveState");
+    syncManualSaveVisibility($("autoSaveDetails").checked);
     setMsg($("autoSaveDetails").checked
       ? "On — new details you type are saved automatically (new fields only, never passwords)."
       : "Off — use “Save new details from this page” when you want to save.");
