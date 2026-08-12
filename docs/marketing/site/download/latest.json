@@ -1,10 +1,10 @@
 {
-  "version": "1.0.10",
-  "notes": "Smarter web-form autofill: shadow-DOM fields (ADP/Workday), state name<->abbreviation matching, EEO self-ID fields, and plain phone fields without a country code.",
+  "version": "1.0.11",
+  "notes": "Extension now learns your choice-question answers (EEO self-ID, Yes/No eligibility) into the vault. Desktop: version-only bump (it already learned these); no functional change.",
   "pub_date": "2026-08-11T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHZoejFhanU0VmZ0Zi91cWhHcUFXNXBQZ1RDVTZMREdTeHVJdExrRXRVQnVscllXZURCb3ZTQTJpSFcxZVFCMld4TnZma0hRQzlxQVcwZXpVSXp1N0FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTAwOTc5CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTBfeDY0LXNldHVwLmV4ZQpyc3lqaGtEYkNGOHZ2UmV5dk40TlJqdzZGU0I2eDNkWGdzRG5TcFNuRnJFd0dxY0IwbC9uMENUZHh0Z1YwRHEzWXBLSlVQUXFjYWZHVWxsa2d6SGdCZz09Cg==",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHNEOFp6emMxSzcwK3BxUGUwRCs0ajQ1WjVDaUlWa1Y5Lzg5UkJUeHFra3lFeDFiclhIOVBpb2tHRnJzMU5NclFLQnFEM280V0NYSUZzUnFkT2IwdGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTA0NDMyCWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTFfeDY0LXNldHVwLmV4ZQprWWMvRjJNckhsUjFmZFg1UEJKWUVmc0daaENIM2lZaG9lZXp1UzJJSUV0aWFjWmwwSkE4ZVJ3eEwxZGFxUzNGZEYycWJLV0F0U2ErSXFIWSt3dHhBZz09Cg==",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }

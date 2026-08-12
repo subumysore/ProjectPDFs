@@ -3,8 +3,9 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.0.11] - 2026-08-11
 ### Added — the extension now LEARNS your choice-question answers (desktop already did)
+_(Feature is extension-side; the desktop app is a version-only bump so both surfaces release in lockstep — the shared engine already learns choice answers on desktop.)_
 - Answering a **radio / checkbox / dropdown** question on a page (EEO self-ID like "Are you Hispanic or
   Latino?" and "Ethnicity", plus Yes/No eligibility) is now offered for capture into the vault via the
   existing "Save new details from this page" review — previously the extension read only typed text and
