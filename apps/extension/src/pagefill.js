@@ -486,7 +486,20 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // EXCEPTION: a field WE filled on a previous run (marked data-ppf-filled) may be re-filled — so a
     // corrected vault value replaces an earlier wrong autofill on the SAME page (e.g. the user fixed a
     // stale email in the vault and clicks Fill again). Only externally-provided values are protected.
-    if ((el.value || "").trim() !== "" && el.getAttribute("data-ppf-filled") !== "1") { fi++; continue; }
+    // The "already has a value → don't clobber" guard must protect real USER/SITE DATA — NOT a widget's
+    // empty-state SCAFFOLD. Generic (no per-control/per-site logic): a value is scaffold, and therefore
+    // still fillable, when it carries no real content — it echoes the field's own placeholder, or it has
+    // no letters, at most a few digits, and only formatting punctuation around them. That covers an intl
+    // phone widget's dialing-code stub ("+1", "+91"), an empty input mask ("(   )   -    ", "__/__/____"),
+    // a lone "+", etc. Anything with letters or a meaningful number is real data and stays protected.
+    const cur = (el.value || "").trim();
+    const digitsOnly = cur.replace(/\D/g, "");
+    const hasLetters = /[a-z]/i.test(cur);
+    const isScaffold = cur !== "" && (
+      cur === (el.placeholder || "").trim() ||
+      (!hasLetters && digitsOnly.length <= 4 && /[^\w]/.test(cur))
+    );
+    if (cur !== "" && !isScaffold && el.getAttribute("data-ppf-filled") !== "1") { fi++; continue; }
     const label = tLabels && tLabels[fi] ? tLabels[fi] : labelOf(el); // use the English-translated label if provided
     fi++;
     // Free-text catch-all fields (Description / Comments / Notes / Remarks / Cover letter / "additional

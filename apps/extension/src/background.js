@@ -410,26 +410,20 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     if (!ent.active) return;
     lastAutofill.set(tabId, { url, at: Date.now() });
     const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
-    await chrome.scripting.executeScript({
+    const edu = parseEducation(r.vault);
+    // Inject the filler DIRECTLY as `func: fillPage` — NOT via `new Function(...)`. MV3's CSP forbids
+    // eval/new Function in the extension's isolated world, AND many sites' page-CSP forbid it in the main
+    // world too, so the old string-rebuild silently failed (auto-fill did NOTHING). `func: fillPage` is
+    // serialized safely by chrome.scripting and runs anywhere. Fill is idempotent (never overwrites), so
+    // to catch SPA forms that render only AFTER an "Apply"/route change we simply RE-INJECT on a few
+    // delays — no page-side observer, no eval. Generic across all sites; best-effort (never throws).
+    const injectFill = () => chrome.scripting.executeScript({
       target: { tabId, allFrames: true },               // reach iframe-embedded ATS forms too
-      // Run the fill NOW, and — GLOBALLY, for any single-page app — re-run it when the form appears
-      // LATER (after an "Apply" click, a route change, a modal). Many ATS forms (ADP WorkforceNow,
-      // Workday, Greenhouse) render the fields only after interaction, long after page load; without
-      // this the one-shot fill hits an empty page. A debounced MutationObserver re-fills on new fields;
-      // fill is idempotent (never overwrites) so re-running is safe. Capped so it stops observing.
-      func: (fillSrc, vault, edu, opts) => {
-        let fill; try { fill = new Function("return (" + fillSrc + ")")(); } catch (_) { return; }
-        const run = () => { try { fill(vault, null, edu, opts); } catch (_) { /* ignore */ } };
-        run();
-        if (window.__ppfAutofillObs) return;            // one observer per frame
-        window.__ppfAutofillObs = true;
-        let t = 0;
-        const obs = new MutationObserver(() => { clearTimeout(t); t = setTimeout(run, 500); });
-        try { obs.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) { return; }
-        setTimeout(() => { try { obs.disconnect(); } catch (_) {} window.__ppfAutofillObs = false; }, 90000);
-      },
-      args: [fillPage.toString(), r.vault, parseEducation(r.vault), { skipPassword: true, savedAnswers: savedAnswers || {} }],
-    });
+      func: fillPage,
+      args: [r.vault, null, edu, { skipPassword: true, savedAnswers: savedAnswers || {} }],
+    }).catch(() => { /* tab closed / no permission — auto-fill must never throw into the worker */ });
+    injectFill();
+    for (const ms of [1500, 4000, 8000, 15000]) setTimeout(injectFill, ms);
   } catch (_) { /* auto-fill must never throw into the worker */ }
 });
 
@@ -453,7 +447,10 @@ async function openToolWindow() {
     const stray = all.find((w) => (w.tabs || []).some((t) => (t.url || "").includes("popup.html?win=1")));
     if (stray) { await chrome.storage.local.set({ winWindowId: stray.id }); await chrome.windows.update(stray.id, { focused: true }); return; }
     const b = winBounds || {};
-    const opts = { url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: b.width || 560, height: b.height || 760 };
+    // Width is FIXED to the content width (the panel is a single vertical column). Honouring a
+    // remembered wider width just left a large blank gap on the right — so we ignore saved width and
+    // only persist/restore HEIGHT (how much the user wants visible). No empty space at any size.
+    const opts = { url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: 560, height: b.height || 760 };
     if (Number.isInteger(b.left)) opts.left = b.left;
     if (Number.isInteger(b.top)) opts.top = b.top;
     const w = await chrome.windows.create(opts);
