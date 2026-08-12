@@ -107,6 +107,38 @@ function headMeta(lang, page, tr) {
 ${alts}`;
 }
 
+// A prominent, honest download counter at the very top of the landing page (social proof). Numbers come
+// live from the self-hosted counter (/counts); if it's unreachable or still zero, the bar hides itself
+// rather than showing "0". Privacy: /counts is two integers — no identities, nothing tracked.
+const COUNTER_JS = `
+(function(){
+  var el=document.getElementById('dlcount'); if(!el) return;
+  fetch('/counts',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
+    if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
+    var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
+    el.querySelector('[data-c=total]').textContent=f(total);
+    el.querySelector('[data-c=exe]').textContent=f(exe);
+    el.querySelector('[data-c=ext]').textContent=f(ext);
+    el.classList.add('on');
+  }).catch(function(){});
+})();`;
+function counterBar(tr) {
+  return `<div id="dlcount" class="dlcount" role="status" aria-live="polite">
+    <div class="big"><span class="num" data-c="total">—</span> ${esc(tr("counter.tagline"))}</div>
+    <div class="brk"><span>🖥️ <b data-c="exe">—</b> ${esc(tr("counter.desktop"))}</span>
+      <span>🧩 <b data-c="ext">—</b> ${esc(tr("counter.extension"))}</span></div>
+    <div class="tiny">${esc(tr("counter.private"))}</div>
+  </div>`;
+}
+const COUNTER_CSS = `
+  .dlcount{display:none;margin:0;padding:14px 24px;text-align:center;background:linear-gradient(180deg,#0d8f83,#0b7a75);color:#fff}
+  .dlcount.on{display:block}
+  .dlcount .big{font:700 clamp(18px,3vw,26px)/1.15 var(--sans,system-ui)}
+  .dlcount .big .num{font-size:1.25em}
+  .dlcount .brk{margin-top:4px;font-size:14px;opacity:.95;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+  .dlcount .tiny{margin-top:4px;font-size:12px;opacity:.8}
+`;
 function switcher(current, page) {
   // The <option> value is the LANGUAGE CODE (stable, testable, and what analytics/deeplinks expect);
   // the destination URL for the SAME page type rides along in data-url so choosing a language keeps
@@ -243,13 +275,15 @@ function landingPage(lang) {
 <title>${esc(tr("app.name"))} — ${esc(tr("meta.landingTitle"))}</title>
 <meta name="description" content="${esc(tr("meta.landingDesc"))}">
 ${headMeta(lang, "landing", tr)}
-<style>${LANDING_CSS}${LANGBAR_CSS}${GUIDEVID_CSS}
+<style>${LANDING_CSS}${LANGBAR_CSS}${GUIDEVID_CSS}${COUNTER_CSS}
   .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
 </style>
 
+${counterBar(tr)}
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
 ${switcher(lang, "landing")}
 ${lang === "en" ? langhint() : ""}
+<script>${COUNTER_JS}</script>
 
 <div class="wrap">
   <nav>
@@ -411,7 +445,7 @@ ${lang === "en" ? langhint() : ""}
   <p class="sub">${esc(tr("get.sub"))}</p>
   <div class="cta">
     <a class="btn" href="${urlFor(lang, "install")}#extension">${esc(tr("get.extPrimary"))}</a>
-    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe" aria-label="${esc(tr("site.download"))}">${esc(tr("get.win"))}</a>
+    <a class="btn ghost" href="/dl/exe" aria-label="${esc(tr("site.download"))}">${esc(tr("get.win"))}</a>
     <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
   </div>
   <p class="note">${esc(tr("get.note"))}</p>
@@ -579,7 +613,7 @@ ${switcher(lang, "install")}
   <div class="card" id="extension">
     <span class="tag">${esc(tr("install.extTag"))}</span>
     <h2 style="margin-top:0">${esc(tr("install.extH2"))} <span class="ver" data-ver="ext">v${EXT_VER}</span></h2>
-    <a class="btn" href="/download/polyglotformfill-extension.zip">${esc(tr("install.extDownload"))}</a>
+    <a class="btn" href="/dl/ext">${esc(tr("install.extDownload"))}</a>
     <p>${esc(tr("install.extLoad"))}</p>
     <ol>
       <li>${esc(tr("install.extStep1"))}</li>
@@ -591,6 +625,21 @@ ${switcher(lang, "install")}
       <li>${esc(tr("install.extStep7"))}</li>
     </ol>
     <p class="muted">${esc(tr("install.extNote"))}</p>
+  </div>
+
+  <div class="card" id="android">
+    <span class="tag">📱 ${esc(tr("install.androidTag"))}</span>
+    <h2 style="margin-top:0">${esc(tr("install.androidH2"))}</h2>
+    <p class="muted">${esc(tr("install.androidIntro"))}</p>
+    <ol>
+      <li>${esc(tr("install.androidStep1"))}</li>
+      <li>${esc(tr("install.androidStep2"))}</li>
+      <li>${esc(tr("install.androidStep3"))}</li>
+      <li>${esc(tr("install.androidStep4"))}</li>
+    </ol>
+    <a class="btn" href="/dl/ext">${esc(tr("install.androidDownload"))}</a>
+    <p class="muted">${esc(tr("install.androidStoreNote"))}</p>
+    <p class="muted">${esc(tr("install.androidDeskNote"))}</p>
   </div>
 
   <div class="card">
@@ -622,7 +671,7 @@ ${switcher(lang, "install")}
       ${esc(tr("install.headsAfter"))}
     </div>`}
 
-    <a class="btn" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("install.deskDownload"))}</a>
+    <a class="btn" href="/dl/exe">${esc(tr("install.deskDownload"))}</a>
     <p class="muted">${esc(tr("install.deskNote"))}</p>
 
     <details>

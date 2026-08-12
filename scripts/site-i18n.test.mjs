@@ -81,8 +81,10 @@ test("the English page offers the switcher and suggests the visitor's own langua
     "the English page must not auto-redirect");
 });
 
-test("download links on a localised page point at the real artifacts", () => {
+test("download links on a localised page reach the installer (directly or via the counted /dl route)", () => {
   const html = readFileSync(join(site, "hi", "index.html"), "utf8");
-  assert.ok(html.includes("/download/PolyglotFormFill-Setup.exe"), "installer link missing");
+  // The primary download button now goes through /dl/exe (self-hosted counter → 302 to the installer)
+  // so downloads are tallied; the direct /download/… link is still valid where hashing is shown.
+  assert.ok(html.includes("/dl/exe") || html.includes("/download/PolyglotFormFill-Setup.exe"), "installer link missing");
   assert.ok(html.includes("/install/"), "extension install link missing");
 });

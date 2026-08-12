@@ -8,6 +8,14 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
 ---
 
 # 1. CORE GOVERNANCE (the "No-Go" zones)
+- **ZERO-COST INFRA — NO PVCs / BLOCK VOLUMES (standing):** the OKE cluster runs on the OCI free tier,
+  which has no block-volume quota (a `PersistentVolumeClaim` fails `ProvisioningFailed … LimitExceeded`).
+  For ANY small persistent state a service needs (counters, flags, cursors, last-run marks, tiny state),
+  **do NOT provision a PVC** — persist it in a Kubernetes **ConfigMap** that the pod reads on start and
+  updates via the **in-cluster API** (ServiceAccount token + least-privilege Role scoped to that one
+  ConfigMap), keeping an in-memory copy so a write failure never breaks the request. Reserve object
+  storage for larger blobs served downward. This applies to all future work, not just the download
+  counter — see `deploy/k8s/counter.{py,yaml}` for the reference pattern. Aligns with zero-cost-first.
 - **NO SILENT DELETIONS:** never delete or rename files/folders without explicit confirmation.
 - **ARCHITECTURE IS INTENTIONAL:** structural boundaries are defined in `docs/reference/architecture.md`;
   do not create competing structures. Changing a boundary requires an RFC → ADR.

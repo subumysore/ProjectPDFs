@@ -1,0 +1,127 @@
+# Self-hosted download counter for polyglotformfill.com — a tiny stock-image service (no custom
+# registry, matching the site's philosophy) that increments a persisted tally then redirects to the
+# real file, and serves /counts as JSON for the site's top banner.
+#
+# The counter.py script lives in deploy/k8s/counter.py (single source). Deploy:
+#   # 1) app code (the script):
+#   kubectl -n polyglotformfill create configmap ppf-counter-app \
+#     --from-file=counter.py=deploy/k8s/counter.py -o yaml --dry-run=client | kubectl apply -f -
+#   # 2) the STATE configmap — create ONCE, never `apply` (apply would reset the tallies):
+#   kubectl -n polyglotformfill create configmap ppf-counter-state --from-literal=exe=0 --from-literal=ext=0
+#   # 3) the rest:
+#   kubectl apply -f deploy/k8s/counter.yaml
+#
+# Persistence is the ppf-counter-state ConfigMap (the OCI free tier is out of block-volume quota, so no
+# PVC). The pod patches it via the in-cluster API using the ServiceAccount below. Single replica so
+# increments never race. Privacy: only two integers; never logs IPs or any request detail.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ppf-counter
+  namespace: polyglotformfill
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ppf-counter-state
+  namespace: polyglotformfill
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["ppf-counter-state"]   # ONLY the tally configmap — least privilege
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ppf-counter-state
+  namespace: polyglotformfill
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ppf-counter-state
+subjects:
+  - kind: ServiceAccount
+    name: ppf-counter
+    namespace: polyglotformfill
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppf-counter
+  namespace: polyglotformfill
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate                   # RWO volume — never run two pods attached at once
+  selector:
+    matchLabels: { app: ppf-counter }
+  template:
+    metadata:
+      labels: { app: ppf-counter }
+    spec:
+      serviceAccountName: ppf-counter
+      containers:
+        - name: counter
+          image: docker.io/library/python:3.12-alpine
+          command: ["python", "/app/counter.py"]
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: PORT, value: "8080" }
+            # Optional baseline for downloads that happened before the counter existed (default 0).
+            - { name: COUNTER_SEED_EXE, value: "0" }
+            - { name: COUNTER_SEED_EXT, value: "0" }
+          volumeMounts:
+            - { name: app, mountPath: /app, readOnly: true }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "10m", memory: "24Mi" }
+            limits: { cpu: "100m", memory: "64Mi" }
+      volumes:
+        - name: app
+          configMap: { name: ppf-counter-app }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppf-counter
+  namespace: polyglotformfill
+spec:
+  selector: { app: ppf-counter }
+  ports:
+    - { port: 80, targetPort: 8080 }
+---
+# Routes ONLY /dl and /counts to the counter; everything else stays on ppf-site. Reuses the site's
+# existing TLS secret (no cert-manager annotation → no duplicate certificate order).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ppf-counter
+  namespace: polyglotformfill
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [polyglotformfill.com, www.polyglotformfill.com]
+      secretName: ppf-site-tls
+  rules:
+    - host: polyglotformfill.com
+      http:
+        paths:
+          - path: /dl
+            pathType: Prefix
+            backend: { service: { name: ppf-counter, port: { number: 80 } } }
+          - path: /counts
+            pathType: Prefix
+            backend: { service: { name: ppf-counter, port: { number: 80 } } }
+    - host: www.polyglotformfill.com
+      http:
+        paths:
+          - path: /dl
+            pathType: Prefix
+            backend: { service: { name: ppf-counter, port: { number: 80 } } }
+          - path: /counts
+            pathType: Prefix
+            backend: { service: { name: ppf-counter, port: { number: 80 } } }
