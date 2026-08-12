@@ -123,6 +123,14 @@ export function resolveFields(vault, fields) {
     // Derived from a date of birth (age isn't stored — it's computed from the DOB).
     age:           ["age", "your age", "current age", "age in years", "age yrs"],
     dependent_age: ["age of dependent", "age of dependant", "dependent age", "dependant age", "child age", "age of child"],
+    // EEO / voluntary self-identification (ADP, Workday, iCIMS…). Stored only if the USER chooses to;
+    // vault keys race / ethnicity / hispanic_latino / veteran_status / disability_status normalise into
+    // these. They never come from a scanned document — the user enters them.
+    race:          ["race", "racial category", "race category", "your race", "race identity"],
+    ethnicity:     ["ethnicity", "ethnic group", "ethnic origin", "ethnicity race", "race ethnicity"],
+    hispanic:      ["hispanic latino", "hispanic or latino", "are you hispanic or latino", "hispanic", "latino", "latina", "latinx", "hispanic ethnicity", "hispanic or latino ethnicity"],
+    veteran:       ["veteran status", "protected veteran", "protected veteran status", "military veteran", "are you a veteran", "veteran", "us veteran", "disabled veteran", "vevraa", "vietnam era veteran"],
+    disability:    ["disability status", "disability", "do you have a disability", "self identification of disability", "voluntary self identification of disability", "disabled", "section 503", "person with a disability"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
@@ -157,12 +165,6 @@ export function resolveFields(vault, fields) {
       if (al.some((a) => key === norm(a))) { atoms[canon] = rawVault[key]; break; }
     }
   }
-  const withCC = (num) => {
-    const n = (num || "").toString().trim();
-    if (!n) return "";
-    const cc = (atoms.phonecc || "").toString().trim();
-    return cc && !n.startsWith("+") ? cc + " " + n : n;
-  };
   // Age isn't stored — DERIVE it from a date of birth (full years to today).
   const ageFrom = (dob) => {
     const m = String(dob || "").match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
@@ -182,9 +184,12 @@ export function resolveFields(vault, fields) {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
     if (key === "nationality") return atoms.nationality ?? atoms.country;
-    if (key === "cellphone") return withCC(atoms.cellphone);
-    if (key === "homephone") return withCC(atoms.homephone);
-    if (key === "phone")     return withCC(atoms.cellphone ?? atoms.phone ?? atoms.homephone);
+    // A plain Telephone / Mobile / Land-line field wants JUST the number — do NOT prepend the country
+    // code (that only belongs in a dedicated "country code" field, which resolves via `phonecc`). If the
+    // user stored their number WITH a +CC, it's preserved as-is; we simply never add one.
+    if (key === "cellphone") return atoms.cellphone;
+    if (key === "homephone") return atoms.homephone;
+    if (key === "phone")     return atoms.cellphone ?? atoms.phone ?? atoms.homephone;
     if (key === "age")           return atoms.age ?? ageFrom(atoms.dob);
     if (key === "dependent_age") return atoms.dependent_age ?? ageFrom(atoms.dependent_dob);
     if (key === "appdate")       return atoms.appdate ?? today(); // default to today

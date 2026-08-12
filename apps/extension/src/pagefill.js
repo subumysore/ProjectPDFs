@@ -6,6 +6,41 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const norm = (s) => (s || "").toString()
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Za-z])([0-9])/g, "$1 $2") // split camelCase / letter-digit
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // Collect matching elements across the main DOM AND every OPEN shadow root — modern ATS forms (ADP,
+  // some Workday/iCIMS) render fields inside web-component shadow trees that a plain
+  // document.querySelectorAll cannot see. (Closed shadow roots stay unreachable — a browser limit.)
+  const deepQSA = (sel, root) => {
+    const out = [], seen = new Set();
+    const visit = (node) => {
+      let m = []; try { m = node.querySelectorAll ? [...node.querySelectorAll(sel)] : []; } catch (_) { m = []; }
+      for (const el of m) if (!seen.has(el)) { seen.add(el); out.push(el); }
+      let all = []; try { all = node.querySelectorAll ? node.querySelectorAll("*") : []; } catch (_) { all = []; }
+      for (const el of all) if (el.shadowRoot) visit(el.shadowRoot);
+    };
+    visit(root || document);
+    return out;
+  };
+  // US state full-name <-> 2-letter abbreviation, so a stored "NC" matches a "North Carolina" option and
+  // a stored "North Carolina" matches an "NC" option — the same field, filled either way the form wants.
+  const US_STATE_ABBR = { al: "Alabama", ak: "Alaska", az: "Arizona", ar: "Arkansas", ca: "California", co: "Colorado", ct: "Connecticut", de: "Delaware", fl: "Florida", ga: "Georgia", hi: "Hawaii", id: "Idaho", il: "Illinois", in: "Indiana", ia: "Iowa", ks: "Kansas", ky: "Kentucky", la: "Louisiana", me: "Maine", md: "Maryland", ma: "Massachusetts", mi: "Michigan", mn: "Minnesota", ms: "Mississippi", mo: "Missouri", mt: "Montana", ne: "Nebraska", nv: "Nevada", nh: "New Hampshire", nj: "New Jersey", nm: "New Mexico", ny: "New York", nc: "North Carolina", nd: "North Dakota", oh: "Ohio", ok: "Oklahoma", or: "Oregon", pa: "Pennsylvania", ri: "Rhode Island", sc: "South Carolina", sd: "South Dakota", tn: "Tennessee", tx: "Texas", ut: "Utah", vt: "Vermont", va: "Virginia", wa: "Washington", wv: "West Virginia", wi: "Wisconsin", wy: "Wyoming", dc: "District of Columbia" };
+  // Extra candidate strings for matching a chooser option to a stored value: gender M<->Male,
+  // country USA<->United States, US state name<->abbrev, phone country code. Centralised so the
+  // <select>, custom-dropdown and radio matchers all behave identically.
+  const expandCands = (pick, value) => {
+    const cands = [value];
+    const g = norm(value);
+    const key = pick && pick.key;
+    if (key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
+    const SEL_COUNTRY = { usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"], uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], england: ["United Kingdom"], uae: ["United Arab Emirates"], india: ["India"], indian: ["India"], rok: ["South Korea"], prc: ["China"], drc: ["Democratic Republic of the Congo"] };
+    if (SEL_COUNTRY[g]) cands.push(...SEL_COUNTRY[g]);
+    if (key === "state" || key === "billing_state" || key === "region") {
+      if (US_STATE_ABBR[g]) cands.push(US_STATE_ABBR[g]);                                  // "nc" -> "North Carolina"
+      const abbr = Object.keys(US_STATE_ABBR).find((k) => norm(US_STATE_ABBR[k]) === g);   // "north carolina" -> "NC"
+      if (abbr) cands.push(abbr.toUpperCase());
+    }
+    if (key === "phonecc") { const d = String(value).replace(/\D/g, ""); if (d) cands.push(d, "+" + d); }
+    return cands;
+  };
   // EDUCATION (from parseEducation, passed in): map a form's Degree/Field/School/Year/GPA fields to
   // the right stored qualification (Master's block gets the masters entry, etc.). eduEntries are
   // pre-parsed in the popup (highest level first); here we only ROUTE them onto the live form.
@@ -143,6 +178,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     taxid: ["tax id", "taxpayer id", "tin", "itin", "ein", "tax identification number", "pan", "pan number"],
     age: ["age", "your age", "current age", "age in years", "age yrs"],
     dependent_age: ["age of dependent", "age of dependant", "dependent age", "dependant age", "child age", "age of child"],
+    // EEO / voluntary self-identification — parity with resolver.js (vault keys race / ethnicity /
+    // hispanic_latino / veteran_status / disability_status).
+    race: ["race", "racial category", "race category", "your race", "race identity"],
+    ethnicity: ["ethnicity", "ethnic group", "ethnic origin", "ethnicity race", "race ethnicity"],
+    hispanic: ["hispanic latino", "hispanic or latino", "are you hispanic or latino", "hispanic", "latino", "latina", "latinx", "hispanic ethnicity", "hispanic or latino ethnicity"],
+    veteran: ["veteran status", "protected veteran", "protected veteran status", "military veteran", "are you a veteran", "veteran", "us veteran", "disabled veteran", "vevraa", "vietnam era veteran"],
+    disability: ["disability status", "disability", "do you have a disability", "self identification of disability", "voluntary self identification of disability", "disabled", "section 503", "person with a disability"],
   };
   const rawVault = {};
   for (const [k, v] of Object.entries(vault)) rawVault[norm(k)] = v;
@@ -342,7 +384,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const ownLabel = (el) => [el.name, el.id, el.placeholder, el.getAttribute("aria-label"),
     (el.labels && el.labels[0] && el.labels[0].textContent) || ""].join(" ");
   // Does this page ALSO ask for the plain/home address? Then the qualified ones are distinct.
-  const hasPlainAddress = [...document.querySelectorAll("input, textarea, select")].some((el) => {
+  const hasPlainAddress = [...deepQSA("input, textarea, select")].some((el) => {
     const toks = norm(ownLabel(el)).split(" ").filter(Boolean);
     return toks.includes("address") && !toks.some((t) => ADDRESS_QUALIFIERS.includes(t));
   });
@@ -426,7 +468,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
 
   const fields = [];
   let fi = 0; // index aligned with collectFillLabels() so tLabels[fi] is this field's translated label
-  for (const el of document.querySelectorAll("input, textarea")) {
+  for (const el of deepQSA("input, textarea")) {
     if (["hidden", "checkbox", "radio", "file", "submit", "button"].includes(el.type)) continue;
     if (el.disabled) continue;
     // Password fields ARE fillable on an explicit "Fill this page" — the user's intent to put their
@@ -735,7 +777,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const [s, l] = x.length <= y.length ? [x, y] : [y, x];
     return s.length >= 3 && l.startsWith(s);
   };
-  for (const sel of document.querySelectorAll("select")) {
+  for (const sel of deepQSA("select")) {
     if (sel.disabled) continue;
     const label = labelOf(sel);
     if (officeUse(ownLabel(sel))) continue; // an office-use dropdown is not the applicant's to set
@@ -749,18 +791,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
     }
     if (!value) continue;
-    // Candidate values to match an option against: the raw value plus expansions (a stored
-    // gender "M" should match a "Male" option; "F" -> "Female").
-    const cands = [value];
-    const g = norm(value);
-    if (pick && pick.key === "gender") { if (g === "m" || g === "male") cands.push("male"); if (g === "f" || g === "female") cands.push("female"); }
-    // Country abbreviations/demonyms -> full names a <select> lists (USA -> United States).
-    const SEL_COUNTRY = {
-      usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"],
-      uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], uae: ["United Arab Emirates"],
-    };
-    if (SEL_COUNTRY[g]) cands.push(...SEL_COUNTRY[g]);
-    if (pick && pick.key === "phonecc") { const d = String(value).replace(/\D/g, ""); if (d) cands.push(d, "+" + d); const cn = atoms.country || atoms.nationality; if (cn) cands.push(String(cn)); }
+    // Candidate values to match an option against: the raw value plus expansions (gender M<->Male,
+    // USA<->United States, US state name<->abbrev, phone country code).
+    const cands = expandCands(pick, value);
     const opts = [...sel.options];
     const match = opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
     if (match) {
@@ -776,7 +809,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // chooser (standard roles / common widget roots), open it, then click the option whose
   // VISIBLE TEXT matches the value. Only widgets that resolve to a concept + have a value are
   // opened, so unrelated menus are never touched.
-  const hosts = [...document.querySelectorAll(
+  const hosts = [...deepQSA(
     'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [aria-haspopup="menu"], ' +
     '[class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"], ' +
     '[class*="combobox"], [class*="Combobox"], [class*="-select"], [class*="Select"], [class*="dropdown"], [class*="Dropdown"]',
@@ -804,24 +837,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
     }
     if (!value) continue;
-    // Candidate strings to type/match: the value plus expansions (gender M->Male; common
-    // country abbreviations/demonyms -> the full country name a dropdown lists).
-    const cands = [String(value)]; const g = norm(value);
-    if (pick && pick.key === "gender") { if (g === "m" || g === "male") cands.push("Male"); if (g === "f" || g === "female") cands.push("Female"); }
-    const COUNTRY = {
-      usa: ["United States", "United States of America", "America"], us: ["United States"], american: ["United States"],
-      uk: ["United Kingdom", "Great Britain"], british: ["United Kingdom"], england: ["United Kingdom"],
-      uae: ["United Arab Emirates"], rok: ["South Korea"], prc: ["China"], drc: ["Democratic Republic of the Congo"],
-    };
-    if (COUNTRY[g]) cands.push(...COUNTRY[g]);
-    // A country-code dropdown may list "+1" OR "United States (+1)" — match both. The user's
-    // dialling code corresponds to their country, so add the country name as a candidate too.
-    if (pick && pick.key === "phonecc") {
-      const digits = String(value).replace(/\D/g, "");
-      if (digits) cands.push(digits, "+" + digits);
-      const cn = atoms.country || atoms.nationality;
-      if (cn) { cands.push(String(cn)); if (COUNTRY[norm(cn)]) cands.push(...COUNTRY[norm(cn)]); }
-    }
+    // Candidate strings to type/match: the value plus expansions (gender M<->Male; country
+    // abbrev/demonym -> full name; US state name<->abbrev; phone country code).
+    const cands = expandCands(pick, String(value));
+    // A country-code dropdown may list "United States (+1)" — the user's dialling code maps to their
+    // country, so add the country name as a candidate too.
+    if (pick && pick.key === "phonecc") { const cn = atoms.country || atoms.nationality; if (cn) cands.push(String(cn)); }
     const n2 = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
     // Score an option against the candidates: EXACT (3) > prefix (2) > containment (1).
     // Ranking (not first-match) is essential so "Male" (exact) beats "Female" — which
@@ -845,7 +866,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (opener.click) opener.click();
       opener.focus && opener.focus();
       await wait(200); // let the option list render (overlays may attach to <body>)
-      const readOpts = () => [...document.querySelectorAll(
+      const readOpts = () => [...deepQSA(
         '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
       )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
       const bestOf = (list) => { let o = null, b = 0; for (const x of list) { const s = scoreOpt(x); if (s > b) { b = s; o = x; } } return { o, b }; };
@@ -1124,7 +1145,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   };
 
   if (Object.keys(SAVED).length || Object.keys(rawVault).length) {
-    const controls = [...document.querySelectorAll(CTRL_SEL)]
+    const controls = [...deepQSA(CTRL_SEL)]
       .filter((c) => !(c.disabled || c.getAttribute("aria-disabled") === "true") && shownCtrl(c));
     // Group all options of a question together by their shared container.
     const groups = new Map();
@@ -1173,7 +1194,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       }
     }
     // Native <select> versions (some forms use a dropdown for gender/veteran/eligibility/etc.).
-    for (const sel of document.querySelectorAll("select")) {
+    for (const sel of deepQSA("select")) {
       if (sel.disabled || sel.value) continue;
       const q = ariaLabelText(sel) + " " + ctrlQuestion(sel) + " " + ownLabel(sel); // aria-labelledby holds the question on iCIMS
       const opts = [...sel.options].filter((o) => o.value && (o.textContent || "").trim());

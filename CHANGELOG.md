@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.10] - 2026-08-11
+### Fixed / Added — web-form autofill (extension) is much smarter
+- **Shadow DOM**: the filler now pierces open shadow roots, so modern web-component forms (ADP careers,
+  some Workday/iCIMS) that render fields inside shadow trees become fillable at all.
+- **State full-name ⇄ abbreviation**: a stored `NC` matches a "North Carolina" `<select>` option and a
+  stored "North Carolina" matches an "NC" option — filled whichever way the form lists it (selects,
+  custom dropdowns, radios).
+- **EEO / self-identification concepts** (race, ethnicity, Hispanic/Latino, veteran status, disability)
+  added to the engine (both surfaces) and seeded (empty) into new profiles, so EEOC pages can fill.
+- **Phone**: a plain Telephone / Mobile / Land-line field now gets just the number — the country code is
+  no longer prepended (it only fills a dedicated country-code field).
+### Tests
+- Green before ship: shared-engine/extension **359** (state, shadow-DOM, self-ID, phone cases added),
+  desktop **33**.
+
 ## [1.0.9] - 2026-08-11
 ### Fixed — no "vault locked" while working in the browser extension
 - The native host now records real extension usage (a served, non-ping request) in a bridge-activity

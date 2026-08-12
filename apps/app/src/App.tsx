@@ -128,6 +128,9 @@ const DEFAULT_PROFILE_KEYS = [
   "first_name", "middle_name", "last_name", "email",
   "address_1", "address_2", "address_3", "city", "state", "county", "zip",
   "cell_phone", "home_phone", "signature", "profile_photo",
+  // EEO / voluntary self-identification (fills ADP/Workday/iCIMS self-ID pages). Optional — blank unless
+  // the user chooses to enter them.
+  "gender", "race", "ethnicity", "hispanic_latino", "veteran_status", "disability_status",
 ];
 // A vault key that holds an IMAGE (attach/replace a picture) rather than a typed value.
 const isImageKey = (k: string) => /signature|photo|driver_license|passport|document_image/i.test(k);
@@ -138,6 +141,8 @@ const KEY_LABELS: Record<string, string> = {
   address_1: "Address line 1", address_2: "Address line 2", address_3: "Address line 3",
   city: "City", state: "State", county: "County", zip: "ZIP",
   cell_phone: "Cell phone", home_phone: "Land line", signature: "Signature", profile_photo: "Profile picture",
+  gender: "Gender", race: "Race", ethnicity: "Ethnicity", hispanic_latino: "Hispanic / Latino",
+  veteran_status: "Veteran status", disability_status: "Disability status",
 };
 
 /**

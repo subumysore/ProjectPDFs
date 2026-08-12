@@ -561,3 +561,23 @@ test("custom dropdown: a mis-guessed value never selects an option (Yes/No quest
   assert.equal(clicked.includes("No"), false, "the government-official box must be left empty");
   assert.equal(clicked.includes("Male"), true, "a real match (Gender → Male) still fills");
 });
+
+// State full-name <-> abbreviation, and Shadow-DOM traversal (2026-08-11).
+test("state <select>: stored 'NC' matches a 'North Carolina' option", async () => {
+  const dom = mount(`<label>State <select id="s"><option value="">--</option><option value="NC">North Carolina</option><option value="NY">New York</option></select></label>`);
+  await fillPage({ state: "NC" });
+  assert.equal($(dom, "#s").value, "NC");
+});
+test("state <select>: stored 'North Carolina' matches an 'NC' option", async () => {
+  const dom = mount(`<label>State <select id="s"><option value="">--</option><option value="NC">NC</option><option value="TX">TX</option></select></label>`);
+  await fillPage({ state: "North Carolina" });
+  assert.equal($(dom, "#s").value, "NC");
+});
+test("shadow DOM: a field inside an OPEN shadow root is filled", async () => {
+  const dom = mount(`<div id="host"></div>`);
+  const host = $(dom, "#host");
+  const root = host.attachShadow({ mode: "open" });
+  root.innerHTML = `<label>Email <input id="e" type="email"></label>`;
+  await fillPage({ email_address: "asha@example.com" });
+  assert.equal(root.querySelector("#e").value, "asha@example.com");
+});

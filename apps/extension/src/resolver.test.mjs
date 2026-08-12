@@ -163,3 +163,18 @@ test("parity: education sub-field with no stored value stays blank (no address/D
   assert.equal(out[1], null);                   // GPA blank, NOT the address
   assert.equal(out[2], null);                   // field blank, NOT bled
 });
+
+// Phone with no country code, and EEO self-ID concepts (2026-08-11).
+test("phone: a plain Telephone/Mobile field gets the number WITHOUT a country code", () => {
+  const v = { cell_phone: "650-390-5612", phone_country_code: "+1" };
+  assert.equal(one(v, "Mobile number"), "650-390-5612");
+  assert.equal(one(v, "Telephone"), "650-390-5612");
+  assert.equal(one(v, "Country code"), "+1"); // a dedicated CC field still fills
+});
+test("self-ID: veteran / race / disability resolve from their vault keys", () => {
+  const v = { veteran_status: "Not a protected veteran", race: "Asian", disability_status: "No", hispanic_latino: "No" };
+  assert.equal(one(v, "Veteran status"), "Not a protected veteran");
+  assert.equal(one(v, "Race"), "Asian");
+  assert.equal(one(v, "Disability status"), "No");
+  assert.equal(one(v, "Are you Hispanic or Latino?"), "No");
+});
