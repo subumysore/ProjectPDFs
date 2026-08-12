@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.13] - 2026-08-12
+### Fixed — the browser⇄desktop bridge, for real this time
+- Native-host now trusts the KEYED unpacked id + the Chrome Web Store id (a build-failing test keeps the
+  store id trusted forever), and RE-registers on every desktop launch (self-heals a stale allow-list).
+- Extension: profile picker never blanks (shows all profiles, or a clear "unlock the desktop" hint);
+  bridged mode no longer demands a SECOND passphrase for the old local vault; pop-out window fills the
+  width; auto-fill on page load now defaults ON (matching auto-save).
+- Added a real-browser end-to-end test (10 assertions) that drives the actual extension against the live
+  desktop bridge, so these can never silently regress.
+
 ## [1.0.12] - 2026-08-12
 ### Added — Auto-save new details (default ON, no clicking)
 - The extension now learns what you type WITHOUT clicking "Save new details" each time. A tiny beacon

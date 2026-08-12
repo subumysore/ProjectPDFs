@@ -1,10 +1,10 @@
 {
-  "version": "1.0.12",
-  "notes": "Profiles shared with the extension over the local bridge (fixed for sideloaded too); sticky enlarged extension window; lock-screen version; Enter-to-unlock; auto-save ignores page menus; cleaner Common-answers layout.",
+  "version": "1.0.13",
+  "notes": "Bridge fix (browser<->desktop): trusts the store + keyed ids and self-heals on launch; profile picker never blanks; no second passphrase; auto-fill defaults on; wider pop-out window.",
   "pub_date": "2026-08-12T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UGlSOElLVVd3bXM5L1RKKzRQZGo0RjdqVXQrcUkybzVlODA1dkd1QS8yaVdIWUxUZXVFOUZlaHQxSmNqTVlVOGVFTzBnZEwyN3pBMnROMnByMXYrdmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTE0MTU5CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTJfeDY0LXNldHVwLmV4ZQpoNHRDaTZNeFdEUFl0aWNSZEZSMWtRa3A5UEhMTlhmUkJ0SWlpNmhEb280dkFMalZNUHpmWXFYMGZJZ0UvM0tSSDdTZ1hnYXIyV2JEdXdNR3RkN3NCZz09Cg==",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UGlxWnppWkNxd05WV2wvR2c5RXdvTUFkZ3E5bHhqWUVhSnhlL0Y2T09MYU9RMmZNY1lVTWVRN3pvcWN6NHl0bXRnVlNFYzZLK3VNaGxDVFRVMDhCZVFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTE5MTAwCWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTNfeDY0LXNldHVwLmV4ZQpLTnRoSnE4SzdzVzJtMFdnRTYzRkZJemw4WWNuY1ExOEVMT3piS2Q2b05Od053ZUlBb1JUUlpPK0EwelpvZXJuM3BJRGNaWXNYR1NoQnNEZlE4R05BQT09Cg==",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }
