@@ -7,6 +7,8 @@ import { starterVault } from "./seed.js";
 import { fillPage } from "./pagefill.js";
 import { parseEducation } from "./education.js";
 import { chooseDataProfile } from "./profileMatch.js";
+import { collectTypedValues, newInformation } from "./pagecapture.js";
+import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 
 let key = null; // CryptoKey, memory-only (+ mirrored to storage.session, see below)
 let vault = null; // decrypted { ontology_key: value }, memory-only
@@ -180,6 +182,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await persist();
           sendResponse({ ok: true });
           break;
+        // AUTO-SAVE: values the user typed on a page, captured on submit/hide by the injected beacon.
+        // Only genuinely NEW fields (never overwrite an existing value) are saved — silently, to the
+        // same vault autofill uses (desktop if bridged, else this browser). Nothing leaves the device.
+        case "autoSaveCapture": {
+          const { autoSaveDetails } = await chrome.storage.local.get("autoSaveDetails");
+          if (autoSaveDetails === false) { sendResponse({ ok: true, saved: 0, off: true }); break; }
+          const saved = await saveNewToVault(Array.isArray(msg.pairs) ? msg.pairs : []);
+          sendResponse({ ok: true, saved });
+          break;
+        }
         case "del":
           await ensureUnlocked();
           if (!key) throw new Error("locked");
@@ -316,12 +328,70 @@ async function vaultForAutofill() {
   return { ok: false };
 }
 
+// Save only genuinely NEW fields (never overwrite an existing value) from what the user typed. Writes
+// to the desktop vault when bridged (same profile autofill picks), else this browser's local vault.
+async function saveNewToVault(pairs) {
+  if (!Array.isArray(pairs) || !pairs.length) return 0;
+  // Desktop (companion) target first — mirror vaultForAutofill's choice.
+  try {
+    const ping = await hostRequest({ type: "ping" });
+    if (ping && ping.ok) {
+      const pl = await hostRequest({ type: "listProfiles" });
+      if (pl.ok && pl.profiles && pl.profiles.length) {
+        const { companionProfile, companionProfileExplicit } = await chrome.storage.local.get(["companionProfile", "companionProfileExplicit"]);
+        const counts = {}; for (const p of pl.profiles) counts[p.id] = p.count || 0;
+        const profileId = chooseDataProfile(pl.profiles, counts, companionProfile, companionProfileExplicit);
+        if (profileId) {
+          const gv = await hostRequest({ type: "getVault", profileId, maxValueLen: AUTOFILL_VAULT_MAX });
+          const cur = (gv.ok && gv.vault) || {};
+          const fresh = newInformation(pairs, cur, keyFromLabel, isCapturableLabel).filter((p) => p.existing === undefined);
+          let n = 0;
+          for (const p of fresh) { await hostRequest({ type: "upsertData", profileId, key: p.key, value: p.value, updatedAt: nowSecs() }); n++; }
+          return n;
+        }
+      }
+    }
+  } catch (_) { /* fall through to local */ }
+  // Local browser vault (only if unlocked).
+  try {
+    if (!vault || !key) return 0;
+    const fresh = newInformation(pairs, vault, keyFromLabel, isCapturableLabel).filter((p) => p.existing === undefined);
+    let n = 0;
+    for (const p of fresh) { vault[p.key] = p.value; times[p.key] = nowSecs(); n++; }
+    if (n) await persist();
+    return n;
+  } catch (_) { return 0; }
+}
+
+const lastAutoSaveInstall = new Map(); // tabId -> url — install the beacon once per page load
 const lastAutofill = new Map(); // tabId -> { url, at } — never refill the same page in a tight loop
 chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
   try {
     if (info.status !== "complete") return;
     const url = (tab && tab.url) || "";
     if (!/^https?:\/\//i.test(url)) return;               // real web pages only
+
+    // AUTO-SAVE beacon (default ON): install a tiny listener that, on form submit / page hide, captures
+    // what the user typed (reusing collectTypedValues) and hands it to the background to save NEW fields.
+    try {
+      const { autoSaveDetails } = await chrome.storage.local.get("autoSaveDetails");
+      if (autoSaveDetails !== false && lastAutoSaveInstall.get(tabId) !== url) {
+        lastAutoSaveInstall.set(tabId, url);
+        await chrome.scripting.executeScript({
+          target: { tabId, allFrames: true },
+          func: (collectSrc) => {
+            if (window.__ppfAutoSave) return; window.__ppfAutoSave = true;
+            let collect; try { collect = new Function("return (" + collectSrc + ")")(); } catch (_) { return; }
+            const fire = () => { try { const p = collect(); if (p && p.length) chrome.runtime.sendMessage({ type: "autoSaveCapture", pairs: p }); } catch (_) { /* ignore */ } };
+            window.addEventListener("submit", fire, true);
+            window.addEventListener("pagehide", fire, true);
+            document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") fire(); }, true);
+          },
+          args: [collectTypedValues.toString()],
+        });
+      }
+    } catch (_) { /* auto-save must never break the worker */ }
+
     const { autofillOnLoad } = await chrome.storage.local.get("autofillOnLoad");
     if (!autofillOnLoad) return;                          // opt-in
     const prev = lastAutofill.get(tabId);

@@ -1133,6 +1133,19 @@ if ($("autofillOnLoad")) {
   };
 }
 
+// Auto-save new details — DEFAULT ON (only an explicit false turns it off), so answering a new field
+// on any page is remembered without clicking "Save new details" each time. New fields only; never
+// passwords; saved to your own vault on this device.
+if ($("autoSaveDetails")) {
+  chrome.storage.local.get("autoSaveDetails").then(({ autoSaveDetails }) => { $("autoSaveDetails").checked = autoSaveDetails !== false; });
+  $("autoSaveDetails").onchange = () => {
+    chrome.storage.local.set({ autoSaveDetails: $("autoSaveDetails").checked });
+    setMsg($("autoSaveDetails").checked
+      ? "On — new details you type are saved automatically (new fields only, never passwords)."
+      : "Off — use “Save new details from this page” when you want to save.");
+  };
+}
+
 $("learnPage").onclick = async () => {
   const tab = await targetTab();
   const url = (tab && tab.url) || "";

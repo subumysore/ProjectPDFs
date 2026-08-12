@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]  (batched — held at 1.0.11 until a release is warranted)
+### Added — Auto-save new details (default ON, no clicking)
+- The extension now learns what you type WITHOUT clicking "Save new details" each time. A tiny beacon
+  installed on page load captures on form submit / page hide (reusing collectTypedValues) and the
+  background saves only genuinely NEW fields — never passwords, never overwriting an existing value —
+  to the same vault autofill uses (desktop if bridged, else this browser). Toggle in the popup
+  (default on). Verified in real Chrome: the injected collector reconstructs and excludes passwords.
 ### Fixed — EEO self-ID fill + capture on real ATS pages (found via REAL-browser testing, not mocks)
 - **Race radio didn't fill** when an option's title runs straight into its description
   ("Asian" + "Not Hispanic…" → "asiannot…"): the matcher's trailing `\b` missed it. Generic word-boundary
