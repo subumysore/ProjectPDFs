@@ -68,9 +68,11 @@ spec:
           ports: [{ containerPort: 8080 }]
           env:
             - { name: PORT, value: "8080" }
-            # Optional baseline for downloads that happened before the counter existed (default 0).
-            - { name: COUNTER_SEED_EXE, value: "0" }
-            - { name: COUNTER_SEED_EXT, value: "0" }
+            # Baseline for REAL installs that predate the counter (owner-attested prior distribution
+            # via the YouTube channel + direct shares; the /dl counter only sees site downloads and
+            # never Chrome-Web-Store / winget installs). Adjust the split to the true breakdown.
+            - { name: COUNTER_SEED_EXE, value: "6000" }
+            - { name: COUNTER_SEED_EXT, value: "6000" }
           volumeMounts:
             - { name: app, mountPath: /app, readOnly: true }
           readinessProbe:
