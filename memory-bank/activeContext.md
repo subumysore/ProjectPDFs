@@ -651,3 +651,23 @@ multilingual filling — not the translation engine.
   (Office→PDF) pending — see RFC-0002.
 - **Web *search* to locate a form (REQ-11):** parked — user scoped web sourcing to URL/download only
   (a search query would leave the device; needs explicit opt-in).
+
+## 1.0.10 — smarter web-form autofill + turnkey release — 2026-08-11
+- **Extension web-form filling upgraded (shared @engine, both surfaces):**
+  - `pagefill.js` `deepQSA()` pierces OPEN shadow roots → ADP careers / web-component forms now fillable.
+  - `expandCands()` US state full-name ⇄ abbreviation (NC ⇄ North Carolina) for selects, custom dropdowns, radios.
+  - EEO self-ID concepts (race/ethnicity/hispanic-latino/veteran/disability) added to resolver + pagefill
+    (parity) and seeded (empty) into new desktop profiles.
+  - `resolver.js`: plain phone/mobile/landline fields no longer get a prepended country code (dedicated
+    country-code field still fills).
+- **Released both surfaces at 1.0.10.** Desktop: signed NSIS built (Authenticode + updater sig), staged to
+  stable `/download`, `latest.json` (no-BOM) + `release-manifest.json` regenerated, winget synced (hash
+  4dc798a1…, InstallerUrl on mooo.com host). Site published `-WithBinaries`; **live-verified**: latest.json
+  = 1.0.10 and live installer sha256 == manifest. Extension zip rebuilt (9.1 MB), **store review-state gate
+  checked (not pending)**, submitted to Chrome Web Store (Upload SUCCESS, in review).
+- **Tests:** extension/shared-engine 359 ✓, desktop 33 ✓, winget/release-manifest/store-package ✓, tsc clean.
+  Known pre-existing ⚠️: `scripts/site-i18n.test.mjs` 4 fails = marketing-translation content gaps (Hindi
+  tagline + privacy.noCollect, picker `en`, English auto-detect) — untouched by 1.0.10, flagged for follow-up.
+- **Housekeeping:** removed 3 stale `.claude/worktrees/agent-*` git worktrees + untracked guide build logs;
+  kept tracked demo PDFs (used by build/tests). Clean source snapshot archived to
+  `F:\PolyglotFormFill-1.0.10-source.zip` (git archive HEAD — no node_modules/target/.git/caches).
