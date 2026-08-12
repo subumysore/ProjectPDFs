@@ -188,12 +188,14 @@
     box-shadow:0 12px 40px rgba(0,0,0,.18);background:#000}
   .guidevid .cc-note{margin:10px 0 0;font-size:13px;opacity:.65}
 
-  .dlchip{display:none;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;
+  .dlchip{display:none;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
     background:rgba(13,143,131,.10);border:1px solid rgba(13,143,131,.28);color:var(--teal,#0b7a75);
     font:600 13px/1 var(--sans,system-ui);white-space:nowrap}
   .dlchip.on{display:inline-flex}
   .dlchip b{font-weight:800}
-  @media (max-width:720px){ .dlchip{display:none!important} }  /* keep the mobile nav uncluttered */
+  .dlchip .split{display:inline-flex;gap:8px;padding-left:8px;margin-left:2px;border-left:1px solid rgba(13,143,131,.30);opacity:.9}
+  @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
+  @media (max-width:720px){ .dlchip{display:none!important} }
 
   .tier.pop::after{content:"الأكثر رواجًا"}
 </style>
@@ -212,7 +214,7 @@
       <a href="#pricing">الأسعار</a>
       <a href="/tutorials/">الدروس التعليمية</a>
       <a href="#privacy">الخصوصية</a>
-      <span id="dlcount" class="dlchip" title="desktop app + browser extension — Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting</span>
+      <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#get">احصل عليه</a>
     </div>
   </nav>
@@ -224,7 +226,8 @@
     var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
     if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
     var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
-    var t=el.querySelector('[data-c=total]'); if(t) t.textContent=f(total);
+    var set=function(k,v){var n=el.querySelector('[data-c='+k+']'); if(n) n.textContent=f(v);};
+    set('total',total); set('exe',exe); set('ext',ext);
     el.classList.add('on');
   }).catch(function(){});
 })();</script>

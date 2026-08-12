@@ -119,23 +119,28 @@ const COUNTER_JS = `
     var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
     if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
     var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
-    var t=el.querySelector('[data-c=total]'); if(t) t.textContent=f(total);
+    var set=function(k,v){var n=el.querySelector('[data-c='+k+']'); if(n) n.textContent=f(v);};
+    set('total',total); set('exe',exe); set('ext',ext);
     el.classList.add('on');
   }).catch(function(){});
 })();`;
 // A COMPACT counter chip that sits in the nav next to "Get it" — not a full-width banner. Shows the
 // total; the desktop/extension split + privacy note are in the tooltip so it stays small.
 function counterChip(tr) {
-  const title = `${esc(tr("counter.desktop"))} + ${esc(tr("counter.extension"))} — ${esc(tr("counter.private"))}`;
-  return `<span id="dlcount" class="dlchip" title="${title}" aria-live="polite">🚀 <b data-c="total">—</b> ${esc(tr("counter.tagline"))}</span>`;
+  const title = esc(tr("counter.private"));
+  return `<span id="dlcount" class="dlchip" title="${title}" aria-live="polite">🚀 <b data-c="total">—</b> ${esc(tr("counter.tagline"))}` +
+    `<span class="split"><span title="${esc(tr("counter.desktop"))}">🖥️ <b data-c="exe">—</b></span>` +
+    `<span title="${esc(tr("counter.extension"))}">🧩 <b data-c="ext">—</b></span></span></span>`;
 }
 const COUNTER_CSS = `
-  .dlchip{display:none;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;
+  .dlchip{display:none;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
     background:rgba(13,143,131,.10);border:1px solid rgba(13,143,131,.28);color:var(--teal,#0b7a75);
     font:600 13px/1 var(--sans,system-ui);white-space:nowrap}
   .dlchip.on{display:inline-flex}
   .dlchip b{font-weight:800}
-  @media (max-width:720px){ .dlchip{display:none!important} }  /* keep the mobile nav uncluttered */
+  .dlchip .split{display:inline-flex;gap:8px;padding-left:8px;margin-left:2px;border-left:1px solid rgba(13,143,131,.30);opacity:.9}
+  @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
+  @media (max-width:720px){ .dlchip{display:none!important} }
 `;
 function switcher(current, page) {
   // The <option> value is the LANGUAGE CODE (stable, testable, and what analytics/deeplinks expect);
