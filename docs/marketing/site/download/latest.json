@@ -1,10 +1,10 @@
 {
-  "version": "1.0.8",
-  "notes": "Scan a credit/debit card; OCR robustness fixes; refreshed Profile & Vault UI.",
-  "pub_date": "2026-08-09T00:00:00Z",
+  "version": "1.0.10",
+  "notes": "Smarter web-form autofill: shadow-DOM fields (ADP/Workday), state name<->abbreviation matching, EEO self-ID fields, and plain phone fields without a country code.",
+  "pub_date": "2026-08-11T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHJUeThLUFJGUFJRWko5a1dWSFc5bFM0QW9sREJRNUFJU1ArVms4VHBBNmQ4ODBCZkdpMWtncXNKcWVBbHdJU3hVK0xFVDBnSFR1MzhNWHFSQm1Ua2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2Mjk2NDA4CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuOF94NjQtc2V0dXAuZXhlCnpHbFl5c0RCVTVYeWwxcEpzR0xlWmltRG5xcjJnQ1VORFBuTlN6dFVvWG9Ya3JESHpTd3FKd05GVDQyd1JnVCtkMkd2OEdMR2p2QUxLNFJteDM3ckFnPT0K",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UHZoejFhanU0VmZ0Zi91cWhHcUFXNXBQZ1RDVTZMREdTeHVJdExrRXRVQnVscllXZURCb3ZTQTJpSFcxZVFCMld4TnZma0hRQzlxQVcwZXpVSXp1N0FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTAwOTc5CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTBfeDY0LXNldHVwLmV4ZQpyc3lqaGtEYkNGOHZ2UmV5dk40TlJqdzZGU0I2eDNkWGdzRG5TcFNuRnJFd0dxY0IwbC9uMENUZHh0Z1YwRHEzWXBLSlVQUXFjYWZHVWxsa2d6SGdCZz09Cg==",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }

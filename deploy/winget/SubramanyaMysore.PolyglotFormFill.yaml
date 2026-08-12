@@ -10,7 +10,7 @@
 #   winget validate --manifest deploy\winget
 #   winget install --manifest deploy\winget          # installs for real — test VM recommended
 PackageIdentifier: SubramanyaMysore.PolyglotFormFill
-PackageVersion: 1.0.8
+PackageVersion: 1.0.10
 DefaultLocale: en-US
 ManifestType: version
 ManifestVersion: 1.6.0
