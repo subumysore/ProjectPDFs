@@ -749,6 +749,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // concept it matched and the value that resolved, so a real session can be inspected when a fill that
   // works in tests doesn't work on a specific page. Reported on window.__ppfDiag + console at the end.
   const _diag = OPTS.diag ? [] : null;
+  const _keepAlive = []; // {el, want} for text fields — re-applied if a framework reverts the write
   for (const { el, label, pick, forced } of fields) {
     let value;
     if (forced != null) {
@@ -797,6 +798,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       };
       if (rejected()) { await wait(30); if (rejected()) await typeFieldValue(el, want); }
       if (el.value) { filled++; markFilled(el); }
+      _keepAlive.push({ el, want }); // watch for an async framework revert (see keep-alive below)
     }
   }
 
@@ -1268,11 +1270,38 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
     }
   }
+  // KEEP-ALIVE: some frameworks (ADP WorkforceNow/Waypoint, certain Angular/React setups) ASYNCHRONOUSLY
+  // REVERT a programmatic value-set on their next re-render — the field visibly fills, then snaps back to
+  // empty a beat later — because the change didn't arrive through their own input pipeline. Watch the text
+  // fields we filled for a short window; if one reverts, RE-APPLY it via real keystroke simulation
+  // (typeFieldValue), which those pipelines accept. Bounded (≤6 passes over ~2.4s, stops early once
+  // stable) so it never fights forever or blocks the UI. Generic — no per-site logic.
+  if (_keepAlive.length) {
+    const reverted = (el, want) => {
+      const cur = (el.value || "").trim();
+      const wd = String(want).replace(/\D/g, "");
+      if (cur === String(want).trim()) return false;
+      if (wd && wd.length >= 4) return !cur.replace(/\D/g, "").includes(wd.slice(-4));
+      return cur === "";
+    };
+    for (let pass = 0; pass < 6; pass++) {
+      await wait(400);
+      let any = false;
+      for (const { el, want } of _keepAlive) {
+        try { if (el.isConnected && reverted(el, want)) { any = true; await typeFieldValue(el, want); markFilled(el); } } catch (_) { /* keep going */ }
+      }
+      if (!any) break; // everything held → done
+    }
+  }
   if (_diag) {
     try {
       const inv = [...deepQSA("input, textarea")].filter((e) => !["hidden", "submit", "button", "reset", "file"].includes(e.type))
         .map((e) => ({ al: e.getAttribute("aria-label") || e.name || e.placeholder || "", type: e.type, value: (e.value || "").slice(0, 18) }));
-      window.__ppfDiag = { filled, collected: fields.length, vaultKeys: Object.keys(vault || {}).length, matched: _diag, allInputs: inv };
+      // world detector: in the page's MAIN world the extension's `chrome.runtime` is NOT present; in the
+      // isolated world it IS. This tells us whether the world:"MAIN" injection actually took effect.
+      let world = "UNKNOWN";
+      try { world = (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.id) ? "MAIN" : "ISOLATED"; } catch (_) { world = "MAIN"; }
+      window.__ppfDiag = { world, framesTop: window.top === window, filled, collected: fields.length, vaultKeys: Object.keys(vault || {}).length, matched: _diag, allInputs: inv };
       console.log("%c[PolyglotFormFill DIAGNOSTIC] copy this whole object:", "font-weight:bold;color:#0a9e8e", window.__ppfDiag);
     } catch (_) { /* diagnostic must never break the fill */ }
   }

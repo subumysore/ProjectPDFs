@@ -651,7 +651,7 @@ async function fillActivePage(vault) {
     // sees the change and it sticks. func:fillPage uses no eval, so page CSP does not block it. Generic.
     world: "MAIN",
     func: fillPage,
-    args: [vault, tLabels, parseEducation(vault), { savedAnswers: savedAnswers || {} }],
+    args: [vault, tLabels, parseEducation(vault), { savedAnswers: savedAnswers || {}, diag: true }],
   });
   return (results || []).reduce((n, r) => n + (r && typeof r.result === "number" ? r.result : 0), 0);
 }
