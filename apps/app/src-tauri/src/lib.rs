@@ -1279,12 +1279,21 @@ fn do_register_companion(app: &tauri::AppHandle, ext: &str) -> Result<String, St
         .ok_or("Companion host binary not found. Build it: cargo build -p native-host --release")?;
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    // Trust the caller's id AND every KNOWN id (the store id AND the sideloaded key-derived id — they
+    // differ, which is exactly why the bridge silently failed for unpacked testers). De-duplicated.
+    let mut ids: Vec<String> = vec![ext.to_string()];
+    for k in KNOWN_EXTENSION_IDS {
+        if !ids.iter().any(|x| x == k) {
+            ids.push(k.to_string());
+        }
+    }
+    let origins: Vec<String> = ids.iter().map(|id| format!("chrome-extension://{id}/")).collect();
     let manifest = serde_json::json!({
         "name": "com.projectpdfs.host",
         "description": "PolyglotFormFill native messaging host (companion trust anchor)",
         "path": host.to_string_lossy(),
         "type": "stdio",
-        "allowed_origins": [format!("chrome-extension://{ext}/")]
+        "allowed_origins": origins
     });
     let manifest_path = dir.join("com.projectpdfs.host.json");
     std::fs::write(&manifest_path, serde_json::to_vec_pretty(&manifest).unwrap())
@@ -1308,7 +1317,16 @@ fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<Str
 /// The published extension id to auto-register on first run. Empty until the
 /// extension ships to a store; set it (or drop the id in `companion-extension-id.txt`
 /// under the app-data dir) to have the installer/app register the companion for you.
-const COMPANION_EXTENSION_ID: &str = "ikocicibacolgmamehagnpcgfabcamfk";
+const COMPANION_EXTENSION_ID: &str = "goaoopdpnofpamcpmmpbfkahfhfegfke";
+
+/// Extension IDs the companion ALWAYS trusts, regardless of what id is passed: the published Chrome
+/// Web Store id AND the sideloaded (unpacked) key-derived id. These differ — the store assigns its own
+/// id while a sideloaded build uses the manifest "key" — and the mismatch is what stopped the unpacked
+/// extension from ever bridging to the desktop (so it fell back to a local single-vault, no profiles).
+const KNOWN_EXTENSION_IDS: [&str; 2] = [
+    "goaoopdpnofpamcpmmpbfkahfhfegfke", // Chrome Web Store
+    "jbapddomfgleanhgiccnopimpjbhepkg", // sideloaded / unpacked (key-derived)
+];
 
 /// Auto-register the companion on startup (idempotent). Uses the compiled id, else an
 /// `companion-extension-id.txt` file in the app-data dir. Best-effort, never fatal.
