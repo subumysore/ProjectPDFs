@@ -1147,7 +1147,8 @@ function paintToggle(inputId, stateId) {
   b.classList.toggle("on", on); b.classList.toggle("off", !on);
 }
 if ($("autofillOnLoad")) {
-  chrome.storage.local.get("autofillOnLoad").then(({ autofillOnLoad }) => { $("autofillOnLoad").checked = !!autofillOnLoad; paintToggle("autofillOnLoad", "autofillState"); });
+  // Default ON (only an explicit false turns it off) — pages you open fill themselves; passwords stay manual.
+  chrome.storage.local.get("autofillOnLoad").then(({ autofillOnLoad }) => { $("autofillOnLoad").checked = autofillOnLoad !== false; paintToggle("autofillOnLoad", "autofillState"); });
   $("autofillOnLoad").onchange = () => {
     chrome.storage.local.set({ autofillOnLoad: $("autofillOnLoad").checked });
     paintToggle("autofillOnLoad", "autofillState");

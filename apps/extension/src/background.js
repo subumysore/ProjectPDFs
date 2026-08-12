@@ -397,7 +397,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     } catch (_) { /* auto-save must never break the worker */ }
 
     const { autofillOnLoad } = await chrome.storage.local.get("autofillOnLoad");
-    if (!autofillOnLoad) return;                          // opt-in
+    if (autofillOnLoad === false) return;                 // default ON — only an explicit false disables
     const prev = lastAutofill.get(tabId);
     if (prev && prev.url === url && Date.now() - prev.at < 4000) return; // debounce repeat 'complete's
     const r = await vaultForAutofill();
