@@ -401,6 +401,10 @@ $("unlock").onclick = async () => {
     } else setMsg(r.error || "Unlock failed (wrong passphrase?)", false);
   } finally { setLoading(false); }
 };
+// Enter in the passphrase box unlocks — a form has no submit button here, so wire the key directly.
+if ($("pass")) $("pass").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); $("unlock").click(); }
+});
 
 // WebAuthn PRF unlock: the passkey's PRF extension yields a per-credential secret
 // that only exists when the hardware authenticator is present + the user gestures.
