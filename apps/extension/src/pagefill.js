@@ -745,6 +745,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     return parts.length ? parts.join(cmp.sep) : (cmp.fallback ? cmp.fallback() : "");
   };
 
+  // OPT-IN diagnostic (OPTS.diag only; zero effect on normal fills): record, per collected field, the
+  // concept it matched and the value that resolved, so a real session can be inspected when a fill that
+  // works in tests doesn't work on a specific page. Reported on window.__ppfDiag + console at the end.
+  const _diag = OPTS.diag ? [] : null;
   for (const { el, label, pick, forced } of fields) {
     let value;
     if (forced != null) {
@@ -754,6 +758,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     } else {
       value = atomVal(pick.key);
     }
+    if (_diag) _diag.push({ label: String(label || "").replace(/\s+/g, " ").trim().slice(0, 48), concept: (pick && pick.key) || (forced != null ? "(own-key)" : null), resolved: value ? String(value).slice(0, 24) : "(EMPTY)", ctrl: el.type || el.tagName });
     if (!value) continue;
     // A YEAR box (labelled "year"/"YYYY") may only receive a 4-digit year — a street address or any
     // other value must never land in a From/To Year field; pull the year out of a date, else skip.
@@ -1262,6 +1267,14 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       }
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
     }
+  }
+  if (_diag) {
+    try {
+      const inv = [...deepQSA("input, textarea")].filter((e) => !["hidden", "submit", "button", "reset", "file"].includes(e.type))
+        .map((e) => ({ al: e.getAttribute("aria-label") || e.name || e.placeholder || "", type: e.type, value: (e.value || "").slice(0, 18) }));
+      window.__ppfDiag = { filled, collected: fields.length, vaultKeys: Object.keys(vault || {}).length, matched: _diag, allInputs: inv };
+      console.log("%c[PolyglotFormFill DIAGNOSTIC] copy this whole object:", "font-weight:bold;color:#0a9e8e", window.__ppfDiag);
+    } catch (_) { /* diagnostic must never break the fill */ }
   }
   return filled;
 }

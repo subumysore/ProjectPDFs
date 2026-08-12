@@ -644,6 +644,12 @@ async function fillActivePage(vault) {
   const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id, allFrames: !tLabels },
+    // MAIN world (page's own JS context): React/Vue/Angular track a controlled input's value via an
+    // expando (`el._valueTracker`) that is INVISIBLE from the extension's isolated world — so a value set
+    // there is discarded on the framework's next re-render and the field snaps back to empty (proven on
+    // live ADP: values resolved correctly yet First/Last/Email reverted). In the MAIN world the framework
+    // sees the change and it sticks. func:fillPage uses no eval, so page CSP does not block it. Generic.
+    world: "MAIN",
     func: fillPage,
     args: [vault, tLabels, parseEducation(vault), { savedAnswers: savedAnswers || {} }],
   });

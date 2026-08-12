@@ -419,6 +419,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     // delays — no page-side observer, no eval. Generic across all sites; best-effort (never throws).
     const injectFill = () => chrome.scripting.executeScript({
       target: { tabId, allFrames: true },               // reach iframe-embedded ATS forms too
+      world: "MAIN",   // page's own JS world so framework value-trackers see the fill (isolated world can't → values revert)
       func: fillPage,
       args: [r.vault, null, edu, { skipPassword: true, savedAnswers: savedAnswers || {} }],
     }).catch(() => { /* tab closed / no permission — auto-fill must never throw into the worker */ });

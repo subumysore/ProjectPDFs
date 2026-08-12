@@ -3,6 +3,25 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.15] - 2026-08-12
+### Fixed — web-form autofill on framework apps (the values were resolving but reverting)
+- **Root cause (found by instrumenting a REAL session, not tests):** the fill ran in the extension's
+  ISOLATED world. Framework apps (React/Vue/Angular, and ADP WorkforceNow's own framework) hold a
+  controlled input's value in a JS expando (`_valueTracker`) that is INVISIBLE from the isolated world, so
+  the framework discarded our DOM write on its next re-render — First/Last/Email resolved correctly
+  (SUBRAMANYA/MYSORE/email) yet snapped back to empty; only the phone widget kept its value. Fix: inject the
+  fill in the page's **MAIN world** (`world: "MAIN"`), where the framework sees the change and it sticks.
+  Verified end-to-end on live ADP with the real 53-field vault: all four fields fill and persist.
+- **Auto-fill was silently dead:** it rebuilt the filler with `new Function(...)`, which MV3's CSP blocks in
+  the isolated world (and many pages' CSP blocks in MAIN). Rewrote it to inject `func: fillPage` directly
+  (no eval) and re-inject on a few delays for SPA/late forms — no page-side observer, works everywhere.
+- **Phone/masked widgets (from 1.0.14, retained):** a widget's empty-state scaffold ("+1", input masks,
+  placeholder echoes) is treated as blank so the field fills. Generic; not per-control.
+- **Popup window:** fixed width so the expanded window no longer shows a blank gap on the right.
+- Added an opt-in per-field fill diagnostic (`OPTS.diag`) + `fillassess.js` self-assessment module.
+### Tests
+- Extension/shared-engine 371 ✓; live-ADP end-to-end (real vault) = 4/4 fill and stick.
+
 ## [1.0.14] - 2026-08-12
 ### Fixed — web-form autofill on SPA + framework widgets (GLOBAL, not per-site)
 - **Forms that appear AFTER load now fill.** SPA career sites (e.g. ADP) render the real form only
