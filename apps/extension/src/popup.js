@@ -189,20 +189,28 @@ async function compProfileName() {
 // Show WHICH profile the extension is on, and let the user switch among all profiles (Pranav / Subu /
 // …) — the same profiles the desktop app has. Only meaningful when bridged to the desktop vault.
 async function renderProfileBar() {
-  const bar = $("profileBar"); const sel = $("profileSel");
+  const bar = $("profileBar"); const sel = $("profileSel"); const hint = $("profileHint");
   if (!bar || !sel) return;
-  if (!COMP.on) { bar.classList.add("hidden"); return; }
+  if (!COMP.on) { bar.classList.add("hidden"); return; }  // standalone browser vault → no named profiles
+  // Bridged: ALWAYS show this bar. If the desktop is locked/unavailable the profile list can't load —
+  // say so here instead of hiding silently (which looked like "the profiles are gone").
+  bar.classList.remove("hidden");
   const pl = await send({ type: "companionProfiles" });
-  if (!pl || !pl.ok || !pl.profiles || !pl.profiles.length) { bar.classList.add("hidden"); return; }
+  if (!pl || !pl.ok || !pl.profiles || !pl.profiles.length) {
+    sel.style.display = "none";
+    if (hint) { hint.textContent = "🔒 Open the desktop app and unlock it to load your profiles."; hint.classList.remove("hidden"); }
+    return;
+  }
+  if (hint) hint.classList.add("hidden");
+  sel.style.display = "";
   const cur = await compProfile();
   sel.textContent = "";
   for (const p of pl.profiles) {
     const o = document.createElement("option");
-    o.value = p.id; o.textContent = p.name || p.id;
+    o.value = p.id; o.textContent = `${p.name || p.id}${p.count != null ? ` (${p.count})` : ""}`;
     if (p.id === cur) o.selected = true;
     sel.appendChild(o);
   }
-  bar.classList.remove("hidden");
   sel.onchange = async () => {
     COMP.profile = sel.value;
     // Mark it EXPLICIT so the auto-picker keeps this choice instead of drifting to the biggest profile.

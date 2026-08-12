@@ -84,10 +84,11 @@
       <!-- WHICH profile the extension is filling from — always visible, and switchable when more than
            one profile exists (e.g. Pranav / Subu). Bound to the same profiles as the desktop app. -->
       <div id="profileBar" class="row hidden" style="align-items:center;gap:8px;margin-bottom:8px;
-           background:#eef7f5;border:1px solid #bfe3db;border-radius:10px;padding:7px 10px">
-        <span aria-hidden="true">👤</span>
-        <b class="sub" style="margin:0">Profile</b>
-        <select id="profileSel" style="flex:1;font-weight:600"></select>
+           background:#eef7f5;border:1.5px solid #17b0a1;border-radius:10px;padding:9px 12px">
+        <span aria-hidden="true" style="font-size:16px">👤</span>
+        <b style="margin:0;color:#0a6a60;font-size:13px">Filling as</b>
+        <select id="profileSel" style="flex:1;font-weight:700;font-size:13px;padding:5px 8px"></select>
+        <span id="profileHint" class="sub hidden" style="margin:0;flex:1;color:#a8620f;font-size:12px"></span>
       </div>
       <div class="row">
         <button id="fill" data-i18n="fill.page">Fill this page</button>
