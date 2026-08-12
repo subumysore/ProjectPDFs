@@ -54,8 +54,15 @@ export function collectTypedValues() {
     ].map((s) => String(s).replace(/\s+/g, " ").trim()).filter(Boolean);
     return own[0] || "";
   };
+  // Skip PAGE CHROME — nav bars, menus, toolbars, tab strips, headers. Their dropdowns/toggles are UI,
+  // not form answers the user filled. This is what captured cryptic junk like "item-with-badge → Top"
+  // (a YouTube menu). Only real form fields should ever be learned.
+  const inChrome = (el) => !!(el && el.closest && el.closest(
+    "nav, header, footer, aside, [role='navigation'], [role='menu'], [role='menubar'], [role='toolbar'], " +
+    "[role='tablist'], [role='banner'], [role='complementary'], [contenteditable='true']"));
   const out = [];
   for (const el of deepQSA("input, textarea, select")) {
+    if (inChrome(el)) continue;
     const type = (el.type || "").toLowerCase();
     if (["password", "hidden", "file", "submit", "button", "image", "reset", "checkbox", "radio"].includes(type)) continue;
     if (el.disabled) continue;
@@ -101,6 +108,7 @@ export function collectTypedValues() {
     '[class*="react-select"], [class*="ant-select"], [class*="p-dropdown"], [class*="combobox"], [class*="Combobox"], [class*="Select"], [class*="dropdown"]',
   )) {
     if (el.tagName === "SELECT" || el.closest("select")) continue;
+    if (inChrome(el)) continue;                                        // skip nav/menu/toolbar UI
     if (seenW.some((s) => s.contains(el) || el.contains(s))) continue; // one row per nested widget
     // The selected value is the widget's visible text; require a short, single-value, non-placeholder.
     const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
@@ -192,7 +200,7 @@ export function collectTypedValues() {
   const groupKey = (el) => (el.name ? "n:" + el.name.replace(/\[\]$/, "") : (el.closest("fieldset") || el.getAttribute("aria-labelledby") || el.parentElement));
   const radios = new Map(); const checks = new Map();
   for (const el of deepQSA('input[type="radio"], input[type="checkbox"], [role="radio"], [role="checkbox"]')) {
-    if (el.disabled) continue;
+    if (el.disabled || inChrome(el)) continue;
     const isCheckbox = el.type === "checkbox" || el.getAttribute("role") === "checkbox";
     const map = isCheckbox ? checks : radios;
     const gk = groupKey(el);
