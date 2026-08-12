@@ -412,8 +412,23 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },               // reach iframe-embedded ATS forms too
-      func: fillPage,
-      args: [r.vault, null, parseEducation(r.vault), { skipPassword: true, savedAnswers: savedAnswers || {} }],
+      // Run the fill NOW, and — GLOBALLY, for any single-page app — re-run it when the form appears
+      // LATER (after an "Apply" click, a route change, a modal). Many ATS forms (ADP WorkforceNow,
+      // Workday, Greenhouse) render the fields only after interaction, long after page load; without
+      // this the one-shot fill hits an empty page. A debounced MutationObserver re-fills on new fields;
+      // fill is idempotent (never overwrites) so re-running is safe. Capped so it stops observing.
+      func: (fillSrc, vault, edu, opts) => {
+        let fill; try { fill = new Function("return (" + fillSrc + ")")(); } catch (_) { return; }
+        const run = () => { try { fill(vault, null, edu, opts); } catch (_) { /* ignore */ } };
+        run();
+        if (window.__ppfAutofillObs) return;            // one observer per frame
+        window.__ppfAutofillObs = true;
+        let t = 0;
+        const obs = new MutationObserver(() => { clearTimeout(t); t = setTimeout(run, 500); });
+        try { obs.observe(document.documentElement, { childList: true, subtree: true }); } catch (_) { return; }
+        setTimeout(() => { try { obs.disconnect(); } catch (_) {} window.__ppfAutofillObs = false; }, 90000);
+      },
+      args: [fillPage.toString(), r.vault, parseEducation(r.vault), { skipPassword: true, savedAnswers: savedAnswers || {} }],
     });
   } catch (_) { /* auto-fill must never throw into the worker */ }
 });
