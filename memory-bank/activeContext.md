@@ -1,5 +1,22 @@
 # Active Context
 
+## 1.0.16 — web-form autofill on controlled-input frameworks (ADP/Chrome 151) — 2026-08-12
+- **Root cause (proven by driving LIVE ADP in Chrome 151 via CDP):** ADP WorkforceNow inputs are CONTROLLED
+  — a bulk `value` set + `input` event is rejected and the field is reset to the framework's empty model
+  (fields filled then snapped back to empty; only the phone widget kept its value). Only KEYSTROKE-pipeline
+  input registers. Isolation on Chrome 151: raw set sticks; `input`/`change` clears; per-character typing
+  sticks. NOTE: not reproducible on Chrome 150 / fresh sessions — needed the owner's Chrome 151 to reproduce.
+- **Fix (`pagefill.js`, generic):** multi-tier escalation — fast set, then for any TEXT field the framework
+  reverts, re-apply via simulated keystrokes (`typeFieldValue`); AWAITED reconcile loop (typing is idempotent
+  and updates the model so siblings stop resetting) + short detached tail for a late clear. No-op on normal
+  forms (41ms). Verified live Chrome-151 ADP: First/Last/Email/phone fill and STICK.
+- **Verification framework:** `fillassess.js` (+4 tests) — per-control asked-vs-filled report for ANY form.
+- **Released:** extension 1.0.16 (zip `F:\polyglotformfill-extension-v1.0.16.zip` + store submitted). Desktop
+  1.0.16 = parity build (web-form fix is extension-only; desktop does NOT import pagefill.js). Tests 375 ✓.
+- **Lesson [[controlled-input-keystrokes]]:** the owner hinted "do webforms look for keyboard entries rather
+  than cut and paste?" hours before I found it — listen to domain hints; and reproduce in the OWNER's exact
+  browser/version when a bug won't show locally (a one-click debug-launcher on the Desktop worked).
+
 ## 1.0.14 — SPA/framework-widget autofill + bridge test-folder fix — 2026-08-12
 - **Global SPA re-fill (`background.js`):** autofill now installs a debounced, self-disconnecting
   MutationObserver so forms injected AFTER load (ADP "Apply", route changes) get filled — no per-site code.

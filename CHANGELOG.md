@@ -3,6 +3,25 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.16] - 2026-08-12
+### Fixed — web-form autofill on strict controlled-input frameworks (ADP WorkforceNow, Chrome 151)
+- **The real root cause (proven by driving live ADP in Chrome 151):** ADP's inputs are controlled — a bulk
+  `value` set + `input` event is treated as "not real user input" and the field is RESET to the framework's
+  empty model. So fields visibly filled, then snapped back to empty (First/Last/Email lost; the phone widget
+  kept its value). Only values that arrive through the **keystroke pipeline** register. (Isolation on Chrome
+  151: raw set sticks; firing `input`/`change` clears; real per-character typing sticks.)
+- **Fix — multi-tier fill escalation (generic, no per-site logic):** set fast, and for any TEXT field the
+  framework REVERTS, re-apply it by **simulating real keystrokes** (`typeFieldValue`) — which controlled
+  inputs accept. An AWAITED reconcile pass loops until stable (filling one field can reset a sibling; typing
+  is idempotent and updates the framework's model so it stops resetting), plus a short detached tail for a
+  clear that lands seconds later (a loaded draft). No-op on normal forms (verified: normal form fills in
+  41ms). VERIFIED on live ADP in Chrome 151: First/Last/Email/phone fill and STICK.
+- **Verification framework:** new `fillassess.js` — inspect ANY form and report, per control (text/select/
+  radio/checkbox/phone), what was asked and whether it filled, flagging required-but-empty fields. 4 tests.
+### Tests
+- Extension/shared-engine **375** ✓ (incl. 4 fill-assessment tests); live Chrome-151 ADP end-to-end = 4/4
+  fill and stick; normal-form regression 41ms (typing reconcile is a no-op when a set already sticks).
+
 ## [1.0.15] - 2026-08-12
 ### Fixed — web-form autofill on framework apps (the values were resolving but reverting)
 - **Root cause (found by instrumenting a REAL session, not tests):** the fill ran in the extension's

@@ -1270,12 +1270,14 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
     }
   }
-  // KEEP-ALIVE: some frameworks (ADP WorkforceNow/Waypoint, certain Angular/React setups) ASYNCHRONOUSLY
-  // REVERT a programmatic value-set on their next re-render — the field visibly fills, then snaps back to
-  // empty a beat later — because the change didn't arrive through their own input pipeline. Watch the text
-  // fields we filled for a short window; if one reverts, RE-APPLY it via real keystroke simulation
-  // (typeFieldValue), which those pipelines accept. Bounded (≤6 passes over ~2.4s, stops early once
-  // stable) so it never fights forever or blocks the UI. Generic — no per-site logic.
+  // CONTROLLED-INPUT RECONCILE: some frameworks (ADP WorkforceNow especially, some Angular/React setups)
+  // treat a bulk `value` set + input event as "not real user input" and RESET the field to their internal
+  // (empty) model — the field visibly fills, then snaps back to empty. PROVEN on live ADP (Chrome 151): a
+  // raw set sticks, but firing input/change clears it; only real keystrokes register. Filling one field
+  // can also reset a previously-set sibling. So after the main pass, re-apply any reverted TEXT field via
+  // real keystroke simulation (typeFieldValue) — which those pipelines accept — looping until stable. This
+  // is AWAITED (guaranteed before we return) and idempotent; each typed field updates the framework's
+  // model so it stops being reset. Generic — no per-site logic. A field the user is editing is left alone.
   if (_keepAlive.length) {
     const reverted = (el, want) => {
       const cur = (el.value || "").trim();
@@ -1285,13 +1287,32 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       return cur === "";
     };
     for (let pass = 0; pass < 6; pass++) {
-      await wait(400);
       let any = false;
       for (const { el, want } of _keepAlive) {
-        try { if (el.isConnected && reverted(el, want)) { any = true; await typeFieldValue(el, want); markFilled(el); } } catch (_) { /* keep going */ }
+        try {
+          if (el.isConnected && document.activeElement !== el && reverted(el, want)) { any = true; await typeFieldValue(el, want); markFilled(el); }
+        } catch (_) { /* keep going */ }
       }
-      if (!any) break; // everything held → done
+      if (!any) break; // everything held → done (no-op on normal sites: one cheap pass, nothing reverted)
+      await wait(120);
     }
+    // DETACHED tail: a few frameworks clear the form SECONDS later (loading a saved draft). Watch briefly
+    // and re-type once more if that happens. Non-blocking; capped; never touches a focused field.
+    const tail = _keepAlive.map((f) => ({ el: f.el, want: f.want, retries: 0, done: false }));
+    let ticks = 0;
+    const tick = async () => {
+      ticks++;
+      for (const f of tail) {
+        if (f.done) continue;
+        try {
+          if (!f.el.isConnected) { f.done = true; continue; }
+          if (document.activeElement === f.el) continue;
+          if (reverted(f.el, f.want)) { if (f.retries++ >= 4) { f.done = true; continue; } await typeFieldValue(f.el, f.want); markFilled(f.el); }
+        } catch (_) { /* keep going */ }
+      }
+      if (ticks < 20 && tail.some((f) => !f.done)) setTimeout(tick, 500);
+    };
+    setTimeout(tick, 900);
   }
   if (_diag) {
     try {
