@@ -1,5 +1,20 @@
 # Active Context
 
+## 1.0.14 — SPA/framework-widget autofill + bridge test-folder fix — 2026-08-12
+- **Global SPA re-fill (`background.js`):** autofill now installs a debounced, self-disconnecting
+  MutationObserver so forms injected AFTER load (ADP "Apply", route changes) get filled — no per-site code.
+- **Framework phone/masked widgets (`pagefill.js`):** after the framework-honoring value-set, VERIFY it
+  stuck (last-4 digits for numbers, non-blank for text); if not, retry via `typeFieldValue` (simulated
+  keystrokes). Fixes React `PhoneInput`/intl-tel-input showing only "+1". Component-agnostic.
+- **Bridge "passphrase again / no profiles" was NOT a code bug** — it was a hand-assembled `F:\` unpacked
+  folder MISSING `vendor/` (popup.js imports `../vendor/pdfjs/pdf.min.mjs` → 404 → popup.js never inits →
+  refresh() never runs → spurious passphrase wall). Host/bridge/vault were fine throughout (host returned
+  all 3 profiles directly). Fix: rebuild the folder from `deploy/build-extension-zip.ps1`'s file set.
+  Memory [[ext-load-folder-complete-set]]. Proven by `apps/app/scripts/real-ext-e2e.mjs` 10/10.
+- **Tests:** extension/shared-engine 371 ✓, real-browser E2E 10/10 ✓, desktop tsc clean.
+- **Release:** both surfaces bumped 1.0.13 → 1.0.14; extension zip saved to `F:\` root; desktop signed +
+  staged; site + store deploy per §10. (See deliverables matrix in the session close.)
+
 ## XFA/LiveCycle form fill + DL surname OCR — 2026-08-02 (ADR-0030)
 - **Hybrid-XFA forms (USCIS N-400, I-130) now fill & stay editable.** pdf-lib can't parse them (0 fields,
   `getPages()` throws) → fall back to pdf.js widgets + `annotationStorage` + `saveDocument()`, boxes labelled

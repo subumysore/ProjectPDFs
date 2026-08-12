@@ -2,6 +2,14 @@
 
 _What works, what's left, known issues. The narrative complement to the traceability matrix._
 
+## Done — 2026-08-12: 1.0.14 autofill robustness (SPA + framework widgets)
+- Autofill re-runs on later-injected forms (MutationObserver) so SPA career sites (ADP) fill after
+  "Apply"; framework phone/masked widgets (React PhoneInput/intl-tel-input) now fill via a typed-keystroke
+  fallback when a programmatic value-set is rejected. Both GLOBAL, not per-site. Extension 371 tests +
+  10/10 real-Chrome E2E green. Released both surfaces at 1.0.14. See activeContext + CHANGELOG.
+- Guardrail learned: build the local unpacked test folder from `deploy/build-extension-zip.ps1`'s file set
+  (includes `vendor/`); a hand-copy missing `vendor/` 404s popup.js and looks like a broken bridge.
+
 ## Done (site) — 2026-07-25: marketing site fully localized in all 26 UI languages
 - `docs/marketing/build-site.mjs` now renders FULL landing + privacy + install per language from one
   template set + `docs/marketing/i18n/<lang>.json` (188 keys each); old per-language stubs gone.

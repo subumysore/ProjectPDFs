@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [1.0.14] - 2026-08-12
+### Fixed — web-form autofill on SPA + framework widgets (GLOBAL, not per-site)
+- **Forms that appear AFTER load now fill.** SPA career sites (e.g. ADP) render the real form only
+  after an "Apply"/route change; the one-shot autofill ran too early and filled nothing. Autofill now
+  installs a MutationObserver that re-runs the fill (debounced, self-disconnecting after ~90s) when the
+  form is injected later. Generic — no per-site logic.
+- **Framework phone/masked widgets now fill.** React `PhoneInput` / intl-tel-input and similar controlled
+  inputs re-render from their own state and DROP a programmatic value-set (field left empty or showing
+  only "+1"). The filler now verifies the value actually stuck (last-4 digits present for numbers, or
+  non-blank for text) and, when it clearly didn't, retries by SIMULATING REAL KEYSTROKES — which those
+  widgets honour. Component-agnostic: any input that rejects the set gets the typed fallback.
+### Tooling / guardrail (no user-facing change)
+- Local unpacked test folder must be assembled from `deploy/build-extension-zip.ps1`'s authoritative file
+  set (it includes `vendor/`); a hand-copy that omits `vendor/` makes `popup.js` 404 and shows a spurious
+  passphrase wall. Verified fixed by `apps/app/scripts/real-ext-e2e.mjs` (10/10 real-Chrome assertions).
+### Tests
+- Extension/shared-engine 371 ✓, real-browser E2E 10/10 ✓ (bridge + profiles + toggles), desktop tsc clean.
+
 ## [1.0.13] - 2026-08-12
 ### Fixed — the browser⇄desktop bridge, for real this time
 - Native-host now trusts the KEYED unpacked id + the Chrome Web Store id (a build-failing test keeps the
