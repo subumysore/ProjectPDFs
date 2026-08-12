@@ -8,6 +8,26 @@ follow the **stricter**. Replace the `TODO` placeholders with your project's spe
 ---
 
 # 1. CORE GOVERNANCE (the "No-Go" zones)
+- **DO NOT BREAK WHAT WORKS — FROZEN-ON-ACCEPTANCE, OPEN FOR EXTENSION (standing, overrides convenience):**
+  Once a piece of code has been ACCEPTED (the owner confirmed it works, it shipped in a release, or it is
+  covered by passing acceptance/real-surface tests), it is **FROZEN**: it is CLOSED for modification and
+  OPEN only for extension. You may ADD new code (new function, new branch, new module, new strategy/adapter)
+  that extends behavior; you may NOT edit, rewrite, or "improve" the accepted code in place. This is the
+  **Open/Closed Principle**, and it is mandatory here — every new autofill quirk, widget, or edge case is
+  handled by an ADDITION guarded so it cannot alter the existing path, never by mutating the working path.
+  - **Regression is the #1 no-go.** Never let a change make a previously-working behavior stop working. If a
+    change *could* touch an accepted path, you MUST prove the old behavior still works on its REAL surface
+    (the actual app/extension/page/PDF — not a unit test alone) BEFORE and AFTER, and show both results.
+  - **Follow SOLID:** Single-responsibility (one reason to change), Open/Closed (extend, don't edit accepted
+    code), Liskov (a new strategy must honor the existing contract), Interface-segregation, Dependency-
+    inversion (depend on the stable interface, inject the new behavior). New behavior plugs in; it does not
+    rewire what exists.
+  - **If accepted code genuinely must change** (a real defect in it, not a new feature): STOP, say so
+    explicitly, get the owner's go, and gate the change behind a real-surface before/after proof. Silent
+    edits to accepted code are forbidden.
+  - **"A test" means a REAL test.** Unit + bridge tests are necessary but NOT sufficient — an accepted
+    behavior is only verified by exercising the real runtime path (see §8b). Passing units while the real
+    surface regresses is a FAILURE, reported as such.
 - **ZERO-COST INFRA — NO PVCs / BLOCK VOLUMES (standing):** the OKE cluster runs on the OCI free tier,
   which has no block-volume quota (a `PersistentVolumeClaim` fails `ProvisioningFailed … LimitExceeded`).
   For ANY small persistent state a service needs (counters, flags, cursors, last-run marks, tiny state),
