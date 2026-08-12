@@ -76,10 +76,19 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+    border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
+  .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
+  [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 </style>
 </head>
 <body>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/install/">English</option><option value="/hi/install/">हिन्दी</option><option value="/bn/install/">বাংলা</option><option value="/ta/install/">தமிழ்</option><option value="/te/install/">తెలుగు</option><option value="/kn/install/">ಕನ್ನಡ</option><option value="/ml/install/">മലയാളം</option><option value="/gu/install/">ગુજરાતી</option><option value="/pa/install/">ਪੰਜਾਬੀ</option><option value="/mr/install/">मराठी</option><option value="/ur/install/">اردو</option><option value="/ar/install/">العربية</option><option value="/he/install/">עברית</option><option value="/fa/install/">فارسی</option><option value="/zh/install/">中文</option><option value="/ja/install/">日本語</option><option value="/ko/install/">한국어</option><option value="/th/install/">ไทย</option><option value="/vi/install/">Tiếng Việt</option><option value="/id/install/" selected>Bahasa Indonesia</option><option value="/ru/install/">Русский</option><option value="/es/install/">Español</option><option value="/fr/install/">Français</option><option value="/de/install/">Deutsch</option><option value="/pt/install/">Português</option><option value="/tr/install/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/install/">English</option><option value="hi" data-url="/hi/install/">हिन्दी</option><option value="bn" data-url="/bn/install/">বাংলা</option><option value="ta" data-url="/ta/install/">தமிழ்</option><option value="te" data-url="/te/install/">తెలుగు</option><option value="kn" data-url="/kn/install/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/install/">മലയാളം</option><option value="gu" data-url="/gu/install/">ગુજરાતી</option><option value="pa" data-url="/pa/install/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/install/">मराठी</option><option value="ur" data-url="/ur/install/">اردو</option><option value="ar" data-url="/ar/install/">العربية</option><option value="he" data-url="/he/install/">עברית</option><option value="fa" data-url="/fa/install/">فارسی</option><option value="zh" data-url="/zh/install/">中文</option><option value="ja" data-url="/ja/install/">日本語</option><option value="ko" data-url="/ko/install/">한국어</option><option value="th" data-url="/th/install/">ไทย</option><option value="vi" data-url="/vi/install/">Tiếng Việt</option><option value="id" data-url="/id/install/" selected>Bahasa Indonesia</option><option value="ru" data-url="/ru/install/">Русский</option><option value="es" data-url="/es/install/">Español</option><option value="fr" data-url="/fr/install/">Français</option><option value="de" data-url="/de/install/">Deutsch</option><option value="pt" data-url="/pt/install/">Português</option><option value="tr" data-url="/tr/install/">Türkçe</option></select></div>
 <div class="wrap">
   <p><a href="/id/">← PolyglotFormFill</a></p>
   <h1>Pasang</h1>

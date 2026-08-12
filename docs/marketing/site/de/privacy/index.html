@@ -77,10 +77,14 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 </style>
 </head>
 <body>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/">தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/" selected>Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/privacy/">English</option><option value="hi" data-url="/hi/privacy/">हिन्दी</option><option value="bn" data-url="/bn/privacy/">বাংলা</option><option value="ta" data-url="/ta/privacy/">தமிழ்</option><option value="te" data-url="/te/privacy/">తెలుగు</option><option value="kn" data-url="/kn/privacy/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/privacy/">മലയാളം</option><option value="gu" data-url="/gu/privacy/">ગુજરાતી</option><option value="pa" data-url="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/privacy/">मराठी</option><option value="ur" data-url="/ur/privacy/">اردو</option><option value="ar" data-url="/ar/privacy/">العربية</option><option value="he" data-url="/he/privacy/">עברית</option><option value="fa" data-url="/fa/privacy/">فارسی</option><option value="zh" data-url="/zh/privacy/">中文</option><option value="ja" data-url="/ja/privacy/">日本語</option><option value="ko" data-url="/ko/privacy/">한국어</option><option value="th" data-url="/th/privacy/">ไทย</option><option value="vi" data-url="/vi/privacy/">Tiếng Việt</option><option value="id" data-url="/id/privacy/">Bahasa Indonesia</option><option value="ru" data-url="/ru/privacy/">Русский</option><option value="es" data-url="/es/privacy/">Español</option><option value="fr" data-url="/fr/privacy/">Français</option><option value="de" data-url="/de/privacy/" selected>Deutsch</option><option value="pt" data-url="/pt/privacy/">Português</option><option value="tr" data-url="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
   <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>Datenschutzerklärung</h1>
@@ -88,6 +92,14 @@
   <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">Diese Übersetzung wird zu Ihrer Bequemlichkeit bereitgestellt. Die englische Fassung dieser Datenschutzerklärung ist die maßgebliche und rechtsverbindliche Fassung. <a href="/privacy/">English</a></div>
   <div class="disclaimer"><b>⚖ Entwurf, ausstehende rechtliche Prüfung — keine Rechtsberatung. Dies ist eine Entwurfsvorlage für das Produkt PolyglotFormFill. Sie muss vor der Veröffentlichung von qualifiziertem Rechtsbeistand in jeder Rechtsordnung geprüft und genehmigt werden, in der der Dienst angeboten wird (einschließlich der EU/des EWR nach der GDPR, Indien nach dem DPDP Act 2023 und der USA nach der CCPA/CPRA). Kontakt-/Identitätsfelder sind ausgefüllt; eine abschließende Prüfung durch einen Rechtsbeistand wird vor einer breiten öffentlichen Freigabe dennoch empfohlen.</b></div>
   <div class="tldr">Das Wesentliche, klar gesagt: Wir sehen, speichern oder übertragen Ihre Dokumente oder die von Ihnen eingegebenen Daten nicht, und wir senden sie nirgendwohin, wohin Sie es nicht beabsichtigt haben. Alles wird auf Ihrem Gerät verarbeitet. Ihre Inhalte verlassen Ihr Gerät nur, wenn Sie eine bestimmte Aktion durchführen — das Absenden eines ausgefüllten Formulars an den von Ihnen gewählten Empfänger oder eine Websuche, die Sie eingeben — und sie gehen direkt dorthin, niemals über uns.</div>
+
+  <ul class="commitments">
+    <li>Wir erheben nichts. Kein Konto, keine Telemetrie, keine Analyse.</li>
+    <li>Lesen, OCR, Übersetzung, Ausfüllen und Unterschreiben geschehen auf Ihrem Gerät.</li>
+    <li>Ihr Formular verlässt das Gerät nur, wenn Sie es senden, und nur an den Empfänger, den Sie wählen.</li>
+    <li>Die App lädt Schriften, Sprachmodelle und Updates von unserem Server. Nichts über Sie wird zurückgesendet.</li>
+  </ul>
+  <p class="muted">Der vollständige Rechtstext liegt auf Englisch vor.</p>
 
   <h2><span class="n">1.</span>Wer wir sind</h2>
   <p>Diese Erklärung wird herausgegeben von Subramanya Mysore (Einzelunternehmer), Indien („wir“, „uns“), verantwortlich für die Anwendung PolyglotFormFill, die Browser-Erweiterung und die Website (der „Dienst“). Nach der GDPR handeln wir als Verantwortlicher; nach dem indischen DPDP Act 2023 als Data Fiduciary; wo wir keine personenbezogenen Daten verarbeiten, entsteht keine solche Rolle. Beschwerdestelle / Kontakt: Subramanya Mysore · subumysore@gmail.com.</p>

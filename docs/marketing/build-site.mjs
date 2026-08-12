@@ -108,12 +108,40 @@ ${alts}`;
 }
 
 function switcher(current, page) {
+  // The <option> value is the LANGUAGE CODE (stable, testable, and what analytics/deeplinks expect);
+  // the destination URL for the SAME page type rides along in data-url so choosing a language keeps
+  // you on the page you were reading.
   const opts = Object.entries(UI_LANGS)
     .map(([code, label]) =>
-      `<option value="${urlFor(code, page)}"${code === current ? " selected" : ""}>${label}</option>`)
+      `<option value="${code}" data-url="${urlFor(code, page)}"${code === current ? " selected" : ""}>${label}</option>`)
     .join("");
   return `<div class="langbar"><label for="lang">🌐</label>` +
-    `<select id="lang" aria-label="Language" onchange="location.href=this.value">${opts}</select></div>`;
+    `<select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url">${opts}</select></div>`;
+}
+
+// English-page only: SUGGEST (never redirect to) the visitor's own language when we speak it. An
+// automatic redirect strands anyone who wanted English, so this only reveals a dismissible hint with
+// a link. `location` is never assigned here — navigation is the visitor's click.
+function langhint() {
+  const known = JSON.stringify(
+    Object.fromEntries(AVAILABLE.filter((l) => l !== "en").map((l) => [l, { url: urlFor(l, "landing"), label: UI_LANGS[l] || l }])),
+  );
+  return `<div id="langhint" class="langhint" hidden></div>
+<script>
+(function(){
+  var KNOWN=${known}, el=document.getElementById("langhint"); if(!el) return;
+  var langs=(navigator.languages||[navigator.language||""]);
+  for(var i=0;i<langs.length;i++){
+    var code=String(langs[i]||"").toLowerCase().split("-")[0];
+    if(code==="en") return;              // the visitor already prefers English — say nothing
+    if(KNOWN[code]){
+      var k=KNOWN[code];
+      el.innerHTML='<a href="'+k.url+'">'+k.label+' →</a>';
+      el.hidden=false; return;
+    }
+  }
+})();
+</script>`;
 }
 
 const HELLO_JS = `
@@ -184,6 +212,10 @@ const LANGBAR_CSS = `
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 `;
 
 // Narrated-guide embed shown in the hero. Language-aware <video> with a caption <track>.
@@ -217,6 +249,7 @@ ${headMeta(lang, "landing", tr)}
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
 ${switcher(lang, "landing")}
+${lang === "en" ? langhint() : ""}
 
 <div class="wrap">
   <nav>
@@ -236,6 +269,7 @@ ${switcher(lang, "landing")}
 <header class="wrap">
   <span class="badge">◉ ${esc(tr("hero.badge"))}</span>
   <h1>${esc(tr("hero.h1a"))}<br><span class="fade">${esc(tr("hero.h1b"))}</span></h1>
+  <p class="tagline">${esc(tr("app.tagline"))}</p>
   <p class="lede">${esc(tr("hero.lede"))}</p>
   <div class="cta">
     <a class="btn" href="#features">${esc(tr("hero.cta1"))}</a>
@@ -377,7 +411,7 @@ ${switcher(lang, "landing")}
   <p class="sub">${esc(tr("get.sub"))}</p>
   <div class="cta">
     <a class="btn" href="${urlFor(lang, "install")}#extension">${esc(tr("get.extPrimary"))}</a>
-    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe">${esc(tr("get.win"))}</a>
+    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe" aria-label="${esc(tr("site.download"))}">${esc(tr("get.win"))}</a>
     <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
   </div>
   <p class="note">${esc(tr("get.note"))}</p>
@@ -386,6 +420,7 @@ ${switcher(lang, "landing")}
 <section id="privacy" class="wrap">
   <span class="eyebrow">${esc(tr("privS.eyebrow"))}</span>
   <h2 class="h2">${esc(tr("privS.h2"))}</h2>
+  <p class="sub" style="font-weight:600">${esc(tr("privacy.headline"))}</p>
   <p class="sub">${esc(tr("privS.sub"))}</p>
   <p style="margin-top:16px"><a class="btn ghost" href="${urlFor(lang, "privacy")}">${esc(tr("privS.readFull"))}</a></p>
 </section>
@@ -426,6 +461,14 @@ ${switcher(lang, "privacy")}
   ${authNote}
   <div class="disclaimer"><b>${esc(tr("privP.disclaimer"))}</b></div>
   <div class="tldr">${esc(tr("privP.tldr"))}</div>
+
+  <ul class="commitments">
+    <li>${esc(tr("privacy.noCollect"))}</li>
+    <li>${esc(tr("privacy.onDevice"))}</li>
+    <li>${esc(tr("privacy.egress"))}</li>
+    <li>${esc(tr("privacy.assets"))}</li>
+  </ul>
+  <p class="muted">${esc(tr("privacy.legalNote"))}</p>
 
   <h2><span class="n">1.</span>${esc(tr("privP.h1"))}</h2>
   <p>${esc(tr("privP.b1"))}</p>

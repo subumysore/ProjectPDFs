@@ -176,6 +176,10 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 
   .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
@@ -188,7 +192,8 @@
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/">English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/">தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/" selected>עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/" selected>עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/">한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
+
 
 <div class="wrap">
   <nav>
@@ -208,6 +213,7 @@
 <header class="wrap">
   <span class="badge">◉ רב-לשוני · על המכשיר · אפס טלמטריה</span>
   <h1>קראו ומלאו כל טופס —<br><span class="fade">בכל שפה.</span></h1>
+  <p class="tagline">מלאו כל טופס, בכל שפה, בפרטיות על המכשיר שלכם.</p>
   <p class="lede">‏PolyglotFormFill קורא טופס בשפה אחת וממלא אותו מהנתונים שלכם בשפה אחרת — קובצי PDF, Word, Excel וטפסים מקוונים. הכול פועל על המכשיר שלכם; אנחנו לעולם לא רואים את הנתונים שלכם. כשאתם שולחים, זה עובר ישירות אל הנמען שבחרתם — לעולם לא דרכנו.</p>
   <div class="cta">
     <a class="btn" href="#features">ראו איך זה עובד</a>
@@ -394,7 +400,7 @@
   <p class="sub">הוסיפו את תוסף הדפדפן למילוי אוטומטי של טפסים מקוונים, או התקינו את אפליקציית שולחן העבודה לחוויה המלאה והמוקשחת. הם פועלים יחד.</p>
   <div class="cta">
     <a class="btn" href="/he/install/#extension">Get the browser extension — no warnings</a>
-    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe">הורדה עבור Windows</a>
+    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe" aria-label="הורדה">הורדה עבור Windows</a>
     <span class="btn ghost soon" aria-disabled="true">‏Chrome Web Store — בקרוב</span>
   </div>
   <p class="note">Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore). A brand-new signed app may show a SmartScreen “unrecognized app” notice — click More info, then Run anyway (verified clean, VirusTotal 0/71). The browser extension installs with no prompt. macOS &amp; Linux next.</p>
@@ -403,6 +409,7 @@
 <section id="privacy" class="wrap">
   <span class="eyebrow">פרטיות</span>
   <h2 class="h2">ההבטחה, בשורה אחת</h2>
+  <p class="sub" style="font-weight:600">המסמכים שלכם לעולם לא עוזבים את המכשיר.</p>
   <p class="sub">הנתונים שלכם מעובדים על המכשיר שלכם ולעולם אינם נשלחים אלינו. הדברים היחידים שעוזבים הם פעולות שאתם מבצעים — שליחת טופס מוגמר (ישירות לנמען שלו) או חיפוש אינטרנט שאתם מקלידים. אלה עוברים ישירות ליעדם, לעולם לא דרכנו. זו כל הרשימה.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/he/privacy/">קראו את מדיניות הפרטיות המלאה</a></p>
 </section>

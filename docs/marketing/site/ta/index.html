@@ -176,6 +176,10 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 
   .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
@@ -188,7 +192,8 @@
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/">English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/" selected>தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/" selected>தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/">한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
+
 
 <div class="wrap">
   <nav>
@@ -208,6 +213,7 @@
 <header class="wrap">
   <span class="badge">◉ பன்மொழி · சாதனத்திலேயே · பூஜ்ஜிய டெலிமெட்ரி</span>
   <h1>எந்தப் படிவத்தையும் படியுங்கள், நிரப்புங்கள் —<br><span class="fade">எந்த மொழியிலும்.</span></h1>
+  <p class="tagline">எந்தப் படிவத்தையும், எந்த மொழியிலும், உங்கள் சாதனத்தில் தனிப்பட்ட முறையில் நிரப்புங்கள்.</p>
   <p class="lede">PolyglotFormFill ஒரு மொழியில் உள்ள படிவத்தைப் படித்து, உங்கள் தரவை மற்றொரு மொழியில் இருந்து நிரப்புகிறது — PDF, Word, Excel மற்றும் இணையப் படிவங்கள். அனைத்தும் உங்கள் சாதனத்திலேயே இயங்குகிறது; உங்கள் தரவை நாங்கள் ஒருபோதும் பார்ப்பதில்லை. நீங்கள் சமர்ப்பிக்கும்போது, அது நீங்கள் தேர்ந்தெடுத்த பெறுநருக்கு நேரடியாகச் செல்கிறது — ஒருபோதும் எங்கள் வழியாக அல்ல.</p>
   <div class="cta">
     <a class="btn" href="#features">இது எப்படி வேலை செய்கிறது என்று பாருங்கள்</a>
@@ -394,7 +400,7 @@
   <p class="sub">இணையப் படிவ தானியங்கி நிரப்புதலுக்கு உலாவி நீட்டிப்பைச் சேர்க்கவும், அல்லது முழுமையான, வலுவூட்டப்பட்ட அனுபவத்திற்கு டெஸ்க்டாப் பயன்பாட்டை நிறுவவும். அவை ஒன்றாக வேலை செய்கின்றன.</p>
   <div class="cta">
     <a class="btn" href="/ta/install/#extension">Get the browser extension — no warnings</a>
-    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe">Windows-க்கு பதிவிறக்கவும்</a>
+    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe" aria-label="பதிவிறக்கு">Windows-க்கு பதிவிறக்கவும்</a>
     <span class="btn ghost soon" aria-disabled="true">Chrome Web Store — விரைவில்</span>
   </div>
   <p class="note">Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore). A brand-new signed app may show a SmartScreen “unrecognized app” notice — click More info, then Run anyway (verified clean, VirusTotal 0/71). The browser extension installs with no prompt. macOS &amp; Linux next.</p>
@@ -403,6 +409,7 @@
 <section id="privacy" class="wrap">
   <span class="eyebrow">தனியுரிமை</span>
   <h2 class="h2">வாக்குறுதி, ஒரே வரியில்</h2>
+  <p class="sub" style="font-weight:600">உங்கள் ஆவணங்கள் உங்கள் சாதனத்தை விட்டு வெளியேறுவதில்லை.</p>
   <p class="sub">உங்கள் தரவு உங்கள் சாதனத்திலேயே செயலாக்கப்படுகிறது, ஒருபோதும் எங்களுக்கு அனுப்பப்படுவதில்லை. வெளியேறும் ஒரே விஷயங்கள் நீங்கள் மேற்கொள்ளும் செயல்கள் மட்டுமே — முடிக்கப்பட்ட ஒரு படிவத்தைச் சமர்ப்பிப்பது (அதன் பெறுநருக்கு நேரடியாக) அல்லது நீங்கள் தட்டச்சு செய்யும் இணையத் தேடல். அவை தங்கள் இலக்கிற்கு நேரடியாகச் செல்கின்றன, ஒருபோதும் எங்கள் வழியாக அல்ல. அதுதான் முழுப் பட்டியல்.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/ta/privacy/">முழு தனியுரிமைக் கொள்கையைப் படியுங்கள்</a></p>
 </section>

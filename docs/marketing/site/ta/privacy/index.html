@@ -77,10 +77,14 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 </style>
 </head>
 <body>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/privacy/">English</option><option value="/hi/privacy/">हिन्दी</option><option value="/bn/privacy/">বাংলা</option><option value="/ta/privacy/" selected>தமிழ்</option><option value="/te/privacy/">తెలుగు</option><option value="/kn/privacy/">ಕನ್ನಡ</option><option value="/ml/privacy/">മലയാളം</option><option value="/gu/privacy/">ગુજરાતી</option><option value="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="/mr/privacy/">मराठी</option><option value="/ur/privacy/">اردو</option><option value="/ar/privacy/">العربية</option><option value="/he/privacy/">עברית</option><option value="/fa/privacy/">فارسی</option><option value="/zh/privacy/">中文</option><option value="/ja/privacy/">日本語</option><option value="/ko/privacy/">한국어</option><option value="/th/privacy/">ไทย</option><option value="/vi/privacy/">Tiếng Việt</option><option value="/id/privacy/">Bahasa Indonesia</option><option value="/ru/privacy/">Русский</option><option value="/es/privacy/">Español</option><option value="/fr/privacy/">Français</option><option value="/de/privacy/">Deutsch</option><option value="/pt/privacy/">Português</option><option value="/tr/privacy/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/privacy/">English</option><option value="hi" data-url="/hi/privacy/">हिन्दी</option><option value="bn" data-url="/bn/privacy/">বাংলা</option><option value="ta" data-url="/ta/privacy/" selected>தமிழ்</option><option value="te" data-url="/te/privacy/">తెలుగు</option><option value="kn" data-url="/kn/privacy/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/privacy/">മലയാളം</option><option value="gu" data-url="/gu/privacy/">ગુજરાતી</option><option value="pa" data-url="/pa/privacy/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/privacy/">मराठी</option><option value="ur" data-url="/ur/privacy/">اردو</option><option value="ar" data-url="/ar/privacy/">العربية</option><option value="he" data-url="/he/privacy/">עברית</option><option value="fa" data-url="/fa/privacy/">فارسی</option><option value="zh" data-url="/zh/privacy/">中文</option><option value="ja" data-url="/ja/privacy/">日本語</option><option value="ko" data-url="/ko/privacy/">한국어</option><option value="th" data-url="/th/privacy/">ไทย</option><option value="vi" data-url="/vi/privacy/">Tiếng Việt</option><option value="id" data-url="/id/privacy/">Bahasa Indonesia</option><option value="ru" data-url="/ru/privacy/">Русский</option><option value="es" data-url="/es/privacy/">Español</option><option value="fr" data-url="/fr/privacy/">Français</option><option value="de" data-url="/de/privacy/">Deutsch</option><option value="pt" data-url="/pt/privacy/">Português</option><option value="tr" data-url="/tr/privacy/">Türkçe</option></select></div>
 <div class="wrap">
   <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
   <h1>தனியுரிமைக் கொள்கை</h1>
@@ -88,6 +92,14 @@
   <div class="disclaimer" style="background:var(--teal-soft);border-color:var(--line)">இந்த மொழிபெயர்ப்பு உங்கள் வசதிக்காக வழங்கப்படுகிறது. இந்த தனியுரிமைக் கொள்கையின் ஆங்கிலப் பதிப்பே அதிகாரப்பூர்வமான மற்றும் சட்டப்பூர்வமாகக் கட்டுப்படுத்தும் பதிப்பாகும். <a href="/privacy/">English</a></div>
   <div class="disclaimer"><b>⚖ சட்ட மதிப்பாய்வுக்கு நிலுவையில் உள்ள வரைவு — சட்ட ஆலோசனை அல்ல. இது PolyglotFormFill தயாரிப்புக்கான ஒரு வரைவு டெம்ப்ளேட். சேவை வழங்கப்படும் ஒவ்வொரு அதிகார வரம்பிலும் (EU/EEA GDPR-இன் கீழ், இந்தியா DPDP சட்டம் 2023-இன் கீழ், மற்றும் US CCPA/CPRA-இன் கீழ் உட்பட) வெளியிடுவதற்கு முன் தகுதி வாய்ந்த சட்ட ஆலோசகரால் இது மதிப்பாய்வு செய்யப்பட்டு அங்கீகரிக்கப்பட வேண்டும். தொடர்பு/அடையாளப் புலங்கள் நிறைவு செய்யப்பட்டுள்ளன; பரவலான பொது வெளியீட்டிற்கு முன் ஆலோசகரின் இறுதி வாசிப்பு இன்னும் பரிந்துரைக்கப்படுகிறது.</b></div>
   <div class="tldr">சாராம்சம், தெளிவாக: உங்கள் ஆவணங்களையோ நீங்கள் உள்ளிடும் தரவையோ நாங்கள் பார்ப்பதில்லை, சேமிப்பதில்லை, அல்லது அனுப்புவதில்லை, மேலும் நீங்கள் விரும்பாத எந்த இடத்திற்கும் அவற்றை நாங்கள் அனுப்புவதில்லை. அனைத்தும் உங்கள் சாதனத்திலேயே செயலாக்கப்படுகிறது. நீங்கள் ஒரு குறிப்பிட்ட செயலை மேற்கொள்ளும்போது மட்டுமே உங்கள் உள்ளடக்கம் உங்கள் சாதனத்தை விட்டு வெளியேறுகிறது — நீங்கள் தேர்ந்தெடுக்கும் பெறுநருக்கு முடிக்கப்பட்ட படிவத்தைச் சமர்ப்பிப்பது, அல்லது நீங்கள் தட்டச்சு செய்யும் இணையத் தேடல் — மேலும் அது நேரடியாக அங்கே செல்கிறது, ஒருபோதும் எங்கள் வழியாக அல்ல.</div>
+
+  <ul class="commitments">
+    <li>நாங்கள் எதையும் சேகரிப்பதில்லை. கணக்கு இல்லை, டெலிமெட்ரி இல்லை, பகுப்பாய்வு இல்லை.</li>
+    <li>படித்தல், OCR, மொழிபெயர்ப்பு, நிரப்புதல், கையொப்பம் — அனைத்தும் உங்கள் சாதனத்திலேயே நடக்கிறது.</li>
+    <li>நீங்கள் அனுப்பும்போது மட்டுமே உங்கள் படிவம் சாதனத்தை விட்டு வெளியேறும், அதுவும் நீங்கள் தேர்ந்தெடுத்த பெறுநருக்கு மட்டுமே.</li>
+    <li>செயலி எங்கள் சேவையகத்திலிருந்து எழுத்துருக்கள், மொழி மாதிரிகள், புதுப்பிப்புகளைப் பதிவிறக்கும். உங்களைப் பற்றி எதுவும் திரும்ப அனுப்பப்படுவதில்லை.</li>
+  </ul>
+  <p class="muted">முழு சட்டப்பூர்வ உரை ஆங்கிலத்தில் உள்ளது.</p>
 
   <h2><span class="n">1.</span>நாங்கள் யார்</h2>
   <p>இந்தக் கொள்கை PolyglotFormFill பயன்பாடு, உலாவி நீட்டிப்பு மற்றும் வலைத்தளத்திற்கு ("சேவை") பொறுப்பான Subramanya Mysore (தனி உரிமையாளர்), இந்தியா ("நாங்கள்", "எங்கள்") ஆல் வழங்கப்படுகிறது. GDPR-க்கு நாங்கள் தரவுக் கட்டுப்படுத்துபவராக செயல்படுகிறோம்; இந்தியா DPDP சட்டம் 2023-இன் கீழ் தரவு நம்பிக்கையாளராக; நாங்கள் எந்த தனிப்பட்ட தரவையும் செயலாக்காத இடத்தில், அத்தகைய பங்கு எழுவதில்லை. குறைதீர்ப்பு அதிகாரி / தொடர்பு: Subramanya Mysore · subumysore@gmail.com.</p>

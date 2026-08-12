@@ -176,6 +176,10 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+    border-bottom:1px solid var(--line,#dde6e4)}
+  .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
+  [dir=rtl] .langhint{text-align:left}
 
   .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
@@ -188,7 +192,23 @@
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.value"><option value="/" selected>English</option><option value="/hi/">हिन्दी</option><option value="/bn/">বাংলা</option><option value="/ta/">தமிழ்</option><option value="/te/">తెలుగు</option><option value="/kn/">ಕನ್ನಡ</option><option value="/ml/">മലയാളം</option><option value="/gu/">ગુજરાતી</option><option value="/pa/">ਪੰਜਾਬੀ</option><option value="/mr/">मराठी</option><option value="/ur/">اردو</option><option value="/ar/">العربية</option><option value="/he/">עברית</option><option value="/fa/">فارسی</option><option value="/zh/">中文</option><option value="/ja/">日本語</option><option value="/ko/">한국어</option><option value="/th/">ไทย</option><option value="/vi/">Tiếng Việt</option><option value="/id/">Bahasa Indonesia</option><option value="/ru/">Русский</option><option value="/es/">Español</option><option value="/fr/">Français</option><option value="/de/">Deutsch</option><option value="/pt/">Português</option><option value="/tr/">Türkçe</option></select></div>
+<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/" selected>English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/">한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
+<div id="langhint" class="langhint" hidden></div>
+<script>
+(function(){
+  var KNOWN={"hi":{"url":"/hi/","label":"हिन्दी"},"bn":{"url":"/bn/","label":"বাংলা"},"ta":{"url":"/ta/","label":"தமிழ்"},"te":{"url":"/te/","label":"తెలుగు"},"kn":{"url":"/kn/","label":"ಕನ್ನಡ"},"ml":{"url":"/ml/","label":"മലയാളം"},"gu":{"url":"/gu/","label":"ગુજરાતી"},"pa":{"url":"/pa/","label":"ਪੰਜਾਬੀ"},"mr":{"url":"/mr/","label":"मराठी"},"ur":{"url":"/ur/","label":"اردو"},"ar":{"url":"/ar/","label":"العربية"},"he":{"url":"/he/","label":"עברית"},"fa":{"url":"/fa/","label":"فارسی"},"zh":{"url":"/zh/","label":"中文"},"ja":{"url":"/ja/","label":"日本語"},"ko":{"url":"/ko/","label":"한국어"},"th":{"url":"/th/","label":"ไทย"},"vi":{"url":"/vi/","label":"Tiếng Việt"},"id":{"url":"/id/","label":"Bahasa Indonesia"},"ru":{"url":"/ru/","label":"Русский"},"es":{"url":"/es/","label":"Español"},"fr":{"url":"/fr/","label":"Français"},"de":{"url":"/de/","label":"Deutsch"},"pt":{"url":"/pt/","label":"Português"},"tr":{"url":"/tr/","label":"Türkçe"}}, el=document.getElementById("langhint"); if(!el) return;
+  var langs=(navigator.languages||[navigator.language||""]);
+  for(var i=0;i<langs.length;i++){
+    var code=String(langs[i]||"").toLowerCase().split("-")[0];
+    if(code==="en") return;              // the visitor already prefers English — say nothing
+    if(KNOWN[code]){
+      var k=KNOWN[code];
+      el.innerHTML='<a href="'+k.url+'">'+k.label+' →</a>';
+      el.hidden=false; return;
+    }
+  }
+})();
+</script>
 
 <div class="wrap">
   <nav>
@@ -208,6 +228,7 @@
 <header class="wrap">
   <span class="badge">◉ Polyglot · on-device · zero telemetry</span>
   <h1>Read &amp; write any form —<br><span class="fade">in any language.</span></h1>
+  <p class="tagline">Fill any form, in any language, privately on your device.</p>
   <p class="lede">PolyglotFormFill reads a form in one language and fills it from your data in another — PDFs, Word, Excel, and web forms. Everything runs on your device; we never see your data. When you submit, it goes straight to the recipient you chose — never through us.</p>
   <div class="cta">
     <a class="btn" href="#features">See how it works</a>
@@ -394,7 +415,7 @@
   <p class="sub">Add the browser extension for web-form autofill, or install the desktop app for the full, hardened experience. They work together.</p>
   <div class="cta">
     <a class="btn" href="/install/#extension">Get the browser extension — no warnings</a>
-    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe">Download for Windows</a>
+    <a class="btn ghost" href="/download/PolyglotFormFill-Setup.exe" aria-label="Download">Download for Windows</a>
     <span class="btn ghost soon" aria-disabled="true">Chrome Web Store — soon</span>
   </div>
   <p class="note">Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore). A brand-new signed app may show a SmartScreen “unrecognized app” notice — click More info, then Run anyway (verified clean, VirusTotal 0/71). The browser extension installs with no prompt. macOS &amp; Linux next.</p>
@@ -403,6 +424,7 @@
 <section id="privacy" class="wrap">
   <span class="eyebrow">Privacy</span>
   <h2 class="h2">The promise, in one line</h2>
+  <p class="sub" style="font-weight:600">Your documents never leave your device.</p>
   <p class="sub">Your data is processed on your device and is never sent to us. The only things that leave are actions you take — submitting a finished form (straight to its recipient) or a web search you type. Those go directly to their destination, never through us. That's the whole list.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/privacy/">Read the full privacy policy</a></p>
 </section>
