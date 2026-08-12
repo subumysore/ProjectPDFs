@@ -27,6 +27,11 @@ import { shouldUseDesktopVault, migrationPlan, reconcileVaults } from "./compani
 import { chooseDataProfile } from "./profileMatch.js";
 import { parseEducation } from "./education.js";
 const $ = (id) => document.getElementById(id);
+
+// Opened via the ⤢ expand button (popup.html?win=1) → this is a real, RESIZABLE window, so drop the
+// fixed 320px popup width and let the layout fill/reflow. (The toolbar popup itself is never resizable
+// — a Chrome limitation — which is exactly why the expand button exists.)
+if (new URLSearchParams(location.search).has("win")) document.documentElement.classList.add("win");
 // The web page we act on. In the normal toolbar popup, `currentWindow` IS the page's window, so the
 // active tab there is the page. But when the popup is "kept open" as a DETACHED window (see the
 // pop-out button), `currentWindow` is the tool window itself — so we must instead resolve the active
@@ -1078,8 +1083,9 @@ async function openAsWindow() {
   const existing = (await chrome.windows.getAll({ populate: true, windowTypes: ["popup"] }))
     .find((w) => (w.tabs || []).some((t) => (t.url || "").includes("popup.html")));
   if (existing) { await chrome.windows.update(existing.id, { focused: true }); window.close(); return; }
+  // type:"popup" gives a clean chrome-less window the user can freely drag to resize; open it roomy.
   await chrome.windows.create({
-    url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: 400, height: 680,
+    url: chrome.runtime.getURL("popup.html?win=1"), type: "popup", width: 560, height: 760,
   });
   window.close();
 }

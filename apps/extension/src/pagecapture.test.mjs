@@ -150,3 +150,20 @@ test("captured EEO answers, once in the vault, are proposed only when new (learn
   const out = pick(typed, { ethnicity: "Asian" }); // ethnicity already known → not re-proposed
   assert.deepEqual(out.map((o) => o.key), ["are_you_hispanic_or_latino"]);
 });
+
+test("ADP junk is NOT captured: internal field-name label + instruction value (regression from a real page)", () => {
+  const dom = new JSDOM(`<!doctype html><body>
+    <!-- ADP renders a select whose only 'label' is an internal id and whose text is an instruction. -->
+    <select name="metadata-form-0__group__vets100ADisabilitySelect">
+      <option selected>Please check one of the boxes below:</option>
+      <option>I have a disability</option>
+      <option>I do not have a disability</option>
+    </select>
+    <!-- A custom-dropdown wrapper whose class matches [class*=Select] but shows an instruction. -->
+    <div class="someDisabilitySelect" role="combobox" aria-label="metadata-form-0__group__x">Select one</div>
+  </body>`);
+  globalThis.document = dom.window.document;
+  const typed = collectTypedValues();
+  assert.equal(typed.some((t) => /metadata-form|__group__/.test(t.label)), false, "internal ids must never become a label/key");
+  assert.equal(typed.some((t) => /please check|select one/i.test(t.value)), false, "instructions/placeholders must never be saved as a value");
+});

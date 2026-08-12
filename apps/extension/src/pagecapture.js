@@ -31,6 +31,18 @@ export function collectTypedValues() {
     return res;
   };
   const norm = (s) => String(s == null ? "" : s).toLowerCase().replace(/\s+/g, " ").trim();
+  // An INTERNAL machine name that must never become a vault key/label — ATS field ids like
+  // "metadata-form-0__group__vets100ADisabilitySelect". Real human labels have spaces or aren't code.
+  const junkLabel = (s) => {
+    const t = String(s || "");
+    if (!t) return true;
+    if (/__|\bmetadata[-_]|form-?\d|subform|pdf417|\[|\]/i.test(t)) return true;   // ATS/PDF internal ids
+    if (!/\s/.test(t) && /[A-Z][a-z].*[A-Z]|[a-z]\d|_/.test(t) && t.length > 18) return true; // long camel/snake code
+    return false;
+  };
+  // A placeholder or an INSTRUCTION ("Please check one of the boxes below", "Select one") — never an
+  // answer the user actually gave.
+  const instructionText = (s) => /^(please\s+(check|select|choose|answer|pick|complete)|select\s+(one|an option|a value|your)|check one of|choose one|answer the|--+|—)\b/i.test(String(s || "").trim());
   const labelOf = (el) => {
     const own = [
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
@@ -51,8 +63,9 @@ export function collectTypedValues() {
     if (!value) continue;
     // A <select> left on its placeholder ("Select…") is not an answer.
     if (el.tagName === "SELECT" && el.selectedIndex <= 0) continue;
+    if (instructionText(value)) continue;                 // a placeholder/instruction is not an answer
     const label = labelOf(el);
-    if (!label) continue;
+    if (!label || junkLabel(label)) continue;             // no usable HUMAN label → don't invent a junk key
     out.push({ label, value });
   }
 
@@ -91,9 +104,9 @@ export function collectTypedValues() {
     if (seenW.some((s) => s.contains(el) || el.contains(s))) continue; // one row per nested widget
     // The selected value is the widget's visible text; require a short, single-value, non-placeholder.
     const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
-    if (!txt || txt.length > 60 || PLACEHOLDER.test(txt)) continue;
+    if (!txt || txt.length > 60 || PLACEHOLDER.test(txt) || instructionText(txt)) continue;
     const label = widgetLabel(el);
-    if (!label || label.length > 200 || PLACEHOLDER.test(label)) continue;
+    if (!label || label.length > 200 || PLACEHOLDER.test(label) || junkLabel(label)) continue;
     seenW.push(el);
     out.push({ label, value: txt });
   }
@@ -158,6 +171,8 @@ export function collectTypedValues() {
   const pushChoice = (label, value) => {
     if (!label || !value) return;
     if (PLACEHOLDER.test(label) || norm(label) === norm(value)) return; // a lone consent box (label == option) is not a Q/A
+    if (junkLabel(label) || instructionText(label)) return;            // internal id / instruction is not a question
+    if (instructionText(value)) return;                                // "Please check one of the boxes" is not an answer
     const k = norm(label);
     if (have.has(k)) return;                                            // already captured via the text/select pass
     have.add(k);
