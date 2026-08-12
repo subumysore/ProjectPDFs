@@ -119,27 +119,23 @@ const COUNTER_JS = `
     var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
     if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
     var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
-    el.querySelector('[data-c=total]').textContent=f(total);
-    el.querySelector('[data-c=exe]').textContent=f(exe);
-    el.querySelector('[data-c=ext]').textContent=f(ext);
+    var t=el.querySelector('[data-c=total]'); if(t) t.textContent=f(total);
     el.classList.add('on');
   }).catch(function(){});
 })();`;
-function counterBar(tr) {
-  return `<div id="dlcount" class="dlcount" role="status" aria-live="polite">
-    <div class="big"><span class="num" data-c="total">—</span> ${esc(tr("counter.tagline"))}</div>
-    <div class="brk"><span>🖥️ <b data-c="exe">—</b> ${esc(tr("counter.desktop"))}</span>
-      <span>🧩 <b data-c="ext">—</b> ${esc(tr("counter.extension"))}</span></div>
-    <div class="tiny">${esc(tr("counter.private"))}</div>
-  </div>`;
+// A COMPACT counter chip that sits in the nav next to "Get it" — not a full-width banner. Shows the
+// total; the desktop/extension split + privacy note are in the tooltip so it stays small.
+function counterChip(tr) {
+  const title = `${esc(tr("counter.desktop"))} + ${esc(tr("counter.extension"))} — ${esc(tr("counter.private"))}`;
+  return `<span id="dlcount" class="dlchip" title="${title}" aria-live="polite">🚀 <b data-c="total">—</b> ${esc(tr("counter.tagline"))}</span>`;
 }
 const COUNTER_CSS = `
-  .dlcount{display:none;margin:0;padding:14px 24px;text-align:center;background:linear-gradient(180deg,#0d8f83,#0b7a75);color:#fff}
-  .dlcount.on{display:block}
-  .dlcount .big{font:700 clamp(18px,3vw,26px)/1.15 var(--sans,system-ui)}
-  .dlcount .big .num{font-size:1.25em}
-  .dlcount .brk{margin-top:4px;font-size:14px;opacity:.95;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
-  .dlcount .tiny{margin-top:4px;font-size:12px;opacity:.8}
+  .dlchip{display:none;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;
+    background:rgba(13,143,131,.10);border:1px solid rgba(13,143,131,.28);color:var(--teal,#0b7a75);
+    font:600 13px/1 var(--sans,system-ui);white-space:nowrap}
+  .dlchip.on{display:inline-flex}
+  .dlchip b{font-weight:800}
+  @media (max-width:720px){ .dlchip{display:none!important} }  /* keep the mobile nav uncluttered */
 `;
 function switcher(current, page) {
   // The <option> value is the LANGUAGE CODE (stable, testable, and what analytics/deeplinks expect);
@@ -254,7 +250,7 @@ const LANGBAR_CSS = `
 
 // Narrated-guide embed shown in the hero. Language-aware <video> with a caption <track>.
 const GUIDEVID_CSS = `
-  .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
+  .guidevid{margin:22px auto 8px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
   .guidevid .lede{margin:0 0 18px}
   .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
@@ -281,11 +277,9 @@ ${headMeta(lang, "landing", tr)}
   .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
 </style>
 
-${counterBar(tr)}
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
 ${switcher(lang, "landing")}
 ${lang === "en" ? langhint() : ""}
-<script>${COUNTER_JS}</script>
 
 <div class="wrap">
   <nav>
@@ -297,10 +291,12 @@ ${lang === "en" ? langhint() : ""}
       <a href="#pricing">${esc(tr("nav.pricing"))}</a>
       <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
       <a href="#privacy">${esc(tr("nav.privacy"))}</a>
+      ${counterChip(tr)}
       <a class="btn" href="#get">${esc(tr("nav.getit"))}</a>
     </div>
   </nav>
 </div>
+<script>${COUNTER_JS}</script>
 
 <header class="wrap">
   <span class="badge">◉ ${esc(tr("hero.badge"))}</span>
@@ -312,7 +308,6 @@ ${lang === "en" ? langhint() : ""}
     <a class="btn ghost" href="/tutorials/">${esc(tr("hero.cta2"))}</a>
     <a class="btn ghost" href="#get">${esc(tr("hero.cta3"))}</a>
   </div>
-  <div class="trustline">${esc(tr("hero.trust"))}</div>
 
   ${(() => { const g = guideAssets(lang); return `<section class="guidevid" aria-label="${esc(tr("guide.title"))}">
     <h2>${esc(tr("guide.title"))}</h2>

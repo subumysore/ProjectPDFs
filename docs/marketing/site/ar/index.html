@@ -86,13 +86,13 @@
   .btn.soon{opacity:.55;cursor:not-allowed;pointer-events:none}
 
   /* hero */
-  header{padding:56px 0 40px}
+  header{padding:40px 0 24px}
   .badge{display:inline-flex;gap:8px;align-items:center;background:var(--teal-soft);color:var(--teal-ink);
     font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;letter-spacing:.04em}
   h1{font-size:clamp(34px,6.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:20px 0 0;
     text-wrap:balance;font-weight:800}
   h1 .fade{color:var(--teal-ink)}
-  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:60ch;margin:18px 0 0}
+  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:82ch;margin:16px 0 0}
   .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
   .trustline{margin-top:20px;font-size:13px;color:var(--muted);font-family:var(--mono)}
 
@@ -181,45 +181,26 @@
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
   [dir=rtl] .langhint{text-align:left}
 
-  .guidevid{margin:40px auto 8px;max-width:840px;text-align:center}
+  .guidevid{margin:22px auto 8px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
   .guidevid .lede{margin:0 0 18px}
   .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
     box-shadow:0 12px 40px rgba(0,0,0,.18);background:#000}
   .guidevid .cc-note{margin:10px 0 0;font-size:13px;opacity:.65}
 
-  .dlcount{display:none;margin:0;padding:14px 24px;text-align:center;background:linear-gradient(180deg,#0d8f83,#0b7a75);color:#fff}
-  .dlcount.on{display:block}
-  .dlcount .big{font:700 clamp(18px,3vw,26px)/1.15 var(--sans,system-ui)}
-  .dlcount .big .num{font-size:1.25em}
-  .dlcount .brk{margin-top:4px;font-size:14px;opacity:.95;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
-  .dlcount .tiny{margin-top:4px;font-size:12px;opacity:.8}
+  .dlchip{display:none;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;
+    background:rgba(13,143,131,.10);border:1px solid rgba(13,143,131,.28);color:var(--teal,#0b7a75);
+    font:600 13px/1 var(--sans,system-ui);white-space:nowrap}
+  .dlchip.on{display:inline-flex}
+  .dlchip b{font-weight:800}
+  @media (max-width:720px){ .dlchip{display:none!important} }  /* keep the mobile nav uncluttered */
 
   .tier.pop::after{content:"الأكثر رواجًا"}
 </style>
 
-<div id="dlcount" class="dlcount" role="status" aria-live="polite">
-    <div class="big"><span class="num" data-c="total">—</span> downloads and counting</div>
-    <div class="brk"><span>🖥️ <b data-c="exe">—</b> desktop app</span>
-      <span>🧩 <b data-c="ext">—</b> browser extension</span></div>
-    <div class="tiny">Every download stays private — we count downloads only, never who or what.</div>
-  </div>
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
 <div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/" selected>العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/">한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
 
-<script>
-(function(){
-  var el=document.getElementById('dlcount'); if(!el) return;
-  fetch('/counts',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
-    if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
-    var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
-    el.querySelector('[data-c=total]').textContent=f(total);
-    el.querySelector('[data-c=exe]').textContent=f(exe);
-    el.querySelector('[data-c=ext]').textContent=f(ext);
-    el.classList.add('on');
-  }).catch(function(){});
-})();</script>
 
 <div class="wrap">
   <nav>
@@ -231,10 +212,22 @@
       <a href="#pricing">الأسعار</a>
       <a href="/tutorials/">الدروس التعليمية</a>
       <a href="#privacy">الخصوصية</a>
+      <span id="dlcount" class="dlchip" title="desktop app + browser extension — Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting</span>
       <a class="btn" href="#get">احصل عليه</a>
     </div>
   </nav>
 </div>
+<script>
+(function(){
+  var el=document.getElementById('dlcount'); if(!el) return;
+  fetch('/counts',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
+    if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
+    var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
+    var t=el.querySelector('[data-c=total]'); if(t) t.textContent=f(total);
+    el.classList.add('on');
+  }).catch(function(){});
+})();</script>
 
 <header class="wrap">
   <span class="badge">◉ متعدد اللغات · على الجهاز · بلا قياس عن بُعد</span>
@@ -246,10 +239,9 @@
     <a class="btn ghost" href="/tutorials/">▶ شاهد الدروس التعليمية</a>
     <a class="btn ghost" href="#get">احصل عليه (نسخة تجريبية)</a>
   </div>
-  <div class="trustline">خزنة AES-256 · فتح بمفتاح مرور · بلا سحابة · بلا تتبّع · مفتوح وقابل للتدقيق</div>
 
-  <section class="guidevid" aria-label="See it in two minutes">
-    <h2>See it in two minutes</h2>
+  <section class="guidevid" aria-label="Watch the video">
+    <h2>Watch the video</h2>
     <p class="lede">A short, narrated walkthrough. Everything happens on your device.</p>
     <video controls preload="none" playsinline poster="https://polyglotformfill.com/download/before-after.jpg" crossorigin="anonymous">
       <source src="/download/guide.mp4" type="video/mp4">
