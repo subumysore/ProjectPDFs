@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]  (batched — held at 1.0.11 until a release is warranted)
+### Fixed — EEO self-ID fill + capture on real ATS pages (found via REAL-browser testing, not mocks)
+- **Race radio didn't fill** when an option's title runs straight into its description
+  ("Asian" + "Not Hispanic…" → "asiannot…"): the matcher's trailing `\b` missed it. Generic word-boundary
+  fix (leading `\b` still excludes "cauc-asian"). Verified in real Chrome.
+- **Capture grabbed the description, not the question** ("A person of Cuban, Mexican…" instead of
+  "Are you Hispanic or Latino?"): new question-vs-description scoring (a "?"/"*" line beats prose).
+- **Junk rejected**: ATS internal ids (`metadata-form-0__group__…`) and placeholders
+  ("Please check one of the boxes below") are never saved as a vault key/value.
+- New: reusable **real-browser harness** `apps/app/scripts/real-form-test.mjs` (puppeteer + real Chrome)
+  + JSDOM regression tests. Standing rule now: verify on real browsers, not mocks.
+### Added — resizable expanded popup window (⤢) and the profile picker/window fixes above.
 ### Fixed — Backup / transfer now carries the WHOLE vault (all profiles), not just the active one
 - Root cause of "I imported the vault but only got PRANAV": the backup format stored a SINGLE profile
   (the selected one). New **v2** format bundles **every profile** (name + data); import restores each

@@ -167,3 +167,21 @@ test("ADP junk is NOT captured: internal field-name label + instruction value (r
   assert.equal(typed.some((t) => /metadata-form|__group__/.test(t.label)), false, "internal ids must never become a label/key");
   assert.equal(typed.some((t) => /please check|select one/i.test(t.value)), false, "instructions/placeholders must never be saved as a value");
 });
+
+test("the QUESTION beats the description when both sit near the options (generic, not per-site)", () => {
+  // ADP/Greenhouse pattern: question, then a long description, then the option rows.
+  const dom = new JSDOM(`<!doctype html><body>
+    <div class="block">
+      <div>Are you Hispanic or Latino? *</div>
+      <div>A person of Cuban, Mexican, Puerto Rican, South or Central American, or other Spanish culture or origin regardless of race.</div>
+      <div class="opts">
+        <label><input type="radio" name="h" value="No" checked> No</label>
+        <label><input type="radio" name="h" value="Yes"> Yes</label>
+      </div>
+    </div>
+  </body>`);
+  globalThis.document = dom.window.document;
+  const byLabel = Object.fromEntries(collectTypedValues().map((t) => [t.label, t.value]));
+  assert.equal(byLabel["Are you Hispanic or Latino? *"], "No", "must capture the question, not the description");
+  assert.equal(Object.keys(byLabel).some((l) => /A person of Cuban/.test(l)), false, "the description must not become the label");
+});

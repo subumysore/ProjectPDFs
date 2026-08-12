@@ -939,7 +939,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     { key: "gender", q: /\bgender\b|\bsex\b|gender identity/, opts: {
       male: /^\s*male\b|^\s*man\b|\bhe\b/, female: /^\s*female\b|^\s*woman\b|\bshe\b/, nonbinary: /non.?binary|genderqueer|third gender/, decline: /decline|prefer not|not.*(identify|answer|disclose)/ } },
     { key: "race", multi: true, q: /\brace\b|ethnicit|ethnic (group|origin)/, opts: {
-      white: /white|caucasian/, hispanic: /hispanic|latino|latina/, black: /black|african american|african.american/, asian: /\basian\b/,
+      // No TRAILING \b: option titles often run straight into their description with no space
+      // ("Asian" + "Not Hispanic…" → "asiannot…"), which \basian\b would miss. The LEADING \b still
+      // prevents matching "cauc-asian" (White).
+      white: /white|caucasian/, hispanic: /hispanic|latino|latina/, black: /black|african american|african.american/, asian: /\basian/,
       native_american: /american indian|alaska(n)? native|native american/, mena: /middle eastern|north african/,
       pacific: /hawaiian|pacific islander/, other: /other race|other ethnic|two or more|multiracial/, decline: /prefer not|decline|not.*(answer|disclose)/ } },
   ];

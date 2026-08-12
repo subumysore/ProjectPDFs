@@ -140,32 +140,41 @@ export function collectTypedValues() {
   // → a heading/[class*=question] descendant → a NON-control previous sibling (ADP renders the question
   // as a <div> just before the options container). Option rows (they contain a control) are skipped so
   // an option caption is never mistaken for the question.
+  // Among several candidate lines near a control, the QUESTION beats a description: a line with "?"
+  // wins, then one ending in "* / :", then the shortest reasonable line. (ADP puts the question, then a
+  // long "A person of Cuban, Mexican…" description, THEN the options — so first-sibling-wins picked the
+  // description; scoring fixes it.)
+  const qScore = (t) => {
+    if (!t || t.length > 200 || PLACEHOLDER.test(t) || instructionText(t) || junkLabel(t)) return -1;
+    let s = 100 - Math.min(90, t.length);            // shorter is better
+    if (/\?/.test(t)) s += 300;                        // an actual question
+    if (/[*:]\s*$/.test(t)) s += 120;                  // "Ethnicity *", "Gender:"
+    if (/^(a person|not hispanic|a person of|for example|includes)/i.test(t)) s -= 200; // description prose
+    return s;
+  };
   const groupQuestion = (el) => {
+    let best = "", bestScore = 0;
+    const consider = (t) => { const sc = qScore((t || "").replace(/\s+/g, " ").trim()); if (sc > bestScore) { bestScore = sc; best = (t || "").replace(/\s+/g, " ").trim(); } };
     const fs = el.closest("fieldset");
-    if (fs) { const lg = fs.querySelector("legend"); const t = lg && lg.textContent ? lg.textContent.replace(/\s+/g, " ").trim() : ""; if (t && !PLACEHOLDER.test(t)) return t; }
+    if (fs) { const lg = fs.querySelector("legend"); if (lg) consider(lg.textContent); }
     let node = el;
     for (let i = 0; i < 6 && node; i++) {
       node = node.parentElement; if (!node) break;
       const lb = node.getAttribute && node.getAttribute("aria-labelledby");
-      if (lb) { const t = lb.split(/\s+/).map((id) => { const n = byId(el, id); return n ? n.textContent : ""; }).join(" ").replace(/\s+/g, " ").trim(); if (t && !PLACEHOLDER.test(t)) return t; }
+      if (lb) { const t = lb.split(/\s+/).map((id) => { const n = byId(el, id); return n ? n.textContent : ""; }).join(" "); consider(t); }
       const role = node.getAttribute && node.getAttribute("role");
       const al = node.getAttribute && node.getAttribute("aria-label");
-      if ((role === "radiogroup" || role === "group") && al) return al.replace(/\s+/g, " ").trim();
+      if ((role === "radiogroup" || role === "group") && al) consider(al);
       const cand = node.querySelector && node.querySelector("legend,[class*='question'],[class*='Question'],[class*='prompt'],[class*='Prompt'],h1,h2,h3,h4,h5,h6");
-      if (cand && !(cand.querySelector && cand.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) {
-        const t = cand.textContent ? cand.textContent.replace(/\s+/g, " ").trim() : "";
-        if (t && t.length <= 200 && !PLACEHOLDER.test(t)) return t;
-      }
+      if (cand && !(cand.querySelector && cand.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) consider(cand.textContent);
       let ps = node.previousElementSibling;
-      for (let j = 0; j < 3 && ps; j++) {
-        if (!(ps.querySelector && ps.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) {
-          const t = ps.textContent ? ps.textContent.replace(/\s+/g, " ").trim() : "";
-          if (t && t.length <= 200 && !PLACEHOLDER.test(t)) return t;
-        }
+      for (let j = 0; j < 4 && ps; j++) {
+        if (!(ps.querySelector && ps.querySelector("input,select,textarea,[role='radio'],[role='checkbox']"))) consider(ps.textContent);
         ps = ps.previousElementSibling;
       }
+      if (bestScore >= 300) break;                     // a real question found — stop climbing
     }
-    return "";
+    return best;
   };
   const have = new Set(out.map((o) => norm(o.label)));
   const pushChoice = (label, value) => {

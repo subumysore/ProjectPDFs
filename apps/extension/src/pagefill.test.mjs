@@ -581,3 +581,14 @@ test("shadow DOM: a field inside an OPEN shadow root is filled", async () => {
   await fillPage({ email_address: "asha@example.com" });
   assert.equal(root.querySelector("#e").value, "asha@example.com");
 });
+
+test("EEO race fills when the option title runs into its description (asiannot… — generic word-boundary fix)", async () => {
+  const dom = mount(`
+    <div><div>Ethnicity *</div>
+      <label><input type="radio" name="race" value="White"> White<div>Not Hispanic or Latino. Europe.</div></label>
+      <label><input type="radio" name="race" value="Asian"> Asian<div>Not Hispanic or Latino. A person having origins in the Far East.</div></label>
+    </div>`);
+  await fillPage({}, null, [], { savedAnswers: { race: "asian" } });
+  assert.equal($(dom, 'input[value="Asian"]').checked, true, "Asian must select despite 'asiannot…' concatenation");
+  assert.equal($(dom, 'input[value="White"]').checked, false);
+});
