@@ -671,3 +671,17 @@ multilingual filling — not the translation engine.
 - **Housekeeping:** removed 3 stale `.claude/worktrees/agent-*` git worktrees + untracked guide build logs;
   kept tracked demo PDFs (used by build/tests). Clean source snapshot archived to
   `F:\PolyglotFormFill-1.0.10-source.zip` (git archive HEAD — no node_modules/target/.git/caches).
+
+## Extension learns choice-question answers (EEO/self-ID) — 2026-08-11 (held at 1.0.10)
+- Root cause of "ADP EEOC page fills nothing": the fields are self-ID (Hispanic/Latino, Race/Ethnicity)
+  which are NEVER guessed; a fresh profile has them blank → nothing to fill. Desktop already offered
+  ticked-box answers for capture, but the EXTENSION's `collectTypedValues` skipped radio/checkbox, so
+  answering an EEO/eligibility question on a page never taught the vault (surface divergence).
+- Fix (extension-only, `pagecapture.js`): capture radio groups + checkbox groups (question → chosen
+  option), tidy option titles, lone-consent boxes filtered, shadow-DOM piercing (deepQSA) for
+  web-component forms. Flows through the existing "Save new details" REVIEW (nothing saved un-ticked) →
+  shared vault → the filler re-applies on BOTH surfaces via the existing `vaultAnswerFor`/intent layer.
+- **No version bump** (owner asked; also the store 1.0.10 is upload-locked in review). Held under
+  CHANGELOG [Unreleased]; rides into the next published version once 1.0.10 clears review. Local
+  unpacked build refreshed at `F:\PolyglotFormFill-Extension-1.0.10` for the owner to reload+test.
+- Tests: extension 364 (+6 capture cases incl. shadow DOM + lone-consent filter), desktop 33.
