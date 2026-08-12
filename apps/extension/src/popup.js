@@ -222,18 +222,14 @@ async function renderProfileBar() {
 async function refresh() {
   await resolveVaultMode();
   if (COMP.on) {
+    // Bridged to the desktop = the shared vault is authoritative. Do NOT block on this browser's OWN
+    // older local vault (that just made the user enter a SECOND passphrase after already unlocking the
+    // desktop). Go straight to the desktop's profiles + data. If there's un-synced local data, offer an
+    // OPTIONAL one-time merge as a dismissible note rather than a wall.
     const s = await send({ type: "status" });
-    // This browser has its own older encrypted vault that hasn't been read yet. It can only be
-    // synced once it's unlocked (encryption — nothing can read it without the passphrase), so show
-    // the normal unlock. After this single unlock it stays readable and syncs automatically.
-    if (s && s.ok && s.hasLocal && !s.unlocked) {
-      $("locked").classList.remove("hidden");
-      $("unlocked").classList.add("hidden");
-      const banner = $("banner");
-      banner.classList.remove("hidden");
-      banner.textContent =
-        "Unlock this browser's vault once so its data syncs with the desktop app — after this it syncs automatically.";
-      return;
+    if (s && s.ok && s.hasLocal && !s.unlocked && localStorage.getItem("ppf.hideLocalMerge") !== "1") {
+      const note = $("localMerge");
+      if (note) note.classList.remove("hidden");
     }
     $("locked").classList.add("hidden");
     $("unlocked").classList.remove("hidden");
