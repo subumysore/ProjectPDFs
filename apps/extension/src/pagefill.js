@@ -763,7 +763,22 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (dt && el.type !== "date") {
       if (await setDateSmart(el, dt, formatDateForField(value, el, label))) { filled++; markFilled(el); }
     } else {
-      if (setFieldValue(el, formatDateForField(value, el, label))) { filled++; markFilled(el); }
+      const want = formatDateForField(value, el, label);
+      setFieldValue(el, want);
+      // GENERIC widget robustness: some framework inputs (React `PhoneInput`/intl-tel-input, masked
+      // fields, etc.) re-render from their own state and DROP a programmatic value-set — the field is
+      // left empty or showing only its scaffold (e.g. "+1", so no digits of our value present). When
+      // the value clearly did NOT stick, retry by SIMULATING REAL TYPING, which those widgets honour.
+      // Not per-site: any input that rejects the set gets the typed fallback.
+      const wantDigits = String(want).replace(/\D/g, "");
+      const rejected = () => {
+        const cur = el.value || "";
+        if (cur === want) return false;                 // exact set held
+        if (wantDigits && wantDigits.length >= 4) return !cur.replace(/\D/g, "").includes(wantDigits.slice(-4)); // numeric (phone) — last 4 must be present
+        return cur.trim() === "";                        // text — only retry if left blank
+      };
+      if (rejected()) { await wait(30); if (rejected()) await typeFieldValue(el, want); }
+      if (el.value) { filled++; markFilled(el); }
     }
   }
 
