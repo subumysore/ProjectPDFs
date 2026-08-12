@@ -78,6 +78,8 @@ function urlFor(lang, page) {
 
 // Canonical origin + a share image (existing asset). Used for SEO + social cards.
 const SITE_ORIGIN = "https://polyglotformfill.com";
+// The published Chrome Web Store listing (LIVE — no longer "coming soon").
+const STORE_URL = "https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke";
 const OG_IMAGE = `${SITE_ORIGIN}/download/before-after.jpg`;
 
 // SEO + social <head> block: canonical, Open Graph, Twitter card, and hreflang alternates for
@@ -446,7 +448,7 @@ ${lang === "en" ? langhint() : ""}
   <div class="cta">
     <a class="btn" href="${urlFor(lang, "install")}#extension">${esc(tr("get.extPrimary"))}</a>
     <a class="btn ghost" href="/dl/exe" aria-label="${esc(tr("site.download"))}">${esc(tr("get.win"))}</a>
-    <span class="btn ghost soon" aria-disabled="true">${esc(tr("get.soon"))}</span>
+    <a class="btn ghost" href="${STORE_URL}" target="_blank" rel="noopener">${esc(tr("get.store"))}</a>
   </div>
   <p class="note">${esc(tr("get.note"))}</p>
 </section>
@@ -613,7 +615,8 @@ ${switcher(lang, "install")}
   <div class="card" id="extension">
     <span class="tag">${esc(tr("install.extTag"))}</span>
     <h2 style="margin-top:0">${esc(tr("install.extH2"))} <span class="ver" data-ver="ext">v${EXT_VER}</span></h2>
-    <a class="btn" href="/dl/ext">${esc(tr("install.extDownload"))}</a>
+    <a class="btn" href="${STORE_URL}" target="_blank" rel="noopener">${esc(tr("get.store"))}</a>
+    <a class="btn ghost" href="/dl/ext">${esc(tr("install.extDownload"))}</a>
     <p>${esc(tr("install.extLoad"))}</p>
     <ol>
       <li>${esc(tr("install.extStep1"))}</li>

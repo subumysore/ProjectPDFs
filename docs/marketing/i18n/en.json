@@ -229,10 +229,11 @@
   "install.androidStep3": "In Kiwi, open the ⋮ menu → Extensions, turn on Developer mode, then tap “+ (from .zip/.crx/.user.js)” and choose the file you just downloaded.",
   "install.androidStep4": "Open ⋮ → Extensions → PolyglotFormFill, unlock your vault, and fill forms in the mobile browser.",
   "install.androidDownload": "Download the extension (.zip)",
-  "install.androidStoreNote": "Once our Chrome Web Store listing is live you can instead open it in Kiwi and tap “Add to Kiwi”.",
+  "install.androidStoreNote": "Or open our Chrome Web Store listing in Kiwi and tap “Add to Kiwi”.",
   "install.androidDeskNote": "The full desktop app is for Windows PCs and laptops — it does not run on Android. Use a Windows laptop for the desktop app; a native mobile app is on our roadmap.",
   "counter.tagline": "downloads and counting",
   "counter.desktop": "desktop app",
   "counter.extension": "browser extension",
-  "counter.private": "Every download stays private — we count downloads only, never who or what."
+  "counter.private": "Every download stays private — we count downloads only, never who or what.",
+  "get.store": "Get it on the Chrome Web Store"
 }
