@@ -1319,13 +1319,14 @@ fn register_companion(app: tauri::AppHandle, extension_id: String) -> Result<Str
 /// under the app-data dir) to have the installer/app register the companion for you.
 const COMPANION_EXTENSION_ID: &str = "goaoopdpnofpamcpmmpbfkahfhfegfke";
 
-/// Extension IDs the companion ALWAYS trusts, regardless of what id is passed: the published Chrome
-/// Web Store id AND the sideloaded (unpacked) key-derived id. These differ — the store assigns its own
-/// id while a sideloaded build uses the manifest "key" — and the mismatch is what stopped the unpacked
-/// extension from ever bridging to the desktop (so it fell back to a local single-vault, no profiles).
+/// Extension IDs the companion ALWAYS trusts. Two are stable and correct:
+///   • the published Chrome Web Store id, and
+///   • the KEYED unpacked id — derived from the manifest "key" (`ikoci…`), stable across folder paths.
+/// (An unpacked build that DROPS the key gets a path-derived id that changes per folder — that churn
+/// is what kept breaking the bridge. The sideload folder must keep the key so its id stays `ikoci…`.)
 const KNOWN_EXTENSION_IDS: [&str; 2] = [
     "goaoopdpnofpamcpmmpbfkahfhfegfke", // Chrome Web Store
-    "jbapddomfgleanhgiccnopimpjbhepkg", // sideloaded / unpacked (key-derived)
+    "ikocicibacolgmamehagnpcgfabcamfk", // keyed unpacked (stable dev id)
 ];
 
 /// Auto-register the companion on startup (idempotent). Uses the compiled id, else an
