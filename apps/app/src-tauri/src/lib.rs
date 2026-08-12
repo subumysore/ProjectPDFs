@@ -1525,4 +1525,14 @@ mod backup_tests {
         let v = serde_json::json!({"v":1,"data":{"a":"b"}});
         assert!(plan_v2_import(&v, &[]).is_empty());
     }
+
+    // PRODUCTION SAFETY: every real user's extension comes from the Chrome Web Store with the fixed id
+    // below. If it is ever dropped from the trusted set, EVERY user's browser⇄desktop bridge silently
+    // breaks (no profiles, no shared vault). This test fails the build before that can ship.
+    #[test]
+    fn store_extension_id_is_always_trusted() {
+        const STORE: &str = "goaoopdpnofpamcpmmpbfkahfhfegfke";
+        assert!(super::KNOWN_EXTENSION_IDS.contains(&STORE), "store extension id must stay in the trust list");
+        assert_eq!(super::COMPANION_EXTENSION_ID, STORE, "the default auto-registered id must be the store id");
+    }
 }
