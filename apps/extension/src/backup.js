@@ -24,8 +24,8 @@ async function deriveKey(passphrase, salt, iters) {
   );
 }
 
-// vault: a plain { key: value } object. Returns a Uint8Array (the .ppfvault file).
-export async function exportVault(passphrase, vault, subject = "") {
+// Encrypt an inner-JSON object into the .ppfvault byte layout (shared by v1 + v2 exports).
+async function seal(passphrase, obj) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const nonce = crypto.getRandomValues(new Uint8Array(12));
   const header = new Uint8Array(HLEN);
@@ -33,7 +33,7 @@ export async function exportVault(passphrase, vault, subject = "") {
   new DataView(header.buffer).setUint32(8, ITERS, true); // little-endian
   header.set(salt, 12);
   const key = await deriveKey(passphrase, salt, ITERS);
-  const plaintext = enc.encode(JSON.stringify({ v: 1, subject, data: vault }));
+  const plaintext = enc.encode(JSON.stringify(obj));
   const ct = new Uint8Array(
     await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce, additionalData: header }, key, plaintext),
   );
@@ -44,7 +44,24 @@ export async function exportVault(passphrase, vault, subject = "") {
   return out;
 }
 
-// Returns { subject, data } or throws on wrong passphrase / tampering / bad format.
+// vault: a plain { key: value } object. Returns a Uint8Array (the .ppfvault file).
+// v1 format — a SINGLE profile. Kept for callers that back up just the active profile.
+export async function exportVault(passphrase, vault, subject = "") {
+  return seal(passphrase, { v: 1, subject, data: vault });
+}
+
+// v2 format — the WHOLE vault: every profile, each restored under its own name.
+// profiles: [{ id?, name, data:{k:v} }]. Byte-compatible container; only the inner JSON differs,
+// so a v2 file still decrypts on the desktop (which understands v2) and an old build reading it
+// falls back to the first profile rather than erroring.
+export async function exportVaultAll(passphrase, profiles, subject = "") {
+  const clean = (profiles || []).map((p) => ({ id: p.id || "", name: p.name || "", data: p.data || {} }));
+  return seal(passphrase, { v: 2, subject, profiles: clean });
+}
+
+// Returns { subject, data, profiles } or throws on wrong passphrase / tampering / bad format.
+// - v2 file → `profiles` is the full list; `data` mirrors the first profile (back-compat).
+// - v1 file → `profiles` is a single synthesized entry named after the subject; `data` is its map.
 export async function importVault(passphrase, bytes) {
   const b = new Uint8Array(bytes);
   if (b.length < HLEN + 12 + 16) throw new Error("file too short / not a vault backup");
@@ -63,5 +80,12 @@ export async function importVault(passphrase, bytes) {
     throw new Error("wrong passphrase or the file was tampered with");
   }
   const obj = JSON.parse(dec.decode(plain));
-  return { subject: obj.subject || "", data: obj.data || {} };
+  if (Array.isArray(obj.profiles)) {
+    // v2 — the whole vault.
+    const profiles = obj.profiles.map((p) => ({ id: (p && p.id) || "", name: (p && p.name) || "", data: (p && p.data) || {} }));
+    return { subject: obj.subject || "", profiles, data: (profiles[0] && profiles[0].data) || {} };
+  }
+  // v1 — a single profile; present it as a one-entry profile list too, so callers have one shape.
+  const data = obj.data || {};
+  return { subject: obj.subject || "", data, profiles: [{ id: "", name: obj.subject || "", data }] };
 }

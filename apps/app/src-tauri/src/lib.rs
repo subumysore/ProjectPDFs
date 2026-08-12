@@ -313,6 +313,60 @@ fn export_vault(state: State<AppState>, profile_id: String, passphrase: String) 
     Ok(core_crypto::export_encrypted(&passphrase, &bytes))
 }
 
+/// Decide, for a decrypted v2 backup, where each profile's data should land: merge into an existing
+/// profile of the same name (case-insensitive), else reuse the backup's id, else a synthesized id.
+/// Pure so it can be unit-tested without a store. `existing` is (id, name) pairs already on device.
+#[allow(clippy::type_complexity)]
+fn plan_v2_import(
+    v: &serde_json::Value,
+    existing: &[(String, String)],
+) -> Vec<(String, String, Vec<(String, String)>)> {
+    let mut out = Vec::new();
+    if let Some(profiles) = v.get("profiles").and_then(|p| p.as_array()) {
+        for (idx, pf) in profiles.iter().enumerate() {
+            let name = pf.get("name").and_then(|x| x.as_str()).unwrap_or("Imported").to_string();
+            let pid = existing
+                .iter()
+                .find(|(_, n)| n.eq_ignore_ascii_case(&name))
+                .map(|(id, _)| id.clone())
+                .or_else(|| pf.get("id").and_then(|x| x.as_str()).filter(|s| !s.is_empty()).map(|s| s.to_string()))
+                .unwrap_or_else(|| format!("import-{idx}-{}", name.replace(|c: char| !c.is_ascii_alphanumeric(), "-")));
+            let mut data = Vec::new();
+            if let Some(obj) = pf.get("data").and_then(|d| d.as_object()) {
+                for (k, val) in obj {
+                    if let Some(s) = val.as_str() {
+                        data.push((k.clone(), s.to_string()));
+                    }
+                }
+            }
+            out.push((pid, name, data));
+        }
+    }
+    out
+}
+
+/// Export the WHOLE vault — every profile, each with its name + data — as one v2 backup file.
+/// This is what "Backup / transfer" should produce so nothing is left behind. Byte layout is
+/// unchanged; only the inner JSON is `{v:2, profiles:[{id,name,data}]}`.
+#[tauri::command]
+fn export_vault_all(state: State<AppState>, passphrase: String) -> Result<Vec<u8>, String> {
+    require_unlocked(&state)?;
+    if passphrase.len() < 8 {
+        return Err("choose a backup passphrase (8+ characters)".into());
+    }
+    let store = state.store.lock().unwrap();
+    let profiles = store.list_profiles().map_err(|e| e.to_string())?;
+    let mut arr = Vec::with_capacity(profiles.len());
+    for p in &profiles {
+        let data = store.vault(&p.id).map_err(|e| e.to_string())?;
+        arr.push(serde_json::json!({ "id": p.id, "name": p.name, "data": data }));
+    }
+    let subject = device_id_for(&state.data_dir);
+    let inner = serde_json::json!({ "v": 2, "subject": subject, "profiles": arr });
+    let bytes = serde_json::to_vec(&inner).map_err(|e| e.to_string())?;
+    Ok(core_crypto::export_encrypted(&passphrase, &bytes))
+}
+
 #[tauri::command]
 fn import_vault(
     state: State<AppState>,
@@ -324,9 +378,36 @@ fn import_vault(
     let plain = core_crypto::import_encrypted(&passphrase, &bytes)
         .map_err(|_| "wrong passphrase or the file was tampered with".to_string())?;
     let v: serde_json::Value = serde_json::from_slice(&plain).map_err(|e| e.to_string())?;
-    let data = v.get("data").and_then(|d| d.as_object()).ok_or("no data in backup")?;
     let store = state.store.lock().unwrap();
     let mut n = 0usize;
+
+    // v2 — the WHOLE vault: restore every profile under its own name. An existing profile with the
+    // same name (case-insensitive) is MERGED into (never duplicated); a new one is created, reusing
+    // the backup's id when present so a later re-import lands on the same profile. Merge is additive
+    // (upsert) — importing never deletes a profile that isn't in the file.
+    if v.get("profiles").and_then(|p| p.as_array()).is_some() {
+        let existing: Vec<(String, String)> = store
+            .list_profiles()
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|p| (p.id, p.name))
+            .collect();
+        for (pid, name, data) in plan_v2_import(&v, &existing) {
+            store
+                .put_profile(&Profile { id: pid.clone(), name })
+                .map_err(|e| e.to_string())?;
+            for (k, s) in data {
+                store
+                    .put_data_point(&pid, &DataPoint { key: k, value: s })
+                    .map_err(|e| e.to_string())?;
+                n += 1;
+            }
+        }
+        return Ok(n);
+    }
+
+    // v1 — a single profile: merge into the profile the UI passed.
+    let data = v.get("data").and_then(|d| d.as_object()).ok_or("no data in backup")?;
     for (k, val) in data {
         if let Some(s) = val.as_str() {
             store
@@ -1378,6 +1459,7 @@ pub fn run() {
             unlock,
             lock_app,
             export_vault,
+            export_vault_all,
             import_vault,
             device_id,
             license_status,
@@ -1386,4 +1468,42 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running PolyglotFormFill");
+}
+
+#[cfg(test)]
+mod backup_tests {
+    use super::plan_v2_import;
+
+    #[test]
+    fn v2_import_merges_by_name_and_creates_new_reusing_backup_id() {
+        let v = serde_json::json!({"v":2,"profiles":[
+            {"id":"p1","name":"Pranav","data":{"first_name":"Pranav"}},
+            {"id":"p2","name":"Subu","data":{"first_name":"Subu","city":"Mysuru"}}
+        ]});
+        // An existing "pranav" (different case) is already on the device.
+        let existing = vec![("existing-pranav".to_string(), "pranav".to_string())];
+        let plan = plan_v2_import(&v, &existing);
+        assert_eq!(plan.len(), 2, "both profiles must be planned");
+        // Pranav merges into the existing profile's id (case-insensitive name match) — no duplicate.
+        assert_eq!(plan[0].0, "existing-pranav");
+        assert_eq!(plan[0].1, "Pranav");
+        // Subu is new → reuses the backup id so a later re-import lands on the same profile.
+        assert_eq!(plan[1].0, "p2");
+        assert_eq!(plan[1].2.len(), 2);
+    }
+
+    #[test]
+    fn v2_without_id_synthesizes_a_stable_id() {
+        let v = serde_json::json!({"v":2,"profiles":[{"name":"New Person","data":{"a":"b"}}]});
+        let plan = plan_v2_import(&v, &[]);
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].0, "import-0-New-Person");
+        assert_eq!(plan[0].1, "New Person");
+    }
+
+    #[test]
+    fn v1_backup_yields_no_v2_plan() {
+        let v = serde_json::json!({"v":1,"data":{"a":"b"}});
+        assert!(plan_v2_import(&v, &[]).is_empty());
+    }
 }

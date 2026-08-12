@@ -3,6 +3,19 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]  (batched — held at 1.0.11 until a release is warranted)
+### Fixed — Backup / transfer now carries the WHOLE vault (all profiles), not just the active one
+- Root cause of "I imported the vault but only got PRANAV": the backup format stored a SINGLE profile
+  (the selected one). New **v2** format bundles **every profile** (name + data); import restores each
+  under its own name, merging into a same-named profile (never duplicating, never deleting one that
+  isn't in the file). v1 (single-profile) files still import. Both surfaces + the Rust core-crypto layer.
+### Added — the extension shows WHICH profile it's on, and lets you switch
+- A profile picker at the top of the popup (Pranav / Subu / …), bound to the same profiles as the
+  desktop app. Answers the "I can't tell / can't choose which profile" gap.
+### Tests
+- backup round-trip (all profiles) — extension 368; Rust `plan_v2_import` merge-by-name — 3; cargo check
+  clean; desktop tsc clean. These are the round-trip tests that were missing.
+
 ## [1.0.11] - 2026-08-11
 ### Added — the extension now LEARNS your choice-question answers (desktop already did)
 _(Feature is extension-side; the desktop app is a version-only bump so both surfaces release in lockstep — the shared engine already learns choice answers on desktop.)_

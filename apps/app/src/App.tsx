@@ -384,13 +384,15 @@ export function App() {
     if (!selected) return;
     if (bkPass.length < 8) return setBkMsg("Choose a backup passphrase (8+ characters).");
     setExporting(true);
-    setBkMsg("⏳ Encrypting your vault on-device…");
+    setBkMsg("⏳ Encrypting your whole vault on-device…");
     try {
-      const arr = await invoke<number[]>("export_vault", { profileId: selected, passphrase: bkPass });
+      // Export the WHOLE vault — EVERY profile — not just the selected one, so a transfer never
+      // silently leaves a profile behind. (v2 backup; a v1 single-profile file still imports.)
+      const arr = await invoke<number[]>("export_vault_all", { passphrase: bkPass });
       // ONE fixed file on the Desktop, overwritten each time — no polyglotformfill-vault (1)(2)(3) pile-up.
       const path = await invoke<string>("save_vault_backup", { bytes: arr });
       setBkPass(""); // done — clear the passphrase from the field
-      setBkMsg(`Exported ${points.length} field(s), encrypted → ${path.split(/[\\/]/).pop()} on your Desktop (one file, replaces the previous backup). Keep the passphrase safe.`);
+      setBkMsg(`Exported all ${profiles.length} profile(s), encrypted → ${path.split(/[\\/]/).pop()} on your Desktop (one file, replaces the previous backup). Keep the passphrase safe.`);
     } catch (e) {
       setBkMsg("Export failed: " + String(e));
     } finally {
@@ -441,12 +443,20 @@ export function App() {
     if (!bkPass) return setBkMsg("Enter the backup passphrase to import.");
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
+      const before = profiles.length;
       const n = await invoke<number>("import_vault", {
         profileId: selected,
         passphrase: bkPass,
         bytes: Array.from(bytes),
       });
-      setBkMsg(`Imported ${n} field(s).`);
+      // A v2 backup restores ALL profiles (creating any that were missing). Fetch the fresh list
+      // directly (React state is stale in this closure) so we can both display them and count new ones.
+      const after = await invoke<Profile[]>("list_profiles");
+      setProfiles(after);
+      const added = Math.max(0, after.length - before);
+      setBkMsg(added > 0
+        ? `Imported ${n} field(s) — ${added} new profile(s) added (${after.map((p) => p.name).join(", ")}). Pick a profile to see its details.`
+        : `Imported ${n} field(s) into your profiles.`);
       loadPoints(selected);
     } catch (e) {
       setBkMsg("Import failed: " + String(e));

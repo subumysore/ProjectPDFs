@@ -2,7 +2,7 @@
 // Single-source-of-truth: when "desktop vault mode" is on, the popup reads AND writes
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
-import { exportVault, importVault } from "./backup.js";
+import { exportVault, exportVaultAll, importVault } from "./backup.js";
 import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 import { UI_LANGS, translator, dirOf, detectUiLang } from "./i18n.js";
@@ -171,6 +171,31 @@ async function compProfileName() {
   return id || "—";
 }
 
+// Show WHICH profile the extension is on, and let the user switch among all profiles (Pranav / Subu /
+// …) — the same profiles the desktop app has. Only meaningful when bridged to the desktop vault.
+async function renderProfileBar() {
+  const bar = $("profileBar"); const sel = $("profileSel");
+  if (!bar || !sel) return;
+  if (!COMP.on) { bar.classList.add("hidden"); return; }
+  const pl = await send({ type: "companionProfiles" });
+  if (!pl || !pl.ok || !pl.profiles || !pl.profiles.length) { bar.classList.add("hidden"); return; }
+  const cur = await compProfile();
+  sel.textContent = "";
+  for (const p of pl.profiles) {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = p.name || p.id;
+    if (p.id === cur) o.selected = true;
+    sel.appendChild(o);
+  }
+  bar.classList.remove("hidden");
+  sel.onchange = async () => {
+    COMP.profile = sel.value;
+    // Mark it EXPLICIT so the auto-picker keeps this choice instead of drifting to the biggest profile.
+    await chrome.storage.local.set({ companionProfile: sel.value, companionProfileExplicit: sel.value });
+    await renderEntries();
+  };
+}
+
 async function refresh() {
   await resolveVaultMode();
   if (COMP.on) {
@@ -194,6 +219,7 @@ async function refresh() {
     banner.textContent =
       `One vault · in sync with the desktop app · profile: ${await compProfileName()}` +
       (COMP.synced ? ` · ${COMP.synced}` : "");
+    await renderProfileBar();
     await renderEntries();
     return;
   }
@@ -417,11 +443,33 @@ function toBase64(bytes) {
 $("export").onclick = async () => {
   const pass = $("bkPass").value;
   if (pass.length < 8) return setMsg("Choose a backup passphrase (8+ characters).", false);
-  const r = await readVault();
-  if (vaultBlocked(r)) return;
-  const withVal = Object.entries(r.vault || {}).filter(([, v]) => v && String(v).trim());
-  if (!withVal.length) return setMsg("Your fields are empty — type some values first, then export.", false);
-  const bytes = await exportVault(pass, r.vault, "");
+  let bytes, summary;
+  if (COMP.on) {
+    // Bridged → back up the WHOLE vault: EVERY profile, so a transfer never leaves one behind.
+    const pl = await send({ type: "companionProfiles" });
+    if (!pl || !pl.ok || !pl.profiles || !pl.profiles.length) return setMsg("No profiles to export.", false);
+    const profiles = [];
+    for (const p of pl.profiles) {
+      const meta = await send({ type: "companionVaultMeta", profileId: p.id, maxValueLen: VAULT_TEXT_MAX });
+      const data = {};
+      if (meta && meta.ok && meta.meta) for (const [k, o] of Object.entries(meta.meta)) {
+        const v = o && o.value; if (v && String(v).trim()) data[k] = v;
+      }
+      profiles.push({ id: p.id, name: p.name || p.id, data });
+    }
+    const total = profiles.reduce((s, p) => s + Object.keys(p.data).length, 0);
+    if (!total) return setMsg("Your profiles are empty — add some values first, then export.", false);
+    bytes = await exportVaultAll(pass, profiles, "");
+    summary = `${profiles.length} profile(s), ${total} field(s)`;
+  } else {
+    // Standalone browser vault → the single local profile.
+    const r = await readVault();
+    if (vaultBlocked(r)) return;
+    const withVal = Object.entries(r.vault || {}).filter(([, v]) => v && String(v).trim());
+    if (!withVal.length) return setMsg("Your fields are empty — type some values first, then export.", false);
+    bytes = await exportVault(pass, r.vault, "");
+    summary = `${withVal.length} field(s)`;
+  }
   try {
     // chrome.downloads is reliable from a popup and shows a Save dialog (saveAs).
     await chrome.downloads.download({
@@ -429,7 +477,7 @@ $("export").onclick = async () => {
       filename: "polyglotformfill-vault.ppfvault",
       saveAs: true,
     });
-    setMsg(`Exporting ${withVal.length} filled field(s) — choose where to save the file.`);
+    setMsg(`Exporting your whole vault (${summary}) — choose where to save the file.`);
   } catch (e) {
     setMsg("Export failed: " + ((e && e.message) || e), false);
   }
@@ -443,14 +491,41 @@ $("bkFile").onchange = async () => {
   if (!pass) { $("bkFile").value = ""; return setMsg("Enter the backup passphrase to import.", false); }
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const { data } = await importVault(pass, bytes);
-    const entries = Object.entries(data);
-    for (const [k, v] of entries) {
-      if (COMP.on) await send({ type: "companionUpsert", profileId: await compProfile(), key: k, value: v });
-      else await send({ type: "set", key: k, value: v });
+    const res = await importVault(pass, bytes);
+    if (COMP.on && res.profiles && res.profiles.length) {
+      // Restore EVERY profile in the file, merging by name into the shared desktop vault (never
+      // duplicating, never deleting a profile that isn't in the file).
+      const existing = await send({ type: "companionProfiles" });
+      const byName = new Map();
+      if (existing && existing.ok && existing.profiles) for (const p of existing.profiles) byName.set((p.name || "").toLowerCase(), p.id);
+      let nFields = 0; const added = [];
+      for (const pf of res.profiles) {
+        const name = pf.name || "Imported";
+        let pid = byName.get(name.toLowerCase());
+        if (!pid) {
+          pid = pf.id || ("imp-" + Math.random().toString(36).slice(2));
+          await send({ type: "companionCreateProfile", id: pid, name });
+          byName.set(name.toLowerCase(), pid);
+          added.push(name);
+        }
+        for (const [k, v] of Object.entries(pf.data || {})) {
+          if (!v || String(v).startsWith("data:")) { if (v) { await send({ type: "companionUpsert", profileId: pid, key: k, value: v }); nFields++; } continue; }
+          await send({ type: "companionUpsert", profileId: pid, key: k, value: v }); nFields++;
+        }
+      }
+      await renderProfileBar();
+      renderEntries();
+      setMsg(added.length
+        ? `Imported ${nFields} field(s); ${added.length} new profile(s) added (${added.join(", ")}). Use the Profile picker to view each.`
+        : `Imported ${nFields} field(s) across your profiles.`);
+    } else {
+      // Standalone browser vault: restore the (first) profile's fields into the local vault.
+      const data = (res.profiles && res.profiles[0] && res.profiles[0].data) || res.data || {};
+      const entries = Object.entries(data);
+      for (const [k, v] of entries) await send({ type: "set", key: k, value: v });
+      setMsg(`Imported ${entries.length} field(s).`);
+      renderEntries();
     }
-    setMsg(`Imported ${entries.length} field(s).`);
-    renderEntries();
   } catch (e) {
     setMsg("Import failed: " + ((e && e.message) || e), false);
   }

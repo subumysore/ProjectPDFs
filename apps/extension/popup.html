@@ -63,6 +63,14 @@
 
 
     <div id="unlocked" class="hidden">
+      <!-- WHICH profile the extension is filling from — always visible, and switchable when more than
+           one profile exists (e.g. Pranav / Subu). Bound to the same profiles as the desktop app. -->
+      <div id="profileBar" class="row hidden" style="align-items:center;gap:8px;margin-bottom:8px;
+           background:#eef7f5;border:1px solid #bfe3db;border-radius:10px;padding:7px 10px">
+        <span aria-hidden="true">👤</span>
+        <b class="sub" style="margin:0">Profile</b>
+        <select id="profileSel" style="flex:1;font-weight:600"></select>
+      </div>
       <div class="row">
         <button id="fill" data-i18n="fill.page">Fill this page</button>
         <button id="scan" data-i18n="scan.id">Scan ID / document</button>
