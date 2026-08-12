@@ -57,8 +57,6 @@
   "who.c3b": "Her adım sıfır telemetriyle yerel olarak çalışır ve kasa, anahtarı asla saklanmayan bir donanım geçiş anahtarıyla (WebAuthn) açılır. Hesap yok, bulut yok, takip yok — verileriniz kontrol ettiğiniz cihazda kalır.",
   "band.eyebrow": "Çok dilli bir dünya için tasarlandı",
   "band.h2": "Verileriniz sizin dilinizde. Form onların dilinde.",
-  "band.sub": "Hükûmetler ve kurumlar formları bir dilde yayımlar; insanlar bilgilerini başka bir dilde tutar. PolyglotFormFill bu boşluğu cihazda kapatır — İngilizce ↔ Hintçe ile başlayarak, daha fazlası yolda.",
-  "band.chip2": "daha fazla dil geliyor",
   "band.chip3": "cihazda NMT · bulut yok",
   "price.eyebrow": "Fiyatlandırma",
   "price.h2": "Bir kez satın alın. Sizin olsun. Abonelik yok.",

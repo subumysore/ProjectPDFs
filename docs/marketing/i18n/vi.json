@@ -57,8 +57,6 @@
   "who.c3b": "Mọi bước chạy cục bộ với không thu thập dữ liệu, và két được mở khóa bằng passkey phần cứng (WebAuthn) mà khóa của nó không bao giờ được lưu. Không tài khoản, không đám mây, không theo dõi — dữ liệu của bạn ở lại trên thiết bị bạn kiểm soát.",
   "band.eyebrow": "Được tạo cho một thế giới đa ngữ",
   "band.h2": "Dữ liệu của bạn bằng ngôn ngữ của bạn. Biểu mẫu bằng ngôn ngữ của họ.",
-  "band.sub": "Chính phủ và các tổ chức phát hành biểu mẫu bằng một ngôn ngữ; người dân giữ thông tin của họ bằng một ngôn ngữ khác. PolyglotFormFill bắc cầu khoảng cách đó ngay trên thiết bị — bắt đầu với tiếng Anh ↔ tiếng Hindi, và sẽ có thêm nữa.",
-  "band.chip2": "sắp có thêm ngôn ngữ",
   "band.chip3": "NMT trên thiết bị · không đám mây",
   "price.eyebrow": "Giá",
   "price.h2": "Mua một lần. Sở hữu trọn đời. Không thuê bao.",

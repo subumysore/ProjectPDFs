@@ -57,8 +57,6 @@
   "who.c3b": "Chaque étape s'exécute localement sans aucune télémétrie, et le coffre se déverrouille avec une clé d'accès matérielle (WebAuthn) dont la clé n'est jamais stockée. Pas de compte, pas de cloud, pas de suivi — vos données restent sur l'appareil que vous contrôlez.",
   "band.eyebrow": "Conçu pour un monde multilingue",
   "band.h2": "Vos données dans votre langue. Le formulaire dans la leur.",
-  "band.sub": "Les gouvernements et les institutions publient des formulaires dans une langue ; les gens conservent leurs informations dans une autre. PolyglotFormFill comble cet écart sur l'appareil — en commençant par l'anglais ↔ l'hindi, et bien d'autres à venir.",
-  "band.chip2": "d'autres langues à venir",
   "band.chip3": "NMT sur l'appareil · sans cloud",
   "price.eyebrow": "Tarifs",
   "price.h2": "Achetez une fois. C'est à vous. Sans abonnement.",

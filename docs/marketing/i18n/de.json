@@ -57,8 +57,6 @@
   "who.c3b": "Jeder Schritt läuft lokal mit null Telemetrie, und der Tresor wird mit einem Hardware-Passkey (WebAuthn) entsperrt, dessen Schlüssel niemals gespeichert wird. Kein Konto, keine Cloud, kein Tracking — Ihre Daten bleiben auf dem Gerät, das Sie kontrollieren.",
   "band.eyebrow": "Für eine mehrsprachige Welt gemacht",
   "band.h2": "Ihre Daten in Ihrer Sprache. Das Formular in ihrer.",
-  "band.sub": "Behörden und Institutionen veröffentlichen Formulare in einer Sprache; Menschen halten ihre Angaben in einer anderen. PolyglotFormFill überbrückt diese Lücke auf dem Gerät — beginnend mit Englisch ↔ Hindi, weitere folgen.",
-  "band.chip2": "weitere Sprachen folgen",
   "band.chip3": "NMT auf dem Gerät · keine Cloud",
   "price.eyebrow": "Preise",
   "price.h2": "Einmal kaufen. Es gehört Ihnen. Kein Abo.",

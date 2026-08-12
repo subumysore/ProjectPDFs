@@ -57,8 +57,6 @@
   "who.c3b": "Cada paso se ejecuta localmente con cero telemetría, y la bóveda se desbloquea con una clave de acceso por hardware (WebAuthn) cuya clave nunca se almacena. Sin cuenta, sin nube, sin rastreo — tus datos permanecen en el dispositivo que controlas.",
   "band.eyebrow": "Creado para un mundo multilingüe",
   "band.h2": "Tus datos en tu idioma. El formulario en el suyo.",
-  "band.sub": "Los gobiernos y las instituciones publican formularios en un idioma; las personas guardan sus datos en otro. PolyglotFormFill salva esa brecha en el dispositivo — empezando por inglés ↔ hindi, con más por venir.",
-  "band.chip2": "más idiomas en camino",
   "band.chip3": "NMT en el dispositivo · sin nube",
   "price.eyebrow": "Precios",
   "price.h2": "Compra una vez. Es tuyo. Sin suscripción.",

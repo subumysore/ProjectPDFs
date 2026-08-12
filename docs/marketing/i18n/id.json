@@ -57,8 +57,6 @@
   "who.c3b": "Setiap langkah berjalan secara lokal dengan nol telemetri, dan brankas dibuka dengan passkey perangkat keras (WebAuthn) yang kuncinya tidak pernah disimpan. Tanpa akun, tanpa cloud, tanpa pelacakan — data Anda tetap di perangkat yang Anda kendalikan.",
   "band.eyebrow": "Dibuat untuk dunia multibahasa",
   "band.h2": "Data Anda dalam bahasa Anda. Formulirnya dalam bahasa mereka.",
-  "band.sub": "Pemerintah dan lembaga menerbitkan formulir dalam satu bahasa; orang menyimpan datanya dalam bahasa lain. PolyglotFormFill menjembatani kesenjangan itu di perangkat — dimulai dengan Inggris ↔ Hindi, dengan lebih banyak lagi menyusul.",
-  "band.chip2": "lebih banyak bahasa segera hadir",
   "band.chip3": "NMT di perangkat · tanpa cloud",
   "price.eyebrow": "Harga",
   "price.h2": "Beli sekali. Miliki. Tanpa langganan.",
