@@ -1,10 +1,10 @@
 {
-  "version": "1.0.14",
-  "notes": "Web-form autofill: fills forms that appear after load (SPA/ADP) and framework phone/masked widgets (React PhoneInput/intl-tel-input) via a typed-keystroke fallback. Global, not per-site.",
+  "version": "1.0.16",
+  "notes": "Web-form autofill now fills strict controlled-input frameworks (ADP WorkforceNow) by simulating real keystrokes, so values stick instead of reverting. Generic; verified on live ADP.",
   "pub_date": "2026-08-12T00:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UG9aWEc5WE03VXQ4SWNheHI5cGF4WURIZGlPUmxHajI1ZFltc0M0b1BuU0dMZ3Q2d0VYaGR0TWV4bENEMzA4Ri9WMnh2VmN5cDJ1QXVkNEVPV21HMUFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTIzMzE0CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTRfeDY0LXNldHVwLmV4ZQpZWkxrMnNZUmNaalVOTFJVa0didEkvdEpvMERCcGZNOFdjTGU1cFJPZWVFU0lTdCs0Tm8rNng2RGQ0TzVYWk0xRTBHRHRQcmp6dW1SZTcxWFJXR3ZEdz09Cg==",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRb2JBYXBIQlE5UGw4ak9NaDdrRjVsL3RmSk9Fc29SbklmSGlnM1RwZWhrMjBhN1R2NVV6R0xrdHc1OTBDdmFwU29zbFZKN1lKR1pubGJsVVlMeXBoWHJFcDc4OHRBTlFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2NTM0MjY1CWZpbGU6UG9seWdsb3RGb3JtRmlsbF8xLjAuMTZfeDY0LXNldHVwLmV4ZQpSL05aUVU3YXRrZ0gzTzJINkpFMWFYdy92QUt0RVFSWjdtbDdsaUtqSDFUbkdMVE5HOTVMMTlQUEFSUnFhZmczT2VOc0hOZVBuYW1zQ0tiYmtabW1DQT09Cg==",
       "url": "https://polyglotformfill.com/download/PolyglotFormFill-Setup.exe"
     }
   }
