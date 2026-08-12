@@ -8,7 +8,7 @@
 #
 # NOTE: the InstallerUrls must be live before submitting — winget validation downloads them.
 PackageIdentifier: SubramanyaMysore.PolyglotFormFill
-PackageVersion: 1.0.13
+PackageVersion: 1.0.14
 InstallerLocale: en-US
 Platform:
 - Windows.Desktop
@@ -26,6 +26,6 @@ Installers:
 - Architecture: x64
   InstallerType: nullsoft
   InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe
-  InstallerSha256: 4B2F99830E0CFA33D0CDB35EBBE5E3694B2B51D3DBCD45ED962519800532F923
+  InstallerSha256: 32F52736B30F65266900532042C2577E4E3A50566AE1483C389B84D3CB3A7324
 ManifestType: installer
 ManifestVersion: 1.6.0
