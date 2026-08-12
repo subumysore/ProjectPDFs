@@ -1123,10 +1123,18 @@ $("companionFill").onclick = async () => {
 // extension users simply lost what they typed. This is the desktop's posture, ported.
 let learnPending = [];
 // Auto-fill-on-load toggle: remembered in storage; the background service worker acts on it.
+// Reflect a checkbox's state in its ON/OFF badge so it's never ambiguous which way it's set.
+function paintToggle(inputId, stateId) {
+  const on = !!($(inputId) && $(inputId).checked);
+  const b = $(stateId); if (!b) return;
+  b.textContent = on ? "ON" : "OFF";
+  b.classList.toggle("on", on); b.classList.toggle("off", !on);
+}
 if ($("autofillOnLoad")) {
-  chrome.storage.local.get("autofillOnLoad").then(({ autofillOnLoad }) => { $("autofillOnLoad").checked = !!autofillOnLoad; });
+  chrome.storage.local.get("autofillOnLoad").then(({ autofillOnLoad }) => { $("autofillOnLoad").checked = !!autofillOnLoad; paintToggle("autofillOnLoad", "autofillState"); });
   $("autofillOnLoad").onchange = () => {
     chrome.storage.local.set({ autofillOnLoad: $("autofillOnLoad").checked });
+    paintToggle("autofillOnLoad", "autofillState");
     setMsg($("autofillOnLoad").checked
       ? "On — pages you open will fill automatically (passwords stay manual)."
       : "Off — use “Fill this page” to fill.");
@@ -1137,9 +1145,10 @@ if ($("autofillOnLoad")) {
 // on any page is remembered without clicking "Save new details" each time. New fields only; never
 // passwords; saved to your own vault on this device.
 if ($("autoSaveDetails")) {
-  chrome.storage.local.get("autoSaveDetails").then(({ autoSaveDetails }) => { $("autoSaveDetails").checked = autoSaveDetails !== false; });
+  chrome.storage.local.get("autoSaveDetails").then(({ autoSaveDetails }) => { $("autoSaveDetails").checked = autoSaveDetails !== false; paintToggle("autoSaveDetails", "autoSaveState"); });
   $("autoSaveDetails").onchange = () => {
     chrome.storage.local.set({ autoSaveDetails: $("autoSaveDetails").checked });
+    paintToggle("autoSaveDetails", "autoSaveState");
     setMsg($("autoSaveDetails").checked
       ? "On — new details you type are saved automatically (new fields only, never passwords)."
       : "Off — use “Save new details from this page” when you want to save.");
