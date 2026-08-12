@@ -12,8 +12,14 @@
   all 3 profiles directly). Fix: rebuild the folder from `deploy/build-extension-zip.ps1`'s file set.
   Memory [[ext-load-folder-complete-set]]. Proven by `apps/app/scripts/real-ext-e2e.mjs` 10/10.
 - **Tests:** extension/shared-engine 371 ✓, real-browser E2E 10/10 ✓, desktop tsc clean.
-- **Release:** both surfaces bumped 1.0.13 → 1.0.14; extension zip saved to `F:\` root; desktop signed +
-  staged; site + store deploy per §10. (See deliverables matrix in the session close.)
+- **Release SHIPPED + live-verified (2026-08-12):** both surfaces 1.0.14. Desktop: Authenticode-Valid
+  (Azure Trusted Signing, CN=Subramanya Mysore) + updater `.sig`; installer staged, `release-manifest.json`
+  (signed:true) + `latest.json` (no-BOM) at 1.0.14, winget sha synced, site published `-WithBinaries`.
+  LIVE-VERIFIED: `latest.json`=1.0.14 and live installer sha == manifest. Extension: store zip → CWS
+  Upload SUCCESS, submitted for review; zip also at `F:\polyglotformfill-extension-v1.0.14.zip`.
+  Installed 1.0.14 on this machine (app.exe ProductVersion 1.0.14, sig Valid), launched + unlocked;
+  Chrome launched with the 1.0.14 keyed extension (dedicated profile). Note: desktop 1.0.14 = version
+  parity only (no desktop code changed since 1.0.13; all 1.0.14 fixes are extension-side).
 
 ## XFA/LiveCycle form fill + DL surname OCR — 2026-08-02 (ADR-0030)
 - **Hybrid-XFA forms (USCIS N-400, I-130) now fill & stay editable.** pdf-lib can't parse them (0 fields,
