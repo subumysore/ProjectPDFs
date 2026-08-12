@@ -74,6 +74,12 @@ Signing is live and verified. Non-secret coordinates (secrets are in the build m
 - **Env vars** on the build machine (User scope): `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
   (client secret **expires ~2027-01-24** — renew in `ppf-signer` → Certificates & secrets before then).
 - **Dlib**: `Microsoft.Trusted.Signing.Client` NuGet (v1.0.95), `Azure.CodeSigning.Dlib.dll` → `TRUSTED_SIGNING_DLIB`.
+  On THIS build machine it lives at `C:\Users\Subramanya Mysore\.trustedsigning\bin\x64\Azure.CodeSigning.Dlib.dll`
+  (NOT under `~/.nuget`, so `sign-windows.ps1` auto-locate misses it — you MUST set `TRUSTED_SIGNING_DLIB` to
+  this path before `tauri build`). The three `TRUSTED_SIGNING_*` coordinates above are non-secret; only the
+  `AZURE_*` service-principal creds (User scope) are secret. Full env to export before a signed build:
+  `TRUSTED_SIGNING_ENDPOINT=https://eus.codesigning.azure.net/`, `TRUSTED_SIGNING_ACCOUNT=polyglotformfill`,
+  `TRUSTED_SIGNING_PROFILE=ppf-release`, `TRUSTED_SIGNING_DLIB=<the .trustedsigning path above>`.
 - **Gotcha fixed**: the `/dmdf` metadata JSON must be UTF-8 **without BOM** — a BOM makes the dlib throw
   `'0xEF' is an invalid start of a value`. `sign-windows.ps1` now writes it BOM-free.
 - **Proof**: 1.0.2 installer signed 2026-07-28, chain `Subramanya Mysore → Microsoft ID Verified CS AOC CA 03
