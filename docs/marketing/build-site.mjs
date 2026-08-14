@@ -263,6 +263,70 @@ const GUIDEVID_CSS = `
   .guidevid .cc-note{margin:10px 0 0;font-size:13px;opacity:.65}
 `;
 
+// EXE vs EXT comparison, placed high in the hero so a visitor sees what each surface does and can
+// download either one WITHOUT scrolling. Additive: the existing #get section is untouched.
+const VS_CSS = `
+  .vs{margin:30px 0 6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);overflow:hidden}
+  .vs h2{margin:0;padding:18px 20px 4px;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.02em}
+  .vs .vssub{margin:0;padding:0 20px 14px;color:var(--muted);font-size:15px}
+  .vstable{width:100%;border-collapse:collapse;font-size:15px}
+  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right}
+  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink);border-top:1px solid var(--line)}
+  .vstable thead th .ic{font-size:20px;margin-right:8px}
+  .vstable thead th small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .vstable tbody th{width:26%;font-weight:600;color:var(--muted);font-size:14px}
+  .vstable td.yes::before{content:"\\2705 "}
+  .vstable td.no{color:var(--muted)}
+  .vstable td.no::before{content:"\\2014 "}
+  .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
+  .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
+  .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  @media (max-width:720px){
+    .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
+    .vstable thead{display:none}
+    .vstable tbody th{border-top:2px solid var(--line);padding-bottom:0}
+    .vstable td::after{display:block;font-size:12px;color:var(--muted);font-family:var(--mono)}
+    .vstable td:nth-of-type(1)::after{content:"\\2014 " attr(data-s)}
+    .vstable td:nth-of-type(2)::after{content:"\\2014 " attr(data-s)}
+  }
+`;
+
+// Rows: [label, desktop, extension, desktopHas, extensionHas]
+const VS_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+function vsSection(lang, tr) {
+  const exeLbl = tr("vs.exe"), extLbl = tr("vs.ext");
+  const rows = VS_ROWS.map((n) => {
+    const cls = (side) => (tr(`vs.r${n}.${side}has`) === "no" ? "no" : "yes");
+    return `        <tr><th scope="row">${esc(tr(`vs.r${n}.k`))}</th>` +
+      `<td class="${cls("exe")}" data-s="${esc(exeLbl)}">${esc(tr(`vs.r${n}.exe`))}</td>` +
+      `<td class="${cls("ext")}" data-s="${esc(extLbl)}">${esc(tr(`vs.r${n}.ext`))}</td></tr>`;
+  }).join("\n");
+  return `  <section class="vs" id="compare" aria-label="${esc(tr("vs.aria"))}">
+    <h2>${esc(tr("vs.h2"))}</h2>
+    <p class="vssub">${tr("vs.sub")}</p>
+    <table class="vstable">
+      <thead>
+        <tr>
+          <th scope="col">${esc(tr("vs.colWhat"))}</th>
+          <th scope="col"><span class="ic">🖥️</span>${esc(exeLbl)}<small>${esc(tr("vs.exeSub"))}</small></th>
+          <th scope="col"><span class="ic">🧩</span>${esc(extLbl)}<small>${esc(tr("vs.extSub"))}</small></th>
+        </tr>
+      </thead>
+      <tbody>
+${rows}
+        <tr class="dlrow">
+          <th scope="row">${esc(tr("site.download"))}</th>
+          <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> ${esc(tr("get.win"))}</a></td>
+          <td><a class="btn" href="${STORE_URL}" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> ${esc(tr("vs.addChrome"))}</a></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="vsnote">${esc(tr("vs.note"))} <a href="${urlFor(lang, "install")}">${esc(tr("vs.installHelp"))} →</a></p>
+  </section>`;
+}
+
 // ---- landing template -----------------------------------------------------------------------
 function landingPage(lang) {
   const tr = translator(lang);
@@ -278,7 +342,7 @@ function landingPage(lang) {
 <title>${esc(tr("app.name"))} — ${esc(tr("meta.landingTitle"))}</title>
 <meta name="description" content="${esc(tr("meta.landingDesc"))}">
 ${headMeta(lang, "landing", tr)}
-<style>${LANDING_CSS}${LANGBAR_CSS}${GUIDEVID_CSS}${COUNTER_CSS}
+<style>${LANDING_CSS}${LANGBAR_CSS}${GUIDEVID_CSS}${COUNTER_CSS}${VS_CSS}
   .tier.pop::after{content:"${esc(tr("price.mostPopular"))}"}
 </style>
 
@@ -297,7 +361,7 @@ ${lang === "en" ? langhint() : ""}
       <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
       <a href="#privacy">${esc(tr("nav.privacy"))}</a>
       ${counterChip(tr)}
-      <a class="btn" href="#get">${esc(tr("nav.getit"))}</a>
+      <a class="btn" href="#compare">${esc(tr("nav.getit"))}</a>
     </div>
   </nav>
 </div>
@@ -311,8 +375,10 @@ ${lang === "en" ? langhint() : ""}
   <div class="cta">
     <a class="btn" href="#features">${esc(tr("hero.cta1"))}</a>
     <a class="btn ghost" href="/tutorials/">${esc(tr("hero.cta2"))}</a>
-    <a class="btn ghost" href="#get">${esc(tr("hero.cta3"))}</a>
+    <a class="btn ghost" href="#compare">${esc(tr("hero.cta3"))}</a>
   </div>
+
+${vsSection(lang, tr)}
 
   ${(() => { const g = guideAssets(lang); return `<section class="guidevid" aria-label="${esc(tr("guide.title"))}">
     <h2>${esc(tr("guide.title"))}</h2>

@@ -201,6 +201,32 @@
   @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
   @media (max-width:720px){ .dlchip{display:none!important} }
 
+  .vs{margin:30px 0 6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);overflow:hidden}
+  .vs h2{margin:0;padding:18px 20px 4px;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.02em}
+  .vs .vssub{margin:0;padding:0 20px 14px;color:var(--muted);font-size:15px}
+  .vstable{width:100%;border-collapse:collapse;font-size:15px}
+  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right}
+  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink);border-top:1px solid var(--line)}
+  .vstable thead th .ic{font-size:20px;margin-right:8px}
+  .vstable thead th small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .vstable tbody th{width:26%;font-weight:600;color:var(--muted);font-size:14px}
+  .vstable td.yes::before{content:"\2705 "}
+  .vstable td.no{color:var(--muted)}
+  .vstable td.no::before{content:"\2014 "}
+  .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
+  .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
+  .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  @media (max-width:720px){
+    .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
+    .vstable thead{display:none}
+    .vstable tbody th{border-top:2px solid var(--line);padding-bottom:0}
+    .vstable td::after{display:block;font-size:12px;color:var(--muted);font-family:var(--mono)}
+    .vstable td:nth-of-type(1)::after{content:"\2014 " attr(data-s)}
+    .vstable td:nth-of-type(2)::after{content:"\2014 " attr(data-s)}
+  }
+
   .tier.pop::after{content:"가장 인기"}
 </style>
 
@@ -219,7 +245,7 @@
       <a href="/tutorials/">튜토리얼</a>
       <a href="#privacy">개인정보</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
-      <a class="btn" href="#get">받기</a>
+      <a class="btn" href="#compare">받기</a>
     </div>
   </nav>
 </div>
@@ -244,8 +270,39 @@
   <div class="cta">
     <a class="btn" href="#features">작동 방식 보기</a>
     <a class="btn ghost" href="/tutorials/">▶ 튜토리얼 보기</a>
-    <a class="btn ghost" href="#get">받기 (베타)</a>
+    <a class="btn ghost" href="#compare">받기 (베타)</a>
   </div>
+
+  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
+    <h2>Two ways to use it — pick one, or use both</h2>
+    <p class="vssub">The <b>desktop app (.exe)</b> handles documents on your machine: PDFs, Word, Excel, scans and photos. The <b>browser extension</b> fills forms inside web pages as you browse. They share one encrypted vault, so anything you enter in one is available in the other.</p>
+    <table class="vstable">
+      <thead>
+        <tr>
+          <th scope="col">What you want to do</th>
+          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
+          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Fill PDF forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — open, fill, sign and export a finished PDF</td><td class="yes" data-s="Browser extension">Yes, for PDFs opened in the browser viewer</td></tr>
+        <tr><th scope="row">Turn a flat PDF, scan or photo into a fillable form</th><td class="yes" data-s="Desktop app (.exe)">Yes — on-device OCR places real fields</td><td class="no" data-s="Browser extension">Not available</td></tr>
+        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes, including export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
+        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">Not applicable</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
+        <tr><th scope="row">Read a form in one language, fill it in another</th><td class="yes" data-s="Desktop app (.exe)">Yes — on-device translation, bilingual side panel</td><td class="yes" data-s="Browser extension">Yes — on-device translation of page labels</td></tr>
+        <tr><th scope="row">Signatures</th><td class="yes" data-s="Desktop app (.exe)">Yes — device-bound signing with provenance</td><td class="no" data-s="Browser extension">Not available</td></tr>
+        <tr><th scope="row">Encrypted vault</th><td class="yes" data-s="Desktop app (.exe)">Owns the vault — passphrase or hardware passkey</td><td class="yes" data-s="Browser extension">Shares the same vault automatically</td></tr>
+        <tr><th scope="row">Works offline</th><td class="yes" data-s="Desktop app (.exe)">Fully</td><td class="yes" data-s="Browser extension">Yes, for filling</td></tr>
+        <tr><th scope="row">Install</th><td class="yes" data-s="Desktop app (.exe)">Signed Windows installer</td><td class="yes" data-s="Browser extension">One click, no prompts</td></tr>
+        <tr class="dlrow">
+          <th scope="row">다운로드</th>
+          <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows용 다운로드</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="vsnote">Free trial on both — no account, no card. Everything runs on your device. <a href="/ko/install/">Installation help →</a></p>
+  </section>
 
   <section class="guidevid" aria-label="Watch the video">
     <h2>Watch the video</h2>
@@ -426,7 +483,7 @@
   <div class="cta">
     <a class="btn" href="/ko/install/#extension">Get the browser extension — no warnings</a>
     <a class="btn ghost" href="/dl/exe" aria-label="다운로드">Windows용 다운로드</a>
-    <a class="btn ghost" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener">Get it on the Chrome Web Store</a>
+    <a class="btn ghost" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener">Add to Chrome — Web Store</a>
   </div>
   <p class="note">Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore). A brand-new signed app may show a SmartScreen “unrecognized app” notice — click More info, then Run anyway (verified clean, VirusTotal 0/71). The browser extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>

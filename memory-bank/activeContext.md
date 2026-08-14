@@ -723,3 +723,15 @@ multilingual filling — not the translation engine.
   CHANGELOG [Unreleased]; rides into the next published version once 1.0.10 clears review. Local
   unpacked build refreshed at `F:\PolyglotFormFill-Extension-1.0.10` for the owner to reload+test.
 - Tests: extension 364 (+6 capture cases incl. shadow DOM + lone-consent filter), desktop 33.
+
+## 2026-08-14 — landing page: EXE vs EXT comparison up top
+- Owner asked that the site say, at the very top, what the DESKTOP APP does vs what the EXTENSION does,
+  as a side-by-side table whose LAST ROW carries the two download links (icons), so nobody scrolls to
+  download; and that the "Get it" label go away (the product itself prompts for a license).
+- Implemented in the GENERATOR (`docs/marketing/build-site.mjs`: `VS_CSS`, `vsSection()`), not the built
+  HTML — `publish-site.ps1` runs `build-site.mjs` first, so hand-edits to `site/index.html` are overwritten.
+- New `vs.*` keys live in `i18n/en.json`; `translator()` falls back to EN, so the 25 other locales render
+  the block in English until translated. FOLLOW-UP: translate `vs.*` for all locales.
+- Labels: nav "Get it" → "Download", hero → "Download (beta)", store → "Add to Chrome — Web Store".
+- Verified: site-i18n tests 8/8; real Chrome (puppeteer) check of `#compare` box + both download hrefs;
+  live check of https://polyglotformfill.com/ and /de/ after publish. PUBLISHED (owner said go ahead).
