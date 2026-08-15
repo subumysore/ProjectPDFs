@@ -735,3 +735,21 @@ multilingual filling — not the translation engine.
 - Labels: nav "Get it" → "Download", hero → "Download (beta)", store → "Add to Chrome — Web Store".
 - Verified: site-i18n tests 8/8; real Chrome (puppeteer) check of `#compare` box + both download hrefs;
   live check of https://polyglotformfill.com/ and /de/ after publish. PUBLISHED (owner said go ahead).
+
+## 2026-08-15 — landing page: corrected, de-jargoned, compressed
+- Owner caught the comparison table asserting things the code contradicts. VERIFIED against source before
+  correcting: extension DOES OCR-fill flat/scanned/XFA PDFs (`pdfocr.js` via `viewer.js`), DOES sign
+  (`sign.js`/`signflatten.js`), DOES show the bilingual side panel. Word/Excel really is desktop-only.
+  LESSON: write capability claims from the code, not from the surface's "role" in my head.
+- Table now shows only the two REAL differences + an "Everything else — identical on both" row
+  (`VS_ROWS = [3, 4]`); ruled grid borders; downloads still the last row.
+- Language-agnostic invariant enforced in copy: "Fill an English form…" and the fixed language list are
+  gone, replaced by any→any / ~200 languages — TRANSLATED into all 26 locales (not English fallback).
+- Vault copy reworded for the owner's framing: the passphrase stays on the user's device, is checked
+  there, never sent or stored by anyone. All 26 locales.
+- "beta" removed from 44 strings; whitespace + copy compressed (page 5914 → 5351px).
+- Desktop app CANNOT fill other native Windows applications — no input injection / UI automation / a11y
+  hooks anywhere in `src-tauri` (deps: tauri, keyring, open, winreg, core-*). It fills documents it opens;
+  the extension fills web pages. If ever wanted, that is a new capability needing its own ADR.
+- `scripts/site-i18n.test.mjs` 8/8 (tagline assertion retired with a comment — the hero no longer prints
+  app.tagline). Verified in real Chrome at 1280/420px, light + dark. Published 3× (owner authorised).

@@ -74,7 +74,7 @@
   .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-ink)}
 
   /* nav */
-  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:14px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:18px}
   .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--teal-ink));
     box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
@@ -90,18 +90,18 @@
   .btn.soon{opacity:.55;cursor:not-allowed;pointer-events:none}
 
   /* hero */
-  header{padding:40px 0 24px}
+  header{padding:14px 0 10px}
   .badge{display:inline-flex;gap:8px;align-items:center;background:var(--teal-soft);color:var(--teal-ink);
     font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;letter-spacing:.04em}
   h1{font-size:clamp(34px,6.4vw,62px);line-height:1.02;letter-spacing:-.035em;margin:20px 0 0;
     text-wrap:balance;font-weight:800}
   h1 .fade{color:var(--teal-ink)}
   .lede{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:82ch;margin:16px 0 0}
-  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
   .trustline{margin-top:20px;font-size:13px;color:var(--muted);font-family:var(--mono)}
 
   /* dataflow diagram */
-  .flow{margin:26px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  .flow{margin:16px 0 4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
     padding:22px;box-shadow:var(--shadow)}
   .device{border:1.5px dashed var(--teal);border-radius:12px;padding:16px;background:var(--teal-soft)}
   .device h3{margin:0 0 12px;font-size:13px;font-family:var(--mono);letter-spacing:.06em;color:var(--teal-ink);text-transform:uppercase}
@@ -113,10 +113,10 @@
   .arrow{font-family:var(--mono);color:var(--amber);font-weight:700}
 
   /* sections */
-  section{padding:52px 0;border-top:1px solid var(--line)}
+  section{padding:34px 0;border-top:1px solid var(--line)}
   .h2{font-size:clamp(24px,3.6vw,34px);letter-spacing:-.02em;margin:6px 0 0;font-weight:800;text-wrap:balance}
-  .sub{color:var(--muted);margin:12px 0 0;max-width:64ch}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:30px}
+  .sub{color:var(--muted);margin:8px 0 0;max-width:72ch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:20px}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
   .card .ic{width:34px;height:34px;border-radius:9px;background:var(--teal-soft);display:grid;place-items:center;font-size:18px;margin-bottom:12px}
   .card h3{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
@@ -129,14 +129,14 @@
   @media (max-width:560px){.card.feature{grid-template-columns:1fr}}
 
   /* polyglot band */
-  .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:34px;margin-top:8px}
+  .band{background:linear-gradient(135deg,var(--teal-ink),var(--teal));color:#fff;border-radius:18px;padding:26px;margin-top:6px}
   .band .h2{color:#fff}
   .band .sub{color:rgba(255,255,255,.85)}
   .langrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:13px}
   .lang{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:999px}
 
   /* pricing */
-  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:30px}
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:20px}
   .tier{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:var(--shadow)}
   .tier.pop{border:1.5px solid var(--teal);position:relative}
   .tier.pop::after{content:"Most popular";position:absolute;top:-11px;left:20px;background:var(--teal);color:#fff;
@@ -148,7 +148,7 @@
   .tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px;font-size:14px;color:var(--muted)}
   .tier li::before{content:"✓ ";color:var(--teal-ink);font-weight:700}
 
-  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:13px;
+  footer{border-top:1px solid var(--line);padding:22px 0;color:var(--muted);font-size:13px;
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   .note{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:8px}
   @media (max-width:560px){.navlinks{display:none}}
@@ -176,16 +176,16 @@
   }
   @media (prefers-reduced-motion: reduce){ .hellobg .kfix{animation:none!important;} }
 
-  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:5px 24px;
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
-  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+  .langhint{padding:5px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
     border-bottom:1px solid var(--line,#dde6e4)}
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
   [dir=rtl] .langhint{text-align:left}
 
-  .guidevid{margin:22px auto 8px;max-width:840px;text-align:center}
+  .guidevid{margin:14px auto 6px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
   .guidevid .lede{margin:0 0 18px}
   .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
@@ -201,30 +201,44 @@
   @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
   @media (max-width:720px){ .dlchip{display:none!important} }
 
-  .vs{margin:30px 0 6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  .vs{margin:18px 0 4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
     box-shadow:var(--shadow);overflow:hidden}
   .vs h2{margin:0;padding:18px 20px 4px;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.02em}
   .vs .vssub{margin:0;padding:0 20px 14px;color:var(--muted);font-size:15px}
-  .vstable{width:100%;border-collapse:collapse;font-size:15px}
-  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
-  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right}
-  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink);border-top:1px solid var(--line)}
+  /* Ruled grid: every cell is boxed (row lines AND column dividers), the header sits on a heavier
+     rule, and the outer frame is drawn by a wrapper so the rounded corners still clip cleanly. */
+  .vsgrid{margin:0 18px 4px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .vstable{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;
+    border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  .vstable th:first-child,.vstable td:first-child{border-left:0}
+  .vstable thead th{border-top:0}
+  .vstable tbody tr:first-child th,.vstable tbody tr:first-child td{border-top:2px solid var(--line)}
+  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right;border-left:0;border-right:1px solid var(--line)}
+  [dir=rtl] .vstable th:first-child,[dir=rtl] .vstable td:first-child{border-right:0}
+  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink)}
   .vstable thead th .ic{font-size:20px;margin-right:8px}
   .vstable thead th small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:2px}
-  .vstable tbody th{width:26%;font-weight:600;color:var(--muted);font-size:14px}
-  .vstable td.yes::before{content:"\2705 "}
+  .vstable tbody th{width:28%;font-weight:600;color:var(--muted);font-size:14px;background:var(--paper)}
+  .vstable td.yes::before{content:"\2705\00a0"}
   .vstable td.no{color:var(--muted)}
-  .vstable td.no::before{content:"\2014 "}
+  .vstable td.no::before{content:"\2014\00a0"}   /* NBSP: a plain trailing space collapses away */
+  .vstable tr.bothrow td{background:var(--teal-soft);font-weight:600}
+  .vstable td[colspan]::after{content:none}   /* the spanning row needs no per-column label on mobile */
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
   @media (max-width:720px){
+    .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
     .vstable thead{display:none}
-    .vstable tbody th{border-top:2px solid var(--line);padding-bottom:0}
+    .vstable tr{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+    .vstable th,.vstable td{border-left:0;border-right:0}
+    .vstable tbody tr:first-child th,.vstable tbody tr:first-child td{border-top:1px solid var(--line)}
+    .vstable tbody th{border-top:0;padding-bottom:0;width:auto}
     .vstable td::after{display:block;font-size:12px;color:var(--muted);font-family:var(--mono)}
-    .vstable td:nth-of-type(1)::after{content:"\2014 " attr(data-s)}
-    .vstable td:nth-of-type(2)::after{content:"\2014 " attr(data-s)}
+    .vstable td:nth-of-type(1)::after{content:"\2014\00a0" attr(data-s)}
+    .vstable td:nth-of-type(2)::after{content:"\2014\00a0" attr(data-s)}
   }
 
   .tier.pop::after{content:"सबसे लोकप्रिय"}
@@ -265,35 +279,31 @@
 <header class="wrap">
   <span class="badge">◉ बहुभाषी · डिवाइस पर · शून्य टेलीमेट्री</span>
   <h1>कोई भी फ़ॉर्म पढ़ें और भरें —<br><span class="fade">किसी भी भाषा में।</span></h1>
-  <p class="tagline">कोई भी फ़ॉर्म, किसी भी भाषा में, आपके डिवाइस पर निजी रूप से भरें।</p>
+<!-- The tagline used to sit here, but it says the same thing as the lede right below it; one line,
+     not two. (app.tagline is still used elsewhere — install page, meta description, the apps.) -->
   <p class="lede">PolyglotFormFill एक भाषा में लिखा फ़ॉर्म पढ़ता है और आपके डेटा से किसी दूसरी भाषा में उसे भर देता है — PDF, Word, Excel और वेब फ़ॉर्म। सब कुछ आपके डिवाइस पर चलता है; हम आपका डेटा कभी नहीं देखते। जब आप फ़ॉर्म भेजते हैं, तो वह सीधे आपके चुने हुए प्राप्तकर्ता तक जाता है — हमारे माध्यम से कभी नहीं।</p>
   <div class="cta">
     <a class="btn" href="#features">देखें यह कैसे काम करता है</a>
     <a class="btn ghost" href="/tutorials/">▶ ट्यूटोरियल देखें</a>
-    <a class="btn ghost" href="#compare">प्राप्त करें (बीटा)</a>
+    <a class="btn ghost" href="#compare">प्राप्त करें</a>
   </div>
 
   <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Two ways to use it — pick one, or use both</h2>
-    <p class="vssub">The <b>desktop app (.exe)</b> handles documents on your machine: PDFs, Word, Excel, scans and photos. The <b>browser extension</b> fills forms inside web pages as you browse. They share one encrypted vault, so anything you enter in one is available in the other.</p>
+    <h2>Desktop app or browser extension?</h2>
+    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+    <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
-          <th scope="col">What you want to do</th>
+          <th scope="col"></th>
           <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
           <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Fill PDF forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — open, fill, sign and export a finished PDF</td><td class="yes" data-s="Browser extension">Yes, for PDFs opened in the browser viewer</td></tr>
-        <tr><th scope="row">Turn a flat PDF, scan or photo into a fillable form</th><td class="yes" data-s="Desktop app (.exe)">Yes — on-device OCR places real fields</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes, including export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">Not applicable</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr><th scope="row">Read a form in one language, fill it in another</th><td class="yes" data-s="Desktop app (.exe)">Yes — on-device translation, bilingual side panel</td><td class="yes" data-s="Browser extension">Yes — on-device translation of page labels</td></tr>
-        <tr><th scope="row">Signatures</th><td class="yes" data-s="Desktop app (.exe)">Yes — device-bound signing with provenance</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Encrypted vault</th><td class="yes" data-s="Desktop app (.exe)">Owns the vault — passphrase or hardware passkey</td><td class="yes" data-s="Browser extension">Shares the same vault automatically</td></tr>
-        <tr><th scope="row">Works offline</th><td class="yes" data-s="Desktop app (.exe)">Fully</td><td class="yes" data-s="Browser extension">Yes, for filling</td></tr>
-        <tr><th scope="row">Install</th><td class="yes" data-s="Desktop app (.exe)">Signed Windows installer</td><td class="yes" data-s="Browser extension">One click, no prompts</td></tr>
+        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
+        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
+        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
         <tr class="dlrow">
           <th scope="row">डाउनलोड करें</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows के लिए डाउनलोड करें</a></td>
@@ -301,7 +311,8 @@
         </tr>
       </tbody>
     </table>
-    <p class="vsnote">Free trial on both — no account, no card. Everything runs on your device. <a href="/hi/install/">Installation help →</a></p>
+    </div>
+    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/hi/install/">Installation help →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -348,11 +359,11 @@
       </div>
     </div>
     <div class="card"><div class="ic">🔒</div><h3>हमेशा डिवाइस पर</h3><p>OCR, अनुवाद, भरना और हस्ताक्षर स्थानीय रूप से चलते हैं। आपका डेटा कभी हम तक या किसी और तक नहीं जाता।</p></div>
-    <div class="card"><div class="ic">🌍</div><h3>बहुभाषी भरना</h3><p>अपने दूसरी भाषा के डेटा से एक अंग्रेज़ी फ़ॉर्म भरें। अनुवाद आपके डिवाइस पर होता है।</p></div>
+    <div class="card"><div class="ic">🌍</div><h3>बहुभाषी भरना</h3><p>किसी भी भाषा का फ़ॉर्म अपने किसी भी दूसरी भाषा के डेटा से भरें — हिंदी जानकारी से जापानी फ़ॉर्म, या इसका उल्टा। अनुवाद आपके डिवाइस पर होता है।</p></div>
     <div class="card"><div class="ic">📄</div><h3>Word और Excel भी</h3><p>.docx और .xlsx फ़ॉर्म भरता है — नामित फ़ील्ड या सपाट लेबल — और PDF निर्यात कर सकता है।</p></div>
     <div class="card"><div class="ic">🧠</div><h3>एक वॉल्ट जो सीखता है</h3><p>किसी नई फ़ील्ड का उत्तर एक बार दें; अगली बार के लिए वह याद रह जाता है — एन्क्रिप्टेड, आपके डिवाइस पर।</p></div>
     <div class="card"><div class="ic">✍️</div><h3>भरोसेमंद हस्ताक्षर</h3><p>गैर-हस्तांतरणीय, डिवाइस-बद्ध हस्ताक्षर जिनकी उत्पत्ति सत्यापन योग्य होती है। आपकी ओर से कोई हस्ताक्षर नहीं करता।</p></div>
-    <div class="card"><div class="ic">🔑</div><h3>पासकी से बंद वॉल्ट</h3><p>एक पासफ़्रेज़ या हार्डवेयर पासकी (WebAuthn) से अनलॉक करें। कुंजी कभी संग्रहीत नहीं होती — हमारे द्वारा भी नहीं।</p></div>
+    <div class="card"><div class="ic">🔑</div><h3>आपका पासफ़्रेज़, आपकी मशीन</h3><p>आपका पासफ़्रेज़ आपके डिवाइस पर ही रहता है। आपकी वॉल्ट खोलने के लिए उसकी जाँच वहीं, आपकी अपनी मशीन पर होती है — वह कहीं नहीं भेजा जाता और न ही कहीं सहेजा जाता है, न हमारे पास, न किसी और के पास। हार्डवेयर पसंद है? पासकी (WebAuthn) से खोलें।</p></div>
     <div class="card"><div class="ic">🔗</div><h3>डेस्कटॉप + ब्राउज़र</h3><p>एक्सटेंशन वेब फ़ॉर्म भरता है; डेस्कटॉप ऐप आपकी कुंजियों को एक सुदृढ़ विश्वास-आधार के रूप में रखता है।</p></div>
   </div>
 </section>
@@ -372,10 +383,10 @@
   <div class="band">
     <span class="eyebrow" style="color:rgba(255,255,255,.8)">एक बहुभाषी दुनिया के लिए बना</span>
     <h2 class="h2">आपका डेटा आपकी भाषा में। फ़ॉर्म उनकी भाषा में।</h2>
-    <p class="sub">Governments and institutions publish forms in one language; people hold their details in another. PolyglotFormFill bridges that gap on-device — it fills forms in any language, and translates across English, Hindi, Spanish, French, German, Chinese, Arabic and Russian, with more on the way.</p>
+    <p class="sub">सरकारें और संस्थान फ़ॉर्म एक भाषा में जारी करते हैं; लोगों की जानकारी दूसरी भाषा में होती है। PolyglotFormFill यह दूरी आपके डिवाइस पर ही पाटता है — यह किसी भी भाषा के फ़ॉर्म पढ़ता और भरता है, और लगभग 200 भाषाओं के बीच, किसी से किसी में अनुवाद करता है।</p>
     <div class="langrow">
       <span class="lang">English ↔ हिन्दी</span>
-      <span class="lang">+ Spanish · French · German · Chinese · Arabic · Russian</span>
+      <span class="lang">+ लगभग 200 भाषाएँ · किसी से किसी में</span>
       <span class="lang">डिवाइस पर NMT · कोई क्लाउड नहीं</span>
     </div>
   </div>
@@ -476,16 +487,17 @@
   <p class="note">7 दिनों के लिए मुफ़्त शुरू करें। व्यक्तिगत स्तर एक बार के, प्रति-डिवाइस Ed25519 लाइसेंस हैं जो स्थानीय रूप से सत्यापित होते हैं — कोई सक्रियण सर्वर नहीं, कोई सदस्यता नहीं। वाणिज्यिक $29 प्रति सीट प्रति वर्ष है, केंद्रीय जारी करने के साथ। मूल्य USD में, आपके क्षेत्र के अनुसार समायोजित; स्थानीय कर लागू हो सकते हैं। एंटरप्राइज़ (20+ सीट): <a href="mailto:subumysore@gmail.com">हमसे संपर्क करें</a>.</p>
 </section>
 
+<!-- Closing CTA. Deliberately slim: the full desktop-vs-extension comparison AND both download
+     buttons already sit at the top (#compare), so this repeats only the two buttons + the install
+     caveat, not the whole pitch. #get is kept as an anchor — the pricing buttons point here. -->
 <section id="get" class="wrap">
-  <span class="eyebrow">PolyglotFormFill प्राप्त करें</span>
   <h2 class="h2">एक मिनट में इंस्टॉल करें</h2>
-  <p class="sub">वेब-फ़ॉर्म ऑटोफ़िल के लिए ब्राउज़र एक्सटेंशन जोड़ें, या पूर्ण, सुदृढ़ अनुभव के लिए डेस्कटॉप ऐप इंस्टॉल करें। ये एक साथ काम करते हैं।</p>
   <div class="cta">
-    <a class="btn" href="/hi/install/#extension">Get the browser extension — no warnings</a>
-    <a class="btn ghost" href="/dl/exe" aria-label="डाउनलोड करें">Windows के लिए डाउनलोड करें</a>
-    <a class="btn ghost" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener">Add to Chrome — Web Store</a>
+    <a class="btn" href="/dl/exe" aria-label="डाउनलोड करें"><span aria-hidden="true">🖥️</span> Windows के लिए डाउनलोड करें</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
+    <a class="btn ghost" href="/hi/install/">Installation help</a>
   </div>
-  <p class="note">Downloads hosted on Oracle Cloud. The Windows installer is code-signed by a Microsoft-trusted authority (verified publisher: Subramanya Mysore). A brand-new signed app may show a SmartScreen “unrecognized app” notice — click More info, then Run anyway (verified clean, VirusTotal 0/71). The browser extension installs with no prompt. macOS &amp; Linux next.</p>
+  <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
 
 <section id="privacy" class="wrap">

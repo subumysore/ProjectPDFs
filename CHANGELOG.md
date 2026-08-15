@@ -20,6 +20,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Verified in real Chrome (puppeteer) on the built page and live after publish; `scripts/site-i18n.test.mjs`
   8/8 pass. Published to https://polyglotformfill.com via `deploy/k8s/publish-site.ps1`.
 
+### Fixed — the comparison table said things the code contradicts
+- Checked every row against the source before shipping the correction: the extension **does** OCR-fill
+  flat/scanned/XFA PDFs (`apps/extension/src/pdfocr.js`, run from `viewer.js`), **does** sign/handwrite on
+  PDFs (`sign.js` + `signflatten.js`), and **does** show the bilingual label+value side panel. Those three
+  rows had claimed "Not available" / desktop-only. Word & Excel remain desktop-only (no docx/xlsx code in
+  the extension) and website autofill remains the extension's job — now worded as a hand-off, not a dash.
+- Desktop "Works offline" no longer implies zero downloads (language/OCR models fetch once); Office row
+  narrowed to named fields, which is what `apps/app/src/office.ts` actually implements.
+### Changed — the table now shows only what DIFFERS
+- Two rows (Office forms · website autofill) plus one "Everything else — identical on both" row, instead
+  of nine near-identical yes/yes lines. `VS_ROWS = [3, 4]`; the unused strings stay in the catalogue.
+- Professional ruled grid: per-cell row lines AND column dividers, heavier header/first-body rules, framed
+  rounded corners via a `.vsgrid` wrapper, RTL-mirrored, and per-row cards under 720px.
+
+### Changed — language-agnostic and privacy copy, in all 26 locales
+- "Fill an **English** form from your data in another language" contradicted the product's core invariant
+  (any language → any language, ADR-0018). Rewritten — with `band.sub`/`band.chip2`'s fixed language list
+  replaced by "roughly 200 languages, any to any" — and **translated into all 26 locales**, not left to the
+  English fallback.
+- The vault card said "The key is never stored — not even by us", which read as if a key of the user's
+  could ever reach us. Now addressed to the user: the passphrase stays on their device, is checked there
+  to unlock their vault, and is never sent anywhere or stored by anyone. Also translated into all 26.
+### Removed
+- **"beta" is gone** — 44 strings across the 26 catalogues (hero CTA, install titles, download labels).
+### Changed — less page, same substance
+- Whitespace pass in `docs/marketing/landing.html` + the shell CSS (nav 22→12px, header 40/24→14/10,
+  section 52→34, grids/tiers 30→20, band 34→26, footer 34→22, langbar 10→5, guide 22→14, `.vs` 30→18).
+- Hero tagline dropped (it repeated the lede verbatim); long EN body copy tightened; the bottom `#get`
+  section slimmed to two buttons + the install caveat, since `#compare` already carries the full pitch.
+  Landing page height 5914 → **5351px** at 1280px wide, with the comparison visible at y≈440.
+- `scripts/site-i18n.test.mjs`: the tagline assertion (now stale) replaced with a comment; the shared-string
+  and no-English-leak assertions still guard translation. 8/8 pass. Published (3 clean rollouts).
+
 ## [1.0.16] - 2026-08-12
 ### Fixed — web-form autofill on strict controlled-input frameworks (ADP WorkforceNow, Chrome 151)
 - **The real root cause (proven by driving live ADP in Chrome 151):** ADP's inputs are controlled — a bulk

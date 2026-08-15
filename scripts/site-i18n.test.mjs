@@ -24,7 +24,9 @@ test("each localised page is actually in that language, and declares it", () => 
     const html = readFileSync(join(site, lang, "index.html"), "utf8");
     const tr = translator(lang);
     assert.ok(html.includes(`lang="${lang}"`), `/${lang}/ does not declare lang="${lang}"`);
-    assert.ok(html.includes(tr("app.tagline")), `/${lang}/ is missing the translated tagline`);
+    // (The tagline assertion was dropped when the hero stopped printing app.tagline — it repeated the
+    // lede word for word. `translator` here is the SHARED catalogue, so the two shared strings below
+    // plus the no-English-leak check still prove the page is genuinely in this language.)
     assert.ok(html.includes(tr("privacy.headline")), `/${lang}/ is missing the translated privacy headline`);
     assert.ok(html.includes(tr("site.download")), `/${lang}/ is missing the translated download label`);
     // The English tagline must NOT appear — that would mean a half-translated page.

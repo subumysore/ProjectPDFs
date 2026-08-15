@@ -243,11 +243,11 @@ const LANDING_CSS = readFileSync(join(dir, "landing.html"), "utf8")
   .match(/<style>([\s\S]*?)<\/style>/)[1];
 
 const LANGBAR_CSS = `
-  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 24px;
+  .langbar{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:5px 24px;
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
-  .langhint{padding:8px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
+  .langhint{padding:5px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
     border-bottom:1px solid var(--line,#dde6e4)}
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
   [dir=rtl] .langhint{text-align:left}
@@ -255,7 +255,7 @@ const LANGBAR_CSS = `
 
 // Narrated-guide embed shown in the hero. Language-aware <video> with a caption <track>.
 const GUIDEVID_CSS = `
-  .guidevid{margin:22px auto 8px;max-width:840px;text-align:center}
+  .guidevid{margin:14px auto 6px;max-width:840px;text-align:center}
   .guidevid h2{margin:0 0 6px;font-size:26px}
   .guidevid .lede{margin:0 0 18px}
   .guidevid video{width:100%;max-width:840px;aspect-ratio:16/9;border-radius:14px;
@@ -266,35 +266,51 @@ const GUIDEVID_CSS = `
 // EXE vs EXT comparison, placed high in the hero so a visitor sees what each surface does and can
 // download either one WITHOUT scrolling. Additive: the existing #get section is untouched.
 const VS_CSS = `
-  .vs{margin:30px 0 6px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  .vs{margin:18px 0 4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
     box-shadow:var(--shadow);overflow:hidden}
   .vs h2{margin:0;padding:18px 20px 4px;font-size:clamp(20px,2.6vw,26px);letter-spacing:-.02em}
   .vs .vssub{margin:0;padding:0 20px 14px;color:var(--muted);font-size:15px}
-  .vstable{width:100%;border-collapse:collapse;font-size:15px}
-  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
-  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right}
-  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink);border-top:1px solid var(--line)}
+  /* Ruled grid: every cell is boxed (row lines AND column dividers), the header sits on a heavier
+     rule, and the outer frame is drawn by a wrapper so the rounded corners still clip cleanly. */
+  .vsgrid{margin:0 18px 4px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .vstable{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+  .vstable th,.vstable td{padding:12px 16px;text-align:left;vertical-align:top;
+    border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  .vstable th:first-child,.vstable td:first-child{border-left:0}
+  .vstable thead th{border-top:0}
+  .vstable tbody tr:first-child th,.vstable tbody tr:first-child td{border-top:2px solid var(--line)}
+  [dir=rtl] .vstable th,[dir=rtl] .vstable td{text-align:right;border-left:0;border-right:1px solid var(--line)}
+  [dir=rtl] .vstable th:first-child,[dir=rtl] .vstable td:first-child{border-right:0}
+  .vstable thead th{background:var(--teal-soft);color:var(--teal-ink)}
   .vstable thead th .ic{font-size:20px;margin-right:8px}
   .vstable thead th small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:2px}
-  .vstable tbody th{width:26%;font-weight:600;color:var(--muted);font-size:14px}
-  .vstable td.yes::before{content:"\\2705 "}
+  .vstable tbody th{width:28%;font-weight:600;color:var(--muted);font-size:14px;background:var(--paper)}
+  .vstable td.yes::before{content:"\\2705\\00a0"}
   .vstable td.no{color:var(--muted)}
-  .vstable td.no::before{content:"\\2014 "}
+  .vstable td.no::before{content:"\\2014\\00a0"}   /* NBSP: a plain trailing space collapses away */
+  .vstable tr.bothrow td{background:var(--teal-soft);font-weight:600}
+  .vstable td[colspan]::after{content:none}   /* the spanning row needs no per-column label on mobile */
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
   @media (max-width:720px){
+    .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
     .vstable thead{display:none}
-    .vstable tbody th{border-top:2px solid var(--line);padding-bottom:0}
+    .vstable tr{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+    .vstable th,.vstable td{border-left:0;border-right:0}
+    .vstable tbody tr:first-child th,.vstable tbody tr:first-child td{border-top:1px solid var(--line)}
+    .vstable tbody th{border-top:0;padding-bottom:0;width:auto}
     .vstable td::after{display:block;font-size:12px;color:var(--muted);font-family:var(--mono)}
-    .vstable td:nth-of-type(1)::after{content:"\\2014 " attr(data-s)}
-    .vstable td:nth-of-type(2)::after{content:"\\2014 " attr(data-s)}
+    .vstable td:nth-of-type(1)::after{content:"\\2014\\00a0" attr(data-s)}
+    .vstable td:nth-of-type(2)::after{content:"\\2014\\00a0" attr(data-s)}
   }
 `;
 
-// Rows: [label, desktop, extension, desktopHas, extensionHas]
-const VS_ROWS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+// Only the rows where the two surfaces genuinely DIFFER earn a line of their own (r3 Office forms,
+// r4 web-page autofill). Everything else behaves the same on both — one sentence says so, instead of
+// seven near-identical "yes / yes" rows. The unused r1/r2/r5..r9 strings stay in the catalogue.
+const VS_ROWS = [3, 4];
 function vsSection(lang, tr) {
   const exeLbl = tr("vs.exe"), extLbl = tr("vs.ext");
   const rows = VS_ROWS.map((n) => {
@@ -306,6 +322,7 @@ function vsSection(lang, tr) {
   return `  <section class="vs" id="compare" aria-label="${esc(tr("vs.aria"))}">
     <h2>${esc(tr("vs.h2"))}</h2>
     <p class="vssub">${tr("vs.sub")}</p>
+    <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
@@ -316,6 +333,7 @@ function vsSection(lang, tr) {
       </thead>
       <tbody>
 ${rows}
+        <tr class="bothrow"><th scope="row">${esc(tr("vs.bothK"))}</th><td class="yes" colspan="2">${esc(tr("vs.both"))}</td></tr>
         <tr class="dlrow">
           <th scope="row">${esc(tr("site.download"))}</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> ${esc(tr("get.win"))}</a></td>
@@ -323,6 +341,7 @@ ${rows}
         </tr>
       </tbody>
     </table>
+    </div>
     <p class="vsnote">${esc(tr("vs.note"))} <a href="${urlFor(lang, "install")}">${esc(tr("vs.installHelp"))} →</a></p>
   </section>`;
 }
@@ -370,7 +389,8 @@ ${lang === "en" ? langhint() : ""}
 <header class="wrap">
   <span class="badge">◉ ${esc(tr("hero.badge"))}</span>
   <h1>${esc(tr("hero.h1a"))}<br><span class="fade">${esc(tr("hero.h1b"))}</span></h1>
-  <p class="tagline">${esc(tr("app.tagline"))}</p>
+<!-- The tagline used to sit here, but it says the same thing as the lede right below it; one line,
+     not two. (app.tagline is still used elsewhere — install page, meta description, the apps.) -->
   <p class="lede">${esc(tr("hero.lede"))}</p>
   <div class="cta">
     <a class="btn" href="#features">${esc(tr("hero.cta1"))}</a>
@@ -507,14 +527,15 @@ ${vsSection(lang, tr)}
   <p class="note">${esc(tr("price.note"))} <a href="mailto:subumysore@gmail.com">${esc(tr("price.contactUs"))}</a>.</p>
 </section>
 
+<!-- Closing CTA. Deliberately slim: the full desktop-vs-extension comparison AND both download
+     buttons already sit at the top (#compare), so this repeats only the two buttons + the install
+     caveat, not the whole pitch. #get is kept as an anchor — the pricing buttons point here. -->
 <section id="get" class="wrap">
-  <span class="eyebrow">${esc(tr("get.eyebrow"))}</span>
   <h2 class="h2">${esc(tr("get.h2"))}</h2>
-  <p class="sub">${esc(tr("get.sub"))}</p>
   <div class="cta">
-    <a class="btn" href="${urlFor(lang, "install")}#extension">${esc(tr("get.extPrimary"))}</a>
-    <a class="btn ghost" href="/dl/exe" aria-label="${esc(tr("site.download"))}">${esc(tr("get.win"))}</a>
-    <a class="btn ghost" href="${STORE_URL}" target="_blank" rel="noopener">${esc(tr("get.store"))}</a>
+    <a class="btn" href="/dl/exe" aria-label="${esc(tr("site.download"))}"><span aria-hidden="true">🖥️</span> ${esc(tr("get.win"))}</a>
+    <a class="btn" href="${STORE_URL}" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> ${esc(tr("vs.addChrome"))}</a>
+    <a class="btn ghost" href="${urlFor(lang, "install")}">${esc(tr("vs.installHelp"))}</a>
   </div>
   <p class="note">${esc(tr("get.note"))}</p>
 </section>
