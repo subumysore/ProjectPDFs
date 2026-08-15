@@ -20,13 +20,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Verified in real Chrome (puppeteer) on the built page and live after publish; `scripts/site-i18n.test.mjs`
   8/8 pass. Published to https://polyglotformfill.com via `deploy/k8s/publish-site.ps1`.
 
+### Removed — two sections that repeated what is already on the page
+- The bottom **Get it now** section is gone: the comparison table at the top already carries both
+  download buttons and the installation-help link, so it was a third copy of the same call to action.
+  The pricing buttons that pointed at #get now point at #compare.
+- The landing **privacy promise** section is gone too; the nav Privacy link now goes straight to the
+  full policy at /privacy/, and the one-line promise (privacy.headline) now leads that policy page —
+  so the promise still has exactly one authoritative home.
+- Landing page is now 5048px tall at 1280px wide (5914px when this session started).
+- scripts/site-i18n.test.mjs: the privacy-headline assertion follows the string to /<lang>/privacy/.
+
 ### Added — a way to reach a human, on every page
-- New  strip above the footer plus a **Contact** nav link: "Feedback, questions, concerns or
+- New `#contact` strip above the footer plus a **Contact** nav link: "Feedback, questions, concerns or
   suggestions?" with a mailto (pre-filled subject) to subumysore@gmail.com and a tel: link to
-  +1 (234) 564-3966. Both defined once in  (/) so they
-  cannot drift, and translated into all 26 locales (, ).
+  +1 (234) 564-3966. Both defined once in `build-site.mjs` (`CONTACT_EMAIL` / `CONTACT_TEL`) so they
+  cannot drift, and translated into all 26 locales (`nav.contact`, `contact.h2/sub/subject`).
 ### Changed — no English left in the comparison table
-- The 19  strings are now translated in all 25 non-English locales (they had been falling back to
+- The 19 `vs.*` strings are now translated in all 25 non-English locales (they had been falling back to
   English), verified by a per-locale key check and by reading the built /hi/ page in Chrome.
 
 ### Fixed — the comparison table said things the code contradicts

@@ -216,7 +216,7 @@ const PAY_LIVE = !!PAY_CFG.live;   // false until we flip live → buy buttons f
 // never ship a button that leads to a checkout that can't complete).
 function payBtn(tr, tier, labelKey) {
   if (PAY_LIVE) return `<a class="btn buy" data-tier="${tier}" style="margin-top:16px" rel="nofollow" href="#">${esc(tr(labelKey))}</a>`;
-  return `<a class="btn" style="margin-top:16px" href="#get">${esc(tr("price.startTrial"))}</a>`;
+  return `<a class="btn" style="margin-top:16px" href="#compare">${esc(tr("price.startTrial"))}</a>`;
 }
 
 const PPP_JS = `
@@ -387,7 +387,7 @@ ${lang === "en" ? langhint() : ""}
       <a href="#polyglot">${esc(tr("nav.languages"))}</a>
       <a href="#pricing">${esc(tr("nav.pricing"))}</a>
       <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
-      <a href="#privacy">${esc(tr("nav.privacy"))}</a>
+      <a href="${urlFor(lang, "privacy")}">${esc(tr("nav.privacy"))}</a>
       <a href="#contact">${esc(tr("nav.contact"))}</a>
       ${counterChip(tr)}
       <a class="btn" href="#compare">${esc(tr("nav.getit"))}</a>
@@ -490,7 +490,7 @@ ${vsSection(lang, tr)}
       <h3>${esc(tr("price.free"))}</h3>
       <div class="price">$0 <span style="font-size:14px;font-weight:500;color:var(--muted)">${esc(tr("price.freeDuration"))}</span></div>
       <ul>${li(tr("price.freeList"))}</ul>
-      <a class="btn ghost" style="margin-top:16px" href="#get">${esc(tr("price.startTrial"))}</a>
+      <a class="btn ghost" style="margin-top:16px" href="#compare">${esc(tr("price.startTrial"))}</a>
     </div>
     <div class="tier pop">
       <h3>${esc(tr("price.pro"))}</h3>
@@ -535,27 +535,6 @@ ${vsSection(lang, tr)}
   </div>
 
   <p class="note">${esc(tr("price.note"))} <a href="mailto:subumysore@gmail.com">${esc(tr("price.contactUs"))}</a>.</p>
-</section>
-
-<!-- Closing CTA. Deliberately slim: the full desktop-vs-extension comparison AND both download
-     buttons already sit at the top (#compare), so this repeats only the two buttons + the install
-     caveat, not the whole pitch. #get is kept as an anchor — the pricing buttons point here. -->
-<section id="get" class="wrap">
-  <h2 class="h2">${esc(tr("get.h2"))}</h2>
-  <div class="cta">
-    <a class="btn" href="/dl/exe" aria-label="${esc(tr("site.download"))}"><span aria-hidden="true">🖥️</span> ${esc(tr("get.win"))}</a>
-    <a class="btn" href="${STORE_URL}" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> ${esc(tr("vs.addChrome"))}</a>
-    <a class="btn ghost" href="${urlFor(lang, "install")}">${esc(tr("vs.installHelp"))}</a>
-  </div>
-  <p class="note">${esc(tr("get.note"))}</p>
-</section>
-
-<section id="privacy" class="wrap">
-  <span class="eyebrow">${esc(tr("privS.eyebrow"))}</span>
-  <h2 class="h2">${esc(tr("privS.h2"))}</h2>
-  <p class="sub" style="font-weight:600">${esc(tr("privacy.headline"))}</p>
-  <p class="sub">${esc(tr("privS.sub"))}</p>
-  <p style="margin-top:16px"><a class="btn ghost" href="${urlFor(lang, "privacy")}">${esc(tr("privS.readFull"))}</a></p>
 </section>
 
 <!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
@@ -604,6 +583,9 @@ ${switcher(lang, "privacy")}
 <div class="wrap">
   <div class="brand"><span class="dot"></span> ${esc(tr("app.name"))}</div>
   <h1>${esc(tr("privP.title"))}</h1>
+  <!-- The one-line promise used to headline a landing-page section; that section is gone, so it now
+       leads the policy itself — which is where a reader looking for the promise expects it. -->
+  <p style="font-size:18px;font-weight:600;margin:6px 0 0">${esc(tr("privacy.headline"))}</p>
   <div class="meta">${esc(tr("privP.effective"))} 18 July 2026 · ${esc(tr("privP.version"))}</div>
   ${authNote}
   <div class="disclaimer"><b>${esc(tr("privP.disclaimer"))}</b></div>

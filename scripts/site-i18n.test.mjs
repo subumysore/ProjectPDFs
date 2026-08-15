@@ -27,7 +27,10 @@ test("each localised page is actually in that language, and declares it", () => 
     // (The tagline assertion was dropped when the hero stopped printing app.tagline — it repeated the
     // lede word for word. `translator` here is the SHARED catalogue, so the two shared strings below
     // plus the no-English-leak check still prove the page is genuinely in this language.)
-    assert.ok(html.includes(tr("privacy.headline")), `/${lang}/ is missing the translated privacy headline`);
+    // The privacy headline moved OFF the landing page (the promise section was removed; /privacy/ is
+    // its authoritative home) — assert it there instead, so the check still has real teeth.
+    const priv = readFileSync(join(site, lang, "privacy", "index.html"), "utf8");
+    assert.ok(priv.includes(tr("privacy.headline")), `/${lang}/privacy/ is missing the translated privacy headline`);
     assert.ok(html.includes(tr("site.download")), `/${lang}/ is missing the translated download label`);
     // The English tagline must NOT appear — that would mean a half-translated page.
     assert.ok(!html.includes("Fill any form, in any language, privately on your device."),

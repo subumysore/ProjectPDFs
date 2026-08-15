@@ -757,3 +757,4 @@ multilingual filling — not the translation engine.
   English fallback in the comparison table), and a `#contact` strip + nav link added on every locale —
   mailto (subumysore@gmail.com, pre-filled subject) and tel (+1 (234) 564-3966), both from single
   constants in build-site.mjs. Verified live: /, /hi/, /ar/, /ja/ byte-identical to the local build.
+- Owner then removed the bottom Get-it and landing privacy sections (duplicated the top of the page); pricing CTAs repointed to #compare, nav Privacy -> /privacy/, and privacy.headline moved onto the policy page so it keeps one authoritative home. Landing now 5048px. site-i18n 8/8, published.
