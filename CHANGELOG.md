@@ -20,6 +20,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Verified in real Chrome (puppeteer) on the built page and live after publish; `scripts/site-i18n.test.mjs`
   8/8 pass. Published to https://polyglotformfill.com via `deploy/k8s/publish-site.ps1`.
 
+### Fixed — the header fell apart (and the language bar wasted a whole row)
+- An earlier flex-wrap on <nav> let the links spill onto a second row, orphaning the brand mark and
+  pushing the download counter off-screen. The nav no longer wraps: the brand is fixed-width and
+  never orphaned, only the link group wraps internally, and each link stays on one line.
+- The language switcher moved OFF its own full-width strip and INTO the nav (before the counter), so
+  the page gains that row back. It is a compact inline control there; the privacy/install pages keep
+  the original strip.
+- The nav lives inside .wrap (max 1080px), so the counter chip now shows the NUMBER only — the
+  desktop/extension split and the privacy note stay in its tooltip. Header is a single 68px row from
+  1100px to 1920px wide, verified in real Chrome at seven widths and on the live site.
+### Added
+- The install caveat (code-signed, SmartScreen may still warn) now rides as a fine-print line under
+  the comparison table — a user meets it BEFORE downloading. Already translated in all 26 catalogues.
+
 ### Removed — two sections that repeated what is already on the page
 - The bottom **Get it now** section is gone: the comparison table at the top already carries both
   download buttons and the installation-help link, so it was a third copy of the same call to action.

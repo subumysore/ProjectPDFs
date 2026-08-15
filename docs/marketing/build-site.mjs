@@ -133,7 +133,7 @@ const COUNTER_JS = `
 // total; the desktop/extension split + privacy note are in the tooltip so it stays small.
 function counterChip(tr) {
   const title = esc(tr("counter.private"));
-  return `<span id="dlcount" class="dlchip" title="${title}" aria-live="polite">🚀 <b data-c="total">—</b> ${esc(tr("counter.tagline"))}` +
+  return `<span id="dlcount" class="dlchip" title="${title}" aria-live="polite">🚀 <b data-c="total">—</b> <span class="words">${esc(tr("counter.tagline"))}</span>` +
     `<span class="split"><span title="${esc(tr("counter.desktop"))}">🖥️ <b data-c="exe">—</b></span>` +
     `<span title="${esc(tr("counter.extension"))}">🧩 <b data-c="ext">—</b></span></span></span>`;
 }
@@ -144,8 +144,9 @@ const COUNTER_CSS = `
   .dlchip.on{display:inline-flex}
   .dlchip b{font-weight:800}
   .dlchip .split{display:inline-flex;gap:8px;padding-left:8px;margin-left:2px;border-left:1px solid rgba(13,143,131,.30);opacity:.9}
-  @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
-  @media (max-width:720px){ .dlchip{display:none!important} }
+  .dlchip .split{display:none}
+  .dlchip .words{display:none}  /* keep the nav tidy on narrow screens */
+  @media (max-width:1260px){ .dlchip{display:none!important} }
 `;
 function switcher(current, page) {
   // The <option> value is the LANGUAGE CODE (stable, testable, and what analytics/deeplinks expect);
@@ -252,6 +253,10 @@ const LANGBAR_CSS = `
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  /* landing: the switcher lives inside the nav — no strip, no border, no full width */
+  .navlinks .langbar{padding:0;border:0;background:none;justify-content:flex-end;gap:5px}
+  .navlinks .langbar select{font-size:13px;padding:3px 4px;max-width:118px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink)}
   .langhint{padding:5px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
     border-bottom:1px solid var(--line,#dde6e4)}
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
@@ -298,6 +303,7 @@ const VS_CSS = `
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  .vsnote+.vsfine{padding-top:0;margin-top:-8px;font-size:12px;opacity:.85}
   /* contact strip: heading on the left, the two ways to reach us on the right */
   .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
   .contact .cta{margin-top:0}
@@ -352,6 +358,10 @@ ${rows}
     </table>
     </div>
     <p class="vsnote">${esc(tr("vs.note"))} <a href="${urlFor(lang, "install")}">${esc(tr("vs.installHelp"))} →</a></p>
+    <!-- Install caveat (code-signed, SmartScreen may still warn). It lived under the old "Get it now"
+         section; that section is gone, so it rides here — a user must meet this BEFORE downloading,
+         not after. get.note is already translated in all 26 catalogues. -->
+    <p class="vsnote vsfine">${esc(tr("get.note"))}</p>
   </section>`;
 }
 
@@ -375,7 +385,6 @@ ${headMeta(lang, "landing", tr)}
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
-${switcher(lang, "landing")}
 ${lang === "en" ? langhint() : ""}
 
 <div class="wrap">
@@ -389,6 +398,7 @@ ${lang === "en" ? langhint() : ""}
       <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
       <a href="${urlFor(lang, "privacy")}">${esc(tr("nav.privacy"))}</a>
       <a href="#contact">${esc(tr("nav.contact"))}</a>
+      ${switcher(lang, "landing")}
       ${counterChip(tr)}
       <a class="btn" href="#compare">${esc(tr("nav.getit"))}</a>
     </div>

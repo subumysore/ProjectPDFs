@@ -77,6 +77,10 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  /* landing: the switcher lives inside the nav — no strip, no border, no full width */
+  .navlinks .langbar{padding:0;border:0;background:none;justify-content:flex-end;gap:5px}
+  .navlinks .langbar select{font-size:13px;padding:3px 4px;max-width:118px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink)}
   .langhint{padding:5px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
     border-bottom:1px solid var(--line,#dde6e4)}
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}

@@ -74,11 +74,12 @@
   .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-ink)}
 
   /* nav */
-  nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:14px;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:18px}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:18px;flex-wrap:nowrap}
+  .brand{display:flex;align-items:center;gap:10px;flex:0 0 auto;white-space:nowrap;font-weight:700;letter-spacing:-.02em;font-size:18px}
   .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--teal-ink));
     box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
-  .navlinks{display:flex;gap:22px;align-items:center;font-size:14px;color:var(--muted)}
+  .navlinks{display:flex;gap:13px;align-items:center;justify-content:flex-end;flex-wrap:wrap;row-gap:8px;min-width:0;font-size:14px;color:var(--muted)}
+  .navlinks a{white-space:nowrap}
   .navlinks a{color:var(--muted)}
   /* The CTA button keeps white text — `.navlinks a` would otherwise override `.btn` (more specific)
      and render "Get it" in muted grey on teal (nearly invisible). Ghost buttons keep their teal ink. */
@@ -180,6 +181,10 @@
     border-bottom:1px solid var(--line,#dde6e4);font-family:var(--sans,system-ui);font-size:14px}
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
+  /* landing: the switcher lives inside the nav — no strip, no border, no full width */
+  .navlinks .langbar{padding:0;border:0;background:none;justify-content:flex-end;gap:5px}
+  .navlinks .langbar select{font-size:13px;padding:3px 4px;max-width:118px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink)}
   .langhint{padding:5px 24px;text-align:right;font-family:var(--sans,system-ui);font-size:14px;
     border-bottom:1px solid var(--line,#dde6e4)}
   .langhint a{color:var(--teal,#0b7a75);text-decoration:none;font-weight:600}
@@ -198,8 +203,9 @@
   .dlchip.on{display:inline-flex}
   .dlchip b{font-weight:800}
   .dlchip .split{display:inline-flex;gap:8px;padding-left:8px;margin-left:2px;border-left:1px solid rgba(13,143,131,.30);opacity:.9}
-  @media (max-width:860px){ .dlchip .split{display:none} }  /* keep the nav tidy on narrow screens */
-  @media (max-width:720px){ .dlchip{display:none!important} }
+  .dlchip .split{display:none}
+  .dlchip .words{display:none}  /* keep the nav tidy on narrow screens */
+  @media (max-width:1260px){ .dlchip{display:none!important} }
 
   .vs{margin:18px 0 4px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
     box-shadow:var(--shadow);overflow:hidden}
@@ -228,6 +234,7 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  .vsnote+.vsfine{padding-top:0;margin-top:-8px;font-size:12px;opacity:.85}
   /* contact strip: heading on the left, the two ways to reach us on the right */
   .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
   .contact .cta{margin-top:0}
@@ -249,7 +256,6 @@
 </style>
 
 <div class="hellobg" id="hellobg" aria-hidden="true"></div>
-<div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/" selected>한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
 
 
 <div class="wrap">
@@ -263,7 +269,8 @@
       <a href="/tutorials/">튜토리얼</a>
       <a href="/ko/privacy/">개인정보</a>
       <a href="#contact">문의하기</a>
-      <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
+      <div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/" selected>한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/">Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
+      <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> <span class="words">downloads and counting</span><span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">받기</a>
     </div>
   </nav>
@@ -318,6 +325,10 @@
     </table>
     </div>
     <p class="vsnote">둘 다 7일 무료 — 계정도 카드도 필요 없습니다. 모든 처리는 기기 안에서 이루어집니다. <a href="/ko/install/">설치 도움말 →</a></p>
+    <!-- Install caveat (code-signed, SmartScreen may still warn). It lived under the old "Get it now"
+         section; that section is gone, so it rides here — a user must meet this BEFORE downloading,
+         not after. get.note is already translated in all 26 catalogues. -->
+    <p class="vsnote vsfine">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
