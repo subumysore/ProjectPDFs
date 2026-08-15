@@ -277,5 +277,9 @@
   "vs.r9.exe": "Signed Windows installer",
   "vs.r9.ext": "One click, no prompts",
   "vs.bothK": "Everything else",
-  "vs.both": "Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline."
+  "vs.both": "Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.",
+  "nav.contact": "Contact",
+  "contact.h2": "Feedback, questions, concerns or suggestions?",
+  "contact.sub": "Tell me what is missing, what broke, or what would make this better — every message reaches me directly.",
+  "contact.subject": "PolyglotFormFill — feedback"
 }

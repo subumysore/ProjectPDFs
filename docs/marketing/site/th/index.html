@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">ราคา</a>
       <a href="/tutorials/">บทแนะนำ</a>
       <a href="#privacy">ความเป็นส่วนตัว</a>
+      <a href="#contact">ติดต่อ</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">รับเลย</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">รับเลย</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="เปรียบเทียบแอปเดสก์ท็อปกับส่วนขยายเบราว์เซอร์">
+    <h2>แอปเดสก์ท็อปหรือส่วนขยายเบราว์เซอร์?</h2>
+    <p class="vssub">เอนจินเดียวกัน ตู้เซฟเข้ารหัสเดียวกัน แชร์ให้อัตโนมัติ มีเพียงสองข้อที่ต่างกันจริง ๆ:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>แอปเดสก์ท็อป (.exe)<small>Windows · โต๊ะทำงานเอกสารครบวงจร</small></th>
+          <th scope="col"><span class="ic">🧩</span>ส่วนขยายเบราว์เซอร์<small>Chrome/Edge · กรอกฟอร์มเว็บระหว่างท่องเว็บ</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">ฟอร์ม Word (.docx) และ Excel (.xlsx)</th><td class="yes" data-s="แอปเดสก์ท็อป (.exe)">ได้ — ช่องที่มีชื่อใน Word/Excel และส่งออกเป็น PDF</td><td class="no" data-s="ส่วนขยายเบราว์เซอร์">ไม่รองรับ</td></tr>
+        <tr><th scope="row">กรอกฟอร์มบนเว็บไซต์อัตโนมัติ</th><td class="no" data-s="แอปเดสก์ท็อป (.exe)">นี่เป็นหน้าที่ของส่วนขยาย — มันกรอกหน้าเว็บจากตู้เซฟเดียวกัน</td><td class="yes" data-s="ส่วนขยายเบราว์เซอร์">ได้ — คลิกเดียวบนหน้าใดก็ได้ รวมถึงฟอร์มแอปที่ยุ่งยาก</td></tr>
+        <tr class="bothrow"><th scope="row">ที่เหลือทั้งหมด</th><td class="yes" colspan="2">เหมือนกันทั้งสอง: ฟอร์ม PDF (รวมไฟล์สแกนและ XFA/LiveCycle), OCR บนอุปกรณ์, อ่านและกรอกข้ามภาษา, ลงลายเซ็น, ตู้เซฟที่ใช้ร่วมกัน และใช้งานออฟไลน์</td></tr>
         <tr class="dlrow">
           <th scope="row">ดาวน์โหลด</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> ดาวน์โหลดสำหรับ Windows</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> เพิ่มลงใน Chrome</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/th/install/">Installation help →</a></p>
+    <p class="vsnote">ทดลองฟรี 7 วันทั้งคู่ — ไม่ต้องมีบัญชี ไม่ต้องใช้บัตร ทุกอย่างทำงานบนอุปกรณ์ของคุณ <a href="/th/install/">ความช่วยเหลือในการติดตั้ง →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">ติดตั้งภายในหนึ่งนาที</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="ดาวน์โหลด"><span aria-hidden="true">🖥️</span> ดาวน์โหลดสำหรับ Windows</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/th/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> เพิ่มลงใน Chrome</a>
+    <a class="btn ghost" href="/th/install/">ความช่วยเหลือในการติดตั้ง</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">เอกสารของคุณไม่เคยออกจากเครื่องของคุณ</p>
   <p class="sub">ข้อมูลของคุณถูกประมวลผลบนอุปกรณ์ของคุณ และไม่เคยถูกส่งมายังเรา สิ่งเดียวที่ออกไปคือการกระทำที่คุณลงมือทำ — การส่งแบบฟอร์มที่กรอกเสร็จ (ตรงถึงผู้รับ) หรือการค้นหาเว็บที่คุณพิมพ์ สิ่งเหล่านั้นไปยังปลายทางโดยตรง ไม่ผ่านเรา นั่นคือรายการทั้งหมด</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/th/privacy/">อ่านนโยบายความเป็นส่วนตัวฉบับเต็ม</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">มีความคิดเห็น คำถาม ข้อกังวล หรือข้อเสนอแนะไหม?</h2>
+    <p class="sub">บอกได้เลยว่าอะไรขาด อะไรพัง หรืออะไรจะทำให้ดีขึ้น — ทุกข้อความส่งถึงผมโดยตรง</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1%E0%B8%84%E0%B8%B4%E0%B8%94%E0%B9%80%E0%B8%AB%E0%B9%87%E0%B8%99"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

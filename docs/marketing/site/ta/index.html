@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">விலை</a>
       <a href="/tutorials/">பயிற்சிகள்</a>
       <a href="#privacy">தனியுரிமை</a>
+      <a href="#contact">தொடர்பு</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">பெறுங்கள்</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">பெறுங்கள்</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="டெஸ்க்டாப் செயலி மற்றும் உலாவி நீட்சி ஒப்பீடு">
+    <h2>டெஸ்க்டாப் செயலியா, உலாவி நீட்சியா?</h2>
+    <p class="vssub">ஒரே இயந்திரம், ஒரே மறையாக்கப் பெட்டகம், தானாகவே பகிரப்படுகிறது. உண்மையான வேறுபாடுகள் இரண்டே:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>டெஸ்க்டாப் செயலி (.exe)<small>Windows · முழு ஆவண பணிமேடை</small></th>
+          <th scope="col"><span class="ic">🧩</span>உலாவி நீட்சி<small>Chrome/Edge · உலாவும்போதே இணையப் படிவங்கள்</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx) மற்றும் Excel (.xlsx) படிவங்கள்</th><td class="yes" data-s="டெஸ்க்டாப் செயலி (.exe)">ஆம் — Word/Excel-இல் பெயரிடப்பட்ட புலங்கள், PDF ஏற்றுமதியுடன்</td><td class="no" data-s="உலாவி நீட்சி">கிடையாது</td></tr>
+        <tr><th scope="row">இணையதளங்களில் படிவங்களை தானாக நிரப்புதல்</th><td class="no" data-s="டெஸ்க்டாப் செயலி (.exe)">இது நீட்சியின் வேலை — அதே பெட்டகத்திலிருந்து இணையப் பக்கங்களை நிரப்புகிறது</td><td class="yes" data-s="உலாவி நீட்சி">ஆம் — எந்தப் பக்கத்திலும் ஒரே சொடுக்கில், சிக்கலான செயலி படிவங்களிலும்</td></tr>
+        <tr class="bothrow"><th scope="row">மற்ற அனைத்தும்</th><td class="yes" colspan="2">இரண்டிலும் ஒரே மாதிரி: PDF படிவங்கள் (ஸ்கேன் மற்றும் XFA/LiveCycle உட்பட), சாதனத்திலேயே OCR, மொழிகளுக்கிடையே படித்து நிரப்புதல், கையொப்பம், பகிர்ந்த பெட்டகம், ஆஃப்லைன் பயன்பாடு.</td></tr>
         <tr class="dlrow">
           <th scope="row">பதிவிறக்கு</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows-க்கு பதிவிறக்கவும்</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-இல் சேர்</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/ta/install/">Installation help →</a></p>
+    <p class="vsnote">இரண்டிலும் 7 நாள் இலவசம் — கணக்கு இல்லை, அட்டை இல்லை. அனைத்தும் உங்கள் சாதனத்தில். <a href="/ta/install/">நிறுவல் உதவி →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">ஒரு நிமிடத்தில் நிறுவுங்கள்</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="பதிவிறக்கு"><span aria-hidden="true">🖥️</span> Windows-க்கு பதிவிறக்கவும்</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/ta/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-இல் சேர்</a>
+    <a class="btn ghost" href="/ta/install/">நிறுவல் உதவி</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">உங்கள் ஆவணங்கள் உங்கள் சாதனத்தை விட்டு வெளியேறுவதில்லை.</p>
   <p class="sub">உங்கள் தரவு உங்கள் சாதனத்திலேயே செயலாக்கப்படுகிறது, ஒருபோதும் எங்களுக்கு அனுப்பப்படுவதில்லை. வெளியேறும் ஒரே விஷயங்கள் நீங்கள் மேற்கொள்ளும் செயல்கள் மட்டுமே — முடிக்கப்பட்ட ஒரு படிவத்தைச் சமர்ப்பிப்பது (அதன் பெறுநருக்கு நேரடியாக) அல்லது நீங்கள் தட்டச்சு செய்யும் இணையத் தேடல். அவை தங்கள் இலக்கிற்கு நேரடியாகச் செல்கின்றன, ஒருபோதும் எங்கள் வழியாக அல்ல. அதுதான் முழுப் பட்டியல்.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/ta/privacy/">முழு தனியுரிமைக் கொள்கையைப் படியுங்கள்</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">கருத்து, கேள்வி, கவலை அல்லது பரிந்துரை?</h2>
+    <p class="sub">என்ன இல்லை, என்ன வேலை செய்யவில்லை, எது சிறப்பாக்கும் — சொல்லுங்கள்; ஒவ்வொரு செய்தியும் நேரடியாக என்னை வந்தடையும்.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%AE%95%E0%AE%B0%E0%AF%81%E0%AE%A4%E0%AF%8D%E0%AE%A4%E0%AF%81"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

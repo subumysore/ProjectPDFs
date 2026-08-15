@@ -20,6 +20,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Verified in real Chrome (puppeteer) on the built page and live after publish; `scripts/site-i18n.test.mjs`
   8/8 pass. Published to https://polyglotformfill.com via `deploy/k8s/publish-site.ps1`.
 
+### Added — a way to reach a human, on every page
+- New  strip above the footer plus a **Contact** nav link: "Feedback, questions, concerns or
+  suggestions?" with a mailto (pre-filled subject) to subumysore@gmail.com and a tel: link to
+  +1 (234) 564-3966. Both defined once in  (/) so they
+  cannot drift, and translated into all 26 locales (, ).
+### Changed — no English left in the comparison table
+- The 19  strings are now translated in all 25 non-English locales (they had been falling back to
+  English), verified by a per-locale key check and by reading the built /hi/ page in Chrome.
+
 ### Fixed — the comparison table said things the code contradicts
 - Checked every row against the source before shipping the correction: the extension **does** OCR-fill
   flat/scanned/XFA PDFs (`apps/extension/src/pdfocr.js`, run from `viewer.js`), **does** sign/handwrite on

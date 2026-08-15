@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">Harga</a>
       <a href="/tutorials/">Tutorial</a>
       <a href="#privacy">Privasi</a>
+      <a href="#contact">Kontak</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">Dapatkan</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">Dapatkan</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="Perbandingan aplikasi desktop dengan ekstensi peramban">
+    <h2>Aplikasi desktop atau ekstensi peramban?</h2>
+    <p class="vssub">Mesin yang sama, brankas terenkripsi yang sama, dibagikan otomatis. Hanya ada dua perbedaan nyata:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>Aplikasi desktop (.exe)<small>Windows · meja kerja dokumen lengkap</small></th>
+          <th scope="col"><span class="ic">🧩</span>Ekstensi peramban<small>Chrome/Edge · formulir web sambil menjelajah</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Formulir Word (.docx) &amp; Excel (.xlsx)</th><td class="yes" data-s="Aplikasi desktop (.exe)">Ya — bidang bernama di Word/Excel, dan ekspor ke PDF</td><td class="no" data-s="Ekstensi peramban">Tidak tersedia</td></tr>
+        <tr><th scope="row">Isi otomatis formulir di situs web</th><td class="no" data-s="Aplikasi desktop (.exe)">Ini tugas ekstensi — ia mengisi halaman web dari brankas yang sama</td><td class="yes" data-s="Ekstensi peramban">Ya — satu klik di halaman mana pun, termasuk formulir aplikasi yang rewel</td></tr>
+        <tr class="bothrow"><th scope="row">Selebihnya</th><td class="yes" colspan="2">Identik di keduanya: formulir PDF (termasuk hasil pindaian dan XFA/LiveCycle), OCR di perangkat, membaca dan mengisi lintas bahasa, tanda tangan, brankas bersama, dan penggunaan luring.</td></tr>
         <tr class="dlrow">
           <th scope="row">Unduh</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Unduh untuk Windows</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Tambahkan ke Chrome</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/id/install/">Installation help →</a></p>
+    <p class="vsnote">Uji coba gratis 7 hari di keduanya — tanpa akun, tanpa kartu. Semuanya berjalan di perangkat Anda. <a href="/id/install/">Bantuan pemasangan →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">Pasang dalam semenit</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="Unduh"><span aria-hidden="true">🖥️</span> Unduh untuk Windows</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/id/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Tambahkan ke Chrome</a>
+    <a class="btn ghost" href="/id/install/">Bantuan pemasangan</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">Dokumen Anda tidak pernah meninggalkan perangkat Anda.</p>
   <p class="sub">Data Anda diproses di perangkat Anda dan tidak pernah dikirim ke kami. Satu-satunya hal yang keluar adalah tindakan yang Anda lakukan — mengirim formulir yang telah selesai (langsung ke penerimanya) atau pencarian web yang Anda ketik. Itu langsung menuju tujuannya, tidak pernah melalui kami. Itulah seluruh daftarnya.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/id/privacy/">Baca kebijakan privasi selengkapnya</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">Masukan, pertanyaan, kekhawatiran, atau saran?</h2>
+    <p class="sub">Beri tahu saya apa yang kurang, apa yang rusak, atau apa yang bisa lebih baik — setiap pesan sampai langsung ke saya.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20masukan"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

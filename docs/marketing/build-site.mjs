@@ -81,6 +81,11 @@ const SITE_ORIGIN = "https://polyglotformfill.com";
 // The published Chrome Web Store listing (LIVE — no longer "coming soon").
 const STORE_URL = "https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke";
 const OG_IMAGE = `${SITE_ORIGIN}/download/before-after.jpg`;
+// How a user reaches a human. One definition, used by the contact section, the nav link and the
+// pricing/enterprise mailto links — so it can never drift between places.
+const CONTACT_EMAIL = "subumysore@gmail.com";
+const CONTACT_TEL = "+1 (234) 564-3966";
+const CONTACT_TEL_RAW = "+12345643966";
 
 // SEO + social <head> block: canonical, Open Graph, Twitter card, and hreflang alternates for
 // every language (so Google serves the right localue and 26 pages aren't seen as duplicates).
@@ -293,6 +298,10 @@ const VS_CSS = `
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -379,6 +388,7 @@ ${lang === "en" ? langhint() : ""}
       <a href="#pricing">${esc(tr("nav.pricing"))}</a>
       <a href="/tutorials/">${esc(tr("nav.tutorials"))}</a>
       <a href="#privacy">${esc(tr("nav.privacy"))}</a>
+      <a href="#contact">${esc(tr("nav.contact"))}</a>
       ${counterChip(tr)}
       <a class="btn" href="#compare">${esc(tr("nav.getit"))}</a>
     </div>
@@ -546,6 +556,20 @@ ${vsSection(lang, tr)}
   <p class="sub" style="font-weight:600">${esc(tr("privacy.headline"))}</p>
   <p class="sub">${esc(tr("privS.sub"))}</p>
   <p style="margin-top:16px"><a class="btn ghost" href="${urlFor(lang, "privacy")}">${esc(tr("privS.readFull"))}</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">${esc(tr("contact.h2"))}</h2>
+    <p class="sub">${esc(tr("contact.sub"))}</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(tr("contact.subject"))}"><span aria-hidden="true">✉️</span> ${CONTACT_EMAIL}</a>
+    <a class="btn ghost" href="tel:${CONTACT_TEL_RAW}"><span aria-hidden="true">📞</span> ${CONTACT_TEL}</a>
+  </div>
 </section>
 
 <footer class="wrap">

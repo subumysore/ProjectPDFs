@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">ధర</a>
       <a href="/tutorials/">ట్యుటోరియల్‌లు</a>
       <a href="#privacy">గోప్యత</a>
+      <a href="#contact">సంప్రదించండి</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">పొందండి</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">పొందండి</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="డెస్క్‌టాప్ యాప్ మరియు బ్రౌజర్ ఎక్స్‌టెన్షన్ పోలిక">
+    <h2>డెస్క్‌టాప్ యాప్ లేదా బ్రౌజర్ ఎక్స్‌టెన్షన్?</h2>
+    <p class="vssub">ఒకే ఇంజిన్, ఒకే ఎన్‌క్రిప్టెడ్ వాల్ట్, స్వయంచాలకంగా పంచుకోబడుతుంది. నిజమైన తేడాలు రెండే:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>డెస్క్‌టాప్ యాప్ (.exe)<small>Windows · పూర్తి డాక్యుమెంట్ వర్క్‌బెంచ్</small></th>
+          <th scope="col"><span class="ic">🧩</span>బ్రౌజర్ ఎక్స్‌టెన్షన్<small>Chrome/Edge · బ్రౌజ్ చేస్తూనే వెబ్ ఫారమ్‌లు</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) ఫారమ్‌లు</th><td class="yes" data-s="డెస్క్‌టాప్ యాప్ (.exe)">అవును — Word/Excel లో పేరున్న ఫీల్డ్‌లు, PDF గా ఎగుమతి</td><td class="no" data-s="బ్రౌజర్ ఎక్స్‌టెన్షన్">అందుబాటులో లేదు</td></tr>
+        <tr><th scope="row">వెబ్‌సైట్లలో ఫారమ్‌ల ఆటోఫిల్</th><td class="no" data-s="డెస్క్‌టాప్ యాప్ (.exe)">ఇది ఎక్స్‌టెన్షన్ పని — అదే వాల్ట్ నుండి వెబ్ పేజీలను నింపుతుంది</td><td class="yes" data-s="బ్రౌజర్ ఎక్స్‌టెన్షన్">అవును — ఏ పేజీలోనైనా ఒక్క క్లిక్, కఠినమైన యాప్ ఫారమ్‌లతో సహా</td></tr>
+        <tr class="bothrow"><th scope="row">మిగిలినవన్నీ</th><td class="yes" colspan="2">రెండింటిలోనూ ఒకేలా: PDF ఫారమ్‌లు (స్కాన్‌లు, XFA/LiveCycle సహా), పరికరంలోనే OCR, భాషల మధ్య చదవడం, నింపడం, సంతకం, పంచుకున్న వాల్ట్, ఆఫ్‌లైన్ పని.</td></tr>
         <tr class="dlrow">
           <th scope="row">డౌన్‌లోడ్</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows కోసం డౌన్‌లోడ్ చేయండి</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome కు జోడించండి</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/te/install/">Installation help →</a></p>
+    <p class="vsnote">రెండింటిలోనూ 7 రోజులు ఉచితం — ఖాతా వద్దు, కార్డు వద్దు. అంతా మీ పరికరంలోనే. <a href="/te/install/">ఇన్‌స్టాల్ సహాయం →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">ఒక నిమిషంలో ఇన్‌స్టాల్ చేయండి</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="డౌన్‌లోడ్"><span aria-hidden="true">🖥️</span> Windows కోసం డౌన్‌లోడ్ చేయండి</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/te/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome కు జోడించండి</a>
+    <a class="btn ghost" href="/te/install/">ఇన్‌స్టాల్ సహాయం</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">మీ పత్రాలు మీ పరికరాన్ని ఎప్పుడూ వదిలిపెట్టవు.</p>
   <p class="sub">మీ డేటా మీ పరికరంలోనే ప్రాసెస్ చేయబడుతుంది మరియు ఎప్పటికీ మాకు పంపబడదు. బయటకు వెళ్లే ఏకైక విషయాలు మీరు తీసుకునే చర్యలు మాత్రమే — పూర్తి చేసిన ఫారమ్‌ను సమర్పించడం (దాని గ్రహీతకు నేరుగా) లేదా మీరు టైప్ చేసే వెబ్ శోధన. అవి తమ గమ్యస్థానానికి నేరుగా వెళతాయి, ఎప్పటికీ మా ద్వారా కాదు. అదే మొత్తం జాబితా.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/te/privacy/">పూర్తి గోప్యతా విధానాన్ని చదవండి</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">అభిప్రాయం, ప్రశ్నలు, ఆందోళనలు లేదా సూచనలు?</h2>
+    <p class="sub">ఏది లేదు, ఏది పని చేయలేదు, ఏది మెరుగుపరుస్తుంది — చెప్పండి; ప్రతి సందేశం నేరుగా నాకు చేరుతుంది.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%B0%85%E0%B0%AD%E0%B0%BF%E0%B0%AA%E0%B1%8D%E0%B0%B0%E0%B0%BE%E0%B0%AF%E0%B0%82"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

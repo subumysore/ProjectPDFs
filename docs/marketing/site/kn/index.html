@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">ಬೆಲೆ</a>
       <a href="/tutorials/">ಟ್ಯುಟೋರಿಯಲ್‌ಗಳು</a>
       <a href="#privacy">ಗೌಪ್ಯತೆ</a>
+      <a href="#contact">ಸಂಪರ್ಕಿಸಿ</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">ಪಡೆಯಿರಿ</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">ಪಡೆಯಿರಿ</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="ಡೆಸ್ಕ್‌ಟಾಪ್ ಆ್ಯಪ್ ಮತ್ತು ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆಯ ಹೋಲಿಕೆ">
+    <h2>ಡೆಸ್ಕ್‌ಟಾಪ್ ಆ್ಯಪ್ ಅಥವಾ ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆ?</h2>
+    <p class="vssub">ಒಂದೇ ಎಂಜಿನ್, ಒಂದೇ ಎನ್‌ಕ್ರಿಪ್ಟ್ ವಾಲ್ಟ್, ತಾನಾಗಿಯೇ ಹಂಚಿಕೆ. ನಿಜವಾದ ವ್ಯತ್ಯಾಸಗಳು ಎರಡೇ:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>ಡೆಸ್ಕ್‌ಟಾಪ್ ಆ್ಯಪ್ (.exe)<small>Windows · ಪೂರ್ಣ ದಾಖಲೆ ಕಾರ್ಯಪೀಠ</small></th>
+          <th scope="col"><span class="ic">🧩</span>ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆ<small>Chrome/Edge · ಬ್ರೌಸ್ ಮಾಡುತ್ತಲೇ ವೆಬ್ ಫಾರ್ಮ್‌ಗಳು</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx) ಮತ್ತು Excel (.xlsx) ಫಾರ್ಮ್‌ಗಳು</th><td class="yes" data-s="ಡೆಸ್ಕ್‌ಟಾಪ್ ಆ್ಯಪ್ (.exe)">ಹೌದು — Word/Excel ನ ಹೆಸರಿಸಿದ ಕ್ಷೇತ್ರಗಳು, PDF ಗೆ ರಫ್ತು</td><td class="no" data-s="ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆ">ಲಭ್ಯವಿಲ್ಲ</td></tr>
+        <tr><th scope="row">ವೆಬ್‌ಸೈಟ್‌ಗಳಲ್ಲಿ ಫಾರ್ಮ್ ಸ್ವಯಂ ಭರ್ತಿ</th><td class="no" data-s="ಡೆಸ್ಕ್‌ಟಾಪ್ ಆ್ಯಪ್ (.exe)">ಇದು ವಿಸ್ತರಣೆಯ ಕೆಲಸ — ಅದೇ ವಾಲ್ಟ್‌ನಿಂದ ವೆಬ್ ಪುಟಗಳನ್ನು ಭರ್ತಿ ಮಾಡುತ್ತದೆ</td><td class="yes" data-s="ಬ್ರೌಸರ್ ವಿಸ್ತರಣೆ">ಹೌದು — ಯಾವುದೇ ಪುಟದಲ್ಲಿ ಒಂದೇ ಕ್ಲಿಕ್, ಕಠಿಣ ಆ್ಯಪ್ ಫಾರ್ಮ್‌ಗಳೂ ಸೇರಿ</td></tr>
+        <tr class="bothrow"><th scope="row">ಉಳಿದೆಲ್ಲವೂ</th><td class="yes" colspan="2">ಎರಡರಲ್ಲೂ ಒಂದೇ: PDF ಫಾರ್ಮ್‌ಗಳು (ಸ್ಕ್ಯಾನ್ ಮತ್ತು XFA/LiveCycle ಸೇರಿ), ಸಾಧನದಲ್ಲೇ OCR, ಭಾಷೆಗಳ ನಡುವೆ ಓದುವುದು ಮತ್ತು ಭರ್ತಿ, ಸಹಿ, ಹಂಚಿದ ವಾಲ್ಟ್, ಆಫ್‌ಲೈನ್ ಬಳಕೆ.</td></tr>
         <tr class="dlrow">
           <th scope="row">ಡೌನ್‌ಲೋಡ್</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows ಗಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome ಗೆ ಸೇರಿಸಿ</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/kn/install/">Installation help →</a></p>
+    <p class="vsnote">ಎರಡರಲ್ಲೂ 7 ದಿನ ಉಚಿತ — ಖಾತೆ ಬೇಡ, ಕಾರ್ಡ್ ಬೇಡ. ಎಲ್ಲವೂ ನಿಮ್ಮ ಸಾಧನದಲ್ಲೇ. <a href="/kn/install/">ಇನ್‌ಸ್ಟಾಲ್ ಸಹಾಯ →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಸ್ಥಾಪಿಸಿ</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="ಡೌನ್‌ಲೋಡ್"><span aria-hidden="true">🖥️</span> Windows ಗಾಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/kn/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome ಗೆ ಸೇರಿಸಿ</a>
+    <a class="btn ghost" href="/kn/install/">ಇನ್‌ಸ್ಟಾಲ್ ಸಹಾಯ</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">ನಿಮ್ಮ ದಾಖಲೆಗಳು ನಿಮ್ಮ ಸಾಧನವನ್ನು ಎಂದಿಗೂ ಬಿಡುವುದಿಲ್ಲ.</p>
   <p class="sub">ನಿಮ್ಮ ಡೇಟಾ ನಿಮ್ಮ ಸಾಧನದಲ್ಲೇ ಸಂಸ್ಕರಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ಎಂದಿಗೂ ನಮಗೆ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಹೊರಹೋಗುವ ಏಕೈಕ ವಿಷಯಗಳು ನೀವು ತೆಗೆದುಕೊಳ್ಳುವ ಕ್ರಿಯೆಗಳು ಮಾತ್ರ — ಪೂರ್ಣಗೊಂಡ ನಮೂನೆಯನ್ನು ಸಲ್ಲಿಸುವುದು (ಅದರ ಸ್ವೀಕರಿಸುವವರಿಗೆ ನೇರವಾಗಿ) ಅಥವಾ ನೀವು ಟೈಪ್ ಮಾಡುವ ವೆಬ್ ಹುಡುಕಾಟ. ಅವು ತಮ್ಮ ಗಮ್ಯಸ್ಥಾನಕ್ಕೆ ನೇರವಾಗಿ ಹೋಗುತ್ತವೆ, ಎಂದಿಗೂ ನಮ್ಮ ಮೂಲಕ ಅಲ್ಲ. ಅದೇ ಸಂಪೂರ್ಣ ಪಟ್ಟಿ.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/kn/privacy/">ಸಂಪೂರ್ಣ ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ಓದಿ</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">ಅಭಿಪ್ರಾಯ, ಪ್ರಶ್ನೆ, ಕಳವಳ ಅಥವಾ ಸಲಹೆ?</h2>
+    <p class="sub">ಏನು ಕೊರತೆ, ಏನು ಕೆಲಸ ಮಾಡಲಿಲ್ಲ, ಏನು ಸುಧಾರಿಸಬಹುದು — ಹೇಳಿ; ಪ್ರತಿ ಸಂದೇಶವೂ ನೇರವಾಗಿ ನನಗೇ ತಲುಪುತ್ತದೆ.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%B2%85%E0%B2%AD%E0%B2%BF%E0%B2%AA%E0%B3%8D%E0%B2%B0%E0%B2%BE%E0%B2%AF"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

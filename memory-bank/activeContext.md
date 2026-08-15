@@ -753,3 +753,7 @@ multilingual filling — not the translation engine.
   the extension fills web pages. If ever wanted, that is a new capability needing its own ADR.
 - `scripts/site-i18n.test.mjs` 8/8 (tagline assertion retired with a comment — the hero no longer prints
   app.tagline). Verified in real Chrome at 1280/420px, light + dark. Published 3× (owner authorised).
+- Follow-up landed same day: all 19 `vs.*` strings translated into the 25 non-English locales (no more
+  English fallback in the comparison table), and a `#contact` strip + nav link added on every locale —
+  mailto (subumysore@gmail.com, pre-filled subject) and tel (+1 (234) 564-3966), both from single
+  constants in build-site.mjs. Verified live: /, /hi/, /ar/, /ja/ byte-identical to the local build.

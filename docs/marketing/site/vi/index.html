@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">Giá</a>
       <a href="/tutorials/">Hướng dẫn</a>
       <a href="#privacy">Quyền riêng tư</a>
+      <a href="#contact">Liên hệ</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">Tải về</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">Tải về</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="So sánh ứng dụng máy tính với tiện ích mở rộng trình duyệt">
+    <h2>Ứng dụng máy tính hay tiện ích trình duyệt?</h2>
+    <p class="vssub">Cùng một engine, cùng một kho dữ liệu mã hoá, chia sẻ tự động. Chỉ có hai khác biệt thật sự:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>Ứng dụng máy tính (.exe)<small>Windows · bàn làm việc tài liệu đầy đủ</small></th>
+          <th scope="col"><span class="ic">🧩</span>Tiện ích trình duyệt<small>Chrome/Edge · biểu mẫu web ngay khi duyệt</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Biểu mẫu Word (.docx) và Excel (.xlsx)</th><td class="yes" data-s="Ứng dụng máy tính (.exe)">Có — các trường có tên trong Word/Excel, và xuất ra PDF</td><td class="no" data-s="Tiện ích trình duyệt">Không có</td></tr>
+        <tr><th scope="row">Tự động điền biểu mẫu trên website</th><td class="no" data-s="Ứng dụng máy tính (.exe)">Đây là việc của tiện ích — nó điền trang web từ chính kho dữ liệu đó</td><td class="yes" data-s="Tiện ích trình duyệt">Có — một cú nhấp trên mọi trang, kể cả biểu mẫu ứng dụng khó tính</td></tr>
+        <tr class="bothrow"><th scope="row">Mọi thứ còn lại</th><td class="yes" colspan="2">Giống hệt nhau ở cả hai: biểu mẫu PDF (kể cả bản quét và XFA/LiveCycle), OCR trên thiết bị, đọc và điền xuyên ngôn ngữ, ký, kho dữ liệu dùng chung và hoạt động ngoại tuyến.</td></tr>
         <tr class="dlrow">
           <th scope="row">Tải xuống</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Tải cho Windows</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Thêm vào Chrome</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/vi/install/">Installation help →</a></p>
+    <p class="vsnote">Dùng thử 7 ngày miễn phí cho cả hai — không tài khoản, không thẻ. Mọi thứ chạy trên thiết bị của bạn. <a href="/vi/install/">Trợ giúp cài đặt →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">Cài đặt trong một phút</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="Tải xuống"><span aria-hidden="true">🖥️</span> Tải cho Windows</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/vi/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Thêm vào Chrome</a>
+    <a class="btn ghost" href="/vi/install/">Trợ giúp cài đặt</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">Tài liệu của bạn không bao giờ rời khỏi thiết bị.</p>
   <p class="sub">Dữ liệu của bạn được xử lý trên thiết bị của bạn và không bao giờ được gửi đến chúng tôi. Điều duy nhất rời đi là những hành động bạn thực hiện — gửi một biểu mẫu đã hoàn thành (thẳng đến người nhận của nó) hoặc một tìm kiếm web bạn gõ. Chúng đi thẳng đến đích, không bao giờ qua chúng tôi. Đó là toàn bộ danh sách.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/vi/privacy/">Đọc toàn văn chính sách quyền riêng tư</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">Góp ý, câu hỏi, lo ngại hay đề xuất?</h2>
+    <p class="sub">Hãy cho tôi biết còn thiếu gì, hỏng ở đâu, hoặc điều gì sẽ tốt hơn — mọi tin nhắn đều đến thẳng tôi.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20g%C3%B3p%20%C3%BD"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

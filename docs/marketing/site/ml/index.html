@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">വില</a>
       <a href="/tutorials/">ട്യൂട്ടോറിയലുകൾ</a>
       <a href="#privacy">സ്വകാര്യത</a>
+      <a href="#contact">ബന്ധപ്പെടുക</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">നേടുക</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">നേടുക</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="ഡെസ്ക്ടോപ്പ് ആപ്പും ബ്രൗസർ എക്സ്റ്റൻഷനും താരതമ്യം">
+    <h2>ഡെസ്ക്ടോപ്പ് ആപ്പോ ബ്രൗസർ എക്സ്റ്റൻഷനോ?</h2>
+    <p class="vssub">ഒരേ എൻജിൻ, ഒരേ എൻക്രിപ്റ്റഡ് വോൾട്ട്, സ്വയമേവ പങ്കിടുന്നു. യഥാർത്ഥ വ്യത്യാസങ്ങൾ രണ്ടു മാത്രം:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>ഡെസ്ക്ടോപ്പ് ആപ്പ് (.exe)<small>Windows · പൂർണ്ണ ഡോക്യുമെന്റ് വർക്ക്ബെഞ്ച്</small></th>
+          <th scope="col"><span class="ic">🧩</span>ബ്രൗസർ എക്സ്റ്റൻഷൻ<small>Chrome/Edge · ബ്രൗസ് ചെയ്യുമ്പോൾ വെബ് ഫോമുകൾ</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx), Excel (.xlsx) ഫോമുകൾ</th><td class="yes" data-s="ഡെസ്ക്ടോപ്പ് ആപ്പ് (.exe)">അതെ — Word/Excel-ലെ പേരുള്ള ഫീൽഡുകൾ, PDF ആയി കയറ്റുമതി</td><td class="no" data-s="ബ്രൗസർ എക്സ്റ്റൻഷൻ">ലഭ്യമല്ല</td></tr>
+        <tr><th scope="row">വെബ്‌സൈറ്റുകളിൽ ഫോം ഓട്ടോഫിൽ</th><td class="no" data-s="ഡെസ്ക്ടോപ്പ് ആപ്പ് (.exe)">ഇത് എക്സ്റ്റൻഷന്റെ ജോലിയാണ് — അതേ വോൾട്ടിൽ നിന്ന് വെബ് പേജുകൾ പൂരിപ്പിക്കുന്നു</td><td class="yes" data-s="ബ്രൗസർ എക്സ്റ്റൻഷൻ">അതെ — ഏത് പേജിലും ഒറ്റ ക്ലിക്ക്, ബുദ്ധിമുട്ടുള്ള ആപ്പ് ഫോമുകളിലും</td></tr>
+        <tr class="bothrow"><th scope="row">ബാക്കിയെല്ലാം</th><td class="yes" colspan="2">രണ്ടിലും ഒരുപോലെ: PDF ഫോമുകൾ (സ്കാനുകളും XFA/LiveCycle-ഉം ഉൾപ്പെടെ), ഉപകരണത്തിൽ OCR, ഭാഷകൾക്കിടയിൽ വായനയും പൂരിപ്പിക്കലും, ഒപ്പ്, പങ്കിട്ട വോൾട്ട്, ഓഫ്‌ലൈൻ ഉപയോഗം.</td></tr>
         <tr class="dlrow">
           <th scope="row">ഡൗൺലോഡ്</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows-നായി ഡൗൺലോഡ് ചെയ്യുക</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-ൽ ചേർക്കുക</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/ml/install/">Installation help →</a></p>
+    <p class="vsnote">രണ്ടിലും 7 ദിവസം സൗജന്യം — അക്കൗണ്ട് വേണ്ട, കാർഡ് വേണ്ട. എല്ലാം നിങ്ങളുടെ ഉപകരണത്തിൽ. <a href="/ml/install/">ഇൻസ്റ്റാൾ സഹായം →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">ഒരു മിനിറ്റിനുള്ളിൽ ഇൻസ്റ്റാൾ ചെയ്യുക</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="ഡൗൺലോഡ്"><span aria-hidden="true">🖥️</span> Windows-നായി ഡൗൺലോഡ് ചെയ്യുക</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/ml/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-ൽ ചേർക്കുക</a>
+    <a class="btn ghost" href="/ml/install/">ഇൻസ്റ്റാൾ സഹായം</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">നിങ്ങളുടെ രേഖകൾ ഒരിക്കലും ഉപകരണം വിട്ടുപോകുന്നില്ല.</p>
   <p class="sub">നിങ്ങളുടെ ഡാറ്റ നിങ്ങളുടെ ഉപകരണത്തിൽ തന്നെ പ്രോസസ്സ് ചെയ്യുന്നു, ഒരിക്കലും ഞങ്ങൾക്ക് അയയ്ക്കുന്നില്ല. പുറത്തുപോകുന്ന ഏക കാര്യങ്ങൾ നിങ്ങൾ എടുക്കുന്ന നടപടികൾ മാത്രമാണ് — പൂർത്തിയാക്കിയ ഒരു ഫോം സമർപ്പിക്കൽ (അതിന്റെ സ്വീകർത്താവിന് നേരിട്ട്) അല്ലെങ്കിൽ നിങ്ങൾ ടൈപ്പ് ചെയ്യുന്ന ഒരു വെബ് തിരയൽ. അവ അവയുടെ ലക്ഷ്യസ്ഥാനത്തേക്ക് നേരിട്ട് പോകുന്നു, ഒരിക്കലും ഞങ്ങളിലൂടെയല്ല. അതാണ് മുഴുവൻ പട്ടിക.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/ml/privacy/">പൂർണ്ണ സ്വകാര്യതാ നയം വായിക്കുക</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">അഭിപ്രായം, ചോദ്യങ്ങൾ, ആശങ്കകൾ അല്ലെങ്കിൽ നിർദ്ദേശങ്ങൾ?</h2>
+    <p class="sub">എന്താണ് ഇല്ലാത്തത്, എന്താണ് പ്രവർത്തിക്കാത്തത്, എന്ത് മെച്ചപ്പെടുത്താം — പറയൂ; ഓരോ സന്ദേശവും നേരിട്ട് എന്നിലേക്കെത്തും.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%B4%85%E0%B4%AD%E0%B4%BF%E0%B4%AA%E0%B5%8D%E0%B4%B0%E0%B4%BE%E0%B4%AF%E0%B4%82"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

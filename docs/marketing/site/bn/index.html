@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">মূল্য</a>
       <a href="/tutorials/">টিউটোরিয়াল</a>
       <a href="#privacy">গোপনীয়তা</a>
+      <a href="#contact">যোগাযোগ</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">সংগ্রহ করুন</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">সংগ্রহ করুন</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="ডেস্কটপ অ্যাপ ও ব্রাউজার এক্সটেনশনের তুলনা">
+    <h2>ডেস্কটপ অ্যাপ না ব্রাউজার এক্সটেনশন?</h2>
+    <p class="vssub">একই ইঞ্জিন, একই এনক্রিপ্টেড ভল্ট, স্বয়ংক্রিয়ভাবে ভাগ করা। আসল পার্থক্য মাত্র দুটি:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>ডেস্কটপ অ্যাপ (.exe)<small>Windows · সম্পূর্ণ ডকুমেন্ট ওয়ার্কবেঞ্চ</small></th>
+          <th scope="col"><span class="ic">🧩</span>ব্রাউজার এক্সটেনশন<small>Chrome/Edge · ব্রাউজ করার সময় ওয়েব ফর্ম</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx) ও Excel (.xlsx) ফর্ম</th><td class="yes" data-s="ডেস্কটপ অ্যাপ (.exe)">হ্যাঁ — Word ও Excel-এর নামযুক্ত ফিল্ড, এবং PDF-এ রপ্তানি</td><td class="no" data-s="ব্রাউজার এক্সটেনশন">নেই</td></tr>
+        <tr><th scope="row">ওয়েবসাইটে ফর্ম অটোফিল</th><td class="no" data-s="ডেস্কটপ অ্যাপ (.exe)">এটি এক্সটেনশনের কাজ — এটি একই ভল্ট থেকে ওয়েব পেজ পূরণ করে</td><td class="yes" data-s="ব্রাউজার এক্সটেনশন">হ্যাঁ — যেকোনো পেজে এক ক্লিকে, কঠিন অ্যাপ ফর্মসহ</td></tr>
+        <tr class="bothrow"><th scope="row">বাকি সবকিছু</th><td class="yes" colspan="2">দুটিতেই এক: PDF ফর্ম (স্ক্যান ও XFA/LiveCycle সহ), ডিভাইসে OCR, ভাষার মধ্যে পড়া ও পূরণ, স্বাক্ষর, ভাগ করা ভল্ট এবং অফলাইনে কাজ।</td></tr>
         <tr class="dlrow">
           <th scope="row">ডাউনলোড</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows-এর জন্য ডাউনলোড করুন</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-এ যোগ করুন</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/bn/install/">Installation help →</a></p>
+    <p class="vsnote">দুটিতেই ৭ দিন বিনামূল্যে — অ্যাকাউন্ট নয়, কার্ড নয়। সবকিছু আপনার ডিভাইসেই চলে। <a href="/bn/install/">ইনস্টল করার সহায়তা →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">এক মিনিটে ইনস্টল করুন</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="ডাউনলোড"><span aria-hidden="true">🖥️</span> Windows-এর জন্য ডাউনলোড করুন</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/bn/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome-এ যোগ করুন</a>
+    <a class="btn ghost" href="/bn/install/">ইনস্টল করার সহায়তা</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">আপনার নথি কখনো আপনার ডিভাইস ছাড়ে না।</p>
   <p class="sub">আপনার তথ্য আপনার ডিভাইসে প্রক্রিয়া করা হয় এবং কখনও আমাদের কাছে পাঠানো হয় না। কেবল সেই জিনিসগুলিই বেরিয়ে যায় যা আপনি করেন — একটি সম্পূর্ণ ফর্ম জমা দেওয়া (সরাসরি তার প্রাপকের কাছে) বা আপনার টাইপ করা একটি ওয়েব অনুসন্ধান। সেগুলি সরাসরি তাদের গন্তব্যে যায়, কখনও আমাদের মাধ্যমে নয়। এটাই সম্পূর্ণ তালিকা।</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/bn/privacy/">সম্পূর্ণ গোপনীয়তা নীতি পড়ুন</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">মতামত, প্রশ্ন, উদ্বেগ বা পরামর্শ?</h2>
+    <p class="sub">কী নেই, কী ভেঙেছে, বা কী হলে আরও ভালো হয় — বলুন; প্রতিটি বার্তা সরাসরি আমার কাছে আসে।</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20%E0%A6%AE%E0%A6%A4%E0%A6%BE%E0%A6%AE%E0%A6%A4"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">

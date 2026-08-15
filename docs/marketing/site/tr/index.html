@@ -228,6 +228,10 @@
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
+  /* contact strip: heading on the left, the two ways to reach us on the right */
+  .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .contact .cta{margin-top:0}
+  .contact .sub{margin-top:6px}
   @media (max-width:720px){
     .vsgrid{border:0;margin:0 14px 4px}
     .vstable,.vstable tbody,.vstable tr,.vstable td,.vstable th{display:block;width:auto}
@@ -258,6 +262,7 @@
       <a href="#pricing">Fiyatlandırma</a>
       <a href="/tutorials/">Eğitimler</a>
       <a href="#privacy">Gizlilik</a>
+      <a href="#contact">İletişim</a>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> downloads and counting<span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
       <a class="btn" href="#compare">İndir</a>
     </div>
@@ -288,31 +293,31 @@
     <a class="btn ghost" href="#compare">İndir</a>
   </div>
 
-  <section class="vs" id="compare" aria-label="Desktop app compared with the browser extension">
-    <h2>Desktop app or browser extension?</h2>
-    <p class="vssub">Same engine, same encrypted vault, shared automatically. There are only two real differences:</p>
+  <section class="vs" id="compare" aria-label="Masaüstü uygulaması ile tarayıcı eklentisinin karşılaştırması">
+    <h2>Masaüstü uygulaması mı, tarayıcı eklentisi mi?</h2>
+    <p class="vssub">Aynı motor, aynı şifreli kasa, otomatik olarak paylaşılır. Gerçek fark yalnızca iki tane:</p>
     <div class="vsgrid">
     <table class="vstable">
       <thead>
         <tr>
           <th scope="col"></th>
-          <th scope="col"><span class="ic">🖥️</span>Desktop app (.exe)<small>Windows · full document workbench</small></th>
-          <th scope="col"><span class="ic">🧩</span>Browser extension<small>Chrome/Edge · web forms as you browse</small></th>
+          <th scope="col"><span class="ic">🖥️</span>Masaüstü uygulaması (.exe)<small>Windows · eksiksiz belge çalışma tezgâhı</small></th>
+          <th scope="col"><span class="ic">🧩</span>Tarayıcı eklentisi<small>Chrome/Edge · gezinirken web formları</small></th>
         </tr>
       </thead>
       <tbody>
-        <tr><th scope="row">Word (.docx) &amp; Excel (.xlsx) forms</th><td class="yes" data-s="Desktop app (.exe)">Yes — named fields in Word and Excel forms, and export to PDF</td><td class="no" data-s="Browser extension">Not available</td></tr>
-        <tr><th scope="row">Autofill forms on websites</th><td class="no" data-s="Desktop app (.exe)">This is the extension's job — it fills web pages from the same vault</td><td class="yes" data-s="Browser extension">Yes — one click on any page, including tricky app forms</td></tr>
-        <tr class="bothrow"><th scope="row">Everything else</th><td class="yes" colspan="2">Identical on both: PDF forms (including scans and XFA/LiveCycle), on-device OCR, reading and filling across languages, signing, the shared vault, and working offline.</td></tr>
+        <tr><th scope="row">Word (.docx) ve Excel (.xlsx) formları</th><td class="yes" data-s="Masaüstü uygulaması (.exe)">Evet — Word ve Excel'deki adlandırılmış alanlar, PDF'ye aktarma dâhil</td><td class="no" data-s="Tarayıcı eklentisi">Mevcut değil</td></tr>
+        <tr><th scope="row">Web sitelerindeki formları otomatik doldurma</th><td class="no" data-s="Masaüstü uygulaması (.exe)">Bu eklentinin işi — web sayfalarını aynı kasadan doldurur</td><td class="yes" data-s="Tarayıcı eklentisi">Evet — her sayfada tek tıkla, zorlu uygulama formlarında bile</td></tr>
+        <tr class="bothrow"><th scope="row">Geri kalan her şey</th><td class="yes" colspan="2">İkisinde de aynı: PDF formları (taramalar ve XFA/LiveCycle dâhil), cihazda OCR, diller arası okuma ve doldurma, imzalama, paylaşılan kasa ve çevrimdışı kullanım.</td></tr>
         <tr class="dlrow">
           <th scope="row">İndir</th>
           <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> Windows için indir</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome'a ekle</a></td>
         </tr>
       </tbody>
     </table>
     </div>
-    <p class="vsnote">Free 7-day trial on both — no account, no card. Everything runs on your device. <a href="/tr/install/">Installation help →</a></p>
+    <p class="vsnote">İkisinde de 7 gün ücretsiz — hesap yok, kart yok. Her şey cihazınızda çalışır. <a href="/tr/install/">Kurulum yardımı →</a></p>
   </section>
 
   <section class="guidevid" aria-label="Watch the video">
@@ -494,8 +499,8 @@
   <h2 class="h2">Bir dakikada kurun</h2>
   <div class="cta">
     <a class="btn" href="/dl/exe" aria-label="İndir"><span aria-hidden="true">🖥️</span> Windows için indir</a>
-    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Add to Chrome</a>
-    <a class="btn ghost" href="/tr/install/">Installation help</a>
+    <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> Chrome'a ekle</a>
+    <a class="btn ghost" href="/tr/install/">Kurulum yardımı</a>
   </div>
   <p class="note">The Windows installer is code-signed (verified publisher: Subramanya Mysore); a new signed app can still show a SmartScreen notice — click More info, then Run anyway. The extension installs with no prompt. macOS &amp; Linux next.</p>
 </section>
@@ -506,6 +511,20 @@
   <p class="sub" style="font-weight:600">Belgeleriniz cihazınızdan asla çıkmaz.</p>
   <p class="sub">Verileriniz cihazınızda işlenir ve asla bize gönderilmez. Cihazdan çıkan tek şey sizin gerçekleştirdiğiniz eylemlerdir — tamamlanmış bir formu göndermek (doğrudan alıcısına) veya yazdığınız bir web araması. Bunlar doğrudan hedeflerine gider, asla bizim üzerimizden değil. Listenin tamamı bu.</p>
   <p style="margin-top:16px"><a class="btn ghost" href="/tr/privacy/">Gizlilik politikasının tamamını okuyun</a></p>
+</section>
+
+<!-- Feedback / questions / concerns / suggestions — a real person, reachable two ways. The mailto
+     carries a subject so replies are easy to triage; the tel: link dials on a phone and is plain
+     text on a desktop. Same block on every locale, so nobody has to hunt for how to reach us. -->
+<section id="contact" class="wrap contact">
+  <div>
+    <h2 class="h2">Geri bildirim, soru, endişe ya da öneri?</h2>
+    <p class="sub">Neyin eksik olduğunu, neyin bozulduğunu ya da neyin daha iyi olacağını yazın — her mesaj doğrudan bana ulaşır.</p>
+  </div>
+  <div class="cta">
+    <a class="btn" href="mailto:subumysore@gmail.com?subject=PolyglotFormFill%20%E2%80%94%20geri%20bildirim"><span aria-hidden="true">✉️</span> subumysore@gmail.com</a>
+    <a class="btn ghost" href="tel:+12345643966"><span aria-hidden="true">📞</span> +1 (234) 564-3966</a>
+  </div>
 </section>
 
 <footer class="wrap">
