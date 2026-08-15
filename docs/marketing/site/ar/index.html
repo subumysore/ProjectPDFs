@@ -233,6 +233,10 @@
   .vstable td[colspan]::after{content:none}   /* the spanning row needs no per-column label on mobile */
   .vstable tr.dlrow td,.vstable tr.dlrow th{background:var(--teal-soft);border-top:2px solid var(--teal)}
   .vstable tr.dlrow .btn{display:inline-flex;align-items:center;gap:8px}
+  /* per-surface download counts, hidden until /counts answers so nobody ever sees a bare 0 */
+  .vstable .dlcount{display:none;margin-top:7px;font-size:12.5px;color:var(--muted)}
+  .vstable .dlcount.on{display:block}
+  .vstable .dlcount b{color:var(--teal-ink);font-weight:700}
   .vsnote{padding:12px 20px 18px;margin:0;color:var(--muted);font-size:13px}
   .vsnote+.vsfine{padding-top:0;margin-top:-8px;font-size:12px;opacity:.85}
   /* contact strip: heading on the left, the two ways to reach us on the right */
@@ -282,9 +286,15 @@
     var exe=+(d.exe||0), ext=+(d.ext||0), total=exe+ext;
     if(!(total>0)) return;                       // nothing to brag about yet — stay hidden
     var f=function(n){try{return n.toLocaleString()}catch(e){return ''+n}};
-    var set=function(k,v){var n=el.querySelector('[data-c='+k+']'); if(n) n.textContent=f(v);};
+    // Fill EVERY counter slot on the page, not just the nav chip: the per-surface numbers also sit
+    // under each download button in the comparison table, which is where the split is worth reading.
+    var set=function(k,v){
+      var ns=document.querySelectorAll('[data-c='+k+']');
+      for(var i=0;i<ns.length;i++) ns[i].textContent=f(v);
+    };
     set('total',total); set('exe',exe); set('ext',ext);
     el.classList.add('on');
+    var slots=document.querySelectorAll('.dlcount'); for(var j=0;j<slots.length;j++) slots[j].classList.add('on');
   }).catch(function(){});
 })();</script>
 
@@ -318,8 +328,10 @@
         <tr class="bothrow"><th scope="row">كل ما عدا ذلك</th><td class="yes" colspan="2">متطابق في الاثنين: نماذج PDF (بما فيها الممسوحة و XFA/LiveCycle)، وOCR على الجهاز، والقراءة والتعبئة بين اللغات، والتوقيع، والخزنة المشتركة، والعمل دون اتصال.</td></tr>
         <tr class="dlrow">
           <th scope="row">تنزيل</th>
-          <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> التنزيل لـ Windows</a></td>
-          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> أضِف إلى Chrome</a></td>
+          <td><a class="btn" href="/dl/exe"><span aria-hidden="true">🖥️</span> التنزيل لـ Windows</a>
+            <div class="dlcount"><b data-c="exe">—</b> downloads and counting</div></td>
+          <td><a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener"><span aria-hidden="true">🧩</span> أضِف إلى Chrome</a>
+            <div class="dlcount"><b data-c="ext">—</b> downloads and counting</div></td>
         </tr>
       </tbody>
     </table>

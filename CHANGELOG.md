@@ -20,6 +20,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Verified in real Chrome (puppeteer) on the built page and live after publish; `scripts/site-i18n.test.mjs`
   8/8 pass. Published to https://polyglotformfill.com via `deploy/k8s/publish-site.ps1`.
 
+### Added — per-surface download counts where they persuade
+- The desktop/extension split left the nav chip when the header was slimmed to one row; it now sits
+  UNDER each download button in the comparison table (desktop count under Download for Windows,
+  extension count under Add to Chrome). One script fills every counter slot from the same live
+  /counts endpoint, and the slots stay hidden until it answers so no visitor sees a bare 0.
+
 ### Fixed — the header fell apart (and the language bar wasted a whole row)
 - An earlier flex-wrap on <nav> let the links spill onto a second row, orphaning the brand mark and
   pushing the download counter off-screen. The nav no longer wraps: the brand is fixed-width and
