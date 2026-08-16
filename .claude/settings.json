@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc=$?\")",
+      "Read(//c/Users/Subramanya Mysore/**)",
+
+      "Bash(node *)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm -r test*)",
+
+      "PowerShell(.\\deploy\\k8s\\publish-site.ps1*)",
+      "PowerShell(./deploy/k8s/publish-site.ps1*)",
+
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+
+      "Bash(curl -s https://polyglotformfill.com/*)",
+      "Bash(curl -s -o * https://polyglotformfill.com/*)",
+      "Bash(curl -s -I https://polyglotformfill.com/*)",
+
+      "Bash(grep *)",
+      "Bash(sed -n *)",
+      "Bash(diff *)",
+      "Bash(ls *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(cp *)",
+      "Bash(rm -f apps/app/*.tmp.mjs)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Subramanya Mysore\\MyProject\\ProjectPDFs\\docs\\marketing"
+    ]
+  }
+}

@@ -6,6 +6,8 @@
 <title>PolyglotFormFill — Đọc và điền mọi biểu mẫu, bằng mọi ngôn ngữ.</title>
 <meta name="description" content="PolyglotFormFill đọc một biểu mẫu bằng ngôn ngữ này và điền nó từ dữ liệu của bạn bằng ngôn ngữ khác — ngay trên thiết bị của bạn, một cách riêng tư. Chúng tôi không bao giờ nhìn thấy dữ liệu của bạn.">
 <link rel="canonical" href="https://polyglotformfill.com/vi/">
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="apple-touch-icon" href="/logo.png">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PolyglotFormFill">
@@ -182,6 +184,8 @@
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
   /* landing: the switcher lives inside the nav — no strip, no border, no full width */
+  /* the real product icon as the brand mark (replaces the old CSS gradient square) */
+  .brand .logo{width:30px;height:30px;border-radius:8px;display:block;flex:0 0 auto}
   .navlinks .langbar{padding:0;border:0;background:none;justify-content:flex-end;gap:5px}
   .navlinks .langbar select{font-size:13px;padding:3px 4px;max-width:118px;border:1px solid var(--line);
     background:var(--surface);color:var(--ink)}
@@ -264,7 +268,7 @@
 
 <div class="wrap">
   <nav>
-    <div class="brand"><span class="dot"></span> PolyglotFormFill</div>
+    <div class="brand"><img class="logo" src="/logo.png" width="30" height="30" alt="PolyglotFormFill"> PolyglotFormFill</div>
     <div class="navlinks">
       <a href="#features">Tính năng</a>
       <a href="#who">Dành cho ai</a>
@@ -275,7 +279,8 @@
       <a href="#contact">Liên hệ</a>
       <div class="langbar"><label for="lang">🌐</label><select id="lang" aria-label="Language" onchange="location.href=this.selectedOptions[0].dataset.url"><option value="en" data-url="/">English</option><option value="hi" data-url="/hi/">हिन्दी</option><option value="bn" data-url="/bn/">বাংলা</option><option value="ta" data-url="/ta/">தமிழ்</option><option value="te" data-url="/te/">తెలుగు</option><option value="kn" data-url="/kn/">ಕನ್ನಡ</option><option value="ml" data-url="/ml/">മലയാളം</option><option value="gu" data-url="/gu/">ગુજરાતી</option><option value="pa" data-url="/pa/">ਪੰਜਾਬੀ</option><option value="mr" data-url="/mr/">मराठी</option><option value="ur" data-url="/ur/">اردو</option><option value="ar" data-url="/ar/">العربية</option><option value="he" data-url="/he/">עברית</option><option value="fa" data-url="/fa/">فارسی</option><option value="zh" data-url="/zh/">中文</option><option value="ja" data-url="/ja/">日本語</option><option value="ko" data-url="/ko/">한국어</option><option value="th" data-url="/th/">ไทย</option><option value="vi" data-url="/vi/" selected>Tiếng Việt</option><option value="id" data-url="/id/">Bahasa Indonesia</option><option value="ru" data-url="/ru/">Русский</option><option value="es" data-url="/es/">Español</option><option value="fr" data-url="/fr/">Français</option><option value="de" data-url="/de/">Deutsch</option><option value="pt" data-url="/pt/">Português</option><option value="tr" data-url="/tr/">Türkçe</option></select></div>
       <span id="dlcount" class="dlchip" title="Every download stays private — we count downloads only, never who or what." aria-live="polite">🚀 <b data-c="total">—</b> <span class="words">downloads and counting</span><span class="split"><span title="desktop app">🖥️ <b data-c="exe">—</b></span><span title="browser extension">🧩 <b data-c="ext">—</b></span></span></span>
-      <a class="btn" href="#compare">Tải về</a>
+      <!-- No download button here: the ONE place to download is the comparison table (#compare),
+           which sits in the first screenful anyway. Three CTAs for the same action was two too many. -->
     </div>
   </nav>
 </div>
@@ -307,7 +312,7 @@
   <div class="cta">
     <a class="btn" href="#features">Xem cách hoạt động</a>
     <a class="btn ghost" href="/tutorials/">▶ Xem hướng dẫn</a>
-    <a class="btn ghost" href="#compare">Tải về</a>
+<!-- (hero download CTA removed — same reason; the table below is the single download point) -->
   </div>
 
   <section class="vs" id="compare" aria-label="So sánh ứng dụng máy tính với tiện ích mở rộng trình duyệt">

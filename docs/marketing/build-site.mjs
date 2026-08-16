@@ -99,6 +99,8 @@ function headMeta(lang, page, tr) {
     .map((code) => `<link rel="alternate" hreflang="${code}" href="${SITE_ORIGIN}${urlFor(code, page)}">`)
     .join("\n") + `\n<link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}${urlFor("en", page)}">`;
   return `<link rel="canonical" href="${canonical}">
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="apple-touch-icon" href="/logo.png">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(tr("app.name"))}">
@@ -260,6 +262,8 @@ const LANGBAR_CSS = `
   .langbar select{font:inherit;padding:4px 8px;border-radius:8px}
   [dir=rtl] .langbar{justify-content:flex-start}
   /* landing: the switcher lives inside the nav — no strip, no border, no full width */
+  /* the real product icon as the brand mark (replaces the old CSS gradient square) */
+  .brand .logo{width:30px;height:30px;border-radius:8px;display:block;flex:0 0 auto}
   .navlinks .langbar{padding:0;border:0;background:none;justify-content:flex-end;gap:5px}
   .navlinks .langbar select{font-size:13px;padding:3px 4px;max-width:118px;border:1px solid var(--line);
     background:var(--surface);color:var(--ink)}
@@ -401,7 +405,7 @@ ${lang === "en" ? langhint() : ""}
 
 <div class="wrap">
   <nav>
-    <div class="brand"><span class="dot"></span> ${esc(tr("app.name"))}</div>
+    <div class="brand"><img class="logo" src="/logo.png" width="30" height="30" alt="${esc(tr("app.name"))}"> ${esc(tr("app.name"))}</div>
     <div class="navlinks">
       <a href="#features">${esc(tr("nav.features"))}</a>
       <a href="#who">${esc(tr("nav.who"))}</a>
@@ -412,7 +416,8 @@ ${lang === "en" ? langhint() : ""}
       <a href="#contact">${esc(tr("nav.contact"))}</a>
       ${switcher(lang, "landing")}
       ${counterChip(tr)}
-      <a class="btn" href="#compare">${esc(tr("nav.getit"))}</a>
+      <!-- No download button here: the ONE place to download is the comparison table (#compare),
+           which sits in the first screenful anyway. Three CTAs for the same action was two too many. -->
     </div>
   </nav>
 </div>
@@ -427,7 +432,7 @@ ${lang === "en" ? langhint() : ""}
   <div class="cta">
     <a class="btn" href="#features">${esc(tr("hero.cta1"))}</a>
     <a class="btn ghost" href="/tutorials/">${esc(tr("hero.cta2"))}</a>
-    <a class="btn ghost" href="#compare">${esc(tr("hero.cta3"))}</a>
+<!-- (hero download CTA removed — same reason; the table below is the single download point) -->
   </div>
 
 ${vsSection(lang, tr)}
@@ -873,6 +878,13 @@ if (existsSync(wellKnown)) {
     staticCount++;
   }
 }
+
+// The site's logo IS the product's icon — the same PNG the desktop app and the extension ship, copied
+// in by the build so the site can never drift from the app's identity (and no hand-copied asset rots).
+// Used by the nav brand mark and as the favicon on every page.
+const LOGO_SRC = join(dir, "..", "..", "apps", "app", "src-tauri", "icons", "128x128@2x.png");
+if (!existsSync(LOGO_SRC)) throw new Error(`logo missing: ${LOGO_SRC}`);
+cpSync(LOGO_SRC, join(site, "logo.png"));
 
 console.log(`install page versions: extension v${EXT_VER}, desktop v${APP_VER}`);
 console.log(`wrote ${AVAILABLE.length} languages × {landing, privacy, install} + 404 + sitemap.xml + robots.txt + ${staticCount} static-root entries`);
