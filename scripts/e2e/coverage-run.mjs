@@ -30,6 +30,16 @@ const VAULT = {
   veteran_status: "I am not a protected veteran", disability_status: "No",
   work_authorization: "Yes", sponsorship_required: "No", desired_salary: "150000",
   native_language: "en", preferred_contact_method: "Email",
+  salutation: "Ms.", suffix: "", language: "English", current_location: "Raleigh, North Carolina",
+};
+
+// Screening / eligibility answers the user has pre-set in "Common answers". The engine NEVER guesses
+// these — it only ever selects an answer the user stored — so a coverage run without them understates
+// what the product does on an ATS form full of Yes/No eligibility questions.
+const SAVED_ANSWERS = {
+  work_auth_us: "yes", work_auth_ca: "yes", sponsorship: "no", over18: "yes", relocate: "yes",
+  felony: "no", clearance: "no", gov_employee: "no", restrictions: "no", proof_identity: "yes",
+  hispanic: "no", veteran: "no", disability: "no",
 };
 
 const FORMS = [
@@ -51,17 +61,20 @@ async function runOne(browser, [name, url]) {
   try {
     await page.goto(url, { waitUntil: "networkidle2", timeout: 90000 });
     await new Promise((r) => setTimeout(r, 4500));
-    await page.evaluate(async (src, vault) => {
+    await page.evaluate(async (src, vault, saved) => {
       const fn = new Function(`${src}; return fillPage;`)();
-      return await fn(vault, null, null, { diag: true });
-    }, SRC, VAULT);
+      return await fn(vault, null, null, { diag: true, savedAnswers: saved });
+    }, SRC, VAULT, SAVED_ANSWERS);
     await new Promise((r) => setTimeout(r, 7000));
-    const res = await page.evaluate((assessSrc) => {
+    const readAssessment = () => page.evaluate((assessSrc) => {
       const { assessForm } = new Function(`${assessSrc}\n return { assessForm };`)();
       const a = assessForm({ includeOptional: true });
       const d = window.__ppfDiag || {};
       return { items: a.items || [], matched: d.matched || [] };
     }, ASSESS);
+    let res;
+    try { res = await readAssessment(); }
+    catch (_) { await new Promise((r) => setTimeout(r, 2000)); res = await readAssessment(); }
     out.items = res.items.map((i) => {
       const m = res.matched.find((x) => norm(x.label).includes(norm(i.label)) || norm(i.label).includes(norm(x.label)));
       let why = null;
