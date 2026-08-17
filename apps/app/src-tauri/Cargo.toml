@@ -32,3 +32,9 @@ core-license = { path = "../../../crates/core-license" }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+# Windows Hello presence check for "stay unlocked on this device". Microsoft's guidance for a local
+# secret is: keep it in the Credential Locker (DPAPI-protected, per Windows account — we already do,
+# via `keyring`) and gate its use behind UserConsentVerifier, which prompts for face/fingerprint/PIN.
+# Silent unlock is deliberately NOT used: it would let anyone with the signed-in Windows session open
+# the vault. A passphrase fallback always remains.
+windows = { version = "0.58", features = ["Security_Credentials_UI", "Foundation"] }

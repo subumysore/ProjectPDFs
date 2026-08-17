@@ -132,6 +132,119 @@ fn clear_session(dir: &std::path::Path) {
 fn lock_app(state: State<AppState>) {
     *state.unlocked.lock().unwrap() = false;
     clear_session(&state.data_dir);
+    remember_clear();   // an explicit lock means "ask me next time"
+}
+
+// --- "Stay unlocked on this device" (opt-in) -------------------------------------------------
+// Retyping the passphrase at every launch is the single friction point of daily use. Microsoft's
+// guidance for a local secret on Windows is: store it in the Credential Locker (DPAPI-protected and
+// scoped to the Windows account — `keyring` already does this for the vault key) and gate its USE
+// behind Windows Hello via UserConsentVerifier, so presence is proven each time.
+//
+// Deliberate choices:
+//   * OPT-IN, off by default — turning it on is a security decision the user makes knowingly.
+//   * NEVER silent: even when remembered, Hello asks for face/fingerprint/PIN. Otherwise anyone with
+//     the signed-in Windows session could open the vault.
+//   * Passphrase always works, and is the fallback when Hello is unavailable or declined.
+//   * Locking, resetting the vault, or letting the remember window lapse clears it — a lock means
+//     "ask me next time", exactly as a user expects.
+const REMEMBER_ENTRY: &str = "unlock-remember";
+
+fn remember_read() -> Option<i64> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, REMEMBER_ENTRY).ok()?;
+    entry.get_password().ok()?.trim().parse::<i64>().ok()
+}
+fn remember_clear() {
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, REMEMBER_ENTRY) {
+        let _ = entry.delete_credential();
+    }
+}
+
+/// Turn "stay unlocked on this device" on (for `days`) or off (`days == 0`). Requires an unlocked app,
+/// so it can only ever be enabled by someone who just proved they know the passphrase.
+#[tauri::command]
+fn set_remember_unlock(state: State<AppState>, days: u64) -> Result<(), String> {
+    require_unlocked(&state)?;
+    if days == 0 {
+        remember_clear();
+        return Ok(());
+    }
+    let until = now_secs() + (days.min(90) as i64) * 86_400; // hard cap: 90 days
+    keyring::Entry::new(KEYRING_SERVICE, REMEMBER_ENTRY)
+        .map_err(|e| e.to_string())?
+        .set_password(&until.to_string())
+        .map_err(|e| e.to_string())
+}
+
+/// Is the remember window currently active? (Used to show the setting's state.)
+#[tauri::command]
+fn remember_unlock_active() -> bool {
+    remember_read().map(|until| until > now_secs()).unwrap_or(false)
+}
+
+// --- "Let the browser use the vault without opening this app" (opt-in, ADR-0031) --------------
+// The bridge used to require this app to be open AND unlocked, so browser-only use began with
+// "open the app and unlock it" every single time. The app was never what protected the vault — the
+// data key lives in the Credential Locker — so the host can prove presence itself with Windows Hello.
+// This switch is what the user turns on to allow that; the host then asks Hello once per short window.
+const BRIDGE_ENTRY: &str = "bridge-without-app";
+
+/// Allow (for `days`) or revoke (`days == 0`) app-free bridging. Requires an unlocked app, so only
+/// someone who just proved they know the passphrase can grant it.
+#[tauri::command]
+fn set_bridge_without_app(state: State<AppState>, days: u64) -> Result<(), String> {
+    require_unlocked(&state)?;
+    let entry = keyring::Entry::new(KEYRING_SERVICE, BRIDGE_ENTRY).map_err(|e| e.to_string())?;
+    if days == 0 {
+        let _ = entry.delete_credential();
+        return Ok(());
+    }
+    let until = now_secs() + (days.min(365) as i64) * 86_400;
+    entry.set_password(&until.to_string()).map_err(|e| e.to_string())
+}
+
+/// Is app-free bridging currently allowed?
+#[tauri::command]
+fn bridge_without_app_active() -> bool {
+    keyring::Entry::new(KEYRING_SERVICE, BRIDGE_ENTRY)
+        .ok()
+        .and_then(|e| e.get_password().ok())
+        .and_then(|s| s.trim().parse::<i64>().ok())
+        .map(|until| until > now_secs())
+        .unwrap_or(false)
+}
+
+/// Ask Windows Hello to verify the person in front of the machine. Returns Ok(true) only on a real
+/// "Verified" result; anything else (declined, no biometrics/PIN enrolled, device unsupported) is a
+/// plain false so the caller falls back to the passphrase.
+#[cfg(windows)]
+fn hello_verify(reason: &str) -> bool {
+    use windows::core::HSTRING;
+    use windows::Security::Credentials::UI::{UserConsentVerifier, UserConsentVerificationResult};
+    let msg = HSTRING::from(reason);
+    match UserConsentVerifier::RequestVerificationAsync(&msg) {
+        Ok(op) => matches!(op.get(), Ok(UserConsentVerificationResult::Verified)),
+        Err(_) => false,
+    }
+}
+#[cfg(not(windows))]
+fn hello_verify(_reason: &str) -> bool { false }
+
+/// Unlock without the passphrase, IF the user opted in and Windows Hello verifies them now.
+/// Returns false when the app should show the passphrase screen (the default path).
+#[tauri::command]
+fn unlock_with_hello(state: State<AppState>) -> Result<bool, String> {
+    match remember_read() {
+        Some(until) if until > now_secs() => {}
+        Some(_) => { remember_clear(); return Ok(false); }   // window lapsed — ask for the passphrase
+        None => return Ok(false),                            // not opted in
+    }
+    if !hello_verify("Unlock your PolyglotFormFill vault") {
+        return Ok(false);                                    // declined / unavailable → passphrase
+    }
+    *state.unlocked.lock().unwrap() = true;
+    touch_session(&state.data_dir);
+    Ok(true)
 }
 
 /// Forgot-passphrase recovery (parity with the extension's resetVault). Erases the passphrase
@@ -145,6 +258,7 @@ fn reset_vault(app: tauri::AppHandle, state: State<AppState>) -> Result<(), Stri
     let _ = std::fs::remove_file(dir.join("vault.db")); // encrypted data
     let _ = std::fs::remove_file(dir.join("vault.db.v2bak")); // prior-format backup
     clear_session(&dir);
+    remember_clear();
     *state.unlocked.lock().unwrap() = false;
     // Relaunch so the store re-opens empty and the UI returns to first-run setup.
     app.restart();
@@ -1444,6 +1558,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             reset_vault,
+            set_remember_unlock,
+            set_bridge_without_app,
+            bridge_without_app_active,
+            remember_unlock_active,
+            unlock_with_hello,
             core_modules,
             demo_autofill,
             create_profile,

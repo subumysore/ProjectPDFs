@@ -373,6 +373,80 @@ pub fn session_fresh(dir: &Path, now: i64) -> bool {
     is_fresh(ts, now, SESSION_MAX_AGE_SECS)
 }
 
+// --- Bridge WITHOUT the desktop app (opt-in) --------------------------------------------------
+// Requiring the desktop app to be open AND unlocked before the extension may touch the shared vault
+// makes browser-only use miserable: every fill starts with "open the app and unlock it". The app is
+// not what protects the vault, though — the data key lives in the Windows Credential Locker, and the
+// passphrase screen was merely the thing that happened to prove presence.
+//
+// So the bridge can prove presence itself: the user opts in (in the desktop app, while unlocked),
+// and from then on the host asks Windows Hello — face/fingerprint/PIN — the first time the browser
+// needs the vault, then serves it for a short window without prompting again. Closing the browser or
+// letting the window lapse means the next request prompts again.
+//
+// Deliberately: OPT-IN and off by default · never silent (Hello every window) · a desktop lock still
+// wins immediately · the window is minutes, not days.
+
+/// How long one Hello consent lets the bridge serve the vault.
+pub const BRIDGE_SESSION_SECS: i64 = 15 * 60;
+/// Credential-Locker entry recording that the user allowed app-free bridging, and until when.
+pub const BRIDGE_SERVICE: &str = "com.projectpdfs.app";
+pub const BRIDGE_ENTRY: &str = "bridge-without-app";
+
+/// Has the user opted in, and is that permission still valid?
+pub fn bridge_opt_in(now: i64) -> bool {
+    keyring::Entry::new(BRIDGE_SERVICE, BRIDGE_ENTRY)
+        .ok()
+        .and_then(|e| e.get_password().ok())
+        .and_then(|s| s.trim().parse::<i64>().ok())
+        .map(|until| until > now)
+        .unwrap_or(false)
+}
+
+/// Is a Hello-approved bridge window currently open?
+pub fn bridge_session_fresh(dir: &Path, now: i64) -> bool {
+    let ts = std::fs::read_to_string(dir.join("bridge-session.flag"))
+        .ok()
+        .and_then(|s| s.trim().parse::<i64>().ok());
+    is_fresh(ts, now, BRIDGE_SESSION_SECS)
+}
+
+fn bridge_session_write(dir: &Path, now: i64) {
+    let _ = std::fs::write(dir.join("bridge-session.flag"), now.to_string());
+}
+
+/// Ask Windows Hello to confirm the person present. Any non-"Verified" outcome (declined, nothing
+/// enrolled, unsupported device) is a plain false, so the caller falls back to "open the app".
+#[cfg(windows)]
+pub fn hello_verify(reason: &str) -> bool {
+    use windows::core::HSTRING;
+    use windows::Security::Credentials::UI::{UserConsentVerificationResult, UserConsentVerifier};
+    match UserConsentVerifier::RequestVerificationAsync(&HSTRING::from(reason)) {
+        Ok(op) => matches!(op.get(), Ok(UserConsentVerificationResult::Verified)),
+        Err(_) => false,
+    }
+}
+#[cfg(not(windows))]
+pub fn hello_verify(_reason: &str) -> bool {
+    false
+}
+
+/// May the vault be served right now? In order: the desktop app is unlocked (unchanged behaviour) →
+/// a Hello-approved bridge window is still open → the user opted in, so ask Hello once now.
+pub fn may_serve(dir: &Path, now: i64) -> bool {
+    if session_fresh(dir, now) {
+        return true;
+    }
+    if bridge_session_fresh(dir, now) {
+        return true;
+    }
+    if bridge_opt_in(now) && hello_verify("Let your browser use your PolyglotFormFill vault") {
+        bridge_session_write(dir, now);
+        return true;
+    }
+    false
+}
+
 /// Gate every request that touches the vault on the desktop app being unlocked. `ping` is always
 /// allowed (so the extension can detect the bridge and show a helpful "unlock the desktop app"
 /// message); everything else requires a fresh session.
@@ -478,5 +552,39 @@ mod dispatch_tests {
         // allowed while unlocked
         assert!(dispatch_gated(&s, &json!({"type":"createProfile","id":"p1","name":"A"}), true)["ok"].as_bool().unwrap());
         assert!(dispatch_gated(&s, &json!({"type":"listProfiles"}), true)["ok"].as_bool().unwrap());
+    }
+}
+
+#[cfg(test)]
+mod bridge_tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn a_hello_window_lets_the_bridge_serve_without_the_app() {
+        let dir = std::env::temp_dir().join(format!("ppf-bridge-{}", std::process::id()));
+        let _ = fs::create_dir_all(&dir);
+        let now = 1_000_000i64;
+        // No app sentinel and no bridge window: nothing may be served.
+        assert!(!session_fresh(&dir, now));
+        assert!(!bridge_session_fresh(&dir, now));
+        // A fresh bridge window (as written after a Hello approval) serves without the app.
+        fs::write(dir.join("bridge-session.flag"), now.to_string()).unwrap();
+        assert!(bridge_session_fresh(&dir, now));
+        assert!(bridge_session_fresh(&dir, now + BRIDGE_SESSION_SECS - 1));
+        // ...and lapses, so presence must be proven again.
+        assert!(!bridge_session_fresh(&dir, now + BRIDGE_SESSION_SECS + 1));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_desktop_app_being_unlocked_still_wins_on_its_own() {
+        let dir = std::env::temp_dir().join(format!("ppf-bridge2-{}", std::process::id()));
+        let _ = fs::create_dir_all(&dir);
+        let now = 2_000_000i64;
+        fs::write(dir.join("app-session.flag"), now.to_string()).unwrap();
+        assert!(session_fresh(&dir, now));
+        assert!(may_serve(&dir, now)); // no Hello prompt needed on this path
+        let _ = fs::remove_dir_all(&dir);
     }
 }

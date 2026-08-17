@@ -3,7 +3,7 @@
 //! on-device vault; if it isn't there yet, every request answers with a clear error.
 use std::io::{self, Write};
 
-use native_host::{data_dir, dispatch_gated, frame, open_store, session_fresh};
+use native_host::{data_dir, dispatch_gated, frame, may_serve, open_store};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn now_secs() -> i64 {
@@ -20,8 +20,10 @@ fn main() {
 
     while let Ok(Some(buf)) = frame::read_message(&mut input) {
         let req: serde_json::Value = serde_json::from_slice(&buf).unwrap_or(serde_json::json!({}));
-        // Serve the vault only while the desktop app is unlocked (fresh session sentinel).
-        let unlocked = session_fresh(&dir, now_secs());
+        // Serve the vault when the desktop app is unlocked OR when the user has allowed app-free
+        // bridging and Windows Hello confirms them (see may_serve). Browser-only use no longer needs
+        // the desktop app open.
+        let unlocked = may_serve(&dir, now_secs());
         let resp = match &store {
             Ok(s) => dispatch_gated(s, &req, unlocked),
             Err(e) => serde_json::json!({

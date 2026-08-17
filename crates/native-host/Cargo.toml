@@ -21,3 +21,8 @@ dirs = "5"
 # Read-only access to the browser own autofill store (Chromium keeps it as SQLite). Bundled so
 # the host never depends on a system sqlite being present.
 rusqlite = { version = "0.32", features = ["bundled"] }
+
+[target.'cfg(windows)'.dependencies]
+# Windows Hello (UserConsentVerifier) so the bridge can serve the shared vault with the desktop app
+# CLOSED — presence is proven per session instead of by "the app happens to be unlocked".
+windows = { version = "0.58", features = ["Security_Credentials_UI", "Foundation"] }
