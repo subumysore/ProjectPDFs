@@ -758,6 +758,20 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // fields) block paste and ignore a bulk value-set, only accepting input that arrives as real typing
   // — per-character keydown/beforeinput/input/keyup with the value growing one char at a time. This
   // mirrors a human typing, so those fields register the value and their on-key validators run.
+  // Is this input the SEARCH box of a dropdown/combobox widget (Ant, react-select, ng-select, an ARIA
+  // combobox) rather than a plain text field? Such a box is transient: the widget wipes it after a
+  // selection, so nothing may treat that wipe as a lost value.
+  const isChooserSearchBox = (el) => {
+    try {
+      if (!el || el.tagName !== "INPUT") return false;
+      if (el.getAttribute("role") === "combobox") return true;
+      const aa = el.getAttribute("aria-autocomplete");
+      if (aa === "list" || aa === "both") return true;
+      if (el.getAttribute("aria-haspopup") === "listbox" || el.getAttribute("aria-expanded") != null) return true;
+      return !!el.closest('.ant-select, [class*="ant-select"], [class*="react-select"], [class*="ng-select"], ' +
+        'mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]');
+    } catch (_) { return false; }
+  };
   const typeFieldValue = async (el, value) => {
     const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
@@ -882,7 +896,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       // is the visible "dancing" in a phone box. Still re-types whenever the value genuinely did not stick.
       if (rejected()) { await wait(150); if (rejected()) await typeFieldValue(el, want); }
       if (el.value) { filled++; markFilled(el); }
-      _keepAlive.push({ el, want }); // watch for an async framework revert (see keep-alive below)
+      // Watch for an async framework revert — but NEVER on a combobox SEARCH box. Such a widget clears
+      // its search text by design once an option is chosen, which the revert check reads as "our value
+      // was dropped": we then re-type the whole term, it clears again, and the field visibly dances for
+      // several seconds (measured on Dayforce: 4 extra 14-character bursts over 8s). The chooser pass
+      // owns those widgets and confirms them by selecting an option, so they need no keep-alive.
+      if (!isChooserSearchBox(el)) _keepAlive.push({ el, want });
     }
   }
 
@@ -1039,18 +1058,37 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
         if (box) {
           const setV = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-          // For a dial list, search by the COUNTRY NAME — these widgets filter on the name, not on "+1".
-          const typed = mustFilterDial
-            ? String(atoms.country || atoms.nationality)
-            : cands.slice().sort((a, b) => b.length - a.length)[0];
-          box.focus(); setV.call(box, typed);
-          box.dispatchEvent(new Event("input", { bubbles: true }));
-          box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
-          await wait(260);
-          const after = bestOf(readOpts());
-          // Keep the better of before/after: filtering must never LOSE a match we already had.
-          if (after.b >= best) ({ o: opt, b: best } = after);
-          if (best < 2) { setV.call(box, ""); box.dispatchEvent(new Event("input", { bubbles: true })); } // remove typed garbage
+          const clearBox = async () => {
+            setV.call(box, "");
+            box.dispatchEvent(new Event("input", { bubbles: true }));
+            await wait(160);
+          };
+          const search = async (term) => {
+            box.focus(); setV.call(box, term);
+            box.dispatchEvent(new Event("input", { bubbles: true }));
+            box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+            await wait(260);
+            const rows = readOpts();
+            // A term the widget cannot search on (Dayforce filters by NAME, so "+1" matches nothing)
+            // leaves it showing "no data" — and a widget left in that state accepts nothing afterwards.
+            // Undo it before trying the next term, so a failed attempt costs nothing.
+            if (!rows.length) { await clearBox(); return { o: null, b: 0 }; }
+            return bestOf(rows);
+          };
+          // For a DIAL list, narrow by the CODE FIRST ("+1" → only the +1 countries, which is the set
+          // the user cares about), then by the country NAME if the widget doesn't search on codes or
+          // the code alone still leaves the right row out of reach. Each attempt stops the moment we
+          // have a country-specific match (score 3), so we type as little as possible.
+          const terms = mustFilterDial
+            ? ["+" + dialWanted, dialWanted, String(atoms.country || atoms.nationality)]
+            : [cands.slice().sort((a, b) => b.length - a.length)[0]];
+          for (const term of terms) {
+            if (!term) continue;
+            const after = await search(term);
+            if (after.b >= best) ({ o: opt, b: best } = after);  // filtering must never LOSE a match
+            if (best >= 3) break;                                 // exact country row in hand — stop typing
+          }
+          if (best < 2) await clearBox(); // nothing matched — leave no typed text behind
         }
       }
       if (best >= 2 && opt) {
