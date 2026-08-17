@@ -308,7 +308,43 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
     return age >= 0 && age < 150 ? String(age) : null;
   };
+  // A form that splits the phone into "Country dialing code" + "Number" (Dayforce/Ceridian, Workday,
+  // many ATS) leaves the code box EMPTY unless the vault happens to store one — and an empty code
+  // makes the whole phone invalid on submit. Derive it instead: from a stored phone written in
+  // international form (+1 919…), else from the user's country. No country we know → return nothing
+  // and leave the box alone, exactly as before.
+  const DIAL_CODE = {
+    "united states": "+1", "united states of america": "+1", america: "+1", usa: "+1", us: "+1", canada: "+1",
+    "united kingdom": "+44", "great britain": "+44", england: "+44", uk: "+44", gb: "+44",
+    india: "+91", australia: "+61", "new zealand": "+64", germany: "+49", france: "+33", spain: "+34",
+    italy: "+39", netherlands: "+31", ireland: "+353", "south africa": "+27", nigeria: "+234", kenya: "+254",
+    singapore: "+65", "united arab emirates": "+971", "saudi arabia": "+966", qatar: "+974", japan: "+81",
+    china: "+86", "south korea": "+82", brazil: "+55", mexico: "+52", pakistan: "+92", bangladesh: "+880",
+    "sri lanka": "+94", nepal: "+977", philippines: "+63", switzerland: "+41", sweden: "+46", norway: "+47",
+    denmark: "+45", poland: "+48", portugal: "+351", "hong kong": "+852", malaysia: "+60", indonesia: "+62",
+  };
+  // +1 is shared by the US, Canada, Antigua, the Bahamas and a dozen more; +7 by Russia and Kazakhstan.
+  // So a dial-code list must be disambiguated by WHICH country the user is in — otherwise the first
+  // matching row wins and a US user silently gets Antigua (seen on Dayforce, whose options are
+  // "🇦🇬 +1" with the ISO code in the option's value).
+  const countryTokens = () => {
+    const c = norm(atoms.country || atoms.nationality || "");
+    if (!c) return [];
+    const toks = [c];
+    for (const code of COUNTRY_ABBR[c] || []) toks.push(code.toLowerCase());
+    return toks;
+  };
+  const derivedDialCode = () => {
+    const stored = (atoms.phonecc || "").toString().trim();
+    if (stored) return stored;
+    const intl = [atoms.cellphone, atoms.phone, atoms.homephone].map((v) => (v || "").toString().trim())
+      .find((v) => v.startsWith("+"));
+    if (intl) { const m = intl.match(/^\+(\d{1,3})/); if (m) return "+" + m[1]; }
+    const c = norm(atoms.country || atoms.nationality || "");
+    return DIAL_CODE[c] || "";
+  };
   const atomVal = (key) => {
+    if (key === "phonecc") return derivedDialCode();
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
     if (key === "nationality") return atoms.nationality ?? atoms.country;
@@ -841,7 +877,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         if (wantDigits && wantDigits.length >= 4) return !cur.replace(/\D/g, "").includes(wantDigits.slice(-4)); // numeric (phone) — last 4 must be present
         return cur.trim() === "";                        // text — only retry if left blank
       };
-      if (rejected()) { await wait(30); if (rejected()) await typeFieldValue(el, want); }
+      // Give a re-rendering widget a moment to settle before deciding it dropped our value: at 30ms we
+      // were racing the widget mid-render and re-typing a value that was about to appear anyway — which
+      // is the visible "dancing" in a phone box. Still re-types whenever the value genuinely did not stick.
+      if (rejected()) { await wait(150); if (rejected()) await typeFieldValue(el, want); }
       if (el.value) { filled++; markFilled(el); }
       _keepAlive.push({ el, want }); // watch for an async framework revert (see keep-alive below)
     }
@@ -875,7 +914,21 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // USA<->United States, US state name<->abbrev, phone country code).
     const cands = expandCands(pick, value);
     const opts = [...sel.options];
-    const match = opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
+    // A dialling-code list ("US +1", "IN +91", "+44") shares no words with the value, so match it on
+    // the CODE itself — exactly, so "+1" never picks "+212". Same rule as the custom-dropdown path.
+    const dialWant = pick && pick.key === "phonecc" ? String(value).replace(/\D/g, "") : "";
+    const dialOf = (t) => { const m = String(t || "").match(/\+\s?(\d{1,4})/) || String(t || "").match(/^\(?\+?(\d{1,4})\)?$/); return m ? m[1] : null; };
+    // Among the rows carrying the right code, prefer the user's own country (ISO in the value or the
+    // name in the text); fall back to the first code match only when we don't know the country.
+    const ctoks = dialWant ? countryTokens() : [];
+    const dialRank = (o) => {
+      if (dialOf(o.textContent) !== dialWant && dialOf(o.value) !== dialWant) return 0;
+      const v = String(o.value || "").toLowerCase(), t = norm(o.textContent || "");
+      return ctoks.some((k) => v === k || t === k || t.includes(k)) ? 2 : 1;
+    };
+    const match = dialWant
+      ? opts.filter((o) => dialRank(o) > 0).sort((a, b) => dialRank(b) - dialRank(a))[0]
+      : opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
     if (match) {
       sel.value = match.value;
       sel.dispatchEvent(new Event("input", { bubbles: true }));
@@ -927,7 +980,24 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // Score an option against the candidates: EXACT (3) > prefix (2) > containment (1).
     // Ranking (not first-match) is essential so "Male" (exact) beats "Female" — which
     // merely CONTAINS "male" (fe-male) — instead of whichever appears first in the list.
+    // A DIALLING-CODE list is scored on the code itself, not on word overlap: its options read
+    // "+1", "US +1", "United States (+1)", "🇺🇸 +1" — none of which share enough letters with "+1"
+    // for the generic scorer, which is why these widgets were left empty (and flagged invalid) while
+    // the number beside them filled. Exact code match only: "+1" must not accept "+12".
+    const dialWanted = pick && pick.key === "phonecc" ? String(value).replace(/\D/g, "") : "";
+    const dialToks = dialWanted ? countryTokens() : [];
+    const dialScore = (o) => {
+      const t = (o.textContent || "").trim();
+      const m = t.match(/\+\s?(\d{1,4})/) || t.match(/^\(?\+?(\d{1,4})\)?$/);
+      if (!m || m[1] !== dialWanted) return 0;
+      // Rows sharing a code (+1 = US, CA, AG, BS…) are separated by the user's country: the ISO code
+      // usually rides on the option's value / data-value / title, the name in its text.
+      const hay = [o.getAttribute && (o.getAttribute("data-value") || o.getAttribute("title") || o.getAttribute("value")), o.value, norm(t)]
+        .filter(Boolean).map((s) => String(s).toLowerCase());
+      return dialToks.some((k) => hay.some((h) => h === k || h.includes(k))) ? 3 : 2;
+    };
     const scoreOpt = (o) => {
+      if (dialWanted) return dialScore(o);
       const ot = n2((o.textContent || "").trim());
       let best = 0;
       for (const cv of cands) {
@@ -958,17 +1028,28 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       let { o: opt, b: best } = bestOf(initial);
       // Only if the widget reveals NO options until you type (a search-to-filter list) do we type —
       // and then still require a real match, and CLEAR the box if nothing matches (no leftover text).
-      if (best < 2 && initial.length === 0) {
+      // A DIAL-CODE list is the other case that must type: it holds every country in the world and is
+      // VIRTUALISED, so only the first handful of rows exist in the DOM — the user's row is simply not
+      // there to be matched, and whatever we pick comes from the alphabetical head of the list (this is
+      // how a US user ended up with Antigua). Typing the country name filters it to a few real rows,
+      // which also leaves the list filtered if the user opens it to check.
+      const mustFilterDial = dialWanted && best < 3 && countryTokens().length > 0;
+      if ((best < 2 && initial.length === 0) || mustFilterDial) {
         const box = h.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio])')
           || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
         if (box) {
           const setV = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-          const typed = cands.slice().sort((a, b) => b.length - a.length)[0];
+          // For a dial list, search by the COUNTRY NAME — these widgets filter on the name, not on "+1".
+          const typed = mustFilterDial
+            ? String(atoms.country || atoms.nationality)
+            : cands.slice().sort((a, b) => b.length - a.length)[0];
           box.focus(); setV.call(box, typed);
           box.dispatchEvent(new Event("input", { bubbles: true }));
           box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
           await wait(260);
-          ({ o: opt, b: best } = bestOf(readOpts()));
+          const after = bestOf(readOpts());
+          // Keep the better of before/after: filtering must never LOSE a match we already had.
+          if (after.b >= best) ({ o: opt, b: best } = after);
           if (best < 2) { setV.call(box, ""); box.dispatchEvent(new Event("input", { bubbles: true })); } // remove typed garbage
         }
       }
