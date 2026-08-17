@@ -874,6 +874,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       value = atomVal(pick.key);
     }
     if (_diag) _diag.push({ label: String(label || "").replace(/\s+/g, " ").trim().slice(0, 48), concept: (pick && pick.key) || (forced != null ? "(own-key)" : null), resolved: value ? String(value).slice(0, 24) : "(EMPTY)", ctrl: el.type || el.tagName });
+    // TODAY'S DATE is the one value that is always available, so a loose match on the application-date
+    // concept can never come up empty — it stamps a date wherever it lands. On a dense form, labelOf()
+    // can pick up wording from neighbouring elements, and that is how "LinkedIn Profile", "Fax" and
+    // "County" all received today's date on a live application. Require the field's OWN identity (its
+    // label/name/id/placeholder) to actually mention a date before writing one.
+    if (pick && pick.key === "appdate" && !/date|dated|dt\b/i.test(norm(ownLabel(el)) + " " + norm(label))) continue;
     if (!value) continue;
     // A YEAR box (labelled "year"/"YYYY") may only receive a 4-digit year — a street address or any
     // other value must never land in a From/To Year field; pull the year out of a date, else skip.

@@ -58,6 +58,32 @@ function hasValue(el) {
   const v = (el.value || "").trim();
   if (v === "") return false;
   if (el.type === "tel" && /^\+\d{1,4}$/.test(v.replace(/\s+/g, ""))) return false;
+  // A custom chooser (Ant/react-select/ng-select/ARIA combobox) keeps its INPUT empty by design — the
+  // chosen value lives in the widget's selection node. Reading only the input reported every such field
+  // as "not filled", which made the whole assessment untrustworthy: Country, State and the dialling
+  // codes were all shown as empty while visibly holding the right answer.
+  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="ng-select"], ' +
+    'mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]';
+  // The element may BE inside the widget, or it may be the framework's hidden mirror input that lives
+  // beside it (Dayforce keeps "…CountryCode" outside the widget and holds the code there). So also look
+  // for a chooser inside this field's own group — and only when the group holds exactly one, so a value
+  // can never be attributed to the wrong control.
+  let chooser = el.closest && el.closest(CHOOSER_SEL);
+  if (!chooser && el.closest) {
+    const group = el.closest('[class*="form-item"], [class*="form-group"], [class*="field"], label');
+    const near = group ? group.querySelectorAll(CHOOSER_SEL) : [];
+    if (near.length === 1) chooser = near[0];
+  }
+  if (chooser) {
+    const sel = chooser.querySelector('[class*="selection-item"], [class*="single-value"], [class*="selected-value"], [class*="value-label"]');
+    let t = ((sel && sel.textContent) || "").replace(/\s+/g, " ").trim();
+    if (!t) {
+      t = (chooser.textContent || "").replace(/\s+/g, " ").trim();
+      if (t.length % 2 === 0 && t.slice(0, t.length / 2) === t.slice(t.length / 2)) t = t.slice(0, t.length / 2).trim();
+    }
+    if (t && !/^(select|choose|please select|pick|--+|—|-)\s*(\.{3}|…)?$/i.test(t)) return true;
+    if (!v) return false;
+  }
   if (el.tagName === "SELECT") {
     // an unchosen select sits on its placeholder/first empty option
     if (v === "" ) return false;
@@ -110,6 +136,38 @@ export function assessForm(opts = {}) {
       filled: hasValue(el),
       value: hasValue(el) ? String(el.value).slice(0, 60) : "",
     });
+  }
+
+  // CUSTOM CHOOSERS are controls too, and their chosen value lives in the widget — not in any <input>.
+  // Frameworks also keep a hidden mirror input beside the widget (Dayforce's "…CountryCode"), so the
+  // loop above can log a field as empty while the widget visibly holds the answer: Country, State and
+  // both dialling codes were reported unfilled on a form where all four were correct. Read the widget
+  // itself and let it correct (or add) the item for that label.
+  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="ng-select"], ' +
+    'mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]';
+  const PLACEHOLDER = /^(select(\s+(one|an option|a value))?|choose(\s+one)?|please select|pick one|--+|—|-)\s*(\.{3}|…)?$/i;
+  const seenChooser = [];
+  for (const w of deepQSA(CHOOSER_SEL)) {
+    if (w.tagName === "SELECT" || w.closest("select") || !visible(w)) continue;
+    if (w.closest("nav, header, [role=menubar], [role=navigation]")) continue;   // page chrome, not a field
+    if (seenChooser.some((s) => s.contains(w) || w.contains(s))) continue;       // one row per nested widget
+    seenChooser.push(w);
+    const selNode = w.querySelector('[class*="selection-item"], [class*="single-value"], [class*="selected-value"], [class*="value-label"]');
+    let val = ((selNode && selNode.textContent) || "").replace(/\s+/g, " ").trim();
+    if (!val) {
+      val = (w.textContent || "").replace(/\s+/g, " ").trim();
+      if (val.length % 2 === 0 && val.slice(0, val.length / 2) === val.slice(val.length / 2)) val = val.slice(0, val.length / 2).trim();
+    }
+    if (PLACEHOLDER.test(val)) val = "";
+    const group = w.closest('[class*="form-item"], [class*="form-group"], [class*="field"], label') || w.parentElement;
+    const inner = group ? group.querySelector("input, textarea, select") : null;
+    const label = (inner && askLabel(inner)) || askLabel(w) || "(unlabelled)";
+    // Repeated labels are normal ("Country dialing code" beside both the home and the mobile number),
+    // so claim the first item with this label that is still unfilled — otherwise the second widget's
+    // answer is dropped onto the first, already-filled row and the second reads as empty.
+    const existing = items.find((i) => i.label === label && !i.filled) || items.find((i) => i.label === label);
+    if (existing) { if (val && !existing.filled) { existing.filled = true; existing.value = val.slice(0, 60); } }
+    else items.push({ label, kind: "chooser", required: !!(inner && isRequired(inner)), filled: !!val, value: val.slice(0, 60) });
   }
 
   const total = items.length;
