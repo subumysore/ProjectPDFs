@@ -862,6 +862,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // concept it matched and the value that resolved, so a real session can be inspected when a fill that
   // works in tests doesn't work on a specific page. Reported on window.__ppfDiag + console at the end.
   const _diag = OPTS.diag ? [] : null;
+  const _chooserLog = [];  // chooser decisions, for OPTS.diag
   const _keepAlive = []; // {el, want} for text fields — re-applied if a framework reverts the write
   for (const { el, label, pick, forced } of fields) {
     let value;
@@ -985,7 +986,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // chooser (standard roles / common widget roots), open it, then click the option whose
   // VISIBLE TEXT matches the value. Only widgets that resolve to a concept + have a value are
   // opened, so unrelated menus are never touched.
-  const hosts = [...deepQSA(
+  // Collected from the LIVE DOM each time it is called: these frameworks REPLACE a dependent widget's
+  // node when its parent changes, so a list captured once goes stale.
+  const chooserHosts = () => [...deepQSA(
     'ng-select, mat-select, [role="combobox"], [aria-haspopup="listbox"], [aria-haspopup="menu"], ' +
     '[class*="ng-select"], [class*="mat-select"], [class*="react-select"], [class*="dropdown-toggle"], [class*="ant-select"], [class*="p-dropdown"], ' +
     '[class*="combobox"], [class*="Combobox"], [class*="-select"], [class*="Select"], [class*="dropdown"], [class*="Dropdown"]',
@@ -998,21 +1001,22 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const t = (h.textContent || "").trim().replace(/\s+/g, " ");
     return t.length <= 40 && (t === "" || /^(select|choose|please select|pick|—|-)\b/i.test(t) || /select an option|select\.\.\.|choose an option/i.test(t));
   });
+  const hosts = chooserHosts();
   const seen = new Set();
-  for (const h of hosts) {
-    if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
-    seen.add(h);
+  const _chooserRetry = [];   // widgets that resolved to a concept but could not be set on the first try
+  // One widget's whole attempt, as a function so the targeted retry below can run it again unchanged.
+  const fillChooser = async (h) => {
     let pick = null;
     const label = labelOf(h);
-    if (officeUse(ownLabel(h))) continue; // an office-use chooser is not the applicant's to set
+    if (officeUse(ownLabel(h))) return; // an office-use chooser is not the applicant's to set
     let value = eduValueFor(h, label); // education chooser (Degree, University) → the routed value
     if (value == null) {
       let top = 0;
       for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
-      if (!pick || top < 1.5) continue;
+      if (!pick || top < 1.5) return;
       value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
     }
-    if (!value) continue;
+    if (!value) return;
     // Candidate strings to type/match: the value plus expansions (gender M<->Male; country
     // abbrev/demonym -> full name; US state name<->abbrev; phone country code).
     const cands = expandCands(pick, String(value));
@@ -1053,20 +1057,88 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       return best;
     };
     try {
-      const opener = h.querySelector('input, [role="combobox"], [class*="control"], [class*="selection"], [class*="toggle"], [class*="trigger"]') || h;
-      opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-      opener.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-      if (opener.click) opener.click();
-      opener.focus && opener.focus();
-      await wait(200); // let the option list render (overlays may attach to <body>)
-      const readOpts = () => [...deepQSA(
-        '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]',
-      )].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
-      const bestOf = (list) => { let o = null, b = 0; for (const x of list) { const s = scoreOpt(x); if (s > b) { b = s; o = x; } } return { o, b }; };
+      // WHICH element opens the widget differs by library: many open on the SELECTOR/control box and
+      // ignore a click on their inner search input (that input only becomes live once the list is
+      // already open). Clicking the input first therefore left some widgets closed, we then read zero
+      // options and gave up — State/Province stayed empty for exactly this reason. So try each plausible
+      // opener in turn and VERIFY by looking for options, instead of assuming the first one worked.
+      const openerCands = [
+        h.querySelector('[class*="selector"], [class*="control"], [class*="selection"], [class*="toggle"], [class*="trigger"]'),
+        h.querySelector('[role="combobox"]'),
+        h.querySelector("input"),
+        h,
+      ].filter((x, i, a) => x && a.indexOf(x) === i);
+      let opener = openerCands[0] || h;
+      const poke = (el) => {
+        for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) {
+          try { el.dispatchEvent(t.startsWith("pointer") ? new Event(t, { bubbles: true }) : new MouseEvent(t, { bubbles: true })); } catch (_) { /* ignore */ }
+        }
+        try { el.focus && el.focus(); } catch (_) { /* ignore */ }
+        // ARIA comboboxes that ignore clicks open on ArrowDown.
+        try { el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })); } catch (_) { /* ignore */ }
+      };
+      // Read options from THIS widget's own popup. The selectors below ("menu-item", "dropdown-item")
+      // also match site navigation, and an unscoped read scored a site's nav menu ("Search Jobs",
+      // "Recommended Jobs") as if it were the State list — so the real list was never seen and the field
+      // stayed empty. Prefer the panel the widget POINTS AT (aria-controls / aria-owns), then a visible
+      // listbox panel, and never accept anything inside site chrome.
+      const OPT_SEL = '[role="option"], .ng-option, mat-option, .ant-select-item-option, .p-dropdown-item, ' +
+        'li[role="option"], [class*="option"]:not([class*="options"]), [class*="dropdown-item"], [class*="menu-item"]';
+      const panelOf = () => {
+        const id = opener.getAttribute && (opener.getAttribute("aria-controls") || opener.getAttribute("aria-owns"));
+        const byId = id && document.getElementById(id);
+        if (byId) return byId;
+        const panels = [...deepQSA('[role="listbox"], [class*="select-dropdown"]:not([class*="hidden"]), .ng-dropdown-panel, [class*="dropdown-menu"]:not([hidden])')]
+          .filter((x) => x.offsetParent !== null && x.querySelector(OPT_SEL));
+        return panels[panels.length - 1] || null;
+      };
+      const readOpts = () => {
+        const panel = panelOf();
+        const list = panel ? [...panel.querySelectorAll(OPT_SEL)] : [...deepQSA(OPT_SEL)];
+        return list.filter((o) => o.offsetParent !== null && (o.textContent || "").trim() &&
+          !o.closest('nav, header, [role="menubar"], [role="navigation"]'));
+      };
+      // Open it: try each candidate opener until options actually appear.
+      for (const cand of openerCands) {
+        opener = cand;
+        poke(cand);
+        await wait(220);
+        if (readOpts().length) break;
+      }
+      // Ties are broken by CLOSENESS to the value, not by list order: "United States" prefix-matches
+      // both "United States of America" and "United States Minor Outlying Islands", and taking the first
+      // gave a US applicant the Minor Outlying Islands — which then left State/Province empty, because
+      // these forms derive the state list from the chosen country.
+      const closeness = (o) => {
+        const ot = n2((o.textContent || "").trim());
+        let d = Infinity;
+        for (const cv of cands) { const c = n2(cv); if (c) d = Math.min(d, Math.abs(ot.length - c.length)); }
+        return d;
+      };
+      const bestOf = (list) => {
+        let o = null, b = 0, d = Infinity;
+        for (const x of list) {
+          const s = scoreOpt(x); if (!s) continue;
+          const c = closeness(x);
+          if (s > b || (s === b && c < d)) { b = s; o = x; d = c; }
+        }
+        return { o, b };
+      };
       // Match among the options shown ON OPEN — WITHOUT speculative typing. Typing a guessed value
       // (a name the concept mis-picked) into a Yes/No question box is exactly how "Mysore" landed in
       // a "government official?" dropdown. Only require a real EXACT/PREFIX match (score >= 2), never
       // a loose containment, so a wrong guess simply selects nothing.
+      // A DEPENDENT list (State from Country, City from State, Model from Make) is refetched when its
+      // parent changes — and we usually set the parent moments ago, so the list can still be empty or a
+      // stub. If it looks unpopulated, wait and re-open once before judging it. Keyed off "the list is
+      // suspiciously small", never off which field this is.
+      if (readOpts().length < 5) {
+        await wait(800);
+        opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        opener.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        if (opener.click) opener.click();
+        await wait(400);
+      }
       const initial = readOpts();
       let { o: opt, b: best } = bestOf(initial);
       // Only if the widget reveals NO options until you type (a search-to-filter list) do we type —
@@ -1077,7 +1149,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       // how a US user ended up with Antigua). Typing the country name filters it to a few real rows,
       // which also leaves the list filtered if the user opens it to check.
       const mustFilterDial = dialWanted && best < 3 && countryTokens().length > 0;
-      if ((best < 2 && initial.length === 0) || mustFilterDial) {
+      // Long lists (countries, states, dialling codes) are virtualised or simply huge, so the row we want
+      // is often not rendered and a weaker rendered row wins. Whenever we do not already hold an EXACT
+      // match and the widget offers a search box, type the value to filter, then re-score.
+      if (best < 3 || (best < 2 && initial.length === 0) || mustFilterDial) {
         const box = h.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio])')
           || document.querySelector('.ng-dropdown-panel input, [class*="dropdown"] input, [role="listbox"] input');
         if (box) {
@@ -1103,9 +1178,11 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           // the user cares about), then by the country NAME if the widget doesn't search on codes or
           // the code alone still leaves the right row out of reach. Each attempt stops the moment we
           // have a country-specific match (score 3), so we type as little as possible.
+          // Otherwise search by the value itself, longest candidate first ("North Carolina" before "NC",
+          // "United States" before "US") — the longer term filters hardest and is what these lists index.
           const terms = mustFilterDial
             ? ["+" + dialWanted, dialWanted, String(atoms.country || atoms.nationality)]
-            : [cands.slice().sort((a, b) => b.length - a.length)[0]];
+            : cands.slice().sort((a, b) => String(b).length - String(a).length).slice(0, 2);
           for (const term of terms) {
             if (!term) continue;
             const after = await search(term);
@@ -1115,6 +1192,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           if (best < 2) await clearBox(); // nothing matched — leave no typed text behind
         }
       }
+      // Chooser widgets write nothing to a value attribute, so a failed one leaves no trace to inspect
+      // afterwards. Under OPTS.diag, record what each widget was offered and what it chose.
+      if (_diag) _chooserLog.push({ label: String(label || "").replace(/\s+/g, " ").trim().slice(0, 30),
+        want: String(value).slice(0, 22), rows: initial.length, rowsNow: readOpts().length,
+        sample: readOpts().slice(0, 3).map((o) => (o.textContent || "").trim().slice(0, 18)),
+        best, chose: opt ? (opt.textContent || "").trim().slice(0, 28) : null });
       if (best >= 2 && opt) {
         opt.scrollIntoView && opt.scrollIntoView({ block: "nearest" });
         opt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
@@ -1125,8 +1208,38 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       } else {
         document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
         opener.blur && opener.blur();
+        // Remember the LABEL, not the element: selecting the parent (Country) makes these frameworks
+        // re-render the dependent widget, so the node we hold is detached by the time we retry.
+        _chooserRetry.push(String(label || "").trim());
       }
     } catch (_) { /* leave this widget alone on any error */ }
+  };
+
+  for (const h of hosts) {
+    if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
+    seen.add(h);
+    await fillChooser(h);
+  }
+
+  // ONE targeted retry, only for the widgets that ended up with nothing. A chooser whose options are
+  // DERIVED from another field (State from Country, City from State, Model from Make) is refetched when
+  // that parent changes — which we did moments earlier — so its list can be empty on the first attempt
+  // and full a second later. Only the failures are revisited: a widget that already holds a value is
+  // never touched again, which is what stopped an earlier blanket second pass from overwriting good
+  // answers with whatever the list re-rendered.
+  if (_chooserRetry.length) {
+    await wait(1200);
+    // Drain into a snapshot: fillChooser pushes onto _chooserRetry when it fails, so iterating the live
+    // array would keep growing it and never finish. One retry per widget, and one only.
+    const pending = new Set(_chooserRetry.splice(0, _chooserRetry.length).filter(Boolean));
+    // Re-collect the widgets from the LIVE DOM (the old nodes may have been replaced by a re-render) and
+    // revisit only those whose label is one that failed AND that are still unset.
+    for (const h of chooserHosts()) {
+      try {
+        if (!pending.has(String(labelOf(h) || "").trim())) continue;
+        await fillChooser(h);
+      } catch (_) { /* a retry must never break the fill */ }
+    }
   }
 
   // ---- SAVED ANSWERS: screening / eligibility / EEO questions (radio, checkbox, <select>) ----------
@@ -1510,7 +1623,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       // isolated world it IS. This tells us whether the world:"MAIN" injection actually took effect.
       let world = "UNKNOWN";
       try { world = (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.id) ? "MAIN" : "ISOLATED"; } catch (_) { world = "MAIN"; }
-      window.__ppfDiag = { world, framesTop: window.top === window, filled, collected: fields.length, vaultKeys: Object.keys(vault || {}).length, matched: _diag, allInputs: inv };
+      window.__ppfDiag = { world, choosers: _chooserLog, framesTop: window.top === window, filled, collected: fields.length, vaultKeys: Object.keys(vault || {}).length, matched: _diag, allInputs: inv };
       console.log("%c[PolyglotFormFill DIAGNOSTIC] copy this whole object:", "font-weight:bold;color:#0a9e8e", window.__ppfDiag);
     } catch (_) { /* diagnostic must never break the fill */ }
   }

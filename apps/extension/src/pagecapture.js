@@ -110,8 +110,16 @@ export function collectTypedValues() {
     if (el.tagName === "SELECT" || el.closest("select")) continue;
     if (inChrome(el)) continue;                                        // skip nav/menu/toolbar UI
     if (seenW.some((s) => s.contains(el) || el.contains(s))) continue; // one row per nested widget
-    // The selected value is the widget's visible text; require a short, single-value, non-placeholder.
-    const txt = (el.textContent || "").replace(/\s+/g, " ").trim();
+    // The selected value: prefer the widget's dedicated SELECTION node. Reading the whole widget's text
+    // returns the selection twice on libraries that keep both a hidden measurement node and the visible
+    // one — "Email" was captured as "EmailEmail". Fall back to the widget text, collapsing an exact
+    // doubling ("EmailEmail" → "Email") for any library that has no such node.
+    const selNode = el.querySelector('[class*="selection-item"], [class*="single-value"], [class*="selected-value"], [class*="value-label"]');
+    let txt = ((selNode && selNode.textContent) || el.textContent || "").replace(/\s+/g, " ").trim();
+    if (txt.length % 2 === 0) {
+      const half = txt.slice(0, txt.length / 2);
+      if (half && half === txt.slice(txt.length / 2)) txt = half.trim();
+    }
     if (!txt || txt.length > 60 || PLACEHOLDER.test(txt) || instructionText(txt)) continue;
     const label = widgetLabel(el);
     if (!label || label.length > 200 || PLACEHOLDER.test(label) || junkLabel(label)) continue;
