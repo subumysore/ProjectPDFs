@@ -94,3 +94,17 @@ test("an answer the vault ALREADY holds is not offered again", () => {
   const again = newInformation(collectTypedValues(), { [key]: "Kamala" }, keyFromLabel, isCapturableLabel);
   assert.equal(again.find((p) => /maiden/i.test(p.label)), undefined);
 });
+
+// Workday-style markup: the question lives in a separate element referenced by aria-labelledby, and the
+// input carries only "input-24". Without resolving that reference every answer was rejected as junk —
+// which is why an entire application's answers reached the vault as NOTHING.
+test("an answer is captured when the question is attached via aria-labelledby", () => {
+  const dom = mount(`
+    <div id="q1">How many years of Java experience do you have?</div>
+    <input id="input-24" aria-labelledby="q1">`);
+  dom.window.document.getElementById("input-24").value = "8";
+  const p = find(/years of java/i);
+  assert.ok(p, "not captured");
+  assert.equal(p.value, "8");
+  assert.match(p.key, /^[a-z0-9_]+$/);
+});

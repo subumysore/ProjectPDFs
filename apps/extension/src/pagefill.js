@@ -1595,6 +1595,22 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // a single captured answer fill EVERY phrasing of the same question — the on-page wording need not
   // match the wording that was captured; only the shared intent matters.
   const intentAnswer = {};
+  // CITIZENSHIP implies the eligibility answers. A US citizen IS authorised to work in the US without
+  // restriction and does NOT need sponsorship — asking them to answer that on every application, and
+  // leaving the field blank until they do, is the engine failing to use what it already knows. Same for
+  // a Canadian citizen on a Canadian form. This is a derivation from the user's own stored fact, not a
+  // guess about a legal status we do not have: with no citizenship stored, nothing is derived.
+  (() => {
+    const cz = Object.entries(rawVault)
+      .filter(([k]) => /citizen|nationality|country of citizenship/i.test(k))
+      .map(([, v]) => String(v == null ? "" : v).toLowerCase())
+      .join(" ");
+    if (!cz) return;
+    const isUS = /\b(us|u\.s\.|usa|united states|american)\b/.test(cz);
+    const isCA = /\b(ca|canada|canadian)\b/.test(cz);
+    if (isUS) { intentAnswer.work_auth_us = "yes"; intentAnswer.sponsorship = "no"; }
+    if (isCA) { intentAnswer.work_auth_ca = "yes"; intentAnswer.sponsorship = "no"; }
+  })();
   for (const key of Object.keys(rawVault)) {
     const e = qaMatch(key); if (!e) continue;
     const val = String(rawVault[key] == null ? "" : rawVault[key]).toLowerCase().trim();

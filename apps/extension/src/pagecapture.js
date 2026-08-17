@@ -43,10 +43,22 @@ export function collectTypedValues() {
   // A placeholder or an INSTRUCTION ("Please check one of the boxes below", "Select one") — never an
   // answer the user actually gave.
   const instructionText = (s) => /^(please\s+(check|select|choose|answer|pick|complete)|select\s+(one|an option|a value|your)|check one of|choose one|answer the|--+|—)\b/i.test(String(s || "").trim());
+  // The question text, wherever the framework put it. `aria-labelledby` matters more than it looks:
+  // Workday (and other React ATS) label every input that way — the visible question lives in a separate
+  // element and the input itself carries only an id like "input-24". Without resolving it, every answer
+  // came back with a junk label, was rejected as unusable, and NOTHING the user typed reached the vault.
+  const labelledBy = (el) => {
+    const ids = el.getAttribute && el.getAttribute("aria-labelledby");
+    if (!ids) return "";
+    return ids.split(/\s+/)
+      .map((id) => { const n = document.getElementById(id); return (n && (n.innerText || n.textContent)) || ""; })
+      .join(" ").replace(/\s+/g, " ").trim();
+  };
   const labelOf = (el) => {
     const own = [
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
       el.getAttribute("aria-label") || "",
+      labelledBy(el),
       (el.closest("label") && el.closest("label").textContent) || "",
       el.placeholder || "",
       el.name || "",
