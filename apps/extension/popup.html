@@ -39,9 +39,13 @@
       .hidden { display: none; }
       .keys { font-family: ui-monospace, monospace; font-size: 11px; color: #55666f; }
       .entry { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; }
-      .entry .k { font-family: ui-monospace, monospace; color: #0a6a60; min-width: 90px; }
+      /* The key is a LABEL, not content: it must never grow into the value box. Long keys (a captured
+         question can be a whole sentence) used to expand this span and squeeze the input to nothing,
+         so the key appeared to be written over the value. Fixed share, truncate, full text on hover. */
+      .entry .k { font-family: ui-monospace, monospace; color: #0a6a60; flex: 0 0 38%; max-width: 38%;
+                  min-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .entry .v { flex: 1; color: #101a20; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .entry .vin { flex: 1; min-width: 0; font: inherit; color: #101a20; padding: 3px 6px; border: 1px solid #e3eae9; border-radius: 5px; background: #fff; }
+      .entry .vin { flex: 1 1 auto; min-width: 110px; font: inherit; color: #101a20; padding: 3px 6px; border: 1px solid #e3eae9; border-radius: 5px; background: #fff; }
       .entry .vin:focus { outline: none; border-color: #0d8f83; box-shadow: 0 0 0 2px rgba(13,143,131,.15); }
       .entry .vin::placeholder { color: #b7c2c2; }
       .entry .x { border: none; background: none; color: #9a2c2c; cursor: pointer; font-size: 14px; padding: 0 4px; }

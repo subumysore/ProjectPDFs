@@ -320,6 +320,7 @@ async function renderEntries() {
     const kEl = document.createElement("span");
     kEl.className = "k";
     kEl.textContent = k;
+    kEl.title = k;   // the full key, since the label truncates
     // Image values show as a thumbnail, not a giant data-URI in a text box.
     const isImage = typeof r.vault[k] === "string" && r.vault[k].startsWith("data:image");
     let vEl;
