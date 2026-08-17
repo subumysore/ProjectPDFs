@@ -436,6 +436,32 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
             window.addEventListener("submit", fire, true);
             window.addEventListener("pagehide", fire, true);
             document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") fire(); }, true);
+            // MULTI-STEP forms (LinkedIn Easy Apply, Workday, Dice, most ATS wizards) never fire submit
+            // between steps — the user clicks "Next" and the step is replaced. Without this, everything
+            // typed on steps 1..n-1 was lost and only the last step was ever learned. Capture on the way
+            // out of each step: any click on an advance/submit control, in the capture phase so it runs
+            // BEFORE the page tears the step down.
+            const ADVANCE = /^(next|continue|save (and|&) continue|next step|review|submit|send application|apply)/i;
+            document.addEventListener("click", (e) => {
+              try {
+                const el = e.target && e.target.closest && e.target.closest('button, [role="button"], input[type="submit"]');
+                if (!el) return;
+                const t = ((el.innerText || el.textContent || el.value || el.getAttribute("aria-label") || "").trim());
+                if (ADVANCE.test(t)) fire();
+              } catch (_) { /* never interfere with the page's own click */ }
+            }, true);
+            // Belt and braces for wizards that swap steps without any button we recognise: when the form
+            // area changes substantially, bank what was on screen a moment ago.
+            try {
+              let last = 0;
+              const obs = new MutationObserver(() => {
+                const now = Date.now();
+                if (now - last < 1500) return;          // debounce: a re-render is many mutations
+                last = now;
+                fire();
+              });
+              obs.observe(document.body, { childList: true, subtree: true });
+            } catch (_) { /* observer unavailable — the listeners above still cover the common cases */ }
           },
           args: [collectTypedValues.toString()],
         });
