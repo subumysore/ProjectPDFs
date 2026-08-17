@@ -1125,10 +1125,17 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       el.dispatchEvent(new Event("input", { bubbles: true }));
     };
     // The ONE term that identifies our answer in a list of this kind.
-    const term = kind === "dial-abbrev" ? want.iso
-      : kind === "dial-name" ? want.countryName
+    // A dialling list is whatever shape the site chose — "US +1", "United States +1", "+1", or (Dayforce)
+    // "🇺🇸 +1 United States of America". What matters is that these lists are VIRTUALISED: only the first
+    // rows exist in the DOM, so the user's row is usually absent and whatever +1 row happens to be
+    // rendered wins — which is how a US applicant ended up with Guam. Typing the COUNTRY NAME brings the
+    // right row into existence; the code and the abbreviation are fallbacks for lists shaped otherwise.
+    const dialTerm = want.countryName || want.iso || (want.dialCode ? "+" + want.dialCode : "");
+    const term = kind === "dial-abbrev" ? (want.iso || dialTerm)
+      : kind === "dial-name" ? dialTerm
       : kind === "dial-code" ? (want.dialCode ? "+" + want.dialCode : "")
       : kind === "yesno" ? ""
+      : want.dialCode ? dialTerm            // a dial list we did not classify — still narrow it by name
       : want.text;
     // A widget that offers NO rows has nothing to filter, so typing into it only churns the field.
     if (kind === "empty") return "unrecognised";
@@ -1523,13 +1530,17 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // and full a second later. Only the failures are revisited: a widget that already holds a value is
   // never touched again, which is what stopped an earlier blanket second pass from overwriting good
   // answers with whatever the list re-rendered.
-  if (_chooserRetry.length) {
-    await wait(1200);
-    // Drain into a snapshot: fillChooser pushes onto _chooserRetry when it fails, so iterating the live
-    // array would keep growing it and never finish. One retry per widget, and one only.
-    const pending = new Set(_chooserRetry.splice(0, _chooserRetry.length).filter(Boolean));
-    // Re-collect the widgets from the LIVE DOM (the old nodes may have been replaced by a re-render) and
-    // revisit only those whose label is one that failed AND that are still unset.
+  // Retry ONLY a list that depends on another field (State on Country, City on State): those are empty
+  // on the first look because we set the parent moments earlier, and a second attempt genuinely helps.
+  // Retrying everything else cost 7.5 SECONDS of re-opening dropdowns on a live form — the visible
+  // "dancing" — and never changed an answer, because a widget that gave a definite answer the first
+  // time gives the same one again.
+  const DEPENDENT = /state|province|region|city|town|district|county|area/i;
+  const retryable = [...new Set(_chooserRetry.filter((l) => DEPENDENT.test(l)))];
+  if (retryable.length) {
+    await wait(500);
+    const pending = new Set(retryable);
+    _chooserRetry.length = 0;                       // one retry per fill, never a loop
     for (const h of chooserHosts()) {
       try {
         if (!pending.has(String(labelOf(h) || "").trim())) continue;
