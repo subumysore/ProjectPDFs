@@ -188,6 +188,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
+    // Professional links — kept in step with resolver.js (the parity test enforces it).
+    linkedin: ["linkedin", "linked in", "linkedin profile", "linkedin url", "linked in url", "linked in profile", "linkedin profile url", "linkedin link", "li profile"],
+    website:  ["website", "personal website", "portfolio", "portfolio url", "portfolio link", "personal site", "web site", "blog url"],
+    github:   ["github", "github profile", "github url", "git hub"],
     phonecc:  ["phone country code", "country code", "dialing code", "dial code", "isd code", "std code"],
     cellphone: ["cell phone", "cell", "mobile", "mobile number", "mobile phone", "cell number", "cellphone"],
     homephone: ["home phone", "landline", "home number", "residence phone", "home telephone"],

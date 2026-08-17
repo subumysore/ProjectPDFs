@@ -78,6 +78,12 @@ export function resolveFields(vault, fields) {
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
+    // Professional links. These were previously matched only by a whole-vault-key fallback, which is
+    // fragile: on a dense form a nearer concept can claim the field first (an application form's
+    // "LinkedIn Profile" was being filled with today's date). A real concept makes the match explicit.
+    linkedin: ["linkedin", "linked in", "linkedin profile", "linkedin url", "linked in url", "linked in profile", "linkedin profile url", "linkedin link", "li profile"],
+    website:  ["website", "personal website", "portfolio", "portfolio url", "portfolio link", "personal site", "web site", "blog url"],
+    github:   ["github", "github profile", "github url", "git hub"],
     phonecc:  ["phone country code", "country code", "dialing code", "dial code", "isd code", "std code"],
     cellphone: ["cell phone", "cell", "mobile", "mobile number", "mobile phone", "cell number", "cellphone"],
     homephone: ["home phone", "landline", "home number", "residence phone", "home telephone"],

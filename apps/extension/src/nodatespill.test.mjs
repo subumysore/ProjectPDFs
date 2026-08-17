@@ -30,3 +30,19 @@ test("a genuine application-date field still gets today's date", async () => {
   await fillPage(VAULT);
   assert.match(dom.window.document.getElementById("d").value, /\d{2}\/\d{2}\/\d{4}/);
 });
+
+// LinkedIn / portfolio links are now real concepts, so a vault holding ANY of the usual key spellings
+// fills them — and a nearer concept can no longer claim the field first.
+for (const key of ["linkedin", "linkedin_url", "linkedin_profile", "linked_in_url"]) {
+  test(`a LinkedIn URL stored as "${key}" fills a LinkedIn field`, async () => {
+    const dom = mount(`<label>LinkedIn Profile <input id="li"></label>`);
+    await fillPage({ ...VAULT, [key]: "https://www.linkedin.com/in/example" });
+    assert.equal(dom.window.document.getElementById("li").value, "https://www.linkedin.com/in/example");
+  });
+}
+
+test("a portfolio/website field fills from the stored website", async () => {
+  const dom = mount(`<label>Personal Website <input id="w"></label>`);
+  await fillPage({ ...VAULT, website: "https://example.com" });
+  assert.equal(dom.window.document.getElementById("w").value, "https://example.com");
+});
