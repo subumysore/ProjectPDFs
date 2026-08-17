@@ -46,3 +46,21 @@ test("a portfolio/website field fills from the stored website", async () => {
   await fillPage({ ...VAULT, website: "https://example.com" });
   assert.equal(dom.window.document.getElementById("w").value, "https://example.com");
 });
+
+// A country stored in ANY short form must select the country ITSELF — never one whose name it merely
+// prefixes. Reported live on a Phenom application: "America"/"USA" was selecting "American Samoa".
+for (const stored of ["USA", "US", "America", "United States"]) {
+  test(`country "${stored}" selects United States, never American Samoa`, async () => {
+    const dom = mount(`<label>Country
+      <select id="c"><option value=""></option><option>American Samoa</option><option>Antigua and Barbuda</option><option>United States</option></select></label>`);
+    await fillPage({ ...VAULT, country: stored });
+    assert.equal(dom.window.document.getElementById("c").value, "United States");
+  });
+}
+
+test("an unknown country still selects nothing rather than a lookalike", async () => {
+  const dom = mount(`<label>Country
+    <select id="c"><option value=""></option><option>American Samoa</option><option>United States</option></select></label>`);
+  await fillPage({ ...VAULT, country: "Wakanda" });
+  assert.equal(dom.window.document.getElementById("c").value, "");
+});

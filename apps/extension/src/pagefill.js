@@ -334,6 +334,20 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // So a dial-code list must be disambiguated by WHICH country the user is in — otherwise the first
   // matching row wins and a US user silently gets Antigua (seen on Dayforce, whose options are
   // "🇦🇬 +1" with the ISO code in the option's value).
+  // ONE canonical country name for whatever spelling the vault holds. Without this, a stored "USA"
+  // or "America" is matched by PREFIX against the option list — and "American Samoa" wins, because it
+  // starts with "America" and sorts first. Canonicalising first makes the match exact.
+  const canonicalCountry = (raw0) => {
+    const raw = norm(raw0 || atoms.country || atoms.nationality || "");
+    if (!raw) return "";
+    if (/^(america|the united states|u s a?|usa|u s)$/.test(raw)) return "united states";
+    if (COUNTRY_ABBR[raw]) return raw;                                  // already canonical
+    for (const [name, codes] of Object.entries(COUNTRY_ABBR)) {
+      if (codes.some((c) => c.toLowerCase() === raw)) return name;      // ISO code -> name
+    }
+    if (/^(america|the united states|u s a?|usa)$/.test(raw)) return "united states";
+    return raw;
+  };
   const countryTokens = () => {
     const raw = norm(atoms.country || atoms.nationality || "");
     // The vault may hold the country in ANY form the user typed it: "United States", "USA", "US",
@@ -969,7 +983,15 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (!value) continue;
     // Candidate values to match an option against: the raw value plus expansions (gender M<->Male,
     // USA<->United States, US state name<->abbrev, phone country code).
-    const cands = expandCands(pick, value);
+    let cands = expandCands(pick, value);
+    // COUNTRY: match the canonical name in FULL. Prefix matching is how a stored "America"/"USA"
+    // selected "AMERICAn Samoa" on a live application — a different country that merely starts the
+    // same way, and which sorts first in most lists.
+    const isCountry = pick && ["country", "nationality", "billing_country"].includes(pick.key);
+    const canonCountry = isCountry ? canonicalCountry(String(value)) : "";
+    // The canonical NAME plus its ISO codes, all matched EXACTLY: exact-only keeps "American Samoa"
+    // out, and including the codes covers lists whose options are "US" / "USA".
+    if (canonCountry) cands = [canonCountry.replace(/\b\w/g, (c) => c.toUpperCase()), ...(COUNTRY_ABBR[canonCountry] || [])];
     const opts = [...sel.options];
     // A dialling-code list ("US +1", "IN +91", "+44") shares no words with the value, so match it on
     // the CODE itself — exactly, so "+1" never picks "+212". Same rule as the custom-dropdown path.
@@ -983,9 +1005,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       const v = String(o.value || "").toLowerCase(), t = norm(o.textContent || "");
       return ctoks.some((k) => v === k || t === k || t.includes(k)) ? 2 : 1;
     };
+    // `optEq` accepts a prefix, which is right for most concepts and WRONG for a country: it is how
+    // "America" matched "American Samoa". For a country, require the whole name.
+    const eqFor = (a, b) => (canonCountry ? nOpt(a) === nOpt(b) : optEq(a, b));
     const match = dialWant
       ? opts.filter((o) => dialRank(o) > 0).sort((a, b) => dialRank(b) - dialRank(a))[0]
-      : opts.find((o) => cands.some((cv) => optEq(o.textContent, cv) || optEq(o.value, cv)));
+      : opts.find((o) => cands.some((cv) => eqFor(o.textContent, cv) || eqFor(o.value, cv)));
     if (match) {
       sel.value = match.value;
       sel.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1119,6 +1144,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       } else {
         const a = norm2(t), b = norm2(want.text);
         if (a === b) score = 3;
+        // A country must match its whole name. Prefix matching is what let "America"/"USA" select
+        // "AMERICAn Samoa" — a different country that merely starts with the same letters.
+        else if (want.exact) score = (want.alts || []).some((x) => norm2(x) === a) ? 3 : 0;  // name or ISO code, in full
         else if (b && (a.startsWith(b) || b.startsWith(a))) score = 2;
       }
       return { o, score, len: t.length };
@@ -1155,11 +1183,17 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // to the older generic path only when the list cannot be recognised.
     {
       const iso = (countryTokens()[1] || "").toUpperCase();
+      // For a COUNTRY field, search and match on the canonical name. A stored "USA"/"America" would
+      // otherwise prefix-match "American Samoa" — which is what a Regions (Phenom) application picked.
+      const isCountryField = pick && ["country", "nationality", "billing_country"].includes(pick.key);
+      const canonical = isCountryField ? canonicalCountry(String(value)) : "";
       const ok = await smartChoose(h, {
-        text: String(value),
+        text: canonical ? canonical.replace(/\b\w/g, (c) => c.toUpperCase()) : String(value),
+        exact: !!canonical,                       // a country must match the whole name, never a prefix
+        alts: canonical ? (COUNTRY_ABBR[canonical] || []) : [],   // ...or one of its ISO codes, exactly
         iso,
         countryName: String(atoms.country || atoms.nationality || ""),
-        dialCode: pick && pick.key === "phonecc" ? String(value).replace(/D/g, "") : "",
+        dialCode: pick && pick.key === "phonecc" ? String(value).replace(/\D/g, "") : "",
       });
       if (ok === "ok") { filled++; markFilled(h); return; }
       if (ok === "no-match") return;   // recognised list, our answer is not in it — leave it blank
@@ -1809,7 +1843,16 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
           }
         }
       }
-      if (!opt && !eduCtx) { const captured = vaultAnswerFor(q); if (captured) opt = selectOption(opts, captured); }
+      // A dropdown the CONCEPT layer already owns (country, state, dialling code…) must not be
+      // re-decided here by fuzzy token matching: that path matched the stored "America" to the option
+      // "American Samoa" — a real answer, on a real application, for the wrong country. Concepts have
+      // canonical names and exact rules; this generic capture path is for questions they don't cover.
+      const conceptOwned = (() => {
+        let top = 0, key = null;
+        for (const c of CONCEPTS) { const sc = score(q, c.syn); if (sc > top) { top = sc; key = c.key; } }
+        return top >= 1.5 && ["country", "nationality", "billing_country"].includes(key);
+      })();
+      if (!opt && !eduCtx && !conceptOwned) { const captured = vaultAnswerFor(q); if (captured) opt = selectOption(opts, captured); }
       if (!opt && eduCtx) { const ev = eduValueFor(sel, q); if (ev != null && String(ev).trim()) opt = selectOption(opts, ev); } // Field of study etc. — only the routed education value
       // EDUCATION-LEVEL dropdown ("What is your highest completed education…" with degree/diploma
       // options): pick the option matching the user's HIGHEST stored qualification. Generic, no capture
