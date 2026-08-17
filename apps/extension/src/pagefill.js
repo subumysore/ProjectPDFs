@@ -294,7 +294,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const withCC = (num) => {
     const n = (num || "").toString().trim();
     if (!n) return "";
-    if (hasCcField) return n; // a dedicated country-code field will carry the code
+    // A dedicated country-code control carries the code, so the number box must hold the number ALONE.
+    // A stored international number ("+1 919 555 0123") otherwise puts "+1" in both places, which most
+    // sites reject — and which the user sees as the code being typed into the wrong box.
+    if (hasCcField) return n.replace(/^\+\s?\d{1,4}[\s.\-()]*/, "").trim();
     const cc = (atoms.phonecc || "").toString().trim();
     return cc && !n.startsWith("+") ? cc + " " + n : n;
   };
@@ -1163,7 +1166,18 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       return { o, score, len: t.length };
     }).filter((x) => x.score >= 2).sort((a, b) => (b.score - a.score) || (a.len - b.len))[0];
     if (!pick) {
-      if (input) { setV(input, ""); input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); }
+      // FILL-THEN-WIPE guard. Clearing our typed text is right when nothing was chosen — but a slow
+      // widget can accept the choice AFTER we decide, and the clear then erases a value that had just
+      // been committed. That is what "it filled everything and then cleaned it up" looks like. So look
+      // again first, and only clear when the widget is still unset AND the box holds only our own text.
+      await wait(120);
+      const shownNow = (h.closest('[class*="select"]') || h).querySelector('[class*="selection-item"], [class*="single-value"], [class*="select__control"]')
+        || h.closest('[class*="select"]') || h;
+      const txtNow = ((shownNow.textContent || "")).replace(/\s+/g, " ").trim();
+      if (txtNow && !/^(select|choose|please select|pick|--+|—|-)\s*(\.{3}|…)?$/i.test(txtNow)) return "ok";
+      const typedNow = input ? String(input.value || "") : "";
+      const oursOnly = !typedNow || !term || typedNow === String(term);
+      if (input && oursOnly) { setV(input, ""); input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); }
       // A list we RECOGNISED that does not contain our answer is a definite no: leave the field blank
       // rather than let another pass type into it again (which is what made a field flicker).
       return (kind === "empty" || kind === "text") ? "unrecognised" : "no-match";

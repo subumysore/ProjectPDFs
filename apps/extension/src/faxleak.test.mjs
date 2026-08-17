@@ -61,3 +61,21 @@ test("a stored extension does fill the extension box", async () => {
   await fillPage({ ...VAULT, phone_extension: "4021" });
   assert.equal(dom.window.document.getElementById("x").value, "4021");
 });
+
+// When the form has a separate country-code control, the number box must hold the NUMBER ALONE —
+// otherwise "+1" is submitted twice and most sites reject it.
+test("a stored international number loses its +code when a country-code field exists", async () => {
+  const dom = mount(`
+    <label>Country code <input id="cc"></label>
+    <label>Mobile phone number <input id="ph"></label>`);
+  await fillPage({ cell_phone: "+1 919 555 0123", country: "United States" });
+  const d = dom.window.document;
+  assert.equal(d.getElementById("ph").value.replace(/\D/g, ""), "9195550123");
+  assert.ok(!d.getElementById("ph").value.includes("+1"), `number box has the code: "${d.getElementById("ph").value}"`);
+});
+
+test("with no separate country-code field the number keeps its international form", async () => {
+  const dom = mount(`<label>Phone <input id="ph"></label>`);
+  await fillPage({ cell_phone: "+1 919 555 0123" });
+  assert.ok(dom.window.document.getElementById("ph").value.includes("+1"));
+});
