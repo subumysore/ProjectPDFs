@@ -62,7 +62,7 @@ function hasValue(el) {
   // chosen value lives in the widget's selection node. Reading only the input reported every such field
   // as "not filled", which made the whole assessment untrustworthy: Country, State and the dialling
   // codes were all shown as empty while visibly holding the right answer.
-  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="ng-select"], ' +
+  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="select__control"], [class*="select__value"], [class*="ng-select"], ' +
     'mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]';
   // The element may BE inside the widget, or it may be the framework's hidden mirror input that lives
   // beside it (Dayforce keeps "…CountryCode" outside the widget and holds the code there). So also look
@@ -143,7 +143,7 @@ export function assessForm(opts = {}) {
   // loop above can log a field as empty while the widget visibly holds the answer: Country, State and
   // both dialling codes were reported unfilled on a form where all four were correct. Read the widget
   // itself and let it correct (or add) the item for that label.
-  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="ng-select"], ' +
+  const CHOOSER_SEL = '.ant-select, [class*="ant-select"], [class*="react-select"], [class*="select__control"], [class*="select__value"], [class*="ng-select"], ' +
     'mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]';
   const PLACEHOLDER = /^(select(\s+(one|an option|a value))?|choose(\s+one)?|please select|pick one|--+|—|-)\s*(\.{3}|…)?$/i;
   const seenChooser = [];

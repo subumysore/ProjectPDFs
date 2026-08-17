@@ -78,6 +78,9 @@ export function resolveFields(vault, fields) {
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
+    // Fax is its OWN concept so a neighbouring "Email Address" or "Phone" label can never claim it
+    // (label text bleeds between adjacent fields on dense forms). With no stored fax, it stays blank.
+    fax:      ["fax", "fax number", "fax no", "facsimile"],
     // Professional links. These were previously matched only by a whole-vault-key fallback, which is
     // fragile: on a dense form a nearer concept can claim the field first (an application form's
     // "LinkedIn Profile" was being filled with today's date). A real concept makes the match explicit.

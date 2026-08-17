@@ -188,6 +188,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     country:  ["country", "nation"],
     nationality: ["nationality", "citizenship"],
     email:    ["email", "e mail", "mail", "email address"],
+    // Fax is its OWN concept so a neighbouring "Email Address" or "Phone" label can never claim it
+    // (label text bleeds between adjacent fields on dense forms). With no stored fax, it stays blank.
+    fax:      ["fax", "fax number", "fax no", "facsimile"],
     // Professional links — kept in step with resolver.js (the parity test enforces it).
     linkedin: ["linkedin", "linked in", "linkedin profile", "linkedin url", "linked in url", "linked in profile", "linkedin profile url", "linkedin link", "li profile"],
     website:  ["website", "personal website", "portfolio", "portfolio url", "portfolio link", "personal site", "web site", "blog url"],
@@ -1008,7 +1011,12 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // chooser: its visible text is a placeholder ("Select an option", "Choose…", "-") or empty.
     // An already-answered widget, a multiselect chip box, a menu button, etc. is left alone.
     // (The concept-score guard below is the other half — only labelled matches are ever opened.)
-    const t = (h.textContent || "").trim().replace(/\s+/g, " ");
+    // "Is this widget still unset?" must be judged on the widget's own DISPLAY area, not on everything
+    // inside it. Some libraries wrap the label and the control together, so reading the whole element
+    // returned the question text ("Country*") — over the length limit, so every one of those widgets was
+    // skipped and the chooser pass never ran on that form at all.
+    const disp = h.querySelector('[class*="select__control"], [class*="selection-item"], [class*="single-value"], [class*="selected-value"]') || h;
+    const t = (disp.textContent || "").trim().replace(/\s+/g, " ");
     return t.length <= 40 && (t === "" || /^(select|choose|please select|pick|—|-)\b/i.test(t) || /select an option|select\.\.\.|choose an option/i.test(t));
   });
   const hosts = chooserHosts();
@@ -1066,6 +1074,117 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       }
       return best;
     };
+    // ---- WIDGET TECHNOLOGY → ADAPTER LADDER -------------------------------------------------------
+    // Identify WHICH library built this control, then run that library's adapter. Each adapter answers
+    // three questions the generic code was guessing at: what element OPENS the widget, which rows are
+    // ITS rows (not a neighbour's), and how a choice is COMMITTED. Every attempt is VERIFIED against the
+    // widget's own display text before we accept it, and an adapter that fails falls through to the next
+    // — ending at the generic ARIA path below, which is unchanged.
+    //
+    // Evidence behind this (measured on a live form, six widgets, six gestures): every commit gesture
+    // works — click, mousedown+click, Enter. What failed was TARGETING: the menu renders in a portal, so
+    // "the open panel near this control" was sometimes the phone field's country list. Hence adapters
+    // that identify rows by the library's own ids rather than by proximity.
+    const displayOf = (el) => {
+      const d = el.querySelector('[class*="select__control"], [class*="selection-item"], [class*="single-value"], [class*="selected-value"]');
+      return ((d || el).textContent || "").replace(/\s+/g, " ").trim();
+    };
+    const isPlaceholder = (t) => !t || /^(select(\s+(one|an option|a value))?|choose(\s+one)?|please select|pick one|--+|—|-)\s*(\.{3}|…)?$/i.test(t);
+    const setNativeValue = (el, v) => {
+      const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+      set.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const clickRow = async (row) => {
+      row.scrollIntoView && row.scrollIntoView({ block: "nearest" });
+      for (const t of ["mousedown", "mouseup", "click"]) row.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
+      await wait(220);
+    };
+    const bestRow = (rows) => rows.map((o) => ({ o, s: scoreOpt(o), len: (o.textContent || "").trim().length }))
+      .filter((x) => x.s >= 2).sort((a, b) => (b.s - a.s) || (a.len - b.len))[0];
+
+    const ADAPTERS = [
+      {
+        // react-select (Greenhouse, Lever and many SaaS forms). The host we collect IS its search input;
+        // its control box is the ancestor, and its rows carry ids "react-select-<name>-option-N".
+        name: "react-select",
+        find: (el) => {
+          const input = (el.tagName === "INPUT" && /select__input/.test(String(el.className || ""))) ? el
+            : el.querySelector('input[class*="select__input"]');
+          const control = input && input.closest('[class*="select__control"]');
+          return control ? { input, control } : null;
+        },
+        run: async ({ input, control }) => {
+          for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) control.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
+          try { input.focus(); } catch (_) { /* ignore */ }
+          await wait(320);
+          const prefix = (input.getAttribute("aria-controls") || "").replace(/-listbox$/, "");
+          const own = () => (prefix ? [...deepQSA('[id^="' + prefix + '-option-"]')] : []).filter((o) => (o.textContent || "").trim());
+          let choice = bestRow(own());
+          if (!choice) {
+            for (const term of cands.slice().sort((a, b) => String(b).length - String(a).length).slice(0, 2)) {
+              setNativeValue(input, String(term));
+              await wait(320);
+              choice = bestRow(own());
+              if (choice) break;
+            }
+          }
+          if (choice) await clickRow(choice.o);
+          const ok = !isPlaceholder(displayOf(control));
+          if (!ok) {                                            // leave nothing typed behind
+            setNativeValue(input, "");
+            input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+          }
+          return ok;
+        },
+      },
+      {
+        // Ant Design / rc-select (Dayforce and much of the enterprise web). Opens on its selector box;
+        // its rows live in a panel the input points at via aria-controls / aria-owns.
+        name: "ant",
+        find: (el) => {
+          const host = el.closest('.ant-select, [class*="ant-select"]') || (/ant-select/.test(String(el.className || "")) ? el : null);
+          if (!host) return null;
+          const control = host.querySelector('[class*="selector"]') || host;
+          const input = host.querySelector("input");
+          return { host, control, input };
+        },
+        run: async ({ host, control, input }) => {
+          for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) control.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
+          try { (input || control).focus(); } catch (_) { /* ignore */ }
+          await wait(320);
+          const id = input && (input.getAttribute("aria-controls") || input.getAttribute("aria-owns"));
+          const panel = (id && document.getElementById(id)) || host.querySelector('[class*="select-dropdown"]');
+          const own = () => panel ? [...panel.querySelectorAll('[class*="item-option"], [role="option"]')].filter((o) => (o.textContent || "").trim()) : [];
+          let choice = bestRow(own());
+          if (!choice && input) {
+            for (const term of cands.slice().sort((a, b) => String(b).length - String(a).length).slice(0, 2)) {
+              setNativeValue(input, String(term));
+              await wait(300);
+              choice = bestRow(own());
+              if (choice) break;
+            }
+          }
+          if (choice) await clickRow(choice.o);
+          const ok = !isPlaceholder(displayOf(host));
+          if (!ok && input) { setNativeValue(input, ""); input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); }
+          return ok;
+        },
+      },
+    ];
+
+    for (const ad of ADAPTERS) {
+      let ctx = null;
+      try { ctx = ad.find(h); } catch (_) { ctx = null; }
+      if (!ctx) continue;
+      let ok = false;
+      try { ok = await ad.run(ctx); } catch (_) { ok = false; }
+      if (_diag) _chooserLog.push({ adapter: ad.name, label: String(label || "").slice(0, 26), want: String(value).slice(0, 20), ok });
+      if (ok) { filled++; markFilled(h); return; }
+      break;   // the technology is known but its adapter did not commit — do not let another one guess
+    }
+
+
     try {
       // WHICH element opens the widget differs by library: many open on the SELECTOR/control box and
       // ignore a click on their inner search input (that input only becomes live once the list is
