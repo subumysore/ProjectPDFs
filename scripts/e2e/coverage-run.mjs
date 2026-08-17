@@ -57,10 +57,29 @@ const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").tr
 
 async function runOne(browser, [name, url]) {
   const page = await browser.newPage();
-  const out = { name, url, ok: false, items: [], error: null };
+  const out = { name, url, ok: false, items: [], error: null, blocked: false, skipped: false };
   try {
     await page.goto(url, { waitUntil: "networkidle2", timeout: 90000 });
     await new Promise((r) => setTimeout(r, 4500));
+    // Is this page even measurable? A CAPTCHA / "verify you are human" wall blocks automation by
+    // design, and a job LISTING page has no application form at all. Report those as blocked/skipped
+    // instead of pretending the engine failed to fill them.
+    const gate = await page.evaluate(() => {
+      const html = document.documentElement.innerHTML;
+      // Almost every ATS page LOADS recaptcha for submission — that is not a wall. A wall is a visible
+      // challenge that replaces the form: a challenge iframe/widget on screen, or the tell-tale text.
+      const challengeVisible = [...document.querySelectorAll(
+        "iframe[src*='recaptcha'], iframe[src*='hcaptcha'], iframe[src*='challenge'], .g-recaptcha, [class*='turnstile']")]
+        .some((e) => e.offsetParent !== null && e.getBoundingClientRect().height > 40);
+      const wallText = /are you a human|verify you are human|press and hold|unusual traffic/i.test(document.body.innerText || '');
+      const fields = [...document.querySelectorAll('input, textarea, select')]
+        .filter((e) => !['hidden', 'submit', 'button', 'reset', 'image', 'file'].includes((e.type || '').toLowerCase()))
+        .filter((e) => e.offsetParent !== null).length;
+      const applyish = /apply|application|first name|resume|cover letter/i.test(document.body.innerText || '');
+      return { blockedNow: (challengeVisible || wallText) && fields < 3, fields, applyish };
+    });
+    if (gate.blockedNow) { out.error = 'BLOCKED: human verification (CAPTCHA) — cannot be measured automatically'; out.blocked = true; return out; }
+    if (gate.fields < 3 || !gate.applyish) { out.error = 'SKIPPED: no application form on this page (listing/search page)'; out.skipped = true; return out; }
     await page.evaluate(async (src, vault, saved) => {
       const fn = new Function(`${src}; return fillPage;`)();
       return await fn(vault, null, null, { diag: true, savedAnswers: saved });
@@ -96,7 +115,7 @@ async function runOne(browser, [name, url]) {
 }
 
 const urls = process.argv.length > 2 ? process.argv.slice(2).map((u) => ["(cli)", u]) : FORMS;
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: false, defaultViewport: null, args: ["--window-size=1400,1100"] });
+const browser = await puppeteer.launch({ protocolTimeout: 300000, executablePath: CHROME, headless: false, defaultViewport: null, args: ["--window-size=1400,1100"] });
 const results = [];
 for (const f of urls) { const r = await runOne(browser, f); results.push(r); console.log(`done: ${r.name} ${r.error ? "ERROR " + r.error : `${r.items.filter((i) => i.filled).length}/${r.items.length}`}`); }
 await browser.close();
