@@ -610,6 +610,18 @@ function collectFillLabels() {
 }
 
 async function fillActivePage(vault) {
+  // The vault may come from the DESKTOP app (companion mode), where the browser-side onboarding /
+  // unlock backfill never runs — so Country can still be blank here. Country is not cosmetic: it is
+  // what tells a shared dialling code (+1 = US, CA, AG, BS…) which row is yours, and it drives state
+  // abbreviations and country dropdowns. Derive it on-device for THIS fill only; nothing is written
+  // to the user's vault, and an existing value always wins.
+  try {
+    if (vault && typeof vault === "object" && !String(vault.country || "").trim()) {
+      const { guessCountry } = await import("./seed.js");
+      const c = guessCountry();
+      if (c) vault = { ...vault, country: c };
+    }
+  } catch (_) { /* derivation is a convenience, never a blocker */ }
   const tab = await targetTab();
   // LANGUAGE-AWARE FILL: if the form is in another language, translate its labels into
   // English (the ontology's language) so the resolver still matches — on-device. The
