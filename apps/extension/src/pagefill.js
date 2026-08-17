@@ -1023,6 +1023,122 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   const seen = new Set();
   const _chooserRetry = [];   // widgets that resolved to a concept but could not be set on the first try
   // One widget's whole attempt, as a function so the targeted retry below can run it again unchanged.
+  // ---- RECOGNISE THE LIST, THEN ACT (one pass, no traversal) ------------------------------------
+  // The old approach opened a widget, then compared every row against the vault — which on a country
+  // or dialling-code list means walking 244 rows, scrolling the page, and retrying. A list announces
+  // what it is in its first few rows, so: OPEN once → SAMPLE a few rows → RECOGNISE the kind → derive
+  // the ONE string that identifies the answer → type it (the widget narrows itself) → click the row.
+  //
+  // Recognised kinds, with the term that identifies the answer in each:
+  //   dial-abbrev   "US +1", "IN +91"        → the ISO abbreviation ("US")   — 2 chars, one row left
+  //   dial-name     "United States +1"       → the country name
+  //   dial-code     "+1", "(+1)"             → the code itself
+  //   yesno         "Yes" / "No"             → nothing to type; match the answer directly
+  //   text          anything else            → the value itself, longest form first
+  const OPT_ROWS = '[role="option"], [class*="item-option"], [class*="select__option"], .ng-option, ' +
+    'mat-option, [class*="p-dropdown-item"], li[role="option"]';
+
+  const openChooser = async (h) => {
+    // The control box opens these widgets; the inner search input only becomes live afterwards.
+    const control = h.closest('[class*="select__control"]') || h.querySelector('[class*="select__control"]')
+      || h.closest('.ant-select, [class*="ant-select"]')?.querySelector('[class*="selector"]')
+      || h.querySelector('[class*="selector"], [class*="control"], [class*="toggle"]') || h;
+    const input = (h.tagName === "INPUT" ? h : null) || h.querySelector("input:not([type=hidden])")
+      || control.querySelector?.("input:not([type=hidden])")
+      || h.closest('.ant-select, [class*="ant-select"], [class*="select"]')?.querySelector("input:not([type=hidden])");
+    for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) {
+      try { control.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 })); } catch (_) { /* ignore */ }
+    }
+    try { input && input.focus(); } catch (_) { /* ignore */ }
+    await wait(180);
+    return { control, input };
+  };
+
+  // Rows that belong to THIS widget: what its input points at (aria-controls), else rows carrying the
+  // library's instance id, else the panel inside the widget. Never "whatever list is open nearby".
+  const ownRows = (h, input) => {
+    const id = input && (input.getAttribute("aria-controls") || input.getAttribute("aria-owns"));
+    if (id) {
+      const byId = document.getElementById(id);
+      if (byId) return [...byId.querySelectorAll(OPT_ROWS)].filter((o) => (o.textContent || "").trim());
+      const prefix = id.replace(/-listbox$/, "");
+      const byPrefix = [...deepQSA('[id^="' + prefix + '-option-"]')].filter((o) => (o.textContent || "").trim());
+      if (byPrefix.length) return byPrefix;
+    }
+    const host = h.closest('.ant-select, [class*="ant-select"], [class*="select"]') || h;
+    return [...host.querySelectorAll(OPT_ROWS)].filter((o) => o.offsetParent !== null && (o.textContent || "").trim());
+  };
+
+  // WHAT IS THIS LIST? Decided from at most 6 rows.
+  const recogniseList = (rows) => {
+    const s = rows.slice(0, 6).map((o) => (o.textContent || "").replace(/\s+/g, " ").trim()).filter(Boolean);
+    if (!s.length) return "empty";
+    const hit = (re) => s.filter((x) => re.test(x)).length >= Math.min(2, s.length);
+    if (hit(/^[^a-z]*[A-Z]{2}\b[^+]{0,4}\+\s?\d{1,4}/)) return "dial-abbrev";  // "US +1", "🇺🇸 US +1"
+    if (hit(/^[^+]*[A-Za-z]{3,}[^+]*\+\s?\d{1,4}/)) return "dial-name";        // "United States +1"
+    if (hit(/^[^\d+]{0,3}\+\s?\d{1,4}\s*$/)) return "dial-code";               // "+1"
+    if (hit(/^(yes|no|prefer not|i don'?t wish|decline)\b/i)) return "yesno";
+    return "text";
+  };
+
+  // Fill ONE chooser: recognise, derive, type, click, verify. Returns true only when the widget's own
+  // display shows a real value afterwards. No retry loop, no scrolling, no row-by-row comparison.
+  const smartChoose = async (h, want) => {
+    // want = { text, alt[], iso, dialCode, matcher }  — everything derivable from the vault BEFORE we
+    // touch the widget, so the DOM is only ever read to confirm, never to search.
+    const { control, input } = await openChooser(h);
+    let rows = ownRows(h, input);
+    if (!rows.length) { await wait(500); rows = ownRows(h, input); }   // dependent list still loading
+    const kind = recogniseList(rows);
+    const setV = (el, v) => {
+      const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+      set.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    // The ONE term that identifies our answer in a list of this kind.
+    const term = kind === "dial-abbrev" ? want.iso
+      : kind === "dial-name" ? want.countryName
+      : kind === "dial-code" ? (want.dialCode ? "+" + want.dialCode : "")
+      : kind === "yesno" ? ""
+      : want.text;
+    // A widget that offers NO rows has nothing to filter, so typing into it only churns the field.
+    if (kind === "empty") return "unrecognised";
+    if (term && input) { setV(input, String(term)); await wait(200); rows = ownRows(h, input); }
+    // Match within the SHORT list. For a dial list the row must carry our code, and (when we know it)
+    // our country — that is what stopped "+1" from selecting Antigua.
+    const norm2 = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9+]/g, "");
+    const pick = rows.slice(0, 25).map((o) => {
+      const t = (o.textContent || "").replace(/\s+/g, " ").trim();
+      let score = 0;
+      if (want.matcher) score = want.matcher.test(t.toLowerCase()) ? 3 : 0;
+      else if (kind.startsWith("dial")) {
+        const code = (t.match(/\+\s?(\d{1,4})/) || [])[1];
+        if (code && code === String(want.dialCode)) score = /\b(us|usa)\b/i.test(t) === false && want.iso
+          ? (new RegExp("\\b" + want.iso + "\\b", "i").test(t) || norm2(t).includes(norm2(want.countryName)) ? 3 : 1)
+          : 2;
+      } else {
+        const a = norm2(t), b = norm2(want.text);
+        if (a === b) score = 3;
+        else if (b && (a.startsWith(b) || b.startsWith(a))) score = 2;
+      }
+      return { o, score, len: t.length };
+    }).filter((x) => x.score >= 2).sort((a, b) => (b.score - a.score) || (a.len - b.len))[0];
+    if (!pick) {
+      if (input) { setV(input, ""); input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); }
+      // A list we RECOGNISED that does not contain our answer is a definite no: leave the field blank
+      // rather than let another pass type into it again (which is what made a field flicker).
+      return (kind === "empty" || kind === "text") ? "unrecognised" : "no-match";
+    }
+    for (const t of ["mousedown", "mouseup", "click"]) pick.o.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
+    await wait(160);
+    const shown = ((h.closest('[class*="select"]') || h).querySelector('[class*="selection-item"], [class*="single-value"], [class*="select__control"]')
+      || h.closest('[class*="select"]') || h);
+    const txt = ((shown.textContent || "")).replace(/\s+/g, " ").trim();
+    const ok = !!txt && !/^(select|choose|please select|pick|--+|—|-)\s*(\.{3}|…)?$/i.test(txt);
+    if (_diag) _chooserLog.push({ smart: true, kind, term: String(term || ""), chose: (pick.o.textContent || "").trim().slice(0, 26), ok });
+    return ok ? "ok" : (kind === "empty" || kind === "text") ? "unrecognised" : "no-match";
+  };
+
   const fillChooser = async (h) => {
     let pick = null;
     const label = labelOf(h);
@@ -1035,6 +1151,19 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
     }
     if (!value) return;
+    // Recognise-then-act (smartChoose): one open, one sample, one typed term, one click. Falls through
+    // to the older generic path only when the list cannot be recognised.
+    {
+      const iso = (countryTokens()[1] || "").toUpperCase();
+      const ok = await smartChoose(h, {
+        text: String(value),
+        iso,
+        countryName: String(atoms.country || atoms.nationality || ""),
+        dialCode: pick && pick.key === "phonecc" ? String(value).replace(/D/g, "") : "",
+      });
+      if (ok === "ok") { filled++; markFilled(h); return; }
+      if (ok === "no-match") return;   // recognised list, our answer is not in it — leave it blank
+    }
     // Candidate strings to type/match: the value plus expansions (gender M<->Male; country
     // abbrev/demonym -> full name; US state name<->abbrev; phone country code).
     const cands = expandCands(pick, String(value));
