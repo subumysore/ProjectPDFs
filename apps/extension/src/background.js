@@ -62,6 +62,7 @@ async function unlockPassphrase(passphrase) {
   }
   key = k;
   await loadTimes();
+  void flushPendingCaptures();   // answers typed while locked land now
   await applyBackfill();   // heal a vault seeded before Country was inferred
   await cacheSession();
   return Object.keys(vault);
@@ -204,7 +205,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           const { autoSaveDetails } = await chrome.storage.local.get("autoSaveDetails");
           if (autoSaveDetails === false) { sendResponse({ ok: true, saved: 0, off: true }); break; }
           const saved = await saveNewToVault(Array.isArray(msg.pairs) ? msg.pairs : []);
-          sendResponse({ ok: true, saved });
+          const { pendingCaptures = [] } = await chrome.storage.local.get("pendingCaptures");
+          sendResponse({ ok: true, saved, queued: pendingCaptures.length });
           break;
         }
         case "openToolWindow":
@@ -373,12 +375,41 @@ async function saveNewToVault(pairs) {
   } catch (_) { /* fall through to local */ }
   // Local browser vault (only if unlocked).
   try {
-    if (!vault || !key) return 0;
+    if (!vault || !key) return await queueForLater(pairs);   // nowhere to write YET — never drop it
     const fresh = newInformation(pairs, vault, keyFromLabel, isCapturableLabel).filter((p) => p.existing === undefined);
     let n = 0;
     for (const p of fresh) { vault[p.key] = p.value; times[p.key] = nowSecs(); n++; }
     if (n) await persist();
     return n;
+  } catch (_) { return await queueForLater(pairs); }
+}
+
+// An answer the user typed must NEVER be lost just because the vault was unreachable at that instant.
+// That is the common case in shared-vault (companion) mode: the desktop app is closed or locked, the
+// bridge refuses, the local vault is locked too — and every captured answer silently evaporated.
+// Queue it instead, and flush the queue the moment a vault becomes writable.
+const PENDING_KEY = "pendingCaptures";
+async function queueForLater(pairs) {
+  try {
+    const { [PENDING_KEY]: q = [] } = await chrome.storage.local.get(PENDING_KEY);
+    const seen = new Set(q.map((p) => p.label + " " + p.value));
+    const add = pairs.filter((p) => p && p.label && p.value && !seen.has(p.label + " " + p.value));
+    if (!add.length) return 0;
+    // Cap the queue so a runaway page cannot fill storage; oldest go first.
+    const next = q.concat(add).slice(-200);
+    await chrome.storage.local.set({ [PENDING_KEY]: next });
+  } catch (_) { /* storage full or unavailable — nothing more we can do */ }
+  return 0;
+}
+
+/// Write anything queued earlier. Called whenever a vault becomes reachable (unlock, or a successful
+/// bridge read), so answers typed while locked land as soon as they can.
+async function flushPendingCaptures() {
+  try {
+    const { [PENDING_KEY]: q = [] } = await chrome.storage.local.get(PENDING_KEY);
+    if (!q.length) return 0;
+    await chrome.storage.local.remove(PENDING_KEY);   // clear first: saveNewToVault re-queues on failure
+    return await saveNewToVault(q);
   } catch (_) { return 0; }
 }
 
