@@ -80,3 +80,30 @@ test("shared code with an unknown country still picks a row carrying the right c
   await fillPage({ cell_phone: "+1 9195550123" });
   assert.ok(["AG", "US"].includes(dom.window.document.getElementById("s").value));
 });
+
+// The vault holds whatever the user typed. "USA" / "US" / "America" must disambiguate a shared code
+// just as well as "United States" — otherwise the first country sharing +1 wins (Antigua).
+for (const written of ["USA", "US", "America", "united states of america"]) {
+  test(`country written as "${written}" still picks the right +1 row`, async () => {
+    const dom = mount(`<label>Country dialing code
+      <select id="s"><option value=""></option><option value="AG">Antigua +1</option><option value="US">United States +1</option></select></label>`);
+    await fillPage({ country: written, cell_phone: "9195550123" });
+    assert.equal(dom.window.document.getElementById("s").value, "US");
+  });
+}
+
+// Onboarding seeds the dialling code from the device timezone but leaves Country BLANK — the common
+// real-world vault. With no country to go on, fall back to the device region rather than row order.
+test("no country stored: the device region disambiguates the shared code", async () => {
+  const dom = mount(`<label>Country dialing code
+    <select id="s"><option value=""></option><option value="AG">Antigua +1</option><option value="US">United States +1</option></select></label>`);
+  // Node exposes its own read-only `navigator`, so plain assignment is silently ignored — define it.
+  const saved = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", { configurable: true, get: () => ({ language: "en-US", languages: ["en-US"] }) });
+  try {
+    await fillPage({ phone_country_code: "+1", cell_phone: "9195550123" });
+    assert.equal(dom.window.document.getElementById("s").value, "US");
+  } finally {
+    if (saved) Object.defineProperty(globalThis, "navigator", saved); else delete globalThis.navigator;
+  }
+});

@@ -328,11 +328,35 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   // matching row wins and a US user silently gets Antigua (seen on Dayforce, whose options are
   // "🇦🇬 +1" with the ISO code in the option's value).
   const countryTokens = () => {
-    const c = norm(atoms.country || atoms.nationality || "");
-    if (!c) return [];
-    const toks = [c];
-    for (const code of COUNTRY_ABBR[c] || []) toks.push(code.toLowerCase());
-    return toks;
+    const raw = norm(atoms.country || atoms.nationality || "");
+    // The vault may hold the country in ANY form the user typed it: "United States", "USA", "US",
+    // "America". Canonicalise first — otherwise "USA" matches no row and the first country sharing
+    // the code wins (a US user was getting Antigua).
+    let canon = raw && COUNTRY_ABBR[raw] ? raw : "";
+    if (raw && !canon) {
+      for (const [name, codes] of Object.entries(COUNTRY_ABBR)) {
+        if (codes.some((c) => c.toLowerCase() === raw)) { canon = name; break; }
+      }
+    }
+    if (canon) return [canon, ...(COUNTRY_ABBR[canon] || []).map((c) => c.toLowerCase())];
+    if (raw) return [raw];
+    // NO country stored at all — which is common, because onboarding seeds the dialling code (from the
+    // device timezone) but leaves the country blank. Fall back to the device's own region, the same
+    // on-device signal the seeder uses. Never a network call, never a guess beyond the OS locale.
+    try {
+      const lang = (typeof navigator !== "undefined" && (navigator.language || (navigator.languages || [])[0])) || "";
+      let region = "";
+      try { region = new Intl.Locale(lang).region || ""; } catch (_) { /* older engine */ }
+      if (!region && lang.includes("-")) region = lang.split("-").pop();
+      if (region) {
+        const r = region.toLowerCase();
+        for (const [name, codes] of Object.entries(COUNTRY_ABBR)) {
+          if (codes.some((c) => c.toLowerCase() === r)) return [name, ...codes.map((c) => c.toLowerCase())];
+        }
+        return [r];
+      }
+    } catch (_) { /* no navigator/Intl — fall through */ }
+    return [];
   };
   const derivedDialCode = () => {
     const stored = (atoms.phonecc || "").toString().trim();
