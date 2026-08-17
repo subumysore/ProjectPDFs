@@ -191,6 +191,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // Fax is its OWN concept so a neighbouring "Email Address" or "Phone" label can never claim it
     // (label text bleeds between adjacent fields on dense forms). With no stored fax, it stays blank.
     fax:      ["fax", "fax number", "fax no", "facsimile"],
+    // A phone EXTENSION is not a phone number. "Phone Extension" contains "phone", so the phone concept
+    // claimed it and stamped the whole number into a 4-digit extension box (seen on a live Workday
+    // application). It fills only from a stored extension, and stays blank when there is none.
+    phone_ext: ["phone extension", "telephone extension", "phone ext", "extension", "ext", "ext no"],
     // Professional links — kept in step with resolver.js (the parity test enforces it).
     linkedin: ["linkedin", "linked in", "linkedin profile", "linkedin url", "linked in url", "linked in profile", "linkedin profile url", "linkedin link", "li profile"],
     website:  ["website", "personal website", "portfolio", "portfolio url", "portfolio link", "personal site", "web site", "blog url"],

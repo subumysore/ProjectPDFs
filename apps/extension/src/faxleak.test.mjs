@@ -43,3 +43,21 @@ test("a phone number never lands in a fax box either", async () => {
   assert.equal(dom.window.document.getElementById("m").value, "9195550123");
   assert.equal(dom.window.document.getElementById("fax").value, "");
 });
+
+// "Phone Extension" contains "phone", so the phone concept used to claim it and write the whole
+// number into a 4-digit extension box. Reported on a live Workday application.
+test("a phone EXTENSION box is left blank when no extension is stored", async () => {
+  const dom = mount(`
+    <div><label>Phone Number <input id="p"></label></div>
+    <div><label>Phone Extension <input id="x"></label></div>`);
+  await fillPage(VAULT);
+  const d = dom.window.document;
+  assert.equal(d.getElementById("p").value, "9195550123");
+  assert.equal(d.getElementById("x").value, "", `extension received "${d.getElementById("x").value}"`);
+});
+
+test("a stored extension does fill the extension box", async () => {
+  const dom = mount(`<label>Phone Extension <input id="x"></label>`);
+  await fillPage({ ...VAULT, phone_extension: "4021" });
+  assert.equal(dom.window.document.getElementById("x").value, "4021");
+});

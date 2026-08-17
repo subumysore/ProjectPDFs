@@ -81,6 +81,10 @@ export function resolveFields(vault, fields) {
     // Fax is its OWN concept so a neighbouring "Email Address" or "Phone" label can never claim it
     // (label text bleeds between adjacent fields on dense forms). With no stored fax, it stays blank.
     fax:      ["fax", "fax number", "fax no", "facsimile"],
+    // A phone EXTENSION is not a phone number. "Phone Extension" contains "phone", so the phone
+    // concept used to claim it and stamp the full number into a 4-digit extension box. It fills only
+    // from a stored extension, and stays blank when there is none.
+    phone_ext: ["phone extension", "telephone extension", "phone ext", "extension", "ext", "ext no"],
     // Professional links. These were previously matched only by a whole-vault-key fallback, which is
     // fragile: on a dense form a nearer concept can claim the field first (an application form's
     // "LinkedIn Profile" was being filled with today's date). A real concept makes the match explicit.
