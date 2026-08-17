@@ -41,6 +41,45 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (key === "phonecc") { const d = String(value).replace(/\D/g, ""); if (d) cands.push(d, "+" + d); }
     return cands;
   };
+  // ISO-3166 alpha-2 / alpha-3 for the countries a stored full name is likely to be. Only the short
+  // codes a form would ever ask for in a 2-3 char box; anything unknown simply yields no abbreviation
+  // and the field is left blank (the old behaviour), never a guess.
+  const COUNTRY_ABBR = {
+    "united states": ["US", "USA"], "united states of america": ["US", "USA"], "america": ["US", "USA"],
+    "united kingdom": ["GB", "UK", "GBR"], "great britain": ["GB", "UK", "GBR"], "england": ["GB", "UK"],
+    "india": ["IN", "IND"], "canada": ["CA", "CAN"], "australia": ["AU", "AUS"], "new zealand": ["NZ", "NZL"],
+    "germany": ["DE", "DEU"], "france": ["FR", "FRA"], "spain": ["ES", "ESP"], "italy": ["IT", "ITA"],
+    "netherlands": ["NL", "NLD"], "ireland": ["IE", "IRL"], "south africa": ["ZA", "ZAF"],
+    "singapore": ["SG", "SGP"], "united arab emirates": ["AE", "ARE"], "saudi arabia": ["SA", "SAU"],
+    "japan": ["JP", "JPN"], "china": ["CN", "CHN"], "south korea": ["KR", "KOR"], "brazil": ["BR", "BRA"],
+    "mexico": ["MX", "MEX"], "nigeria": ["NG", "NGA"], "kenya": ["KE", "KEN"], "pakistan": ["PK", "PAK"],
+    "bangladesh": ["BD", "BGD"], "sri lanka": ["LK", "LKA"], "nepal": ["NP", "NPL"], "philippines": ["PH", "PHL"],
+    "switzerland": ["CH", "CHE"], "sweden": ["SE", "SWE"], "norway": ["NO", "NOR"], "denmark": ["DK", "DNK"],
+    "poland": ["PL", "POL"], "portugal": ["PT", "PRT"], "hong kong": ["HK", "HKG"], "malaysia": ["MY", "MYS"],
+  };
+  // The short form of a state/country value that FITS a maxlength-limited box, or null when there is
+  // none we are sure of. Used only to rescue a fill that would otherwise be skipped.
+  const abbreviateFor = (key, label, value, maxL) => {
+    const n = norm(value);
+    const fits = (s) => s && s.length <= maxL ? s : null;
+    // The concept may arrive as a matched key OR, when the value came straight from a vault key of the
+    // same name ("state"), as nothing at all — in which case the field's own caption tells us.
+    const cap = norm(label);
+    if (!key && /\b(state|province|region)\b/.test(cap)) key = "state";
+    if (!key && /\b(country|nationality)\b/.test(cap)) key = "country";
+    if (key === "state" || key === "billing_state" || key === "region") {
+      const abbr = Object.keys(US_STATE_ABBR).find((k) => norm(US_STATE_ABBR[k]) === n);
+      return abbr ? fits(abbr.toUpperCase()) : null;
+    }
+    if (key === "country" || key === "nationality" || key === "billing_country") {
+      // Longest code that still fits: a 3-char box wants the alpha-3 ("USA"), a 2-char box alpha-2 ("US").
+      const cands = [...(COUNTRY_ABBR[n] || [])].sort((a, b) => b.length - a.length);
+      for (const cand of cands) { const f = fits(cand); if (f) return f; }
+      return null;
+    }
+    return null;
+  };
+
   // EDUCATION (from parseEducation, passed in): map a form's Degree/Field/School/Year/GPA fields to
   // the right stored qualification (Master's block gets the masters entry, etc.). eduEntries are
   // pre-parsed in the popup (highest level first); here we only ROUTE them onto the live form.
@@ -769,7 +808,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       if (!y) continue;      // not a year → leave the box blank rather than fill garbage
       value = y[0];
     } else if (maxL > 0 && String(value).length > maxL && /\D/.test(String(value))) {
-      continue;              // value with letters can't fit this short field → a wrong match, skip it
+      // The value has letters and does not fit. For a STATE or COUNTRY that is not a wrong match —
+      // it is a form that wants the ABBREVIATION ("North Carolina" into a maxlength=2 box, "United
+      // States" into a 2/3-char one). Try the short form; only if that fits do we fill, otherwise we
+      // still skip as before. Purely additive: this branch runs where the old code filled NOTHING.
+      const shortForm = abbreviateFor(pick && pick.key, label, value, maxL);
+      if (!shortForm) continue;   // no abbreviation that fits → leave blank, exactly as before
+      value = shortForm;
     }
     if (pick && pick.name && wantsInitial(label, el)) value = initial(value);
     // Password fields: type the value key-by-key (sites that block paste / ignore a bulk set still
