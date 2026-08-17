@@ -3,7 +3,7 @@
 // unlocked, and are dropped on lock (or when the worker is evicted). chrome.storage
 // holds only the SALT and the AES-GCM CIPHERTEXT — never the key, never plaintext.
 import { derivePassphraseKey, deriveWebAuthnKey, seal, open, newSalt, exportKeyB64, importKeyB64 } from "./vault.js";
-import { starterVault } from "./seed.js";
+import { starterVault, backfillDerivable } from "./seed.js";
 import { fillPage } from "./pagefill.js";
 import { parseEducation } from "./education.js";
 import { chooseDataProfile } from "./profileMatch.js";
@@ -62,6 +62,7 @@ async function unlockPassphrase(passphrase) {
   }
   key = k;
   await loadTimes();
+  await applyBackfill();   // heal a vault seeded before Country was inferred
   await cacheSession();
   return Object.keys(vault);
 }
@@ -79,8 +80,22 @@ async function unlockWebAuthn(prfSecretB64) {
   }
   key = k;
   await loadTimes();
+  await applyBackfill();   // heal a vault seeded before Country was inferred
   await cacheSession();
   return Object.keys(vault);
+}
+
+// Fill in values we can derive on-device but that an older vault never got (Country, dialling code).
+// Only ever writes a key that is EMPTY, so it can never overwrite something the user typed.
+async function applyBackfill() {
+  try {
+    const add = backfillDerivable(vault);
+    const keys = Object.keys(add);
+    if (!keys.length) return;
+    Object.assign(vault, add);
+    for (const k of keys) times[k] = Date.now();
+    await chrome.storage.local.set({ blob: await seal(key, vault), vtimes: times });
+  } catch (_) { /* a backfill must never block an unlock */ }
 }
 
 async function persist() {

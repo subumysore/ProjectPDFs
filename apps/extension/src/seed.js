@@ -89,6 +89,66 @@ const REGION_DIAL = {
   CO: "+57", PE: "+51", CL: "+56", AR: "+54",
 };
 
+// ISO-3166 alpha-2 region -> country NAME. Seeding the dialling code but leaving Country blank was a
+// half-measure: the country drives the dial-code row on a shared code (+1 is the US, Canada, Antigua,
+// the Bahamas…), state abbreviations, country dropdowns and address shape. Same on-device signal, so
+// if we can infer the code we can infer the country.
+const REGION_COUNTRY = {
+  IN: "India", US: "United States", CA: "Canada", GB: "United Kingdom", IE: "Ireland",
+  PT: "Portugal", ES: "Spain", FR: "France", BE: "Belgium", NL: "Netherlands", DE: "Germany",
+  CH: "Switzerland", IT: "Italy", AT: "Austria", CZ: "Czechia", PL: "Poland", HU: "Hungary",
+  RO: "Romania", SE: "Sweden", NO: "Norway", DK: "Denmark", FI: "Finland", GR: "Greece",
+  UA: "Ukraine", RU: "Russia", TR: "Turkey", AE: "United Arab Emirates", SA: "Saudi Arabia",
+  QA: "Qatar", KW: "Kuwait", IL: "Israel", IR: "Iran", PK: "Pakistan", BD: "Bangladesh",
+  LK: "Sri Lanka", NP: "Nepal", CN: "China", HK: "Hong Kong", TW: "Taiwan", SG: "Singapore",
+  MY: "Malaysia", ID: "Indonesia", TH: "Thailand", VN: "Vietnam", PH: "Philippines",
+  JP: "Japan", KR: "South Korea", AU: "Australia", NZ: "New Zealand", ZA: "South Africa",
+  NG: "Nigeria", KE: "Kenya", EG: "Egypt", MA: "Morocco", BR: "Brazil", MX: "Mexico",
+  CO: "Colombia", PE: "Peru", CL: "Chile", AR: "Argentina",
+};
+// Timezones are the better location signal (locale is a language preference), so map the zones we
+// already know to their region, then reuse REGION_COUNTRY.
+const TZ_REGION = {
+  "Asia/Kolkata": "IN", "Asia/Calcutta": "IN",
+  "America/New_York": "US", "America/Detroit": "US", "America/Chicago": "US", "America/Denver": "US",
+  "America/Phoenix": "US", "America/Los_Angeles": "US", "America/Anchorage": "US", "Pacific/Honolulu": "US",
+  "America/Toronto": "CA", "America/Vancouver": "CA", "America/Edmonton": "CA",
+  "Europe/London": "GB", "Europe/Dublin": "IE", "Europe/Lisbon": "PT", "Europe/Madrid": "ES",
+  "Europe/Paris": "FR", "Europe/Brussels": "BE", "Europe/Amsterdam": "NL", "Europe/Berlin": "DE",
+  "Europe/Zurich": "CH", "Europe/Rome": "IT", "Europe/Vienna": "AT", "Europe/Prague": "CZ",
+  "Europe/Warsaw": "PL", "Europe/Budapest": "HU", "Europe/Bucharest": "RO", "Europe/Stockholm": "SE",
+  "Europe/Oslo": "NO", "Europe/Copenhagen": "DK", "Europe/Helsinki": "FI", "Europe/Athens": "GR",
+  "Europe/Kyiv": "UA", "Europe/Kiev": "UA", "Europe/Moscow": "RU", "Europe/Istanbul": "TR",
+  "Asia/Dubai": "AE", "Asia/Riyadh": "SA", "Asia/Qatar": "QA", "Asia/Kuwait": "KW",
+  "Asia/Jerusalem": "IL", "Asia/Tehran": "IR", "Asia/Karachi": "PK", "Asia/Dhaka": "BD",
+  "Asia/Colombo": "LK", "Asia/Kathmandu": "NP", "Asia/Shanghai": "CN", "Asia/Hong_Kong": "HK",
+  "Asia/Taipei": "TW", "Asia/Singapore": "SG", "Asia/Kuala_Lumpur": "MY", "Asia/Jakarta": "ID",
+  "Asia/Bangkok": "TH", "Asia/Ho_Chi_Minh": "VN", "Asia/Manila": "PH", "Asia/Tokyo": "JP",
+  "Asia/Seoul": "KR", "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Brisbane": "AU",
+  "Australia/Perth": "AU", "Australia/Adelaide": "AU", "Pacific/Auckland": "NZ",
+  "Africa/Johannesburg": "ZA", "Africa/Lagos": "NG", "Africa/Nairobi": "KE", "Africa/Cairo": "EG",
+  "Africa/Casablanca": "MA", "America/Sao_Paulo": "BR", "America/Mexico_City": "MX",
+  "America/Bogota": "CO", "America/Lima": "PE", "America/Santiago": "CL",
+  "America/Argentina/Buenos_Aires": "AR",
+};
+
+// Best-effort COUNTRY NAME from the machine's location. Same rules as the dialling code: timezone
+// first, then the locale's region. Returns "" when we cannot tell — never a guess.
+export function guessCountry() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TZ_REGION[tz] && REGION_COUNTRY[TZ_REGION[tz]]) return REGION_COUNTRY[TZ_REGION[tz]];
+  } catch (_) { /* Intl/timezone unavailable */ }
+  try {
+    const lang = (self.navigator && self.navigator.language) || "";
+    let region = "";
+    try { region = (new Intl.Locale(lang).region || "").toUpperCase(); } catch (_) { /* older engine */ }
+    if (!region && lang.includes("-")) region = lang.split("-").pop().toUpperCase();
+    if (region && REGION_COUNTRY[region]) return REGION_COUNTRY[region];
+  } catch (_) { /* navigator unavailable */ }
+  return "";
+}
+
 // Best-effort dialing code from the machine's location. No network, no permissions.
 export function guessDialCode() {
   try {
@@ -110,6 +170,20 @@ export function starterVault() {
   const v = {};
   for (const k of STARTER_KEYS) v[k] = "";
   v.phone_country_code = guessDialCode();
+  v.country = guessCountry();
   v.native_language = guessNativeLanguage();
   return v;
+}
+
+// Vaults created BEFORE country was seeded have a dialling code but no country — and the country is
+// what tells a "+1" list whether you are in the US, Canada, Antigua or the Bahamas. Fill that one gap
+// on unlock, only when the field is genuinely empty and only from the same on-device signal. Returns
+// the keys it set (empty when there is nothing to do) so the caller can persist just those.
+export function backfillDerivable(vault) {
+  const out = {};
+  if (!vault || typeof vault !== "object") return out;
+  const blank = (k) => !vault[k] || !String(vault[k]).trim();
+  if (blank("country")) { const c = guessCountry(); if (c) out.country = c; }
+  if (blank("phone_country_code")) { const d = guessDialCode(); if (d) out.phone_country_code = d; }
+  return out;
 }
