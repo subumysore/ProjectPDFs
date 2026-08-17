@@ -206,6 +206,22 @@ export function App() {
   useEffect(() => { getVersion().then(setAppVersion).catch(() => {}); }, []);
   const [hasPass, setHasPass] = useState(false);
   const [unlocking, setUnlocking] = useState(false); // show a live spinner while the vault decrypts
+  // Convenience switches (ADR-0031). Both are OPT-IN and both keep Windows Hello in the loop:
+  //  • bridgeFree  — the browser extension may use the shared vault with THIS APP CLOSED, instead of
+  //                  demanding "open the app and unlock it" before every fill.
+  //  • rememberMe  — relaunching this app asks Hello instead of the passphrase.
+  const [bridgeFree, setBridgeFree] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  useEffect(() => {
+    if (locked) return;
+    void invoke<boolean>("bridge_without_app_active").then(setBridgeFree).catch(() => {});
+    void invoke<boolean>("remember_unlock_active").then(setRememberMe).catch(() => {});
+  }, [locked]);
+  // On launch, offer Hello FIRST when the user asked to be remembered — a declined or unavailable
+  // prompt simply leaves the passphrase screen in place.
+  useEffect(() => {
+    void invoke<boolean>("unlock_with_hello").then((ok) => { if (ok) setLocked(false); }).catch(() => {});
+  }, []);
   const [pass, setPass] = useState("");
   const [lockMsg, setLockMsg] = useState("");
   const [extracted, setExtracted] = useState<ExtractedField[]>([]);
@@ -1511,6 +1527,38 @@ export function App() {
           🔒 {tr("lock.button")}
         </button>
       </div>
+      {/* Two switches that remove the daily friction, both opt-in and both still requiring Windows
+          Hello (ADR-0031). Shown only when unlocked, because enabling them must require the passphrase. */}
+      {!locked && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", margin: "2px 0 8px", fontSize: 12, color: "#55666f" }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}
+            title="The browser extension can use your shared vault while this app is closed. Windows Hello (face, fingerprint or PIN) is asked for every 15 minutes. Nothing leaves your device.">
+            <input
+              type="checkbox"
+              checked={bridgeFree}
+              onChange={async (e) => {
+                const on = e.currentTarget.checked;
+                try { await invoke("set_bridge_without_app", { days: on ? 365 : 0 }); setBridgeFree(on); }
+                catch (err) { setErr(String(err)); }
+              }}
+            />
+            Let the browser extension work without opening this app
+          </label>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}
+            title="Next time this app starts, unlock with Windows Hello instead of typing your passphrase. Your passphrase always still works, and locking the app cancels this.">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={async (e) => {
+                const on = e.currentTarget.checked;
+                try { await invoke("set_remember_unlock", { days: on ? 30 : 0 }); setRememberMe(on); }
+                catch (err) { setErr(String(err)); }
+              }}
+            />
+            Unlock this app with Windows Hello
+          </label>
+        </div>
+      )}
       {!(tab === "forms" && pdfBytes) && (
         <p style={{ color: "#55666f", margin: "1px 0 7px", fontSize: 12.5 }}>
           {tr("privacy.body")}

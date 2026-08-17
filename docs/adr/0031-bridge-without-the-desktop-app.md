@@ -61,8 +61,19 @@ Locker, and gate its use behind `UserConsentVerifier` rather than inventing a be
   its state), and `unlock_with_hello` / `set_remember_unlock` for the same treatment on the app's own
   unlock screen. `lock_app` and `reset_vault` clear both permissions.
 
+## Verification
+
+- `scripts/e2e/verify-bridge-without-app.mjs` drives the REAL host binary over the native-messaging
+  protocol against an isolated vault and asserts all four gate states: refused when not opted in,
+  served when the app is unlocked, **served with the app CLOSED inside a live Hello window**, and
+  refused again once that window lapses. 5/5 passing, each "served" case doing a real vault read
+  (listProfiles), not merely passing the gate.
+- native-host unit tests cover window opening/lapsing and the app-unlocked path winning with no prompt.
+- Desktop UI: both switches are drawn in the header (opt-in, shown only while unlocked); tsc clean and
+  the app front-end builds.
+
 ## Still to do before release
 
-- The desktop settings UI for the switch (the commands exist; the toggle is not drawn yet).
-- End-to-end verification: extension fills a form with the desktop app CLOSED, on a machine with Hello
-  enrolled, and the same check with Hello declined (must fall back to the old message).
+- ONE manual eyeball: on a machine with Hello enrolled, confirm the biometric dialog actually appears
+  on the first browser fill with the app closed, and that DECLINING it falls back to the old message.
+  A biometric prompt cannot be automated - it requires a real finger or face.
