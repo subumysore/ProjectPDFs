@@ -21,6 +21,9 @@ importers:
       '@pdf-lib/fontkit':
         specifier: ^1.1.1
         version: 1.1.1(patch_hash=mysz3jcn64vbezynen3b6lvkmu)
+      puppeteer-core:
+        specifier: ^25.4.0
+        version: 25.4.0
       typescript:
         specifier: ^5.6.0
         version: 5.9.3

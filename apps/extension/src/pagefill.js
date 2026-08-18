@@ -206,6 +206,8 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     gender:   ["gender", "sex"],
     marital:  ["marital status", "marital", "civil status", "relationship status", "marital state", "marital condition"],
     salutation: ["salutation", "title", "prefix", "honorific"],
+    suffix:   ["suffix", "name suffix", "generational suffix", "suffix jr sr", "post nominal", "post nominal letters"],
+    language: ["language", "preferred language", "primary language", "native language", "language preference", "spoken language", "correspondence language"],
     dob:      ["date of birth", "dob", "d o b", "birth date", "birthday", "born", "birthdate"],
     appdate:  ["date of application", "application date", "today's date", "todays date", "current date", "date of submission", "submission date", "date signed", "signature date", "date of signature", "date of filling", "date filled", "dated", "date of declaration"],
     passport: ["passport", "passport no", "passport number"],
@@ -213,7 +215,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     passport_issue:  ["passport issue date", "passport issuance date", "passport issuance", "date of issue", "issue date", "issuance date", "date of issuance", "issued on", "valid from", "passport valid from"],
     dl_expiry:       ["dl expiry date", "driver license expiry date", "drivers license expiry date", "driving licence expiry date", "license expiry date", "licence expiry date", "license expiry", "licence expiry", "dl expiry", "dl exp", "license expiration date", "driver license expiration", "licence expiration"],
     dl_issue:        ["dl issue date", "driver license issue date", "drivers license issue date", "driving licence issue date", "license issue date", "licence issue date", "license issue", "licence issue", "dl issue", "licence valid from", "license valid from"],
-    organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm"],
+    organization: ["company", "company name", "organization", "organisation", "employer", "business name", "firm",
+      "current company", "current employer", "current organization", "current organisation", "present employer",
+      "present company", "employer name", "company you work for", "most recent employer", "most recent company"],
     username: ["username", "user name", "login", "user id", "userid", "handle"],
     password: ["password", "confirm password", "create password", "new password", "choose password", "re enter password", "reenter password", "re type password", "retype password", "repeat password", "verify password", "passphrase", "pwd"],
     dependent_name: ["name of dependent", "dependent name", "dependant name", "nominee name", "nominee", "guardian name", "beneficiary name", "next of kin", "spouse name", "emergency contact name"],
@@ -348,6 +352,18 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const raw = norm(raw0 || atoms.country || atoms.nationality || "");
     if (!raw) return "";
     if (/^(america|the united states|u s a?|usa|u s)$/.test(raw)) return "united states";
+    // The SAME country under another official name. Dropdowns use these long forms ("United States of
+    // America", "Korea, Republic of") while a vault holds the short one, and treating them as different
+    // countries left a REQUIRED country box blank on live applications.
+    const SAME_COUNTRY = {
+      "united states of america": "united states", "united states minor outlying islands": "",
+      "united kingdom of great britain and northern ireland": "united kingdom", "great britain": "united kingdom",
+      "england": "united kingdom", "the netherlands": "netherlands", "holland": "netherlands",
+      "republic of india": "india", "korea republic of": "south korea", "republic of korea": "south korea",
+      "russian federation": "russia", "viet nam": "vietnam", "u a e": "united arab emirates",
+      "peoples republic of china": "china", "republic of ireland": "ireland",
+    };
+    if (SAME_COUNTRY[raw] !== undefined && SAME_COUNTRY[raw] !== "") return SAME_COUNTRY[raw];
     if (COUNTRY_ABBR[raw]) return raw;                                  // already canonical
     for (const [name, codes] of Object.entries(COUNTRY_ABBR)) {
       if (codes.some((c) => c.toLowerCase() === raw)) return name;      // ISO code -> name
@@ -454,10 +470,15 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // The visible caption is often a SIBLING (Angular/React forms rarely use <label for>),
     // and the id can be misspelt (e.g. "passportExpirtyDate"). Read the nearest ancestor's
     // short text so the real, human-visible label is seen — not just the field's own tags.
+    // A custom dropdown's own wrapper reads "Select…" — the widget's PLACEHOLDER, not its question.
+    // Stopping there labelled every Greenhouse screening dropdown "Select..." , so the saved answer
+    // for "Are you eligible to work in the United States?" matched nothing and the box stayed empty.
+    // Keep climbing past a placeholder-only wrapper until the real question is in view.
+    const placeholderOnly = /^(select\s*(one|an option|a value)?|choose( one)?|please select|pick one|--+|—|-)\s*(\.{3}|…)?$/i;
     let gt = "", a = el.parentElement;
-    for (let i = 0; i < 4 && a; i++, a = a.parentElement) {
+    for (let i = 0; i < 5 && a; i++, a = a.parentElement) {
       const t = (a.textContent || "").replace(/\s+/g, " ").trim();
-      if (t.length >= 3 && t.length <= 200) { gt = t; break; }
+      if (t.length >= 3 && t.length <= 200 && !placeholderOnly.test(t)) { gt = t; break; }
     }
     return [el.name, el.id, el.placeholder, el.getAttribute("aria-label"), ariaLabelText(el),
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
@@ -1150,7 +1171,11 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       const t = (o.textContent || "").replace(/\s+/g, " ").trim();
       let score = 0;
       if (want.matcher) score = want.matcher.test(t.toLowerCase()) ? 3 : 0;
-      else if (kind.startsWith("dial")) {
+      // Match by dialling code ONLY when a dialling code is what we are filling. A COUNTRY dropdown
+      // that happens to print the code beside each country ("United States +1", Greenhouse) is still a
+      // country question — scoring it as a dial list needs a code we do not have, so every row scored
+      // zero and the required Country box was left blank.
+      else if (kind.startsWith("dial") && want.dialCode) {
         const code = (t.match(/\+\s?(\d{1,4})/) || [])[1];
         if (code && code === String(want.dialCode)) score = /\b(us|usa)\b/i.test(t) === false && want.iso
           ? (new RegExp("\\b" + want.iso + "\\b", "i").test(t) || norm2(t).includes(norm2(want.countryName)) ? 3 : 1)
@@ -1160,12 +1185,25 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         if (a === b) score = 3;
         // A country must match its whole name. Prefix matching is what let "America"/"USA" select
         // "AMERICAn Samoa" — a different country that merely starts with the same letters.
-        else if (want.exact) score = (want.alts || []).some((x) => norm2(x) === a) ? 3 : 0;  // name or ISO code, in full
+        // Name or ISO code, in full — OR the SAME country under another of its official names. A list
+        // that says "United States of America" while the vault says "United States" is the same country,
+        // and refusing it left a REQUIRED country box blank on live Greenhouse. Identity is decided by
+        // canonicalising both sides, so "American Samoa" is still a different country and stays out.
+        // Country rows are often decorated with the dialling code or a flag ("United States +1"), which
+        // an exact whole-name test rejects — leaving a REQUIRED country box blank on live Greenhouse.
+        // Strip the decoration, then compare identities.
+        else if (want.exact) {
+          const bare = t.replace(/\+\s*\d{1,4}\s*$/, "").replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "").trim();
+          score = (want.alts || []).some((x) => norm2(x) === a || norm2(x) === norm2(bare)) ? 3
+            : (canonicalCountry(bare) && canonicalCountry(bare) === canonicalCountry(want.text) ? 3 : 0);
+        }
         else if (b && (a.startsWith(b) || b.startsWith(a))) score = 2;
       }
       return { o, score, len: t.length };
     }).filter((x) => x.score >= 2).sort((a, b) => (b.score - a.score) || (a.len - b.len))[0];
     if (!pick) {
+      if (_diag) _chooserLog.push({ nopick: true, kind, term: String(term || ""), exact: !!want.exact, want: String(want.text || ""),
+        rows: rows.length, sample: rows.slice(0, 4).map((o) => (o.textContent || "").replace(/\s+/g, " ").trim().slice(0, 24)) });
       // FILL-THEN-WIPE guard. Clearing our typed text is right when nothing was chosen — but a slow
       // widget can accept the choice AFTER we decide, and the clear then erases a value that had just
       // been committed. That is what "it filled everything and then cleaned it up" looks like. So look
@@ -1189,7 +1227,11 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const txt = ((shown.textContent || "")).replace(/\s+/g, " ").trim();
     const ok = !!txt && !/^(select|choose|please select|pick|--+|—|-)\s*(\.{3}|…)?$/i.test(txt);
     if (_diag) _chooserLog.push({ smart: true, kind, term: String(term || ""), chose: (pick.o.textContent || "").trim().slice(0, 26), ok });
-    return ok ? "ok" : (kind === "empty" || kind === "text") ? "unrecognised" : "no-match";
+    // We DID find the right row and clicked it, but the widget still shows nothing. That is not "our
+    // answer isn't in this list" — it is a library that commits on a gesture we haven't sent yet, so the
+    // per-technology adapters must still get their turn. Returning "no-match" here stopped them, and a
+    // required Country box stayed blank on live Greenhouse with "United States +1" sitting right there.
+    return ok ? "ok" : "unrecognised";
   };
 
   const fillChooser = async (h) => {
@@ -1200,10 +1242,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (value == null) {
       let top = 0;
       for (const c of CONCEPTS) { const s = score(label, c.syn); if (s > top) { top = s; pick = c; } }
-      if (!pick || top < 1.5) return;
+      if (!pick || top < 1.5) { if (_diag) _chooserLog.push({ noconcept: String(label).replace(/s+/g," ").trim().slice(0,40), top }); return; }
       value = pick.kind === "composite" ? compositeValue(pick.cmp) : atomVal(pick.key);
     }
-    if (!value) return;
+    if (!value) { if (_diag) _chooserLog.push({ novalue: String(label).replace(/s+/g," ").trim().slice(0,40) }); return; }
     // Recognise-then-act (smartChoose): one open, one sample, one typed term, one click. Falls through
     // to the older generic path only when the list cannot be recognised.
     {
@@ -1220,6 +1262,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         countryName: String(atoms.country || atoms.nationality || ""),
         dialCode: pick && pick.key === "phonecc" ? String(value).replace(/\D/g, "") : "",
       });
+      if (_diag) _chooserLog.push({ smartResult: ok, label: String(label).replace(/s+/g," ").trim().slice(0,40) });
       if (ok === "ok") { filled++; markFilled(h); return; }
       if (ok === "no-match") return;   // recognised list, our answer is not in it — leave it blank
     }
@@ -1533,7 +1576,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
   };
 
   for (const h of hosts) {
-    if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) continue;
+    if (seen.has(h) || [...seen].some((s) => s.contains(h) || h.contains(s))) {
+      if (_diag) _chooserLog.push({ skipped: "nested", label: String(labelOf(h)).replace(/\s+/g, " ").trim().slice(0, 40) });
+      continue;
+    }
     seen.add(h);
     await fillChooser(h);
   }
@@ -1582,6 +1628,9 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     { key: "felony", q: /(convicted|conviction|felony|criminal (record|history|convict)|pleaded guilty)/, opts: YESNO },
     { key: "over18", q: /(18 years|eighteen years|at least 18|over 18|age of 18|legal working age)/, opts: YESNO },
     { key: "relocate", q: /relocat|willing to move|open to moving/, opts: YESNO },
+    // "Are you able to work onsite in one of our offices?" / "…in the office 3 days a week?" is asked on
+    // most hybrid roles and is NOT the same question as relocating, so it needs its own saved answer.
+    { key: "onsite", q: /work (on.?site|in.?office|from (the|our) office)|able to (commute|be on.?site)|on.?site in one of|in the office d|hybrid (work|schedule|model)/, opts: YESNO },
     { key: "proof_identity", q: /proof of.*(identity|authoriz|eligib)|present proof|form i.?9|right to work document/, opts: YESNO },
     { key: "restrictions", q: /restrictions? limiting|restrictive covenant|non.?compete|non.?solicit|\bnda\b|confidentiality agreement|agreements? with.*(current|prior|former)? ?employer/, opts: YESNO },
     { key: "hispanic", q: /hispanic|latino|latina|latinx/, opts: YESNO },
@@ -1915,6 +1964,66 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         }
       }
       if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true })); filled++; markFilled(sel); }
+    }
+
+    // ---- SAVED ANSWERS on CUSTOM dropdowns (react-select, Ant, Workday, ng-select…) --------------
+    // The two loops above answer a screening question only when it is a radio group, a checkbox set or
+    // a native <select>. Every modern ATS renders them as a CUSTOM widget instead — which is why
+    // "Are you eligible to work in the United States?", "Do you require sponsorship?", Gender and
+    // Veteran status stayed empty on Greenhouse and Workday even with the answers saved.
+    // Same contract as everywhere else: we NEVER guess. Only a question the library recognises, only
+    // an answer the user has already given (Common answers, or one captured for that intent), and only
+    // a row that belongs to THIS widget. A widget whose list lacks that answer is left blank.
+    // Answering one react-select makes the framework re-render the WHOLE question list, so every host
+    // collected before that click is detached and silently unusable — which is why only the first
+    // screening question was ever answered. Re-read the widgets after each answer and work through the
+    // questions by IDENTITY (the question text), not by node.
+    // The question of a CUSTOM dropdown is rarely inside the widget: the library keeps a hidden input
+    // (id "question_123…") and the page carries <label for="question_123…"> beside it. Read that too,
+    // or a long question ("If hired, do you now or in the future require visa sponsorship…") is never
+    // seen and the answer is never given.
+    const chooserQuestion = (h) => {
+      let extra = "";
+      try {
+        const inner = h.querySelector("input, select, textarea") || (h.tagName === "INPUT" ? h : null);
+        const id = inner && inner.id;
+        if (id) {
+          const lab = document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+          if (lab) extra += " " + (lab.textContent || "");
+        }
+        if (inner) extra += " " + ariaLabelText(inner) + " " + (inner.getAttribute("aria-label") || "");
+      } catch (_) { /* the plain label below still applies */ }
+      return (labelOf(h) + extra).replace(/\s+/g, " ").trim();
+    };
+    const savedDone = new Set();
+    for (let round = 0; round < 12; round++) {
+      const fresh = chooserHosts().filter((x) => x.isConnected && !savedDone.has(chooserQuestion(x).slice(0, 80)));
+      if (_diag && round === 0) _chooserLog.push({ savedPass: fresh.length, qs: fresh.map((x) => chooserQuestion(x).slice(0, 50)) });
+      const h = fresh.find((x) => qaMatch(chooserQuestion(x)));
+      if (!h) break;
+      savedDone.add(chooserQuestion(h).slice(0, 80));
+      try {
+        const q = chooserQuestion(h);
+        const entry = qaMatch(q);
+        if (_diag && !entry) _chooserLog.push({ saved: null, label: String(q).replace(/\s+/g, " ").trim().slice(0, 70) });
+        if (!entry) continue;
+        const tok = (SAVED[entry.key] != null && SAVED[entry.key] !== "") ? SAVED[entry.key] : intentAnswer[entry.key];
+        if (tok == null || tok === "") continue;
+        const re = entry.opts[String(tok)];
+        if (!re) continue;
+        const { input } = await openChooser(h);
+        const rows = ownRows(h, input);
+        const row = rows.find((r) => re.test((r.textContent || "").replace(/\s+/g, " ").trim().toLowerCase()));
+        if (_diag) _chooserLog.push({ saved: entry.key, want: String(tok), label: String(q).replace(/\s+/g, " ").trim().slice(0, 40), rows: rows.length, chose: row ? (row.textContent || "").trim().slice(0, 24) : null });
+        if (!row) {                                   // our answer is not on offer — close and move on
+          try { input && input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (_) { /* ignore */ }
+          continue;
+        }
+        for (const t of ["mousedown", "mouseup", "click"]) row.dispatchEvent(new MouseEvent(t, { bubbles: true }));
+        if (row.click) row.click();
+        filled++; markFilled(h);
+        await wait(120);
+      } catch (_) { /* one stubborn widget must never stop the fill */ }
     }
   }
   // CONTROLLED-INPUT RECONCILE: some frameworks (ADP WorkforceNow especially, some Angular/React setups)

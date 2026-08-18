@@ -1,5 +1,27 @@
 # Active Context
 
+## Multi-step application fill + screening answers on custom dropdowns — 2026-08-17 (NOT released)
+- **Built** the multi-step loop from `docs/specs/multi-step-fill.md`: `multistep.js` (pure loop, fully
+  testable), `stepprobe.js` (injected, self-contained page probe), `fillSteps` in `background.js`
+  (runs in the WORKER so the popup can close), popup summary. Version deliberately NOT bumped, nothing
+  deployed — the owner tests locally first.
+- **Contract:** fill → bank the step's answers to the vault → advance; PAUSE naming any required question
+  we could not answer; STOP at Submit / "Review your application"; stuck-step detection; 12-step cap.
+  Submit is never clicked (proved by a click spy in jsdom AND in real Chrome).
+- **Biggest engine fix:** saved screening/EEO answers only ever reached radio groups and native selects.
+  Every modern ATS uses custom dropdowns, so work authorisation, Gender, Race, Veteran and Disability
+  status were blank on Greenhouse/Workday/Lever. New additive pass answers them there too, re-reading the
+  widgets between answers (the framework re-renders the whole list after each choice).
+- **Also fixed:** country rows decorated with a dialling code; country lists mis-scored as dialling lists;
+  long official country names; a picked row that the library commits on a different gesture now falls
+  through to the adapters; junk vault keys (option lists / EEO paragraphs); false "please answer" entries
+  for filled phone boxes and invisible mirror inputs; new concepts (current company, suffix, language).
+- **Verified:** 494 unit tests ✓, coverage gate improved with no regressions, `multistep-run.mjs` green
+  in real Chrome on a wizard + live Greenhouse + live Lever.
+- **Still open:** Dayforce Language/Suffix dropdowns; Lever "Current location" (geo-autocomplete needs a
+  suggestion picked); Workday/iCIMS have no coverage rows yet; fill time on Dayforce still ~8s.
+
+
 ## 1.0.16 — web-form autofill on controlled-input frameworks (ADP/Chrome 151) — 2026-08-12
 - **Root cause (proven by driving LIVE ADP in Chrome 151 via CDP):** ADP WorkforceNow inputs are CONTROLLED
   — a bulk `value` set + `input` event is rejected and the field is reset to the framework's empty model

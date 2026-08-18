@@ -54,6 +54,15 @@ export function collectTypedValues() {
       .map((id) => { const n = document.getElementById(id); return (n && (n.innerText || n.textContent)) || ""; })
       .join(" ").replace(/\s+/g, " ").trim();
   };
+  // A dropdown's caption and its OPTION LIST are often the same block of text ("GenderSelect ...Male
+  // FemaleDecline to self-identify"), so the whole list was being saved as the vault KEY. The question
+  // is the part before the widget's placeholder — keep that, and never save a paragraph as a key.
+  const cleanQuestion = (t) => {
+    let s = String(t == null ? "" : t).replace(/\s+/g, " ").trim();
+    const cut = s.search(/\s*(select\s*\.{2,3}|select\s+(one|an option|a value)\b|choose\s*\.{2,3}|—|…)/i);
+    if (cut > 0) s = s.slice(0, cut).trim();
+    return s.length > 120 ? "" : s;      // still a paragraph → not a question, so not a key
+  };
   const labelOf = (el) => {
     const own = [
       (el.labels && el.labels[0] && el.labels[0].textContent) || "",
@@ -83,7 +92,7 @@ export function collectTypedValues() {
     // A <select> left on its placeholder ("Select…") is not an answer.
     if (el.tagName === "SELECT" && el.selectedIndex <= 0) continue;
     if (instructionText(value)) continue;                 // a placeholder/instruction is not an answer
-    const label = labelOf(el);
+    const label = cleanQuestion(labelOf(el));
     if (!label || junkLabel(label)) continue;             // no usable HUMAN label → don't invent a junk key
     out.push({ label, value });
   }
@@ -103,13 +112,13 @@ export function collectTypedValues() {
         .join(" ").replace(/\s+/g, " ").trim();
       if (t) return t;
     }
-    const own = labelOf(el);
+    const own = cleanQuestion(labelOf(el));
     if (own && !PLACEHOLDER.test(own)) return own;
     let node = el;
     for (let i = 0; i < 5 && node; i++) {
       node = node.parentElement; if (!node) break;
       const lab = node.querySelector("label, legend, [class*='label'], [class*='question'], [class*='prompt']");
-      const t = lab && lab.textContent ? lab.textContent.replace(/\s+/g, " ").trim() : "";
+      const t = cleanQuestion(lab && lab.textContent ? lab.textContent : "");
       if (t && t.length <= 200 && !PLACEHOLDER.test(t)) return t;
     }
     return "";

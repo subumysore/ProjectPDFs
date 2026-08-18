@@ -9,6 +9,8 @@ import { parseEducation } from "./education.js";
 import { chooseDataProfile } from "./profileMatch.js";
 import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
+import { stepProbe } from "./stepprobe.js";
+import { runStepLoop } from "./multistep.js";
 
 let key = null; // CryptoKey, memory-only (+ mirrored to storage.session, see below)
 let vault = null; // decrypted { ontology_key: value }, memory-only
@@ -209,6 +211,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse({ ok: true, saved, queued: pendingCaptures.length });
           break;
         }
+        case "fillSteps":
+          // Multi-step application fill. Runs HERE, in the worker, so closing the popup does not
+          // abandon a half-filled application (docs/specs/multi-step-fill.md).
+          sendResponse(await runMultiStepFill(msg.tabId, msg.opts || {}));
+          break;
         case "openToolWindow":
           await openToolWindow();
           sendResponse({ ok: true });
@@ -499,6 +506,70 @@ chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
     for (const ms of [1500, 4000, 8000, 15000]) setTimeout(injectFill, ms);
   } catch (_) { /* auto-fill must never throw into the worker */ }
 });
+
+// ---- Multi-step application fill --------------------------------------------------------------
+// One press of Fill carries a multi-page application as far as it can honestly go. Each step is a
+// FRESH injection of the same `fillPage` used everywhere else — there is no second filling engine —
+// plus a capture (so the answers are banked before the step is torn down) and a probe (what is still
+// required, and how do we leave this step). We never click Submit; that is the user's.
+const STEP_SETTLE_MS = 4000;   // how long a step gets to render after an advance click
+
+async function runMultiStepFill(tabId, opts = {}) {
+  try {
+    const r = await vaultForAutofill();
+    if (!r.ok) return { ok: false, error: "locked" };
+    let v = r.vault;
+    if (!String(v.country || "").trim()) {
+      try { const { guessCountry } = await import("./seed.js"); const c = guessCountry(); if (c) v = { ...v, country: c }; }
+      catch (_) { /* derivation is a convenience */ }
+    }
+    const { savedAnswers } = await chrome.storage.local.get("savedAnswers");
+    const edu = parseEducation(v);
+    const inject = (fn, args, allFrames = false) => chrome.scripting.executeScript({
+      target: { tabId, allFrames }, world: "MAIN", func: fn, args,
+    }).catch(() => []);
+
+    const probeOnce = async (click) => {
+      const res = await inject(stepProbe, [{ click: !!click }]);
+      // Take the frame that actually has the form (most controls) — ATS forms are often in an iframe.
+      const rs = (res || []).map((x) => x && x.result).filter(Boolean);
+      return rs.sort((a, b) => (b.controls || 0) - (a.controls || 0))[0] || { stepKey: "", requiredEmpty: [] };
+    };
+
+    const deps = {
+      fillStep: async () => {
+        const res = await inject(fillPage, [v, null, edu, { skipPassword: true, savedAnswers: savedAnswers || {} }], true);
+        return (res || []).reduce((n, x) => n + (x && typeof x.result === "number" ? x.result : 0), 0);
+      },
+      // BANK THE ANSWER. Everything on this step — what we filled and what the USER typed — becomes
+      // key/value pairs in the vault before the wizard replaces the step. Obeys "save new details".
+      captureStep: async () => {
+        const { autoSaveDetails } = await chrome.storage.local.get("autoSaveDetails");
+        if (autoSaveDetails === false) return 0;
+        const res = await inject(collectTypedValues, [], true);
+        const pairs = [];
+        for (const x of res || []) if (x && Array.isArray(x.result)) pairs.push(...x.result);
+        // Never bank an image/data-URL: it is not an answer and it would bloat the vault.
+        const clean = pairs.filter((p) => p && p.value && !/^data:/i.test(String(p.value)));
+        return clean.length ? await saveNewToVault(clean) : 0;
+      },
+      probeStep: () => probeOnce(false),
+      clickAdvance: () => probeOnce(true),
+      waitForChange: async (beforeKey) => {
+        const deadline = Date.now() + STEP_SETTLE_MS;
+        while (Date.now() < deadline) {
+          await new Promise((res) => setTimeout(res, 400));
+          const p = await probeOnce(false);
+          if (p.stepKey && p.stepKey !== beforeKey) { await new Promise((res) => setTimeout(res, 600)); return true; }
+        }
+        return false;
+      },
+    };
+    return await runStepLoop(deps, opts);
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+}
 
 // ---- Sticky enlarged tool window (strict singleton) ------------------------------------------------
 // The user can pop the popup out into a resizable window; once they do, it stays their default (across

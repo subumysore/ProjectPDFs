@@ -3,6 +3,7 @@
 // through the native companion, so the ONE desktop vault is authoritative — the
 // extension keeps no separate copy.
 import { exportVault, exportVaultAll, importVault } from "./backup.js";
+import { summarise } from "./multistep.js";
 import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 import { UI_LANGS, translator, dirOf, detectUiLang } from "./i18n.js";
@@ -610,6 +611,17 @@ function collectFillLabels() {
   return out;
 }
 
+// Is this form written in a language other than the ontology's? Only then do we take the (single-page)
+// translating path. Cheap: labels are already collectable, and detectLang is on-device.
+async function pageNeedsTranslation(tab) {
+  try {
+    const [{ result: labels } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectFillLabels });
+    if (!labels || !labels.some(Boolean)) return false;
+    const { detectLang } = await import("./lang.js");
+    return detectLang(labels.join(" ")).lang !== "en";
+  } catch (_) { return false; }
+}
+
 async function fillActivePage(vault) {
   // The vault may come from the DESKTOP app (companion mode), where the browser-side onboarding /
   // unlock backfill never runs — so Country can still be blank here. Country is not cosmetic: it is
@@ -788,6 +800,24 @@ $("fill").onclick = async () => {
       "Tip: click Fill FIRST, then complete the remaining fields in the viewer that opens.",
     )) return setMsg("Cancelled — nothing was changed.");
     return runPdfFlow(r, tab, url);
+  }
+  // MULTI-STEP: a job application is usually a wizard, so one press should carry it as far as it can
+  // honestly go — fill this step, bank the answers, click Next, repeat — stopping at the last page so
+  // the user presses Submit themselves. The loop lives in the BACKGROUND worker, so closing this popup
+  // does not abandon a half-filled application.
+  // A form in another language still goes through the single-page path below, because its translated
+  // labels are aligned to THIS page's field order and cannot survive a step change.
+  if (!(await pageNeedsTranslation(tab))) {
+    setMsg("Filling this page…");
+    const res = await send({ type: "fillSteps", tabId: tab.id });
+    if (res && res.ok) {
+      const el = $("msg");
+      el.className = "msg " + (res.filled > 0 ? "ok" : "err");
+      el.textContent = (res.filled > 0 ? "✅ " : "") + summarise(res) +
+        (res.filled > 0 ? " Filled fields are outlined in teal — please verify." : "");
+      return;
+    }
+    if (res && res.error && res.error !== "locked") return setMsg("Fill couldn't run: " + res.error, false);
   }
   setFillResult(await fillActivePage(r.vault), COMP.on ? " (desktop vault)" : "");
 };
@@ -1294,6 +1324,7 @@ const COMMON_ANSWERS = [
   { key: "clearance", label: "Have / can obtain a security clearance?", opts: YN },
   { key: "gov_employee", label: "Current or former government employee?", opts: YN },
   { key: "relocate", label: "Willing to relocate?", opts: YN },
+  { key: "onsite", label: "Able to work onsite / hybrid?", opts: YN },
   { key: "proof_identity", label: "Can present proof of work authorization?", opts: YN },
   { key: "restrictions", label: "Subject to NDAs / non-competes?", opts: YN },
   { key: "hispanic", label: "Hispanic or Latino?", opts: YN },
