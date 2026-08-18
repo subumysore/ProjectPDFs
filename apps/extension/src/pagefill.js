@@ -873,6 +873,17 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     el.getAttribute("aria-invalid") === "true" ||
     /(^|\s)(ng-invalid|is-invalid|invalid|has-error)(\s|$)/.test(el.className || "");
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Poll until `fn()` is truthy (or the budget runs out) and return what it gave. A ready widget costs
+  // one tick (~16ms) instead of the full sleep; a slow one still gets the same total grace as before.
+  const until = async (fn, budget = 400, step = 30) => {
+    const t0 = Date.now();
+    for (;;) {
+      let v; try { v = fn(); } catch (_) { v = null; }
+      if (v) return v;
+      if (Date.now() - t0 >= budget) return v;
+      await wait(step);
+    }
+  };
   // Set a DATE, self-correcting the format: try the detected/preferred order first, and if
   // the field's own validator rejects it, try the other orders until it's accepted. This
   // works on the FIRST fill — no dependence on a hint that only appears AFTER a failed try.
@@ -1141,7 +1152,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     // touch the widget, so the DOM is only ever read to confirm, never to search.
     const { control, input } = await openChooser(h);
     let rows = ownRows(h, input);
-    if (!rows.length) { await wait(500); rows = ownRows(h, input); }   // dependent list still loading
+    if (!rows.length) { await until(() => (rows = ownRows(h, input)).length, 500, 40); }  // dependent list still loading
     const kind = recogniseList(rows);
     const setV = (el, v) => {
       const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
@@ -1163,7 +1174,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       : want.text;
     // A widget that offers NO rows has nothing to filter, so typing into it only churns the field.
     if (kind === "empty") return "unrecognised";
-    if (term && input) { setV(input, String(term)); await wait(200); rows = ownRows(h, input); }
+    if (term && input) {
+      const before = rows.length;
+      setV(input, String(term));
+      // The list narrows almost immediately; waiting a flat 200ms per widget is where the time went.
+      await until(() => { const r = ownRows(h, input); return r.length && r.length !== before ? r : null; }, 260, 20);
+      rows = ownRows(h, input);
+    }
     // Match within the SHORT list. For a dial list the row must carry our code, and (when we know it)
     // our country — that is what stopped "+1" from selecting Antigua.
     const norm2 = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9+]/g, "");
@@ -1329,7 +1346,8 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     const clickRow = async (row) => {
       row.scrollIntoView && row.scrollIntoView({ block: "nearest" });
       for (const t of ["mousedown", "mouseup", "click"]) row.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
-      await wait(220);
+      // Committed the moment the panel closes; a flat sleep per row is where the "dancing" time went.
+      await until(() => !document.querySelector('[role="listbox"]:not([hidden])'), 220, 20);
     };
     const bestRow = (rows) => rows.map((o) => ({ o, s: scoreOpt(o), len: (o.textContent || "").trim().length }))
       .filter((x) => x.s >= 2).sort((a, b) => (b.s - a.s) || (a.len - b.len))[0];
@@ -1348,14 +1366,14 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         run: async ({ input, control }) => {
           for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) control.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
           try { input.focus(); } catch (_) { /* ignore */ }
-          await wait(320);
           const prefix = (input.getAttribute("aria-controls") || "").replace(/-listbox$/, "");
           const own = () => (prefix ? [...deepQSA('[id^="' + prefix + '-option-"]')] : []).filter((o) => (o.textContent || "").trim());
+          await until(() => own().length, 320, 20);   // ready within a frame or two on a normal page
           let choice = bestRow(own());
           if (!choice) {
             for (const term of cands.slice().sort((a, b) => String(b).length - String(a).length).slice(0, 2)) {
               setNativeValue(input, String(term));
-              await wait(320);
+              await until(() => bestRow(own()), 320, 20);
               choice = bestRow(own());
               if (choice) break;
             }
@@ -1383,15 +1401,15 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         run: async ({ host, control, input }) => {
           for (const t of ["pointerdown", "mousedown", "mouseup", "click"]) control.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
           try { (input || control).focus(); } catch (_) { /* ignore */ }
-          await wait(320);
           const id = input && (input.getAttribute("aria-controls") || input.getAttribute("aria-owns"));
           const panel = (id && document.getElementById(id)) || host.querySelector('[class*="select-dropdown"]');
           const own = () => panel ? [...panel.querySelectorAll('[class*="item-option"], [role="option"]')].filter((o) => (o.textContent || "").trim()) : [];
+          await until(() => own().length, 320, 20);
           let choice = bestRow(own());
           if (!choice && input) {
             for (const term of cands.slice().sort((a, b) => String(b).length - String(a).length).slice(0, 2)) {
               setNativeValue(input, String(term));
-              await wait(300);
+              await until(() => bestRow(own()), 300, 20);
               choice = bestRow(own());
               if (choice) break;
             }
@@ -1493,11 +1511,13 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
       // stub. If it looks unpopulated, wait and re-open once before judging it. Keyed off "the list is
       // suspiciously small", never off which field this is.
       if (readOpts().length < 5) {
-        await wait(800);
-        opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        opener.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-        if (opener.click) opener.click();
-        await wait(400);
+        await until(() => readOpts().length >= 5, 800, 40);
+        if (readOpts().length < 5) {
+          opener.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          opener.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          if (opener.click) opener.click();
+          await until(() => readOpts().length >= 5, 400, 40);
+        }
       }
       const initial = readOpts();
       let { o: opt, b: best } = bestOf(initial);
@@ -1526,7 +1546,7 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
             box.focus(); setV.call(box, term);
             box.dispatchEvent(new Event("input", { bubbles: true }));
             box.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
-            await wait(260);
+            await until(() => !document.querySelector('[role="listbox"]:not([hidden])'), 260, 20);
             const rows = readOpts();
             // A term the widget cannot search on (Dayforce filters by NAME, so "+1" matches nothing)
             // leaves it showing "no data" — and a widget left in that state accepts nothing afterwards.
