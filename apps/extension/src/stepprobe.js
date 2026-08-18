@@ -73,7 +73,10 @@ export function stepProbe(opts) {
     '[class*="ng-select"], mat-select, [class*="mat-select"], [class*="p-dropdown"], [role="combobox"], [aria-haspopup="listbox"]';
   const PLACEHOLDER = /^(select(\s+(one|an option|a value))?|choose(\s+one)?|please select|pick one|--+|—|-)\s*(\.{3}|…)?$/i;
   const chooserValue = (el) => {
-    let w = (el.closest && el.closest(CHOOSER)) || null;
+    // `closest` matches the element ITSELF first, and a react-select's search box carries
+    // role="combobox" — so the widget "found" was the empty input, and an answered question ("Yes"
+    // plainly on screen) was reported as unanswered. Look at ancestors only.
+    let w = (el.parentElement && el.parentElement.closest && el.parentElement.closest(CHOOSER)) || null;
     // Many widgets keep a HIDDEN MIRROR input BESIDE (not inside) the visible chooser — that input is
     // permanently empty by design, so reading it alone reports an answered question as unanswered and
     // the run would stall on a question the user has already answered. Look for the chooser that
@@ -81,8 +84,16 @@ export function stepProbe(opts) {
     if (!w && el.parentElement) {
       let g = el.parentElement, hops = 0;
       while (g && hops++ < 3) {
-        const cand = g.querySelector(CHOOSER);
-        if (cand && !cand.contains(el)) { w = cand; break; }
+        // Keep only the OUTERMOST widgets: a library's inner parts carry the same class prefix
+        // (".ant-select-selection-item" inside ".ant-select"), and counting them as separate widgets
+        // makes every group look ambiguous.
+        const all = [...g.querySelectorAll(CHOOSER)].filter((c) => !c.contains(el));
+        const cands = all.filter((c) => !all.some((o) => o !== c && o.contains(c)));
+        // Take a widget only while the enclosing block still holds exactly ONE. Climb one level too far
+        // on a page of stacked questions and the FIRST chooser in the document wins — which is how an
+        // ANSWERED question was reported as unanswered, using the neighbouring question's empty box.
+        if (cands.length > 1) break;
+        if (cands.length === 1) { w = cands[0]; break; }
         g = g.parentElement;
       }
     }
@@ -154,8 +165,14 @@ export function stepProbe(opts) {
     }
   }
 
+  // A step with a password box is a SIGN-IN or CREATE-ACCOUNT step (every Workday application starts
+  // with one). Pressing its "Continue" would create an account in the user's name — an outward-facing
+  // act that is theirs to take, not ours. The run stops and says so.
+  const authStep = [...document.querySelectorAll('input[type="password"]')].some(isVisible);
+
   return {
     stepKey,
+    authStep,
     controls: controls.length,
     requiredEmpty: requiredEmpty.slice(0, 12),
     advance: advanceBtn ? btnText(advanceBtn) : null,

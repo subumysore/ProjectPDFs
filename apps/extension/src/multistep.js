@@ -39,6 +39,9 @@ export async function runStepLoop(deps, opts = {}) {
     out.filled += filled;
     out.saved += saved;
 
+    // AN ACCOUNT STEP IS THE USER'S. Signing in or creating an account is an outward-facing act with
+    // their name on it; we fill what we can and hand it back.
+    if (probe.authStep) { out.stopped = "sign-in"; break; }
     // WAIT, DON'T SKIP. A required question we could not answer is the user's to answer; advancing past
     // it either loses the application or submits it wrong.
     if (step.requiredEmpty.length) { out.stopped = "needs-you"; out.needs = step.requiredEmpty; break; }
@@ -65,6 +68,7 @@ export function summarise(res) {
   const why = {
     "needs-you": `Stopped on page ${n}: please answer ${res.needs.join(", ")}, then press Fill again.`,
     "at-submit": "You're at the last page — check it over and press Submit yourself.",
+    "sign-in": "This page wants you to sign in or create an account — that part is yours; press Fill again afterwards.",
     "no-next": n === 1 ? "" : "No next step on this page.",
     stuck: `Page ${n} didn't move on — the form may need something more from you.`,
     "max-steps": `Stopped after ${MAX_STEPS} pages.`,

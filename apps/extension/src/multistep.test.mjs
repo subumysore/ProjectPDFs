@@ -167,3 +167,27 @@ test("the run is capped so a looping form cannot fill forever", async () => {
   assert.equal(res.stopped, "max-steps");
   assert.equal(res.steps.length, 12);
 });
+
+// Every Workday application opens with "Create Account / Sign In". Pressing its Continue would create
+// an account in the user's name — an outward-facing act that is theirs, not ours.
+test("a sign-in / create-account step is never advanced past", async () => {
+  const h = wizard([
+    `<h1>Create Account</h1><form><label>Email <input type="email" required></label>
+      <label>Password <input type="password" required></label>
+      <label>Verify Password <input type="password" required></label>
+      <button type="button">Continue</button></form>`,
+    `<h1>Step 2</h1><form>${CONTACT}<button type="button">Submit application</button></form>`,
+  ]);
+  const res = await runStepLoop(deps(h));
+  assert.equal(res.stopped, "sign-in");
+  assert.equal(res.steps.length, 1, "it walked past an account step");
+  assert.match(summarise(res), /sign in or create an account/i);
+});
+
+test("a password is never banked into the vault", async () => {
+  const h = wizard([`<form><label>Email <input type="email"></label>
+    <label>Password <input id="pw" type="password"></label></form>`]);
+  h.w.document.getElementById("pw").value = "hunter2-not-a-real-one";
+  await runStepLoop(deps(h));
+  assert.equal(h.state.saved.find((p) => /hunter2/.test(p.value)), undefined, "a password reached the vault");
+});
