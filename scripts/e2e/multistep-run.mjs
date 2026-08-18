@@ -67,6 +67,7 @@ async function drive(page, label) {
       captured.push(...fresh);
       return fresh.length;
     },
+    settle: () => new Promise((r) => setTimeout(r, 2500)),
     probeStep: () => evalProbe(false),
     clickAdvance: () => evalProbe(true),
     waitForChange: async (before) => {

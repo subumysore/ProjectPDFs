@@ -553,6 +553,8 @@ async function runMultiStepFill(tabId, opts = {}) {
         const clean = pairs.filter((p) => p && p.value && !/^data:/i.test(String(p.value)));
         return clean.length ? await saveNewToVault(clean) : 0;
       },
+      // A single-page ATS mounts its form after the first paint; give it one chance to appear.
+      settle: () => new Promise((res) => setTimeout(res, 2500)),
       probeStep: () => probeOnce(false),
       clickAdvance: () => probeOnce(true),
       waitForChange: async (beforeKey) => {

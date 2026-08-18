@@ -21,12 +21,21 @@ export async function runStepLoop(deps, opts = {}) {
   const out = { ok: true, steps: [], filled: 0, saved: 0, stopped: "", needs: [] };
 
   for (let n = 1; n <= max; n++) {
-    const filled = (await deps.fillStep(n)) || 0;
+    let filled = (await deps.fillStep(n)) || 0;
     // BANK THE ANSWER before leaving the step: once the wizard moves on, this step's markup is gone and
     // anything the user typed here is unrecoverable. Honours the user's "save new details" setting
     // inside captureStep, which is where the vault lives.
     const saved = (await deps.captureStep(n)) || 0;
-    const probe = (await deps.probeStep(n)) || {};
+    let probe = (await deps.probeStep(n)) || {};
+    // AN APPLICATION THAT HAS NOT RENDERED YET. Workday, iCIMS and most single-page ATS apps mount
+    // their form after the first paint, so arriving a second early means an empty page, "0 fields" and
+    // a run that gives up on a form that is about to appear. If the first step looks bare, wait once
+    // and look again — costs nothing on a page that was ready.
+    if (n === 1 && !filled && (probe.controls || 0) < 3 && deps.settle) {
+      await deps.settle();
+      filled = (await deps.fillStep(n)) || 0;
+      probe = (await deps.probeStep(n)) || {};
+    }
     const step = {
       step: n,
       filled,
@@ -63,6 +72,9 @@ export function summarise(res) {
   if (!res || !res.ok) return (res && res.error) || "The fill couldn't run.";
   const n = res.steps.length;
   const pages = n === 1 ? "this page" : `${n} pages`;
+  if (!res.filled && res.stopped === "no-next") {
+    return "Nothing on this page matched your saved details — if the form is still loading, press Fill again.";
+  }
   const head = `Filled ${res.filled} field${res.filled === 1 ? "" : "s"} across ${pages}` +
     (res.saved ? `, saved ${res.saved} new answer${res.saved === 1 ? "" : "s"} to your vault` : "") + ".";
   const why = {
