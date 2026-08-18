@@ -40,9 +40,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - New concepts in BOTH engines (parity enforced): current company / current employer, name suffix,
   preferred language.
 ### Tests
+- `bgmultistep.test.mjs` (3) — the BACKGROUND worker's own path: background.js loads, `fillSteps`
+  reaches the handler, a 3-step wizard is filled, the new answer is readable back OUT of the unlocked
+  vault, and Submit is never clicked. This is the wiring no page-level test can reach.
 - `multistep.test.mjs` (8, incl. a click-spy proving Submit is never pressed and that a new answer is
   banked as a key/value pair), `stepprobe.test.mjs` (11), `savedchooser.test.mjs` (9),
   `capturelabel.test.mjs` (4). Suite 477 → 494 ✓.
+- `scripts/e2e/stage-ext.mjs` (space-free runtime copy) and `scripts/e2e/ext-smoke.mjs`, which reports
+  honestly that current Chrome refuses `--load-extension` altogether — the unpacked extension has to be
+  loaded by hand at chrome://extensions.
 - `scripts/e2e/multistep-run.mjs` — the loop driven in REAL Chrome over a 3-step wizard and live ATS
   forms, asserting the submit button is never clicked. Coverage gate re-run: Greenhouse 10/18 → 12/17,
   Lever 10/13 → 11/13, Dayforce unchanged.
