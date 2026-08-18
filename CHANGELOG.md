@@ -54,6 +54,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   all 26 languages.
 ### Tests
 - `locationtypeahead.test.mjs` (5).
+- `popupfill.test.mjs` (2) — the button the user actually presses: popup.js loaded against the real
+  popup.html and a stubbed chrome, asserting Fill asks the BACKGROUND for a multi-step run on the right
+  tab and shows the summary it gets back.
 - `bgmultistep.test.mjs` (3) — the BACKGROUND worker's own path: background.js loads, `fillSteps`
   reaches the handler, a 3-step wizard is filled, the new answer is readable back OUT of the unlocked
   vault, and Submit is never clicked. This is the wiring no page-level test can reach.

@@ -16,7 +16,8 @@
   long official country names; a picked row that the library commits on a different gesture now falls
   through to the adapters; junk vault keys (option lists / EEO paragraphs); false "please answer" entries
   for filled phone boxes and invisible mirror inputs; new concepts (current company, suffix, language).
-- **Verified:** 484 unit tests ✓ (incl. the worker path itself via a stubbed-chrome load of background.js), coverage gate improved with no regressions, `multistep-run.mjs` green
+- **Verified:** 491 unit tests ✓ — every link in the chain now has a test: page probe → loop → worker →
+  popup button (incl. the worker path itself via a stubbed-chrome load of background.js), coverage gate improved with no regressions, `multistep-run.mjs` green
   in real Chrome on a wizard + live Greenhouse + live Lever.
 - **Environment note:** current Chrome has disabled `--load-extension`, so no automated run can drive the
   unpacked extension; load it by hand (chrome://extensions → Load unpacked → apps/extension).
