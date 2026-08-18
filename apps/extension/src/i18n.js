@@ -90,6 +90,8 @@ const en = {
   "view.showOriginal": "Show the original",
   // — capture / learning new details —
   "learn.button": "Save new details from this page",
+  // Every other language falls back to English for this one until it is translated (additive only).
+  "diag.copy": "Copy a report about this page",
   "learn.title": "New details found on this page.",
   "learn.note": "Nothing is saved until you tick it. These stay on this device.",
   "learn.saveTicked": "Save ticked",
@@ -184,6 +186,7 @@ const en = {
 const STRINGS = {
   en,
   hi: {
+    "diag.copy": "इस पेज की रिपोर्ट कॉपी करें",
     "app.name": "PolyglotFormFill", "app.tagline": "कोई भी फ़ॉर्म, किसी भी भाषा में, आपके डिवाइस पर निजी रूप से भरें।",
     "lang.choose": "अपनी भाषा चुनें", "lang.ui": "भाषा", "lang.hint": "सब कुछ इसी भाषा में दिखेगा। फ़ॉर्म अपनी भाषा में रहेंगे।",
     "action.continue": "आगे बढ़ें", "action.save": "सहेजें", "action.cancel": "रद्द करें", "action.close": "बंद करें", "action.back": "वापस",
@@ -260,6 +263,7 @@ const STRINGS = {
     "lang.fillHint": "आपकी प्रोफ़ाइल के साथ सहेजा जाता है, ताकि प्रविष्टियाँ फ़ॉर्म की भाषा में लिखी जा सकें।",
   },
   bn: {
+    "diag.copy": "এই পাতার রিপোর্ট কপি করুন",
     "app.name": "PolyglotFormFill", "app.tagline": "যেকোনো ফর্ম, যেকোনো ভাষায়, আপনার ডিভাইসে গোপনে পূরণ করুন।",
     "lang.choose": "আপনার ভাষা বেছে নিন", "lang.ui": "ভাষা", "lang.hint": "সবকিছু এই ভাষায় দেখানো হবে। ফর্ম নিজের ভাষাতেই থাকবে।",
     "action.continue": "এগিয়ে যান", "action.save": "সংরক্ষণ", "action.cancel": "বাতিল", "action.close": "বন্ধ", "action.back": "ফিরে যান",
@@ -336,6 +340,7 @@ const STRINGS = {
     "lang.fillHint": "আপনার প্রোফাইলের সঙ্গে সংরক্ষিত, যাতে তথ্য ফর্মের ভাষায় লেখা যায়।",
   },
   ta: {
+    "diag.copy": "இந்தப் பக்கத்தின் அறிக்கையை நகலெடுக்கவும்",
     "app.name": "PolyglotFormFill", "app.tagline": "எந்தப் படிவத்தையும், எந்த மொழியிலும், உங்கள் சாதனத்தில் தனிப்பட்ட முறையில் நிரப்புங்கள்.",
     "lang.choose": "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்", "lang.ui": "மொழி", "lang.hint": "அனைத்தும் இந்த மொழியில் காட்டப்படும். படிவங்கள் அவற்றின் மொழியிலேயே இருக்கும்.",
     "action.continue": "தொடரவும்", "action.save": "சேமி", "action.cancel": "ரத்து", "action.close": "மூடு", "action.back": "பின்",
@@ -412,6 +417,7 @@ const STRINGS = {
     "lang.fillHint": "உங்கள் சுயவிவரத்துடன் சேமிக்கப்படுகிறது, அதனால் பதிவுகள் படிவத்தின் மொழியில் எழுதப்படும்.",
   },
   te: {
+    "diag.copy": "ఈ పేజీ నివేదికను కాపీ చేయండి",
     "app.name": "PolyglotFormFill", "app.tagline": "ఏ ఫారమ్‌నైనా, ఏ భాషలోనైనా, మీ పరికరంలోనే గోప్యంగా నింపండి.",
     "lang.choose": "మీ భాషను ఎంచుకోండి", "lang.ui": "భాష", "lang.hint": "అంతా ఈ భాషలో కనిపిస్తుంది. ఫారమ్‌లు వాటి భాషలోనే ఉంటాయి.",
     "action.continue": "కొనసాగించు", "action.save": "భద్రపరచు", "action.cancel": "రద్దు", "action.close": "మూసివేయి", "action.back": "వెనుకకు",
@@ -488,6 +494,7 @@ const STRINGS = {
     "lang.fillHint": "మీ ప్రొఫైల్‌తో భద్రపరచబడుతుంది, తద్వారా వివరాలు ఫారమ్ భాషలో రాయబడతాయి.",
   },
   kn: {
+    "diag.copy": "ಈ ಪುಟದ ವರದಿಯನ್ನು ನಕಲಿಸಿ",
     "app.name": "PolyglotFormFill", "app.tagline": "ಯಾವುದೇ ನಮೂನೆಯನ್ನು, ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ, ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿಯೇ ಖಾಸಗಿಯಾಗಿ ಭರ್ತಿ ಮಾಡಿ.",
     "lang.choose": "ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆರಿಸಿ", "lang.ui": "ಭಾಷೆ", "lang.hint": "ಎಲ್ಲವೂ ಈ ಭಾಷೆಯಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ. ನಮೂನೆಗಳು ತಮ್ಮದೇ ಭಾಷೆಯಲ್ಲಿ ಉಳಿಯುತ್ತವೆ.",
     "action.continue": "ಮುಂದುವರಿಸಿ", "action.save": "ಉಳಿಸಿ", "action.cancel": "ರದ್ದು", "action.close": "ಮುಚ್ಚಿ", "action.back": "ಹಿಂದೆ",
@@ -564,6 +571,7 @@ const STRINGS = {
     "lang.fillHint": "ನಿಮ್ಮ ಪ್ರೊಫೈಲ್‌ನೊಂದಿಗೆ ಉಳಿಸಲಾಗುತ್ತದೆ, ಇದರಿಂದ ವಿವರಗಳು ನಮೂನೆಯ ಭಾಷೆಯಲ್ಲಿ ಬರೆಯಲ್ಪಡುತ್ತವೆ.",
   },
   ml: {
+    "diag.copy": "ഈ പേജിന്റെ റിപ്പോർട്ട് പകർത്തുക",
     "app.name": "PolyglotFormFill", "app.tagline": "ഏത് ഫോമും, ഏത് ഭാഷയിലും, നിങ്ങളുടെ ഉപകരണത്തിൽ സ്വകാര്യമായി പൂരിപ്പിക്കുക.",
     "lang.choose": "നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക", "lang.ui": "ഭാഷ", "lang.hint": "എല്ലാം ഈ ഭാഷയിൽ കാണിക്കും. ഫോമുകൾ അവയുടെ ഭാഷയിൽ തന്നെ നിലനിൽക്കും.",
     "action.continue": "തുടരുക", "action.save": "സൂക്ഷിക്കുക", "action.cancel": "റദ്ദാക്കുക", "action.close": "അടയ്ക്കുക", "action.back": "പിന്നോട്ട്",
@@ -640,6 +648,7 @@ const STRINGS = {
     "lang.fillHint": "നിങ്ങളുടെ പ്രൊഫൈലിനൊപ്പം സൂക്ഷിക്കുന്നു, അതിനാൽ വിവരങ്ങൾ ഫോമിന്റെ ഭാഷയിൽ എഴുതാനാകും.",
   },
   gu: {
+    "diag.copy": "આ પેજનો રિપોર્ટ કૉપિ કરો",
     "app.name": "PolyglotFormFill", "app.tagline": "કોઈપણ ફોર્મ, કોઈપણ ભાષામાં, તમારા ઉપકરણ પર ખાનગી રીતે ભરો.",
     "lang.choose": "તમારી ભાષા પસંદ કરો", "lang.ui": "ભાષા", "lang.hint": "બધું આ ભાષામાં દેખાશે. ફોર્મ તેમની પોતાની ભાષામાં રહેશે.",
     "action.continue": "આગળ વધો", "action.save": "સાચવો", "action.cancel": "રદ કરો", "action.close": "બંધ કરો", "action.back": "પાછળ",
@@ -716,6 +725,7 @@ const STRINGS = {
     "lang.fillHint": "તમારી પ્રોફાઇલ સાથે સચવાય છે, જેથી વિગતો ફોર્મની ભાષામાં લખાય.",
   },
   pa: {
+    "diag.copy": "ਇਸ ਪੰਨੇ ਦੀ ਰਿਪੋਰਟ ਕਾਪੀ ਕਰੋ",
     "app.name": "PolyglotFormFill", "app.tagline": "ਕੋਈ ਵੀ ਫ਼ਾਰਮ, ਕਿਸੇ ਵੀ ਭਾਸ਼ਾ ਵਿੱਚ, ਆਪਣੇ ਡਿਵਾਈਸ ਉੱਤੇ ਨਿੱਜੀ ਤੌਰ ਤੇ ਭਰੋ।",
     "lang.choose": "ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ", "lang.ui": "ਭਾਸ਼ਾ", "lang.hint": "ਸਭ ਕੁਝ ਇਸੇ ਭਾਸ਼ਾ ਵਿੱਚ ਦਿਖੇਗਾ। ਫ਼ਾਰਮ ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਹੀ ਰਹਿਣਗੇ।",
     "action.continue": "ਅੱਗੇ ਵਧੋ", "action.save": "ਸੰਭਾਲੋ", "action.cancel": "ਰੱਦ ਕਰੋ", "action.close": "ਬੰਦ ਕਰੋ", "action.back": "ਪਿੱਛੇ",
@@ -792,6 +802,7 @@ const STRINGS = {
     "lang.fillHint": "ਤੁਹਾਡੀ ਪ੍ਰੋਫ਼ਾਈਲ ਨਾਲ ਸੰਭਾਲਿਆ ਜਾਂਦਾ ਹੈ, ਤਾਂ ਜੋ ਵੇਰਵੇ ਫ਼ਾਰਮ ਦੀ ਭਾਸ਼ਾ ਵਿੱਚ ਲਿਖੇ ਜਾਣ।",
   },
   mr: {
+    "diag.copy": "या पानाचा अहवाल कॉपी करा",
     "app.name": "PolyglotFormFill", "app.tagline": "कोणताही फॉर्म, कोणत्याही भाषेत, तुमच्या उपकरणावर खासगीरीत्या भरा.",
     "lang.choose": "तुमची भाषा निवडा", "lang.ui": "भाषा", "lang.hint": "सर्व काही याच भाषेत दिसेल. फॉर्म त्यांच्या भाषेतच राहतील.",
     "action.continue": "पुढे चला", "action.save": "जतन करा", "action.cancel": "रद्द करा", "action.close": "बंद करा", "action.back": "मागे",
@@ -868,6 +879,7 @@ const STRINGS = {
     "lang.fillHint": "तुमच्या प्रोफाइलसोबत जतन होते, जेणेकरून नोंदी फॉर्मच्या भाषेत लिहिल्या जातील.",
   },
   ur: {
+    "diag.copy": "اس صفحے کی رپورٹ کاپی کریں",
     "app.name": "PolyglotFormFill", "app.tagline": "کوئی بھی فارم، کسی بھی زبان میں، اپنے آلے پر نجی طور پر بھریں۔",
     "lang.choose": "اپنی زبان منتخب کریں", "lang.ui": "زبان", "lang.hint": "سب کچھ اسی زبان میں دکھایا جائے گا۔ فارم اپنی زبان میں ہی رہیں گے۔",
     "action.continue": "جاری رکھیں", "action.save": "محفوظ کریں", "action.cancel": "منسوخ", "action.close": "بند کریں", "action.back": "واپس",
@@ -944,6 +956,7 @@ const STRINGS = {
     "lang.fillHint": "آپ کی پروفائل کے ساتھ محفوظ ہوتا ہے، تاکہ اندراجات فارم کی زبان میں لکھے جا سکیں۔",
   },
   ar: {
+    "diag.copy": "انسخ تقريرًا عن هذه الصفحة",
     "app.name": "PolyglotFormFill", "app.tagline": "املأ أي نموذج، بأي لغة، بخصوصية على جهازك.",
     "lang.choose": "اختر لغتك", "lang.ui": "اللغة", "lang.hint": "سيُعرض كل شيء بهذه اللغة. تبقى النماذج بلغتها الأصلية.",
     "action.continue": "متابعة", "action.save": "حفظ", "action.cancel": "إلغاء", "action.close": "إغلاق", "action.back": "رجوع",
@@ -1020,6 +1033,7 @@ const STRINGS = {
     "lang.fillHint": "يُحفظ مع ملفك، لتُكتب المدخلات بلغة النموذج.",
   },
   he: {
+    "diag.copy": "העתק דוח על הדף הזה",
     "app.name": "PolyglotFormFill", "app.tagline": "מלאו כל טופס, בכל שפה, בפרטיות על המכשיר שלכם.",
     "lang.choose": "בחרו את השפה שלכם", "lang.ui": "שפה", "lang.hint": "הכול יוצג בשפה הזו. הטפסים נשארים בשפתם.",
     "action.continue": "המשך", "action.save": "שמירה", "action.cancel": "ביטול", "action.close": "סגירה", "action.back": "חזרה",
@@ -1096,6 +1110,7 @@ const STRINGS = {
     "lang.fillHint": "נשמר עם הפרופיל שלכם, כך שהערכים ייכתבו בשפת הטופס.",
   },
   fa: {
+    "diag.copy": "گزارش این صفحه را کپی کنید",
     "app.name": "PolyglotFormFill", "app.tagline": "هر فرمی را، به هر زبانی، به‌صورت خصوصی روی دستگاه خودتان پر کنید.",
     "lang.choose": "زبان خود را انتخاب کنید", "lang.ui": "زبان", "lang.hint": "همه چیز به این زبان نمایش داده می‌شود. فرم‌ها به زبان خودشان می‌مانند.",
     "action.continue": "ادامه", "action.save": "ذخیره", "action.cancel": "لغو", "action.close": "بستن", "action.back": "بازگشت",
@@ -1172,6 +1187,7 @@ const STRINGS = {
     "lang.fillHint": "همراه نمایهٔ شما ذخیره می‌شود تا ورودی‌ها به زبان فرم نوشته شوند.",
   },
   zh: {
+    "diag.copy": "复制本页的报告",
     "app.name": "PolyglotFormFill", "app.tagline": "在您的设备上私密地填写任何语言的任何表单。",
     "lang.choose": "选择您的语言", "lang.ui": "语言", "lang.hint": "所有内容都以此语言显示。表单保持其原本语言。",
     "action.continue": "继续", "action.save": "保存", "action.cancel": "取消", "action.close": "关闭", "action.back": "返回",
@@ -1248,6 +1264,7 @@ const STRINGS = {
     "lang.fillHint": "与您的档案一同保存，以便按表单的语言填写内容。",
   },
   ja: {
+    "diag.copy": "このページのレポートをコピー",
     "app.name": "PolyglotFormFill", "app.tagline": "どんな言語のどんな書類も、お使いの端末の中だけで入力できます。",
     "lang.choose": "言語を選んでください", "lang.ui": "言語", "lang.hint": "表示はすべてこの言語になります。書類は元の言語のままです。",
     "action.continue": "続ける", "action.save": "保存", "action.cancel": "キャンセル", "action.close": "閉じる", "action.back": "戻る",
@@ -1324,6 +1341,7 @@ const STRINGS = {
     "lang.fillHint": "プロフィールと一緒に保存され、書類の言語で記入できるようになります。",
   },
   ko: {
+    "diag.copy": "이 페이지 보고서 복사",
     "app.name": "PolyglotFormFill", "app.tagline": "어떤 언어의 어떤 서식이든, 내 기기 안에서 비공개로 작성하세요.",
     "lang.choose": "언어를 선택하세요", "lang.ui": "언어", "lang.hint": "모든 화면이 이 언어로 표시됩니다. 서식은 원래 언어를 유지합니다.",
     "action.continue": "계속", "action.save": "저장", "action.cancel": "취소", "action.close": "닫기", "action.back": "뒤로",
@@ -1400,6 +1418,7 @@ const STRINGS = {
     "lang.fillHint": "프로필과 함께 저장되어, 서식의 언어로 입력할 수 있습니다.",
   },
   th: {
+    "diag.copy": "คัดลอกรายงานของหน้านี้",
     "app.name": "PolyglotFormFill", "app.tagline": "กรอกแบบฟอร์มใดก็ได้ ภาษาใดก็ได้ อย่างเป็นส่วนตัวบนเครื่องของคุณ",
     "lang.choose": "เลือกภาษาของคุณ", "lang.ui": "ภาษา", "lang.hint": "ทุกอย่างจะแสดงเป็นภาษานี้ แบบฟอร์มยังคงเป็นภาษาเดิม",
     "action.continue": "ดำเนินการต่อ", "action.save": "บันทึก", "action.cancel": "ยกเลิก", "action.close": "ปิด", "action.back": "ย้อนกลับ",
@@ -1476,6 +1495,7 @@ const STRINGS = {
     "lang.fillHint": "บันทึกไว้กับโปรไฟล์ของคุณ เพื่อให้กรอกข้อมูลเป็นภาษาของแบบฟอร์มได้",
   },
   vi: {
+    "diag.copy": "Sao chép báo cáo về trang này",
     "app.name": "PolyglotFormFill", "app.tagline": "Điền mọi biểu mẫu, bằng mọi ngôn ngữ, riêng tư ngay trên thiết bị của bạn.",
     "lang.choose": "Chọn ngôn ngữ của bạn", "lang.ui": "Ngôn ngữ", "lang.hint": "Mọi thứ sẽ hiển thị bằng ngôn ngữ này. Biểu mẫu vẫn giữ ngôn ngữ gốc.",
     "action.continue": "Tiếp tục", "action.save": "Lưu", "action.cancel": "Hủy", "action.close": "Đóng", "action.back": "Quay lại",
@@ -1552,6 +1572,7 @@ const STRINGS = {
     "lang.fillHint": "Được lưu cùng hồ sơ của bạn, để các mục được viết bằng ngôn ngữ của biểu mẫu.",
   },
   id: {
+    "diag.copy": "Salin laporan tentang halaman ini",
     "app.name": "PolyglotFormFill", "app.tagline": "Isi formulir apa pun, dalam bahasa apa pun, secara pribadi di perangkat Anda.",
     "lang.choose": "Pilih bahasa Anda", "lang.ui": "Bahasa", "lang.hint": "Semua ditampilkan dalam bahasa ini. Formulir tetap dalam bahasa aslinya.",
     "action.continue": "Lanjutkan", "action.save": "Simpan", "action.cancel": "Batal", "action.close": "Tutup", "action.back": "Kembali",
@@ -1628,6 +1649,7 @@ const STRINGS = {
     "lang.fillHint": "Disimpan bersama profil Anda, agar isian ditulis dalam bahasa formulir.",
   },
   ru: {
+    "diag.copy": "Скопировать отчёт об этой странице",
     "app.name": "PolyglotFormFill", "app.tagline": "Заполняйте любые формы на любом языке — прямо на своём устройстве.",
     "lang.choose": "Выберите язык", "lang.ui": "Язык", "lang.hint": "Всё отображается на этом языке. Формы остаются на своём языке.",
     "action.continue": "Продолжить", "action.save": "Сохранить", "action.cancel": "Отмена", "action.close": "Закрыть", "action.back": "Назад",
@@ -1704,6 +1726,7 @@ const STRINGS = {
     "lang.fillHint": "Сохраняется вместе с профилем, чтобы записи вносились на языке формы.",
   },
   es: {
+    "diag.copy": "Copiar un informe de esta página",
     "app.name": "PolyglotFormFill", "app.tagline": "Rellena cualquier formulario, en cualquier idioma, de forma privada en tu dispositivo.",
     "lang.choose": "Elige tu idioma", "lang.ui": "Idioma", "lang.hint": "Todo se muestra en este idioma. Los formularios conservan el suyo.",
     "action.continue": "Continuar", "action.save": "Guardar", "action.cancel": "Cancelar", "action.close": "Cerrar", "action.back": "Atrás",
@@ -1780,6 +1803,7 @@ const STRINGS = {
     "lang.fillHint": "Se guarda con tu perfil, para que las entradas se escriban en el idioma del formulario.",
   },
   fr: {
+    "diag.copy": "Copier un rapport sur cette page",
     "app.name": "PolyglotFormFill", "app.tagline": "Remplissez n'importe quel formulaire, dans n'importe quelle langue, en privé sur votre appareil.",
     "lang.choose": "Choisissez votre langue", "lang.ui": "Langue", "lang.hint": "Tout s'affiche dans cette langue. Les formulaires gardent la leur.",
     "action.continue": "Continuer", "action.save": "Enregistrer", "action.cancel": "Annuler", "action.close": "Fermer", "action.back": "Retour",
@@ -1856,6 +1880,7 @@ const STRINGS = {
     "lang.fillHint": "Enregistré avec votre profil, pour que les saisies soient écrites dans la langue du formulaire.",
   },
   de: {
+    "diag.copy": "Bericht zu dieser Seite kopieren",
     "app.name": "PolyglotFormFill", "app.tagline": "Füllen Sie jedes Formular in jeder Sprache privat auf Ihrem Gerät aus.",
     "lang.choose": "Wählen Sie Ihre Sprache", "lang.ui": "Sprache", "lang.hint": "Alles wird in dieser Sprache angezeigt. Formulare behalten ihre eigene.",
     "action.continue": "Weiter", "action.save": "Speichern", "action.cancel": "Abbrechen", "action.close": "Schließen", "action.back": "Zurück",
@@ -1932,6 +1957,7 @@ const STRINGS = {
     "lang.fillHint": "Wird mit Ihrem Profil gespeichert, damit Einträge in der Sprache des Formulars geschrieben werden.",
   },
   pt: {
+    "diag.copy": "Copiar um relatório desta página",
     "app.name": "PolyglotFormFill", "app.tagline": "Preencha qualquer formulário, em qualquer idioma, com privacidade no seu dispositivo.",
     "lang.choose": "Escolha o seu idioma", "lang.ui": "Idioma", "lang.hint": "Tudo é mostrado neste idioma. Os formulários mantêm o seu.",
     "action.continue": "Continuar", "action.save": "Guardar", "action.cancel": "Cancelar", "action.close": "Fechar", "action.back": "Voltar",
@@ -2008,6 +2034,7 @@ const STRINGS = {
     "lang.fillHint": "Guardado com o seu perfil, para que as entradas sejam escritas no idioma do formulário.",
   },
   tr: {
+    "diag.copy": "Bu sayfa hakkında rapor kopyala",
     "app.name": "PolyglotFormFill", "app.tagline": "Herhangi bir formu, herhangi bir dilde, cihazınızda gizlilikle doldurun.",
     "lang.choose": "Dilinizi seçin", "lang.ui": "Dil", "lang.hint": "Her şey bu dilde gösterilir. Formlar kendi dilinde kalır.",
     "action.continue": "Devam", "action.save": "Kaydet", "action.cancel": "İptal", "action.close": "Kapat", "action.back": "Geri",

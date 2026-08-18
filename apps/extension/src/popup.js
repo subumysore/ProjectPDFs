@@ -4,6 +4,7 @@
 // extension keeps no separate copy.
 import { exportVault, exportVaultAll, importVault } from "./backup.js";
 import { summarise } from "./multistep.js";
+import { stepProbe } from "./stepprobe.js";
 import { collectTypedValues, newInformation } from "./pagecapture.js";
 import { keyFromLabel, isCapturableLabel } from "./vaultkey.js";
 import { UI_LANGS, translator, dirOf, detectUiLang } from "./i18n.js";
@@ -815,6 +816,15 @@ $("fill").onclick = async () => {
       el.className = "msg " + (res.filled > 0 ? "ok" : "err");
       el.textContent = (res.filled > 0 ? "✅ " : "") + summarise(res) +
         (res.filled > 0 ? " Filled fields are outlined in teal — please verify." : "");
+      // Keep the outcome (counts and reasons only — never your values) so "Copy a report about this
+      // page" can say what the last run actually did.
+      try {
+        await chrome.storage.session.set({ lastRun: {
+          at: new Date().toISOString(), url: (tab.url || "").split("?")[0],
+          filled: res.filled, saved: res.saved, stopped: res.stopped, needs: res.needs,
+          steps: res.steps.map((st) => ({ step: st.step, filled: st.filled, saved: st.saved, advance: st.advance, submit: st.submit })),
+        } });
+      } catch (_) { /* a report is a convenience, never a blocker */ }
       return;
     }
     if (res && res.error && res.error !== "locked") return setMsg("Fill couldn't run: " + res.error, false);
@@ -825,6 +835,49 @@ $("fill").onclick = async () => {
 // ✍️ Sign / handwrite: open the current PDF in the annotate tool where the user can draw
 // or stamp their saved signature/photo anywhere, then flatten + download. Works on ANY
 // PDF (printed boxes, scanned forms) — no fillable field required.
+// 🩺 Copy a report about this page. When a form does not fill the way it should, this is what makes it
+// diagnosable without anyone looking over the user's shoulder. It reports what the engine SAW (field
+// labels, control kinds, whether each is required and whether it now holds something) and what the last
+// run DECIDED — never the values themselves, and it never leaves the device until the user pastes it.
+if ($("copyDiag")) $("copyDiag").onclick = async () => {
+  try {
+    const tab = await targetTab();
+    const [{ result: probe } = {}] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: "MAIN", func: stepProbe, args: [{}] });
+    const [{ result: inv } = {}] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id }, world: "MAIN",
+      func: () => [...document.querySelectorAll("input, textarea, select, [role=combobox]")]
+        .filter((e) => !["hidden", "submit", "button", "reset", "image"].includes((e.type || "").toLowerCase()))
+        .slice(0, 120)
+        .map((e) => ({
+          label: ((e.labels && e.labels[0] && e.labels[0].textContent) || e.getAttribute("aria-label") ||
+            e.placeholder || e.name || e.id || "").replace(/\s+/g, " ").trim().slice(0, 60),
+          kind: (e.tagName === "SELECT" ? "select" : e.getAttribute("role") === "combobox" ? "chooser" : (e.type || e.tagName).toLowerCase()),
+          required: !!(e.required || e.getAttribute("aria-required") === "true"),
+          hasValue: !!String(e.value || "").trim(),      // WHETHER it is filled, never WHAT is in it
+        })),
+    });
+    const { lastRun } = await chrome.storage.session.get("lastRun");
+    const report = [
+      "PolyglotFormFill — page report (no personal values included)",
+      "when: " + new Date().toISOString(),
+      "page: " + ((tab.url || "").split("?")[0]),
+      "extension: " + chrome.runtime.getManifest().version,
+      "",
+      "last fill: " + (lastRun ? JSON.stringify(lastRun) : "(none in this session)"),
+      "",
+      "way forward found: " + JSON.stringify({ advance: probe && probe.advance, submit: probe && probe.submit, review: probe && probe.reviewText }),
+      "still required and empty: " + JSON.stringify((probe && probe.requiredEmpty) || []),
+      "",
+      "fields on this page:",
+      ...(inv || []).map((f) => `  ${f.required ? "*" : " "} [${f.kind}] ${f.hasValue ? "filled" : "EMPTY"} — ${f.label}`),
+    ].join("\n");
+    await navigator.clipboard.writeText(report);
+    setMsg("Report copied — paste it into your message. It contains no values from your vault.");
+  } catch (e) {
+    setMsg("Couldn't build the report: " + ((e && e.message) || e), false);
+  }
+};
+
 if ($("signPdf")) $("signPdf").onclick = async () => {
   const tab = await targetTab();
   const url = (tab && tab.url) || "";

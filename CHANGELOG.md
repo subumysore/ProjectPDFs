@@ -46,6 +46,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   three states is left for the user to pick, never guessed. New `location` concept in both engines
   (composed from city + state when the vault holds no explicit one). Verified live on Ashby.
 - Ashby joins the coverage gate as the fourth ATS.
+### Added — "Copy a report about this page"
+- A button in the popup that copies what the engine SAW and DECIDED on the current page: every field's
+  label, kind, whether it is required and whether it now holds something, the advance/submit controls
+  found, what is still required-and-empty, and what the last fill did. **It never includes a value** —
+  neither from the page nor from the vault — and it goes to the clipboard, not to us. Translated into
+  all 26 languages.
 ### Tests
 - `locationtypeahead.test.mjs` (5).
 - `bgmultistep.test.mjs` (3) — the BACKGROUND worker's own path: background.js loads, `fillSteps`
