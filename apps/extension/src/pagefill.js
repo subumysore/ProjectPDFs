@@ -171,6 +171,10 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     street1:  ["address line 1", "address 1", "address1", "street address", "street address 1", "addr1", "address line one", "house number", "house no", "flat no"],
     street2:  ["address line 2", "address 2", "address2", "addr2", "apartment", "apt", "suite", "unit", "address line two", "landmark"],
     city:     ["city", "town", "city town", "village"],
+    // "Current location" on a job application is a place, and it is usually a TYPE-AHEAD that only accepts
+    // a suggestion it offered. Its own concept so it never borrows the mailing-address city blindly.
+    location: ["location", "current location", "your location", "where are you located", "where are you based",
+      "city and state", "location city state", "current city", "based in", "home location", "preferred location"],
     state:    ["state", "province", "region", "state province"],
     zip:      ["zip", "zip code", "postal code", "pincode", "pin code", "postcode", "post code"],
     // Payment CARD + its BILLING address (from a saved card record) — mirrors resolver.js so web
@@ -416,6 +420,8 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
     if (key === "given")  return atoms.given ?? (atoms.full || "").split(/\s+/)[0];
     if (key === "family") return atoms.family ?? ((atoms.full || "").split(/\s+/).slice(-1)[0]);
     if (key === "nationality") return atoms.nationality ?? atoms.country;
+    // A location the user never stored explicitly is still known: it is where they live.
+    if (key === "location") return atoms.location ?? ([atoms.city, atoms.state].filter(Boolean).join(", ") || null);
     if (key === "cellphone") return withCC(atoms.cellphone ?? anyPhone());
     if (key === "homephone") return withCC(atoms.homephone ?? anyPhone());
     if (key === "phone")     return withCC(anyPhone());
@@ -1626,6 +1632,44 @@ export async function fillPage(vault, tLabels, eduEntries, opts) {
         if (!pending.has(String(labelOf(h) || "").trim())) continue;
         await fillChooser(h);
       } catch (_) { /* a retry must never break the fill */ }
+    }
+  }
+
+  // ---- LOCATION TYPE-AHEADS ("Current location", "Start typing…") ------------------------------
+  // A place box on a job application is usually an autocomplete that ONLY accepts a suggestion it
+  // offered: a plain value-set is wiped (Lever) or leaves the field looking filled while the form holds
+  // nothing (Ashby). So type it like a person, wait for the menu, and click the suggestion that matches
+  // where the user actually lives. No suggestion we can vouch for → leave the typed text, never a guess.
+  {
+    const placeVal = atomVal("location");
+    const cityTok = String(atoms.city || "").toLowerCase();
+    const stateTok = String(atoms.state || "").toLowerCase();
+    if (placeVal) {
+      const boxes = [...deepQSA('input[role="combobox"], input[class*="location"], input[name*="location" i], input[placeholder*="typing" i]')]
+        .filter((el) => el.type !== "hidden" && !el.disabled && el.offsetParent !== null)
+        .filter((el) => {
+          const lab = norm(labelOf(el));
+          return /\blocation\b|\bcity\b|where are you|based/.test(lab) || /location/i.test(el.name || el.className || "");
+        });
+      for (const el of boxes.slice(0, 3)) {
+        try {
+          if (String(el.value || "").trim() && !/^select|^start typing/i.test(el.value)) continue;  // already answered
+          await typeFieldValue(el, String(placeVal).split(",")[0]);   // the CITY narrows the menu best
+          const rows = () => [...deepQSA('[role="option"], [class*="suggestion"], [class*="dropdown"] li, [class*="menu"] li, [class*="option"]')]
+            .filter((o) => { const t = norm(o.textContent); return t && cityTok && t.includes(cityTok); });
+          await until(() => rows().length, 900, 60);
+          const found = rows();
+          if (!found.length) continue;                    // nothing offered — keep what we typed
+          // Prefer the suggestion that also carries the user's state (Raleigh, NORTH CAROLINA), so a
+          // same-named town in another state is never chosen for them.
+          const best = found.find((o) => stateTok && norm(o.textContent).includes(stateTok)) || (found.length === 1 ? found[0] : null);
+          if (!best) continue;                            // ambiguous — the user picks, we do not guess
+          for (const t of ["mousedown", "mouseup", "click"]) best.dispatchEvent(new MouseEvent(t, { bubbles: true, button: 0 }));
+          if (best.click) best.click();
+          await until(() => String(el.value || "").trim().length > 0, 300, 30);
+          filled++; markFilled(el);
+        } catch (_) { /* a type-ahead must never break the fill */ }
+      }
     }
   }
 

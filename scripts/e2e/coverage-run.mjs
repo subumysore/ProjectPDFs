@@ -48,6 +48,9 @@ const FORMS = [
   ["Greenhouse (City of Fort Worth)", "https://job-boards.greenhouse.io/cityoffortworth/jobs/7662064003"],
   ["Lever (LaunchSquad)", "https://jobs.lever.co/launchsquad/0f4f5b47-0d59-40b3-9c6d-17a1abc11769/apply"],
   ["Lever (Magna Legal)", "https://jobs.lever.co/magnals/cf051e03-c069-44bb-9590-d98080b4aca5/apply"],
+  // Ashby is the fourth ATS the owner's target roles use. Its application is a single page whose place
+  // box is a type-ahead and whose screening questions are free text — a good test of "pause, don't guess".
+  ["Ashby (Ashby)", "https://jobs.ashbyhq.com/ashby/206c6a86-74e3-4fcf-9175-fdfe07858676/application"],
 ];
 
 // Labels we deliberately never guess: legal / self-ID / consent.

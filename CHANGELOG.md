@@ -39,7 +39,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
   "(unlabelled)" fields the user cannot see. Both fixed.
 - New concepts in BOTH engines (parity enforced): current company / current employer, name suffix,
   preferred language.
+### Added — "Current location" boxes fill at last
+- A place box on a job application is a TYPE-AHEAD that only accepts a suggestion it offered, so a plain
+  value-set left the form holding nothing (Ashby) or was wiped (Lever). New pass: type it like a person,
+  wait for the menu, and click the suggestion carrying the user's own state — a name shared by towns in
+  three states is left for the user to pick, never guessed. New `location` concept in both engines
+  (composed from city + state when the vault holds no explicit one). Verified live on Ashby.
+- Ashby joins the coverage gate as the fourth ATS.
 ### Tests
+- `locationtypeahead.test.mjs` (5).
 - `bgmultistep.test.mjs` (3) — the BACKGROUND worker's own path: background.js loads, `fillSteps`
   reaches the handler, a 3-step wizard is filled, the new answer is readable back OUT of the unlocked
   vault, and Submit is never clicked. This is the wiring no page-level test can reach.
