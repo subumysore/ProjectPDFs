@@ -1,6 +1,6 @@
 # winget default-locale manifest. See SubramanyaMysore.PolyglotFormFill.yaml for submission steps.
 PackageIdentifier: SubramanyaMysore.PolyglotFormFill
-PackageVersion: 1.0.16
+PackageVersion: 1.0.18
 PackageLocale: en-US
 Publisher: Subramanya Mysore
 PublisherUrl: https://polyglotformfill.com

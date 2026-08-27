@@ -8,7 +8,7 @@
 #
 # NOTE: the InstallerUrls must be live before submitting — winget validation downloads them.
 PackageIdentifier: SubramanyaMysore.PolyglotFormFill
-PackageVersion: 1.0.16
+PackageVersion: 1.0.18
 InstallerLocale: en-US
 Platform:
 - Windows.Desktop
@@ -18,7 +18,7 @@ InstallModes:
 - interactive
 - silent
 UpgradeBehavior: install
-ReleaseDate: 2026-08-12
+ReleaseDate: 2026-08-19
 # Only the NSIS installer is published. The MSI is still built by `tauri build`, but it is no
 # longer hosted (it duplicated the .exe for ~32 MB), and winget validation downloads InstallerUrl —
 # so an unhosted MSI cannot be offered here.
@@ -26,6 +26,6 @@ Installers:
 - Architecture: x64
   InstallerType: nullsoft
   InstallerUrl: https://polyglotformfill.mooo.com/download/PolyglotFormFill-Setup.exe
-  InstallerSha256: 8948C950A945CA3997932CDC19086FCC65A3F181D9917A70FFF6BEA0AA3DDEE5
+  InstallerSha256: 84341FAEFF26A782F7189191B78A9A1E493EC1C80059A18FCFD1792539FD1FF3
 ManifestType: installer
 ManifestVersion: 1.6.0

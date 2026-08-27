@@ -148,7 +148,7 @@
 
   <div class="card" id="extension">
     <span class="tag">Commencez ici · le plus simple</span>
-    <h2 style="margin-top:0">🧩 Extension de navigateur <span class="ver" data-ver="ext">v1.0.16</span></h2>
+    <h2 style="margin-top:0">🧩 Extension de navigateur <span class="ver" data-ver="ext">v1.0.18</span></h2>
     <a class="btn" href="https://chromewebstore.google.com/detail/goaoopdpnofpamcpmmpbfkahfhfegfke" target="_blank" rel="noopener">Add to Chrome — Web Store</a>
     <a class="btn ghost" href="/dl/ext">Télécharger l'extension (.zip)</a>
     <p>En attendant qu'elle soit sur les stores, chargez-la en mode développeur :</p>
@@ -189,11 +189,20 @@
 
   <div class="card">
     <h2 style="margin-top:0">🖥️ Application de bureau Windows — téléchargement direct
-      <span class="ver" data-ver="app">v1.0.16</span></h2>
+      <span class="ver" data-ver="app">v1.0.18</span></h2>
 
     <div class="heads">
-      <b>Digitally signed.</b> Code-signed by a Microsoft-trusted certificate authority, so Windows shows the verified publisher — Subramanya Mysore — not “unknown publisher.”
-      <div style="margin-top:8px">Because this is a brand-new release, Windows may still say “Windows protected your PC — unrecognized app.” That is a reputation notice on new software, not a virus. Click More info, then Run anyway. Independently verified clean (VirusTotal: 0 of 71); the notice fades as more people install. Prefer no prompt at all? Use the browser extension above — it installs with none.</div>
+      <b>Ce que Windows va vous montrer, et pourquoi.</b> Nous n'avons pas encore acheté de certificat de signature de code — ils sont vendus aux entreprises enregistrées et coûtent quelques centaines de dollars par an, et nous préférons reporter cet achat plutôt que de vous le facturer. Windows ne reconnaît donc pas encore le nom de l'éditeur et affiche cette boîte bleue la première fois que vous exécutez l'installateur :
+      <div class="screen">
+        <span class="t">Windows a protégé votre PC</span>
+        Microsoft Defender SmartScreen a empêché le démarrage d'une application non reconnue.
+      </div>
+      Ce message signifie « je n'ai jamais vu cet éditeur auparavant » — pas que le fichier pose un problème. Pour continuer :
+      <ol>
+        <li>Cliquez sur Informations complémentaires (le petit lien à l'intérieur de la boîte bleue).</li>
+        <li>Cliquez sur Exécuter quand même.</li>
+      </ol>
+      Elle apparaît une seule fois, à la première installation. Vous préférez l'éviter complètement ? Utilisez winget ci-dessus, ou l'extension de navigateur, qui n'est pas concernée.
     </div>
 
     <a class="btn" href="/dl/exe">Télécharger l'installateur (.exe)</a>
